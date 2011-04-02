@@ -12,6 +12,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.util.Log;
 
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -96,6 +97,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
 				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
 				if(detailed == NetworkInfo.DetailedState.CONNECTED){
+					Log.i("WifiCallback", "get network state -> CONNECTED");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						isNetworkStateRefreshedToConnected = true;
@@ -105,6 +107,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						onNetworkConnected(wifiManager.getConnectionInfo());
 					}
 				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+					Log.i("WifiCallback", "get network state -> OBTAINING_IPADDR");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						if(autoUnregisterActions.length == 0) onNetworkObtainingIp(wifiManager.getConnectionInfo());
@@ -113,6 +116,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						onNetworkObtainingIp(wifiManager.getConnectionInfo());
 					}
     			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+    				Log.i("WifiCallback", "get network state -> DISCONNECTED");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						if(autoUnregisterActions.length == 0) onNetworkDisconnected(wifiManager.getConnectionInfo());
