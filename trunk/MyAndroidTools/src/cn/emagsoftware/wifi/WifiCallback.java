@@ -58,8 +58,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			}else if(state == WifiManager.WIFI_STATE_ENABLING){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) unregisterMe();
-					onWifiEnabling();
+					if(autoUnregisterActions.length == 0) onWifiEnabling();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) unregisterMe();
 					onWifiEnabling();
@@ -75,8 +74,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     		}else if(state == WifiManager.WIFI_STATE_DISABLING){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) unregisterMe();
-					onWifiDisabling();
+					if(autoUnregisterActions.length == 0) onWifiDisabling();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) unregisterMe();
 					onWifiDisabling();
@@ -99,7 +97,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
 				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
 				if(detailed == NetworkInfo.DetailedState.CONNECTED){
-					Log.i("WifiCallback", "get network state -> CONNECTED");
+					Log.d("WifiCallback", "get network state -> CONNECTED");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						isNetworkStateRefreshedToConnected = true;
@@ -109,17 +107,16 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						onNetworkConnected(wifiManager.getConnectionInfo());
 					}
 				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-					Log.i("WifiCallback", "get network state -> OBTAINING_IPADDR");
+					Log.d("WifiCallback", "get network state -> OBTAINING_IPADDR");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) unregisterMe();
-						onNetworkObtainingIp(wifiManager.getConnectionInfo());
+						if(autoUnregisterActions.length == 0) onNetworkObtainingIp(wifiManager.getConnectionInfo());
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) unregisterMe();
 						onNetworkObtainingIp(wifiManager.getConnectionInfo());
 					}
     			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
-    				Log.i("WifiCallback", "get network state -> DISCONNECTED");
+    				Log.d("WifiCallback", "get network state -> DISCONNECTED");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						if(autoUnregisterActions.length == 0) onNetworkDisconnected(wifiManager.getConnectionInfo());
