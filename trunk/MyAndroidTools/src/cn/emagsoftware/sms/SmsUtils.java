@@ -36,7 +36,7 @@ public final class SmsUtils {
 		PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);
 		if(ssc != null){
 			ssc.setToken(sendMessageToken);
-			ssc.setAutoUnregisterWhenAction(true, SmsSendCallback.ACTION_SENT);
+			ssc.setAutoUnregisterActions(new int[]{SmsSendCallback.ACTION_SENT});
 			ssc.registerMe();
 		}
 		smsManager.sendTextMessage(to, null, text, sentPI, deliveredPI);
