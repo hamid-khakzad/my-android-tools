@@ -58,6 +58,7 @@ public final class HttpConnectionManager {
 			httpConn = openConnection(url, isSSL, followRedirects, connOrReadTimeout, requestHeaders);
 			httpConn.setRequestMethod("GET");
 			HttpResponseResult result = new HttpResponseResult();
+			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
@@ -116,6 +117,7 @@ public final class HttpConnectionManager {
 				buffOutput.flush();
 			}
 			HttpResponseResult result = new HttpResponseResult();
+			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());

@@ -1,14 +1,24 @@
 package com.wendell.net.http;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
 public class HttpResponseResult {
 	
+	protected URL responseURL = null;
 	protected int responseCode = -1;
 	protected Map<String,List<String>> responseHeaders = null;
 	protected byte[] data = null;
+	
+	public URL getResponseURL(){
+		return responseURL;
+	}
+	
+	public void setResponseURL(URL responseURL){
+		this.responseURL = responseURL;
+	}
 	
 	public int getResponseCode() {
 		return responseCode;
