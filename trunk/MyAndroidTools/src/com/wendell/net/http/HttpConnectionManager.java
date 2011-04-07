@@ -42,59 +42,12 @@ public final class HttpConnectionManager {
 	private HttpConnectionManager(){}
 	
 	/**
-	 * 返回HttpURLConnection实例
-	 * @param url 请求的url
-	 * @param isSSL 是否是加密的https请求
-	 * @param followRedirects 是否自动重定向
-	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
-	 * @param requestHeaders 请求头
-	 * @return HttpURLConnection实例
-	 * @throws IOException
-	 */
-	private static HttpURLConnection openConnection(String url,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
-		HttpURLConnection httpConn = null;
-		try{
-			if(isSSL) {
-				SSLContext sslCont = SSLContext.getInstance("TLS"); 
-				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
-				HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
-				HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(new URL(url).getHost()));
-				httpConn = (HttpsURLConnection)new URL(url).openConnection();
-			} else {
-				httpConn = (HttpURLConnection)new URL(url).openConnection();
-			}
-			httpConn.setInstanceFollowRedirects(followRedirects);
-			httpConn.setDoInput(true);
-			httpConn.setDoOutput(true);
-			httpConn.setReadTimeout(connOrReadTimeout);
-			httpConn.setConnectTimeout(connOrReadTimeout);
-			if(requestHeaders != null){
-				Iterator<String> keys = requestHeaders.keySet().iterator();
-				while(keys.hasNext()){
-					String key = keys.next();
-					List<String> values = requestHeaders.get(key);
-					for(String value:values){
-						httpConn.addRequestProperty(key, value);
-					}
-				}
-			}
-			return httpConn;
-		}catch(IOException e){
-			if(httpConn != null) httpConn.disconnect();
-			throw e;
-		}catch(Exception e){
-			if(httpConn != null) httpConn.disconnect();
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
 	 * 进行http get请求
 	 * @param url 请求的url
 	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
-	 * @param requestHeaders 请求头
+	 * @param requestHeaders 请求头，不需要时可传null
 	 * @return HttpResponseResult实例
 	 * @throws IOException
 	 */
@@ -134,9 +87,9 @@ public final class HttpConnectionManager {
 	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
-	 * @param requestHeaders 请求头
-	 * @param params 请求时带入的参数
-	 * @param paramsCharset 带入参数的字符集
+	 * @param requestHeaders 请求头，不需要时可传null
+	 * @param params 请求时带入的参数，不需要时可传null
+	 * @param paramsCharset 带入参数的字符集，不需要时可传null
 	 * @return HttpResponseResult实例
 	 * @throws IOException
 	 */
@@ -187,6 +140,53 @@ public final class HttpConnectionManager {
 					if(httpConn != null) httpConn.disconnect();
 				}
 			}
+		}
+	}
+	
+	/**
+	 * 返回HttpURLConnection实例
+	 * @param url 请求的url
+	 * @param isSSL 是否是加密的https请求
+	 * @param followRedirects 是否自动重定向
+	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
+	 * @param requestHeaders 请求头，不需要时可传null
+	 * @return HttpURLConnection实例
+	 * @throws IOException
+	 */
+	private static HttpURLConnection openConnection(String url,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+		HttpURLConnection httpConn = null;
+		try{
+			if(isSSL) {
+				SSLContext sslCont = SSLContext.getInstance("TLS"); 
+				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
+				HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
+				HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(new URL(url).getHost()));
+				httpConn = (HttpsURLConnection)new URL(url).openConnection();
+			} else {
+				httpConn = (HttpURLConnection)new URL(url).openConnection();
+			}
+			httpConn.setInstanceFollowRedirects(followRedirects);
+			httpConn.setDoInput(true);
+			httpConn.setDoOutput(true);
+			httpConn.setReadTimeout(connOrReadTimeout);
+			httpConn.setConnectTimeout(connOrReadTimeout);
+			if(requestHeaders != null){
+				Iterator<String> keys = requestHeaders.keySet().iterator();
+				while(keys.hasNext()){
+					String key = keys.next();
+					List<String> values = requestHeaders.get(key);
+					for(String value:values){
+						httpConn.addRequestProperty(key, value);
+					}
+				}
+			}
+			return httpConn;
+		}catch(IOException e){
+			if(httpConn != null) httpConn.disconnect();
+			throw e;
+		}catch(Exception e){
+			if(httpConn != null) httpConn.disconnect();
+			throw new RuntimeException(e);
 		}
 	}
 	
