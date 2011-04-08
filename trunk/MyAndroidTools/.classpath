@@ -3,5 +3,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="lib" path="lib/htmlparser/filterbuilder.jar"/>
+	<classpathentry kind="lib" path="lib/htmlparser/htmlparser.jar"/>
+	<classpathentry kind="lib" path="lib/htmlparser/sitecapturer.jar"/>
+	<classpathentry kind="lib" path="lib/htmlparser/thumbelina.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
