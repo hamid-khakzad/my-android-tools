@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -45,6 +46,7 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 	
 	protected void init(Context context){
 		this.context = context;
+		getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 		getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));		
 		setContentView(R.layout.themedialog);
 		icon = (ImageView)findViewById(R.id.ImageView01);
