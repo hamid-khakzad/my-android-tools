@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.view.View;
-import android.widget.TextView;
 
 public abstract class DialogManager {
 	
@@ -40,13 +39,20 @@ public abstract class DialogManager {
 		return ab.show();
 	}
 	
-	public static ProgressDialog showMessageThemeDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable){
-		TextView tv = null;
-		if(msg != null){
-			tv = new TextView(context);
-			tv.setText(msg);
+	public static ThemeDialog showMessageThemeDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable){
+		ThemeDialog td = null;
+		if(theme == -1) td = new ThemeDialog(context);
+		else td = new ThemeDialog(context, theme);
+		if(title != null) td.setTitle(title);
+		if(msg != null) td.setMessage(msg);
+		if(buttons != null){
+			if(buttons.length >= 1) td.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
+			if(buttons.length >= 2) td.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[1], onClickListener);
+			if(buttons.length >= 3) td.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[2], onClickListener);
 		}
-		return showCustomThemeDialog(context,theme,title,tv,buttons,onClickListener,cancelable);
+		td.setCancelable(cancelable);
+		td.show();
+		return td;
 	}
 	
 	public static ProgressDialog showProgressThemeDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable){
@@ -65,20 +71,20 @@ public abstract class DialogManager {
 		return pd;
 	}
 	
-	public static ProgressDialog showCustomThemeDialog(Context context,int theme,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable){
-		ProgressDialog pd = null;
-		if(theme == -1) pd = new ProgressDialog(context);
-		else pd = new ProgressDialog(context, theme);
-		if(title != null) pd.setTitle(title);
-		if(view != null) pd.setView(view);
+	public static ThemeDialog showCustomThemeDialog(Context context,int theme,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable){
+		ThemeDialog td = null;
+		if(theme == -1) td = new ThemeDialog(context);
+		else td = new ThemeDialog(context, theme);
+		if(title != null) td.setTitle(title);
+		if(view != null) td.setView(view);
 		if(buttons != null){
-			if(buttons.length >= 1) pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-			if(buttons.length >= 2) pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[1], onClickListener);
-			if(buttons.length >= 3) pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[2], onClickListener);
+			if(buttons.length >= 1) td.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
+			if(buttons.length >= 2) td.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[1], onClickListener);
+			if(buttons.length >= 3) td.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[2], onClickListener);
 		}
-		pd.setCancelable(cancelable);
-		pd.show();
-		return pd;
+		td.setCancelable(cancelable);
+		td.show();
+		return td;
 	}
 	
 }
