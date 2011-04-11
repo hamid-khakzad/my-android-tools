@@ -23,6 +23,10 @@ public abstract class DialogManager {
 		return ab.show();
 	}
 	
+	public static ProgressDialog showProgressDialog(Context context,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable){
+		return showProgressThemeDialog(context,-1,title,msg,buttons,onClickListener,cancelable);
+	}
+	
 	public static AlertDialog showCustomDialog(Context context,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable){
 		AlertDialog.Builder ab = new AlertDialog.Builder(context);
 		if(title != null) ab.setTitle(title);
