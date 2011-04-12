@@ -9,16 +9,21 @@ import android.view.View;
 
 public abstract class DialogManager {
 	
-	public static AlertDialog showMessageDialog(Context context,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable){
+	public static AlertDialog.Builder createAlertDialogBuilder(Context context,String title,String[] buttons,OnClickListener onClickListener,boolean cancelable){
 		AlertDialog.Builder ab = new AlertDialog.Builder(context);
 		if(title != null) ab.setTitle(title);
-		if(msg != null) ab.setMessage(msg);
 		if(buttons != null){
 			if(buttons.length >= 1) ab.setPositiveButton(buttons[0], onClickListener);
 			if(buttons.length >= 2) ab.setNegativeButton(buttons[1], onClickListener);
 			if(buttons.length >= 3) ab.setNeutralButton(buttons[2], onClickListener);
 		}
 		ab.setCancelable(cancelable);
+		return ab;
+	}
+	
+	public static AlertDialog showMessageDialog(Context context,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable){
+		AlertDialog.Builder ab = createAlertDialogBuilder(context,title,buttons,onClickListener,cancelable);
+		if(msg != null) ab.setMessage(msg);
 		return ab.show();
 	}
 	
@@ -27,15 +32,8 @@ public abstract class DialogManager {
 	}
 	
 	public static AlertDialog showCustomDialog(Context context,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable){
-		AlertDialog.Builder ab = new AlertDialog.Builder(context);
-		if(title != null) ab.setTitle(title);
+		AlertDialog.Builder ab = createAlertDialogBuilder(context,title,buttons,onClickListener,cancelable);
 		if(view != null) ab.setView(view);
-		if(buttons != null){
-			if(buttons.length >= 1) ab.setPositiveButton(buttons[0], onClickListener);
-			if(buttons.length >= 2) ab.setNegativeButton(buttons[1], onClickListener);
-			if(buttons.length >= 3) ab.setNeutralButton(buttons[2], onClickListener);
-		}
-		ab.setCancelable(cancelable);
 		return ab.show();
 	}
 	
