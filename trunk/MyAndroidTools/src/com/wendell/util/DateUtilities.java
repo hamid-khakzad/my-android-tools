@@ -37,40 +37,67 @@ public final class DateUtilities {
 		return day;
 	}
 	
-	public static int[] getMondayFront(){
+	public static int getMaxDayThisMonth(){
+		GregorianCalendar calendar = new GregorianCalendar();
+		int maxDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+		return maxDay;
+	}
+	
+	public static int getWeek(){
+		GregorianCalendar calendar = new GregorianCalendar();
+		int day = calendar.get(Calendar.DAY_OF_WEEK);
+		return day;
+	}
+	
+	public static int[] getMondayThisWeek(boolean sundayIsFirst){
 		int amount = 0;
 		int week = getWeek();
-		if(week == Calendar.MONDAY) amount = 0;
+		if(week == Calendar.SUNDAY){
+			if(sundayIsFirst) amount = 1;
+			else amount = -6;
+		}else if(week == Calendar.MONDAY) amount = 0;
 		else if(week == Calendar.TUESDAY) amount = -1;
 		else if(week == Calendar.WEDNESDAY) amount = -2;
 		else if(week == Calendar.THURSDAY) amount = -3;
 		else if(week == Calendar.FRIDAY) amount = -4;
 		else if(week == Calendar.SATURDAY) amount = -5;
-		else if(week == Calendar.SUNDAY) amount = -6;
 		GregorianCalendar calendar = new GregorianCalendar();
 		calendar.add(Calendar.DAY_OF_MONTH, amount);
 		return new int[]{
 				calendar.get(Calendar.YEAR),
-				calendar.get(Calendar.MONTH)+1,
+				calendar.get(Calendar.MONTH) + 1,
 				calendar.get(Calendar.DAY_OF_MONTH)
 		};
 	}
 	
-	public static int[] getSunDayBehind(){
+	public static int[] getSundayThisWeek(boolean sundayIsFirst){
 		int amount = 0;
 		int week = getWeek();
-		if(week == Calendar.MONDAY) amount = 6;
-		else if(week == Calendar.TUESDAY) amount = 5;
-		else if(week == Calendar.WEDNESDAY) amount = 4;
-		else if(week == Calendar.THURSDAY) amount = 3;
-		else if(week == Calendar.FRIDAY) amount = 2;
-		else if(week == Calendar.SATURDAY) amount = 1;
-		else if(week == Calendar.SUNDAY) amount = 0;
+		if(week == Calendar.SUNDAY) amount = 0;
+		else if(week == Calendar.MONDAY) {
+			if(sundayIsFirst) amount = -1;
+			else amount = 6;
+		}else if(week == Calendar.TUESDAY) {
+			if(sundayIsFirst) amount = -2;
+			else amount = 5;
+		}else if(week == Calendar.WEDNESDAY) {
+			if(sundayIsFirst) amount = -3;
+			else amount = 4;
+		}else if(week == Calendar.THURSDAY) {
+			if(sundayIsFirst) amount = -4;
+			else amount = 3;
+		}else if(week == Calendar.FRIDAY){
+			if(sundayIsFirst) amount = -5;
+			else amount = 2;
+		}else if(week == Calendar.SATURDAY){
+			if(sundayIsFirst) amount = -6;
+			else amount = 1;
+		}
 		GregorianCalendar calendar = new GregorianCalendar();
 		calendar.add(Calendar.DAY_OF_MONTH, amount);
 		return new int[]{
 				calendar.get(Calendar.YEAR),
-				calendar.get(Calendar.MONTH)+1,
+				calendar.get(Calendar.MONTH) + 1,
 				calendar.get(Calendar.DAY_OF_MONTH)
 		};
 	}
@@ -97,12 +124,6 @@ public final class DateUtilities {
 		GregorianCalendar calendar = new GregorianCalendar();
 		int millisec = calendar.get(Calendar.MILLISECOND);
 		return millisec;
-	}
-	
-	public static int getWeek(){
-		GregorianCalendar calendar = new GregorianCalendar();
-		int day = calendar.get(Calendar.DAY_OF_WEEK);
-		return day;
 	}
 	
 	/**
