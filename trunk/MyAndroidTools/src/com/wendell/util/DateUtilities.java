@@ -9,7 +9,7 @@ import java.util.GregorianCalendar;
 /**
  * <p>关于的时间的通用类
  * @author Wendell
- * @date 2008.9.26
+ * @date 2011.04.13
  */
 public final class DateUtilities {
 	
@@ -18,7 +18,17 @@ public final class DateUtilities {
 		int year = calendar.get(Calendar.YEAR);
 		return year;
 	}
-
+	
+	/**
+	 * 是否是闰年
+	 * @return
+	 */
+	public boolean isLeapYear(){
+		int year = getYear();
+		if ((year % 4 == 0) && ((year % 100 != 0) | (year % 400 == 0))) return true;
+		return false;
+	}
+	
 	public static int getMonth() {
 		GregorianCalendar calendar = new GregorianCalendar();
 		int month = calendar.get(Calendar.MONTH) + 1;
@@ -132,7 +142,7 @@ public final class DateUtilities {
 	 * @param dateformat
 	 * @return
 	 */
-	public static String getFormatDate(Date date,String dateformat) { 
+	public static String getFormatDate(Date date,String dateformat) {
 		SimpleDateFormat format = new SimpleDateFormat(dateformat);
 		String time = format.format(date);
 		return time;
@@ -147,13 +157,13 @@ public final class DateUtilities {
 	 * @param dateformat
 	 * @return
 	 */
-	public static String getFormatNowDate(String dateformat) {
+	public static String getFormatDate(String dateformat) {
 		Date now = new Date();
 		return getFormatDate(now,dateformat);
 	}
 	
-	public static String getFormatNowDate() {
-		return getFormatNowDate("yyyy-MM-dd");
+	public static String getFormatDate() {
+		return getFormatDate("yyyy-MM-dd");
 	}
 	
 	/**
@@ -162,7 +172,7 @@ public final class DateUtilities {
 	 * @param dateformat
 	 * @return
 	 */
-	public static Date getParseDateString(String dateStr,String dateformat){
+	public static Date getParseDate(String dateStr,String dateformat){
 		try{
 			SimpleDateFormat format = new SimpleDateFormat(dateformat);
 			Date date = format.parse(dateStr);
@@ -172,8 +182,8 @@ public final class DateUtilities {
 		}
 	}
 	
-	public static Date getParseDateString(String dateStr){
-		return getParseDateString(dateStr,"yyyy-MM-dd");
+	public static Date getParseDate(String dateStr){
+		return getParseDate(dateStr,"yyyy-MM-dd");
 	}
 	
 }
