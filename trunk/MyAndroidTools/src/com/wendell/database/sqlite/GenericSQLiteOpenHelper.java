@@ -22,15 +22,10 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
 	}
 	
 	/**
-	 * 一些需要实现的方法
+	 * 一些必需或可选实现的方法
 	 * <p>onCreate:创建指定的数据库时执行，该方法只会被执行一次，在软件更新时由于会保留原有数据，故该方法将不再被调用，除非卸载软件后再安装
 	 * <p>onUpgrade:指定的数据库版本号发生变化时执行，执行时会传入原来的版本号和新版本号，方便数据库的更新
 	 * <p>onOpen:每次成功打开指定的数据库时首先被执行
-	 * <p>举个例子，onCreate的实现可以是以下语句：<br>
-	 * public void onCreate(SQLiteDatabase db) {
-	 *   String sql = "CREATE TABLE IF NOT EXISTS T_USER (ID INTEGER PRIMARY KEY,NAME TEXT,PASSWORD TEXT);";
-	 *   db.execSQL(sql);
-	 * }
 	 */
 	
     /**
