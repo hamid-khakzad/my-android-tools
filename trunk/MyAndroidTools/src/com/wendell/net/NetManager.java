@@ -13,7 +13,7 @@ public final class NetManager {
 	
 	private NetManager(){}
 	
-	public boolean isNetUseful(){
+	public static boolean isNetUseful(){
 		try{
 			HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, false, true, 15000, null);
 			if(result.getResponseCode() != HttpURLConnection.HTTP_OK) return false;

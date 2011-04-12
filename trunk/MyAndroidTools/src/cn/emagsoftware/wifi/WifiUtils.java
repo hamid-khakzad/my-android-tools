@@ -3,6 +3,7 @@ package cn.emagsoftware.wifi;
 import java.util.List;
 
 import com.farproc.wifi.connecter.Wifi;
+import com.wendell.net.NetManager;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -24,7 +25,8 @@ public final class WifiUtils {
 	
 	public synchronized static WifiUtils getInstance(Context context){
 		if(wifiUtils != null) return wifiUtils;
-		return new WifiUtils(context);
+		wifiUtils = new WifiUtils(context);
+		return wifiUtils;
 	}
 	
 	private WifiUtils(Context context){
@@ -43,6 +45,10 @@ public final class WifiUtils {
 		NetworkInfo wifiNetworkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 		if (wifiNetworkInfo != null && wifiNetworkInfo.isConnected()) return true;
 		return false;
+	}
+	
+	public boolean isWifiUseful(){
+		return isWifiConnected() && NetManager.isNetUseful();
 	}
 	
 	public WifiInfo getConnectionInfo(){
