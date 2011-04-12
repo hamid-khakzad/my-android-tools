@@ -36,7 +36,45 @@ public final class DateUtilities {
 		int day = calendar.get(Calendar.DAY_OF_MONTH);
 		return day;
 	}
-
+	
+	public static int[] getMondayFront(){
+		int amount = 0;
+		int week = getWeek();
+		if(week == Calendar.MONDAY) amount = 0;
+		else if(week == Calendar.TUESDAY) amount = -1;
+		else if(week == Calendar.WEDNESDAY) amount = -2;
+		else if(week == Calendar.THURSDAY) amount = -3;
+		else if(week == Calendar.FRIDAY) amount = -4;
+		else if(week == Calendar.SATURDAY) amount = -5;
+		else if(week == Calendar.SUNDAY) amount = -6;
+		GregorianCalendar calendar = new GregorianCalendar();
+		calendar.add(Calendar.DAY_OF_MONTH, amount);
+		return new int[]{
+				calendar.get(Calendar.YEAR),
+				calendar.get(Calendar.MONTH)+1,
+				calendar.get(Calendar.DAY_OF_MONTH)
+		};
+	}
+	
+	public static int[] getSunDayBehind(){
+		int amount = 0;
+		int week = getWeek();
+		if(week == Calendar.MONDAY) amount = 6;
+		else if(week == Calendar.TUESDAY) amount = 5;
+		else if(week == Calendar.WEDNESDAY) amount = 4;
+		else if(week == Calendar.THURSDAY) amount = 3;
+		else if(week == Calendar.FRIDAY) amount = 2;
+		else if(week == Calendar.SATURDAY) amount = 1;
+		else if(week == Calendar.SUNDAY) amount = 0;
+		GregorianCalendar calendar = new GregorianCalendar();
+		calendar.add(Calendar.DAY_OF_MONTH, amount);
+		return new int[]{
+				calendar.get(Calendar.YEAR),
+				calendar.get(Calendar.MONTH)+1,
+				calendar.get(Calendar.DAY_OF_MONTH)
+		};
+	}
+	
 	public static int getHours() {
 		GregorianCalendar calendar = new GregorianCalendar();
 		int hours = calendar.get(Calendar.HOUR_OF_DAY);
@@ -59,6 +97,12 @@ public final class DateUtilities {
 		GregorianCalendar calendar = new GregorianCalendar();
 		int millisec = calendar.get(Calendar.MILLISECOND);
 		return millisec;
+	}
+	
+	public static int getWeek(){
+		GregorianCalendar calendar = new GregorianCalendar();
+		int day = calendar.get(Calendar.DAY_OF_WEEK);
+		return day;
 	}
 	
 	/**
