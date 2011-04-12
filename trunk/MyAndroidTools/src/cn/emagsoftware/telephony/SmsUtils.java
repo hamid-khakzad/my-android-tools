@@ -13,8 +13,8 @@ import android.telephony.SmsManager;
 
 public final class SmsUtils {
 	
-	public static final String SMS_SENT_ACTION = "cn.emagsoftware.sms.SENT";
-	public static final String SMS_DELIVERED_ACTION = "cn.emagsoftware.sms.DELIVERED";
+	public static final String SMS_SENT_ACTION = "cn.emagsoftware.telephony.SMS_SENT";
+	public static final String SMS_DELIVERED_ACTION = "cn.emagsoftware.telephony.SMS_DELIVERED";
 	
 	private static int sendMessageToken = 0;
 	private static SmsManager smsManager = SmsManager.getDefault();
