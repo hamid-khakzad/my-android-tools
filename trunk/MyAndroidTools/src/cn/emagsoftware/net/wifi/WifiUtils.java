@@ -34,7 +34,7 @@ public final class WifiUtils {
 		if(context == null) throw new NullPointerException();
 		this.context = context;
 		wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-		wifiLock = wifiManager.createWifiLock("cn.emagsoftware.wifi.WifiUtils");
+		wifiLock = wifiManager.createWifiLock("cn.emagsoftware.net.wifi.WifiUtils");
 		connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
 	
