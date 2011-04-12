@@ -9,15 +9,11 @@ public class UIThread extends Thread {
 	protected Handler handler = null;
 	protected Callback callback = new Callback();
 	
-	public UIThread(Context context){
+	public UIThread(Context context,Callback callback){
 		if(context == null) throw new NullPointerException();
 		this.context = context;
 		this.handler = new Handler();
-	}
-	
-	public void setCallback(Callback callback){
-		if(callback == null) throw new NullPointerException();
-		this.callback = callback;
+		if(callback != null) this.callback = callback;
 	}
 	
 	public final void start(){
@@ -27,27 +23,26 @@ public class UIThread extends Thread {
 	
 	public final void run(){
 		super.run();
-		final Callback currentCallback = callback;
 		try{
-			final Object result = currentCallback.onRunNoUI(context);
+			final Object result = callback.onRunNoUI(context);
 			handler.post(new Runnable(){
 				@Override
 				public void run() {
-					currentCallback.onSuccessUI(context,result);
+					callback.onSuccessUI(context,result);
 				}
 			});
 		}catch(final Exception e){
 			handler.post(new Runnable(){
 				@Override
 				public void run() {
-					currentCallback.onExceptionUI(context,e);
+					callback.onExceptionUI(context,e);
 				}
 			});
 		}finally{
 			handler.post(new Runnable(){
 				@Override
 				public void run() {
-					currentCallback.onFinallyUI(context);
+					callback.onFinallyUI(context);
 				}
 			});
 		}
@@ -55,25 +50,15 @@ public class UIThread extends Thread {
 	
 	public static class Callback{
 		
-		public void onBeginUI(Context context){
-			
-		}
+		public void onBeginUI(Context context){}
 		
-		public Object onRunNoUI(Context context) throws Exception{
-			return null;
-		}
+		public Object onRunNoUI(Context context) throws Exception{return null;}
 		
-		public void onSuccessUI(Context context,Object result){
-			
-		}
+		public void onSuccessUI(Context context,Object result){}
 		
-		public void onExceptionUI(Context context,Exception e){
-			
-		}
+		public void onExceptionUI(Context context,Exception e){}
 		
-		public void onFinallyUI(Context context){
-			
-		}
+		public void onFinallyUI(Context context){}
 		
 	}
 	
