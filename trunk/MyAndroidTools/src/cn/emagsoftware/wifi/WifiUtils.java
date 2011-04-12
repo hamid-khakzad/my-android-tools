@@ -39,12 +39,14 @@ public final class WifiUtils {
 		return wifiManager.isWifiEnabled();
 	}
 	
-	public WifiInfo getConnectedInfo(){
-		NetworkInfo wifiNetworkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);    
-		if (wifiNetworkInfo != null && wifiNetworkInfo.isConnected()){
-			return wifiManager.getConnectionInfo();
-		}
-		return null;
+	public boolean isWifiConnected(){
+		NetworkInfo wifiNetworkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		if (wifiNetworkInfo != null && wifiNetworkInfo.isConnected()) return true;
+		return false;
+	}
+	
+	public WifiInfo getConnectionInfo(){
+		return wifiManager.getConnectionInfo();
 	}
 	
 	public void lockWifi(){

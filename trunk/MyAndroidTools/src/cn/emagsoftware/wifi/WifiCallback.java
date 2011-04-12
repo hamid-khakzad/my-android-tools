@@ -44,7 +44,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	public final void onReceive(Context arg0, Intent arg1) {
 		// TODO Auto-generated method stub
 		String action = arg1.getAction();
-		WifiManager wifiManager = WifiUtils.getInstance(arg0).getWifiManager();
+		WifiUtils wifiUtils = WifiUtils.getInstance(arg0);
 		if(action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION)){
 			int state = arg1.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
 			if(state == WifiManager.WIFI_STATE_ENABLED){
@@ -89,7 +89,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 				}
     		}
 		}else if(action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
-			List<ScanResult> results = wifiManager.getScanResults();
+			List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
 			if(Arrays.binarySearch(autoUnregisterActions, ACTION_SCAN_RESULTS) > -1) unregisterMe();
 			onScanResults(results);
 		}else if(action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)){
@@ -101,39 +101,39 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						isNetworkStateRefreshedToConnected = true;
-						if(autoUnregisterActions.length == 0) onNetworkConnected(wifiManager.getConnectionInfo());
+						if(autoUnregisterActions.length == 0) onNetworkConnected(wifiUtils.getConnectionInfo());
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) unregisterMe();
-						onNetworkConnected(wifiManager.getConnectionInfo());
+						onNetworkConnected(wifiUtils.getConnectionInfo());
 					}
 				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
 					Log.d("WifiCallback", "get network state -> OBTAINING_IPADDR");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
-						if(autoUnregisterActions.length == 0) onNetworkObtainingIp(wifiManager.getConnectionInfo());
+						if(autoUnregisterActions.length == 0) onNetworkObtainingIp(wifiUtils.getConnectionInfo());
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) unregisterMe();
-						onNetworkObtainingIp(wifiManager.getConnectionInfo());
+						onNetworkObtainingIp(wifiUtils.getConnectionInfo());
 					}
     			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
     				Log.d("WifiCallback", "get network state -> DISCONNECTED");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
-						if(autoUnregisterActions.length == 0) onNetworkDisconnected(wifiManager.getConnectionInfo());
+						if(autoUnregisterActions.length == 0) onNetworkDisconnected(wifiUtils.getConnectionInfo());
 					}else{
 						networkDisconnectedCount = networkDisconnectedCount + 1;
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
 							if(isNetworkStateRefreshedToConnected){
 								if(networkDisconnectedCount >= 2){
 									unregisterMe();
-									onNetworkDisconnected(wifiManager.getConnectionInfo());
+									onNetworkDisconnected(wifiUtils.getConnectionInfo());
 								}
 							}else{
 								unregisterMe();
-								onNetworkDisconnected(wifiManager.getConnectionInfo());
+								onNetworkDisconnected(wifiUtils.getConnectionInfo());
 							}
 						}else{
-							onNetworkDisconnected(wifiManager.getConnectionInfo());
+							onNetworkDisconnected(wifiUtils.getConnectionInfo());
 						}
 					}
     			}
