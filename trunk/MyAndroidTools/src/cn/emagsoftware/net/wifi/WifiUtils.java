@@ -2,7 +2,8 @@ package cn.emagsoftware.net.wifi;
 
 import java.util.List;
 
-import com.farproc.wifi.connecter.Wifi;
+import cn.emagsoftware.net.wifi.support.Wifi;
+
 import com.wendell.net.NetManager;
 
 import android.content.Context;
