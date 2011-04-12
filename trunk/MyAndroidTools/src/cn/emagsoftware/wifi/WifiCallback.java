@@ -159,6 +159,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onNetworkDisconnected(WifiInfo wifiInfo){}
 	
+	public void onCallbackFailure(){}
+	
 	public void registerMe(){
 		IntentFilter wifiIntentFilter = new IntentFilter();
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);

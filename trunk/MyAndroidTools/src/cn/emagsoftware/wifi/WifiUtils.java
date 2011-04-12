@@ -77,14 +77,13 @@ public final class WifiUtils {
 		return wifiManager;
 	}
 	
-	public boolean setWifiEnabled(boolean enabled,WifiCallback callback){
+	public void setWifiEnabled(boolean enabled,WifiCallback callback){
 		if(enabled == isWifiEnabled()){
-			if(enabled) {
-				if(callback != null) callback.onWifiEnabled();
-			}else {
-				if(callback != null) callback.onWifiDisabled();
+			if(callback != null){
+				if(enabled) callback.onWifiEnabled();
+				else callback.onWifiDisabled();
 			}
-			return true;
+			return;
 		}
 		if(callback != null){
 			if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED});
@@ -92,39 +91,57 @@ public final class WifiUtils {
 			callback.registerMe();
 		}
 		boolean circs = wifiManager.setWifiEnabled(enabled);
-		if(!circs) if(callback != null) callback.unregisterMe();
-		return circs;
+		if(!circs) if(callback != null) {
+			callback.unregisterMe();
+			callback.onCallbackFailure();
+		}
 	}
 	
-	public boolean startScan(WifiCallback callback){
-		if(!isWifiEnabled()) return false;
+	public void startScan(WifiCallback callback){
+		if(!isWifiEnabled()) {
+			if(callback != null) callback.onCallbackFailure();
+			return;
+		}
 		if(callback != null){
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_SCAN_RESULTS});
 			callback.registerMe();
 		}
 		boolean circs = wifiManager.startScan();
-		if(!circs) if(callback != null) callback.unregisterMe();
-		return circs;
+		if(!circs) if(callback != null){
+			callback.unregisterMe();
+			callback.onCallbackFailure();
+		}
 	}
 	
-	public boolean connect(WifiConfiguration wc,WifiCallback callback){
-		if(!isWifiEnabled()) return false;
+	public void connect(WifiConfiguration wc,WifiCallback callback){
+		if(!isWifiEnabled()) {
+			if(callback != null) callback.onCallbackFailure();
+			return;
+		}
 		if(callback != null){
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.registerMe();
 		}
 		boolean circs = Wifi.connectToConfiguredNetwork(context, wifiManager, wc, true);
-		if(!circs) if(callback != null) callback.unregisterMe();
-		return circs;
+		if(!circs) if(callback != null){
+			callback.unregisterMe();
+			callback.onCallbackFailure();
+		}
 	}
 	
-	public boolean connect(ScanResult sr,String password,WifiCallback callback){
-		if(!isWifiEnabled()) return false;
+	public void connect(ScanResult sr,String password,WifiCallback callback){
+		if(!isWifiEnabled()) {
+			if(callback != null) callback.onCallbackFailure();
+			return;
+		}
 		WifiConfiguration old = getConfiguration(sr);
 		if(old != null){
 			String security = getScanResultSecurity(sr);
 			Wifi.setupSecurity(old, security, password);
-			if(!wifiManager.saveConfiguration()) return false;
+			if(!wifiManager.saveConfiguration()) {
+				if(callback != null) callback.onCallbackFailure();
+				return;
+			}
 		}
 		if(callback != null){
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
@@ -133,8 +150,10 @@ public final class WifiUtils {
 		boolean circs;
 		if(old != null) circs = Wifi.connectToConfiguredNetwork(context, wifiManager, old, true);
 		else circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);
-		if(!circs) if(callback != null) callback.unregisterMe();
-		return circs;
+		if(!circs) if(callback != null) {
+			callback.unregisterMe();
+			callback.onCallbackFailure();
+		}
 	}
 	
 }
