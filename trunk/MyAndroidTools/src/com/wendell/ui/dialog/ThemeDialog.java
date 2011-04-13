@@ -28,8 +28,8 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 	private TextView message = null;
 	private LinearLayout buttonsLayout = null;
 	private Button buttonPositive = null;
-	private Button buttonNegative = null;
 	private Button buttonNeutral = null;
+	private Button buttonNegative = null;
 	
 	private Map<Button,OnClickListener> buttonsMapping = new HashMap<Button, OnClickListener>();
 	
@@ -55,11 +55,11 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 		message = (TextView)findViewById(R.id.TextView02);
 		buttonsLayout = (LinearLayout)findViewById(R.id.LinearLayout05);
 		buttonPositive = (Button)findViewById(R.id.Button01);
-		buttonNegative = (Button)findViewById(R.id.Button02);
-		buttonNeutral = (Button)findViewById(R.id.Button03);
+		buttonNeutral = (Button)findViewById(R.id.Button02);
+		buttonNegative = (Button)findViewById(R.id.Button03);
 		buttonPositive.setOnClickListener(this);
-		buttonNegative.setOnClickListener(this);
 		buttonNeutral.setOnClickListener(this);
+		buttonNegative.setOnClickListener(this);
 	}
 	
 	public void setIcon(int iconResourceId){
@@ -98,8 +98,8 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 	public void setButton(int whichButton,CharSequence textStr,OnClickListener listener){
 		Button button = null;
 		if(whichButton == DialogInterface.BUTTON_POSITIVE) button = buttonPositive;
-		else if(whichButton == DialogInterface.BUTTON_NEGATIVE) button = buttonNegative;
 		else if(whichButton == DialogInterface.BUTTON_NEUTRAL) button = buttonNeutral;
+		else if(whichButton == DialogInterface.BUTTON_NEGATIVE) button = buttonNegative;
 		else throw new IllegalArgumentException();
 		
 		button.setVisibility(View.VISIBLE);
@@ -120,8 +120,8 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 			this.dismiss();
 		}else{
 			if(v == buttonPositive) listener.onClick(this, DialogInterface.BUTTON_POSITIVE);
-			else if(v == buttonNegative) listener.onClick(this, DialogInterface.BUTTON_NEGATIVE);
 			else if(v == buttonNeutral) listener.onClick(this, DialogInterface.BUTTON_NEUTRAL);
+			else if(v == buttonNegative) listener.onClick(this, DialogInterface.BUTTON_NEGATIVE);
 		}
 	}
 	
@@ -130,8 +130,8 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 		// TODO Auto-generated method stub
 		int visibleCount = 0;
 		if(buttonPositive.getVisibility() == View.VISIBLE) visibleCount = visibleCount + 1;
-		if(buttonNegative.getVisibility() == View.VISIBLE) visibleCount = visibleCount + 1;
 		if(buttonNeutral.getVisibility() == View.VISIBLE) visibleCount = visibleCount + 1;
+		if(buttonNegative.getVisibility() == View.VISIBLE) visibleCount = visibleCount + 1;
 		if(visibleCount == 0){
 			buttonsLayout.setPadding(0,0,0,0);
 		}else if(visibleCount == 1){
