@@ -11,7 +11,7 @@ import android.view.View;
  * <p>dialog manager
  * <p>though the 'setView' method for thematic ProgressDialog has existed,but it dose not work.The ThemeDialog class is created by this reson.
  * @author Wendell
- * @version 1.0
+ * @version 1.1
  * 
  */
 public abstract class DialogManager {
@@ -21,8 +21,8 @@ public abstract class DialogManager {
 		if(title != null) ab.setTitle(title);
 		if(buttons != null){
 			if(buttons.length >= 1) ab.setPositiveButton(buttons[0], onClickListener);
-			if(buttons.length >= 2) ab.setNegativeButton(buttons[1], onClickListener);
-			if(buttons.length >= 3) ab.setNeutralButton(buttons[2], onClickListener);
+			if(buttons.length >= 2) ab.setNeutralButton(buttons[1], onClickListener);
+			if(buttons.length >= 3) ab.setNegativeButton(buttons[2], onClickListener);
 		}
 		ab.setCancelable(cancelable);
 		return ab;
@@ -52,8 +52,8 @@ public abstract class DialogManager {
 		if(msg != null) pd.setMessage(msg);
 		if(buttons != null){
 			if(buttons.length >= 1) pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-			if(buttons.length >= 2) pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[1], onClickListener);
-			if(buttons.length >= 3) pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[2], onClickListener);
+			if(buttons.length >= 2) pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+			if(buttons.length >= 3) pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
 		}
 		pd.setCancelable(cancelable);
 		pd.show();
@@ -68,8 +68,8 @@ public abstract class DialogManager {
 		if(msg != null) td.setMessage(msg);
 		if(buttons != null){
 			if(buttons.length >= 1) td.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-			if(buttons.length >= 2) td.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[1], onClickListener);
-			if(buttons.length >= 3) td.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[2], onClickListener);
+			if(buttons.length >= 2) td.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+			if(buttons.length >= 3) td.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
 		}
 		td.setCancelable(cancelable);
 		td.show();
@@ -84,8 +84,8 @@ public abstract class DialogManager {
 		if(view != null) td.setView(view);
 		if(buttons != null){
 			if(buttons.length >= 1) td.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-			if(buttons.length >= 2) td.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[1], onClickListener);
-			if(buttons.length >= 3) td.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[2], onClickListener);
+			if(buttons.length >= 2) td.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+			if(buttons.length >= 3) td.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
 		}
 		td.setCancelable(cancelable);
 		td.show();
