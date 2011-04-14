@@ -21,7 +21,7 @@ import com.wendell.net.http.HtmlManager;
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
 
-class DefaultUser extends User {
+public class DefaultUser extends User {
 	
 	protected static final String GUIDE_URL = "http://www.baidu.com";
 	protected static final String GUIDE_HOST = "www.baidu.com";
@@ -48,7 +48,7 @@ class DefaultUser extends User {
 	protected String cmccPageHtml = null;
 	protected Map<String,String> cmccLoginPageFields = new HashMap<String, String>();
 	
-	public DefaultUser(String userName,String password){
+	protected DefaultUser(String userName,String password){
 		super(userName, password);
 	}
 	
