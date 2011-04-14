@@ -7,7 +7,6 @@ import cn.emagsoftware.net.wifi.support.Wifi;
 import com.wendell.net.NetManager;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -17,17 +16,12 @@ import android.net.wifi.WifiManager.WifiLock;
 
 public final class WifiUtils {
 	
-	private static WifiUtils wifiUtils = null;
-	
 	private Context context = null;
 	private WifiManager wifiManager = null;
 	private WifiLock wifiLock = null;
-	private ConnectivityManager connectivityManager = null;
 	
-	public synchronized static WifiUtils getInstance(Context context){
-		if(wifiUtils != null) return wifiUtils;
-		wifiUtils = new WifiUtils(context);
-		return wifiUtils;
+	public static WifiUtils getInstance(Context context){
+		return new WifiUtils(context);
 	}
 	
 	private WifiUtils(Context context){
@@ -35,7 +29,6 @@ public final class WifiUtils {
 		this.context = context;
 		wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
 		wifiLock = wifiManager.createWifiLock("cn.emagsoftware.net.wifi.WifiUtils");
-		connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
 	}
 	
 	public boolean isWifiEnabled(){
@@ -43,7 +36,7 @@ public final class WifiUtils {
 	}
 	
 	public boolean isWifiConnected(){
-		NetworkInfo wifiNetworkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		NetworkInfo wifiNetworkInfo = NetManager.getWifiNetworkInfo(context);
 		if (wifiNetworkInfo != null && wifiNetworkInfo.isConnected()) return true;
 		return false;
 	}
