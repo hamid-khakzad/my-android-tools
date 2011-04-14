@@ -18,7 +18,7 @@ public final class NetManager {
 	private NetManager(){}
 	
 	public static boolean isNetConnected(Context context){
-		return getActiveNetworkInfo(context).isAvailable();
+		return getActiveNetworkInfo(context).isConnected();
 	}
 	
 	public static boolean isNetUseful(){
@@ -39,6 +39,21 @@ public final class NetManager {
 	public static NetworkInfo getActiveNetworkInfo(Context context){
 		ConnectivityManager connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		return connectivityManager.getActiveNetworkInfo();
+	}
+	
+	public static NetworkInfo getMobileNetworkInfo(Context context){
+		ConnectivityManager connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+	}
+	
+	public static NetworkInfo getWifiNetworkInfo(Context context){
+		ConnectivityManager connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+	}
+	
+	public static NetworkInfo[] getAllNetworkInfo(Context context){
+		ConnectivityManager connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		return connectivityManager.getAllNetworkInfo();
 	}
 	
 }
