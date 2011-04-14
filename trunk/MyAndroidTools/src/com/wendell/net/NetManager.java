@@ -3,6 +3,10 @@ package com.wendell.net;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
 
@@ -12,6 +16,10 @@ public final class NetManager {
 	private static final String USEFUL_TEST_HOST = "www.baidu.com";
 	
 	private NetManager(){}
+	
+	public static boolean isNetConnected(Context context){
+		return getActiveNetworkInfo(context).isAvailable();
+	}
 	
 	public static boolean isNetUseful(){
 		try{
@@ -26,6 +34,11 @@ public final class NetManager {
 		}catch(IOException e){
 			return false;
 		}
+	}
+	
+	public static NetworkInfo getActiveNetworkInfo(Context context){
+		ConnectivityManager connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		return connectivityManager.getActiveNetworkInfo();
 	}
 	
 }

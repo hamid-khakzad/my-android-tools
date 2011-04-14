@@ -30,6 +30,7 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 	private Button buttonPositive = null;
 	private Button buttonNeutral = null;
 	private Button buttonNegative = null;
+	private boolean isNotAutoDismiss = false;
 	
 	private Map<Button,OnClickListener> buttonsMapping = new HashMap<Button, OnClickListener>();
 	
@@ -60,6 +61,11 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 		buttonPositive.setOnClickListener(this);
 		buttonNeutral.setOnClickListener(this);
 		buttonNegative.setOnClickListener(this);
+	}
+	
+	public ThemeDialog setNotAutoDismiss(boolean isNotAutoDismiss){
+		this.isNotAutoDismiss = isNotAutoDismiss;
+		return this;
 	}
 	
 	public void setIcon(int iconResourceId){
@@ -116,13 +122,12 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
 		OnClickListener listener = buttonsMapping.get(v);
-		if(listener == null){
-			this.dismiss();
-		}else{
+		if(listener != null){
 			if(v == buttonPositive) listener.onClick(this, DialogInterface.BUTTON_POSITIVE);
 			else if(v == buttonNeutral) listener.onClick(this, DialogInterface.BUTTON_NEUTRAL);
 			else if(v == buttonNegative) listener.onClick(this, DialogInterface.BUTTON_NEGATIVE);
 		}
+		if(!isNotAutoDismiss && isShowing()) this.dismiss();
 	}
 	
 	@Override
