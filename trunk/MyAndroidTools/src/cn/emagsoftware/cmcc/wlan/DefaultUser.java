@@ -304,14 +304,14 @@ class DefaultUser extends User {
 		HttpResponseResult result = HttpConnectionManager.doGet(url, isSSL, false, 15000, requestHeaders);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
-			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION);
+			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
 			result = HttpConnectionManager.doGet(location, false, false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
 		//以下获取cookie
-		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE);
+		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE.toLowerCase());
 		String setCookieValue = setCookieValues.get(0);
 		if(setCookieValue != null) {
 			String[] setCookieGroup = setCookieValue.split(";");
@@ -341,7 +341,7 @@ class DefaultUser extends User {
 		HttpResponseResult result = HttpConnectionManager.doPost(url, isSSL, false, 15000, requestHeaders, params, "gb2312");
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
-			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION);
+			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
 			values = new ArrayList<String>();
 			values.add(sessionCookie);
