@@ -21,9 +21,9 @@ public final class NetManager {
 		return getActiveNetworkInfo(context).isConnected();
 	}
 	
-	public static boolean isNetUseful(){
+	public static boolean isNetUseful(int timeout){
 		try{
-			HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, false, true, 15000, null);
+			HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, false, true, timeout, null);
 			if(result.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
 			String host = result.getResponseURL().getHost();
 			String content = result.getDataString("gb2312");

@@ -41,8 +41,8 @@ public final class WifiUtils {
 		return false;
 	}
 	
-	public boolean isWifiUseful(){
-		return isWifiConnected() && NetManager.isNetUseful();
+	public boolean isWifiUseful(int timeout){
+		return isWifiConnected() && NetManager.isNetUseful(timeout);
 	}
 	
 	public WifiInfo getConnectionInfo(){
