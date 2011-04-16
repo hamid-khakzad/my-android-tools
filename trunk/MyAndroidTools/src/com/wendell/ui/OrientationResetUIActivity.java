@@ -37,15 +37,15 @@ public abstract class OrientationResetUIActivity extends Activity {
 		if(contentViewResID != View.NO_ID){
 			setContentView(contentViewResID);
 			if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-				onUIResetWhenPortrait();
+				onUIResetedWhenPortrait();
 			}else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
-				onUIResetWhenLandscape();
+				onUIResetedWhenLandscape();
 			}
 		}
 	}
 	
-	protected abstract void onUIResetWhenPortrait();
+	protected abstract void onUIResetedWhenPortrait();
 	
-	protected abstract void onUIResetWhenLandscape();
+	protected abstract void onUIResetedWhenLandscape();
 	
 }
