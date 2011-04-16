@@ -5,7 +5,7 @@ import android.content.res.Configuration;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 
-public abstract class OrientationResetUIActivity extends Activity{
+public abstract class OrientationResetUIActivity extends Activity {
 	
 	protected int contentViewResID = View.NO_ID;
 	
@@ -44,8 +44,8 @@ public abstract class OrientationResetUIActivity extends Activity{
 		}
 	}
 	
-	protected abstract void onUIResetWhenLandscape();
-	
 	protected abstract void onUIResetWhenPortrait();
+	
+	protected abstract void onUIResetWhenLandscape();
 	
 }
