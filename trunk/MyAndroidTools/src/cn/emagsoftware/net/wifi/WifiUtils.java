@@ -79,7 +79,12 @@ public final class WifiUtils {
 		return wifiManager;
 	}
 	
-	public void setWifiEnabled(boolean enabled,WifiCallback callback){
+	/**
+	 * @param enabled
+	 * @param callback
+	 * @param timeout 单位为毫秒，设为0将永不超时
+	 */
+	public void setWifiEnabled(boolean enabled,WifiCallback callback,int timeout){
 		if(enabled == isWifiEnabled()){
 			if(callback != null){
 				if(enabled) callback.onWifiEnabled();
@@ -90,6 +95,7 @@ public final class WifiUtils {
 		if(callback != null){
 			if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED});
 			else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED});
+			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
 		boolean circs = wifiManager.setWifiEnabled(enabled);
@@ -99,13 +105,18 @@ public final class WifiUtils {
 		}
 	}
 	
-	public void startScan(WifiCallback callback){
+	/**
+	 * @param callback
+	 * @param timeout 单位为毫秒，设为0将永不超时
+	 */
+	public void startScan(WifiCallback callback,int timeout){
 		if(!isWifiEnabled()) {
 			if(callback != null) callback.onCallbackFailure();
 			return;
 		}
 		if(callback != null){
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_SCAN_RESULTS});
+			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
 		boolean circs = wifiManager.startScan();
@@ -115,13 +126,19 @@ public final class WifiUtils {
 		}
 	}
 	
-	public void connect(WifiConfiguration wc,WifiCallback callback){
+	/**
+	 * @param wc
+	 * @param callback
+	 * @param timeout 单位为毫秒，设为0将永不超时
+	 */
+	public void connect(WifiConfiguration wc,WifiCallback callback,int timeout){
 		if(!isWifiEnabled()) {
 			if(callback != null) callback.onCallbackFailure();
 			return;
 		}
 		if(callback != null){
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
+			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
 		boolean circs = Wifi.connectToConfiguredNetwork(context, wifiManager, wc, true);
@@ -131,7 +148,13 @@ public final class WifiUtils {
 		}
 	}
 	
-	public void connect(ScanResult sr,String password,WifiCallback callback){
+	/**
+	 * @param sr
+	 * @param password
+	 * @param callback
+	 * @param timeout 单位为毫秒，设为0将永不超时
+	 */
+	public void connect(ScanResult sr,String password,WifiCallback callback,int timeout){
 		if(!isWifiEnabled()) {
 			if(callback != null) callback.onCallbackFailure();
 			return;
@@ -147,6 +170,7 @@ public final class WifiUtils {
 		}
 		if(callback != null){
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
+			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
 		boolean circs;
