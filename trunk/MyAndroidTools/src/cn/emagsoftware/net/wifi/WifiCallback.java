@@ -50,7 +50,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			if(state == WifiManager.WIFI_STATE_ENABLED){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(autoUnregisterActions.length == 0) onWifiEnabled();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) < 0) onWifiEnabled();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1) unregisterMe();
 					onWifiEnabled();
@@ -58,7 +58,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			}else if(state == WifiManager.WIFI_STATE_ENABLING){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(autoUnregisterActions.length == 0) onWifiEnabling();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) < 0) onWifiEnabling();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) unregisterMe();
 					onWifiEnabling();
@@ -66,7 +66,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     		}else if(state == WifiManager.WIFI_STATE_DISABLED){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(autoUnregisterActions.length == 0) onWifiDisabled();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) < 0) onWifiDisabled();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1) unregisterMe();
 					onWifiDisabled();
@@ -74,7 +74,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     		}else if(state == WifiManager.WIFI_STATE_DISABLING){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(autoUnregisterActions.length == 0) onWifiDisabling();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) < 0) onWifiDisabling();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) unregisterMe();
 					onWifiDisabling();
@@ -82,7 +82,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(autoUnregisterActions.length == 0) onWifiUnknown();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) < 0) onWifiUnknown();
 				}else{
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) > -1) unregisterMe();
 					onWifiUnknown();
@@ -101,7 +101,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
 						isNetworkStateRefreshedToConnected = true;
-						if(autoUnregisterActions.length == 0) onNetworkConnected(wifiUtils.getConnectionInfo());
+						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) < 0) onNetworkConnected(wifiUtils.getConnectionInfo());
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) unregisterMe();
 						onNetworkConnected(wifiUtils.getConnectionInfo());
@@ -110,7 +110,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					Log.d("WifiCallback", "get network state -> OBTAINING_IPADDR");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
-						if(autoUnregisterActions.length == 0) onNetworkObtainingIp(wifiUtils.getConnectionInfo());
+						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) < 0) onNetworkObtainingIp(wifiUtils.getConnectionInfo());
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) unregisterMe();
 						onNetworkObtainingIp(wifiUtils.getConnectionInfo());
@@ -119,7 +119,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     				Log.d("WifiCallback", "get network state -> DISCONNECTED");
 					if(!isNetworkStateRefreshed) {
 						isNetworkStateRefreshed = true;
-						if(autoUnregisterActions.length == 0) onNetworkDisconnected(wifiUtils.getConnectionInfo());
+						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) < 0) onNetworkDisconnected(wifiUtils.getConnectionInfo());
 					}else{
 						networkDisconnectedCount = networkDisconnectedCount + 1;
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
