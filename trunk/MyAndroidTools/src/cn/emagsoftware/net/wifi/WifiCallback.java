@@ -14,6 +14,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Looper;
 import android.util.Log;
 
 public abstract class WifiCallback extends BroadcastReceiver {
@@ -191,6 +192,9 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onTimeout(){}
 	
+	/**
+	 * 留给外部在无法回调时使用的接口，WifiCallback自身不会回调该接口
+	 */
 	public void onCallbackFailure(){}
 	
 	public void registerMe(){
@@ -212,7 +216,9 @@ public abstract class WifiCallback extends BroadcastReceiver {
     				}else if(timeCount >= timeoutForAutoUnregisterActions){   //已超时
     					unregisterMe();
     					cancel();
+    					Looper.prepare();
     					onTimeout();
+    					Looper.loop();
     				}
     			}
     		},100,100);
