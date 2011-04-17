@@ -220,6 +220,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	}
 	
 	public void unregisterMe(){
+		isDoneForAutoUnregisterActions = true;   //在反注册时置为true，使计时器能够尽快退出
 		isWifiStateRefreshed = false;
 		isNetworkStateRefreshed = false;
 		isNetworkStateRefreshedToConnected = false;
