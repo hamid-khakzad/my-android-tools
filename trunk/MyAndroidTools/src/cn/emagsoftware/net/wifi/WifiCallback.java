@@ -2,6 +2,8 @@ package cn.emagsoftware.net.wifi;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -28,6 +30,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	protected Context context = null;
 	protected int[] autoUnregisterActions = new int[]{};
+	protected int timeoutForAutoUnregisterActions = 0;
+	protected boolean isDoneForAutoUnregisterActions = false;
 	
 	protected boolean isWifiStateRefreshed = false;
 	protected boolean isNetworkStateRefreshed = false;
@@ -52,7 +56,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					isWifiStateRefreshed = true;
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) < 0) onWifiEnabled();
 				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1) unregisterMe();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
 					onWifiEnabled();
 				}
 			}else if(state == WifiManager.WIFI_STATE_ENABLING){
@@ -60,7 +67,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					isWifiStateRefreshed = true;
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) < 0) onWifiEnabling();
 				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) unregisterMe();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
 					onWifiEnabling();
 				}
     		}else if(state == WifiManager.WIFI_STATE_DISABLED){
@@ -68,7 +78,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					isWifiStateRefreshed = true;
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) < 0) onWifiDisabled();
 				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1) unregisterMe();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
 					onWifiDisabled();
 				}
     		}else if(state == WifiManager.WIFI_STATE_DISABLING){
@@ -76,7 +89,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					isWifiStateRefreshed = true;
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) < 0) onWifiDisabling();
 				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) unregisterMe();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
 					onWifiDisabling();
 				}
     		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){
@@ -84,13 +100,19 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					isWifiStateRefreshed = true;
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) < 0) onWifiUnknown();
 				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) > -1) unregisterMe();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
 					onWifiUnknown();
 				}
     		}
 		}else if(action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
 			List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
-			if(Arrays.binarySearch(autoUnregisterActions, ACTION_SCAN_RESULTS) > -1) unregisterMe();
+			if(Arrays.binarySearch(autoUnregisterActions, ACTION_SCAN_RESULTS) > -1) {
+				isDoneForAutoUnregisterActions = true;
+				unregisterMe();
+			}
 			onScanResults(results);
 		}else if(action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)){
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
@@ -103,7 +125,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						isNetworkStateRefreshedToConnected = true;
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) < 0) onNetworkConnected(wifiUtils.getConnectionInfo());
 					}else{
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) unregisterMe();
+						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
+							isDoneForAutoUnregisterActions = true;
+							unregisterMe();
+						}
 						onNetworkConnected(wifiUtils.getConnectionInfo());
 					}
 				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
@@ -112,7 +137,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						isNetworkStateRefreshed = true;
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) < 0) onNetworkObtainingIp(wifiUtils.getConnectionInfo());
 					}else{
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) unregisterMe();
+						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
+							isDoneForAutoUnregisterActions = true;
+							unregisterMe();
+						}
 						onNetworkObtainingIp(wifiUtils.getConnectionInfo());
 					}
     			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
@@ -125,10 +153,12 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
 							if(isNetworkStateRefreshedToConnected){
 								if(networkDisconnectedCount >= 2){
+									isDoneForAutoUnregisterActions = true;
 									unregisterMe();
 									onNetworkDisconnected(wifiUtils.getConnectionInfo());
 								}
 							}else{
+								isDoneForAutoUnregisterActions = true;
 								unregisterMe();
 								onNetworkDisconnected(wifiUtils.getConnectionInfo());
 							}
@@ -159,6 +189,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onNetworkDisconnected(WifiInfo wifiInfo){}
 	
+	public void onTimeout(){}
+	
 	public void onCallbackFailure(){}
 	
 	public void registerMe(){
@@ -166,7 +198,25 @@ public abstract class WifiCallback extends BroadcastReceiver {
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        isDoneForAutoUnregisterActions = false;
         context.registerReceiver(this,wifiIntentFilter);
+        if(timeoutForAutoUnregisterActions > 0){   //为0时将永不超时
+            new Timer().schedule(new TimerTask() {
+            	protected long timeCount = 0;
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				timeCount = timeCount + 100;
+    				if(isDoneForAutoUnregisterActions){
+    					cancel();
+    				}else if(timeCount >= timeoutForAutoUnregisterActions){   //已超时
+    					unregisterMe();
+    					cancel();
+    					onTimeout();
+    				}
+    			}
+    		},100,100);
+        }
 	}
 	
 	public void unregisterMe(){
@@ -181,6 +231,16 @@ public abstract class WifiCallback extends BroadcastReceiver {
 		if(actions == null) throw new NullPointerException();
 		Arrays.sort(actions);
 		this.autoUnregisterActions = actions;
+	}
+	
+	/**
+	 * 设置等待自动反注册ACTION被执行的超时时间，超时时将回调onTimeout方法并自动反注册
+	 * timeout设为0，将永不超时
+	 * @param timeout
+	 */
+	public void setTimeoutForAutoUnregisterActions(int timeout){
+		if(timeout < 0) throw new IllegalArgumentException("timeout could not be below zero.");
+		this.timeoutForAutoUnregisterActions = timeout;
 	}
 	
 }
