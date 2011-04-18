@@ -15,7 +15,7 @@ import android.view.View;
  * <p>dialog manager
  * <p>though the 'setView' method for thematic ProgressDialog has existed,but it dose not work.The ThemeDialog class is created by this reson.
  * @author Wendell
- * @version 1.2
+ * @version 1.3
  * 
  */
 public abstract class DialogManager {
@@ -33,11 +33,16 @@ public abstract class DialogManager {
 	}
 	
 	public static AlertDialog.Builder createAlertDialogBuilder(Context context,int titleId,int[] buttonIds,OnClickListener onClickListener,boolean cancelable){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return createAlertDialogBuilder(context,context.getString(titleId),buttons,onClickListener,cancelable);
+		return createAlertDialogBuilder(context,title,buttons,onClickListener,cancelable);
 	}
 	
 	public static AlertDialog showAlertDialog(Context context,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
@@ -48,11 +53,18 @@ public abstract class DialogManager {
 	}
 	
 	public static AlertDialog showAlertDialog(Context context,int titleId,int msgId,int[] buttonIds,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String msg = null;
+		if(msgId != -1) msg = context.getString(msgId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return showAlertDialog(context,context.getString(titleId),context.getString(msgId),buttons,onClickListener,cancelable,isNotAutoDismiss);
+		return showAlertDialog(context,title,msg,buttons,onClickListener,cancelable,isNotAutoDismiss);
 	}
 	
 	public static AlertDialog showAlertDialog(Context context,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
@@ -63,11 +75,16 @@ public abstract class DialogManager {
 	}
 	
 	public static AlertDialog showAlertDialog(Context context,int titleId,View view,int[] buttonIds,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return showAlertDialog(context,context.getString(titleId),view,buttons,onClickListener,cancelable,isNotAutoDismiss);
+		return showAlertDialog(context,title,view,buttons,onClickListener,cancelable,isNotAutoDismiss);
 	}
 	
 	public static ProgressDialog showProgressDialog(Context context,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
@@ -75,11 +92,18 @@ public abstract class DialogManager {
 	}
 	
 	public static ProgressDialog showProgressDialog(Context context,int titleId,int msgId,int[] buttonIds,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String msg = null;
+		if(msgId != -1) msg = context.getString(msgId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return showProgressDialog(context,context.getString(titleId),context.getString(msgId),buttons,onClickListener,cancelable,isNotAutoDismiss);
+		return showProgressDialog(context,title,msg,buttons,onClickListener,cancelable,isNotAutoDismiss);
 	}
 	
 	public static ProgressDialog showProgressDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
@@ -100,11 +124,18 @@ public abstract class DialogManager {
 	}
 	
 	public static ProgressDialog showProgressDialog(Context context,int theme,int titleId,int msgId,int[] buttonIds,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String msg = null;
+		if(msgId != -1) msg = context.getString(msgId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return showProgressDialog(context,theme,context.getString(titleId),context.getString(msgId),buttons,onClickListener,cancelable,isNotAutoDismiss);
+		return showProgressDialog(context,theme,title,msg,buttons,onClickListener,cancelable,isNotAutoDismiss);
 	}
 	
 	public static ThemeDialog showThemeDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
@@ -124,11 +155,18 @@ public abstract class DialogManager {
 	}
 	
 	public static ThemeDialog showThemeDialog(Context context,int theme,int titleId,int msgId,int[] buttonIds,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String msg = null;
+		if(msgId != -1) msg = context.getString(msgId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return showThemeDialog(context,theme,context.getString(titleId),context.getString(msgId),buttons,onClickListener,cancelable,isNotAutoDismiss);
+		return showThemeDialog(context,theme,title,msg,buttons,onClickListener,cancelable,isNotAutoDismiss);
 	}
 	
 	public static ThemeDialog showThemeDialog(Context context,int theme,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
@@ -148,11 +186,16 @@ public abstract class DialogManager {
 	}
 	
 	public static ThemeDialog showThemeDialog(Context context,int theme,int titleId,View view,int[] buttonIds,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		String[] buttons = new String[buttonIds.length];
-		for(int i = 0;i < buttons.length;i++){
-			buttons[i] = context.getString(buttonIds[i]);
+		String title = null;
+		if(titleId != -1) title = context.getString(titleId);
+		String[] buttons = null;
+		if(buttonIds != null){
+			buttons = new String[buttonIds.length];
+			for(int i = 0;i < buttons.length;i++){
+				buttons[i] = context.getString(buttonIds[i]);
+			}
 		}
-		return showThemeDialog(context,theme,context.getString(titleId),view,buttons,onClickListener,cancelable,isNotAutoDismiss);
+		return showThemeDialog(context,theme,title,view,buttons,onClickListener,cancelable,isNotAutoDismiss);
 	}
 	
 	public static AlertDialog setNotAutoDismiss(final AlertDialog dialog){
