@@ -14,7 +14,7 @@ import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Looper;
+import android.os.Handler;
 import android.util.Log;
 
 public abstract class WifiCallback extends BroadcastReceiver {
@@ -30,6 +30,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	public static final int ACTION_NETWORK_DISCONNECTED = 8;
 	
 	protected Context context = null;
+	protected Handler handler = new Handler();
 	protected int[] autoUnregisterActions = new int[]{};
 	protected int timeoutForAutoUnregisterActions = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
@@ -216,9 +217,13 @@ public abstract class WifiCallback extends BroadcastReceiver {
     				}else if(timeCount >= timeoutForAutoUnregisterActions){   //ÒÑ³¬Ê±
     					unregisterMe();
     					cancel();
-    					Looper.prepare();
-    					onTimeout();
-    					Looper.loop();
+    					handler.post(new Runnable() {
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								onTimeout();
+							}
+						});
     				}
     			}
     		},100,100);
