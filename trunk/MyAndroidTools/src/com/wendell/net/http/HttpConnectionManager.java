@@ -25,7 +25,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.0
+ * @version 1.1
  */
 public final class HttpConnectionManager {
 	
@@ -156,18 +156,20 @@ public final class HttpConnectionManager {
 	 * @throws IOException
 	 */
 	private static HttpURLConnection openConnection(String url,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+		URL myUrl = new URL(url);
 		HttpURLConnection httpConn = null;
 		try{
 			if(isSSL) {
 				SSLContext sslCont = SSLContext.getInstance("TLS"); 
 				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
 				HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
-				HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(new URL(url).getHost()));
-				httpConn = (HttpsURLConnection)new URL(url).openConnection();
+				HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(myUrl.getHost()));
+				httpConn = (HttpsURLConnection)myUrl.openConnection();
 			} else {
-				httpConn = (HttpURLConnection)new URL(url).openConnection();
+				httpConn = (HttpURLConnection)myUrl.openConnection();
 			}
-			httpConn.setInstanceFollowRedirects(followRedirects);
+			HttpURLConnection.setFollowRedirects(false);
+			httpConn.setInstanceFollowRedirects(false);
 			httpConn.setDoInput(true);
 			httpConn.setDoOutput(true);
 			httpConn.setReadTimeout(connOrReadTimeout);
@@ -182,7 +184,14 @@ public final class HttpConnectionManager {
 					}
 				}
 			}
-			return httpConn;
+			if(!followRedirects) return httpConn;
+			int rspCode = httpConn.getResponseCode();
+			if(rspCode != HttpURLConnection.HTTP_MOVED_PERM && rspCode != HttpURLConnection.HTTP_MOVED_TEMP && rspCode != HttpURLConnection.HTTP_SEE_OTHER) return httpConn;
+			String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
+			if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
+			if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
+			httpConn.disconnect();
+			return openConnection(location,isSSL,followRedirects,connOrReadTimeout,requestHeaders);
 		}catch(IOException e){
 			if(httpConn != null) httpConn.disconnect();
 			throw e;
