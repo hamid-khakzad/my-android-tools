@@ -25,7 +25,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.2
+ * @version 1.3
  */
 public final class HttpConnectionManager {
 	
@@ -36,8 +36,11 @@ public final class HttpConnectionManager {
 	public static final String HEADER_REQUEST_CONTENT_TYPE = "Content-Type";
 	public static final String HEADER_REQUEST_USER_AGENT = "User-Agent";
 	public static final String HEADER_REQUEST_COOKIE = "Cookie";
+	
 	public static final String HEADER_RESPONSE_LOCATION = "Location";
 	public static final String HEADER_RESPONSE_SET_COOKIE = "Set-Cookie";
+	
+	public static final int REDIRECT_MAX_COUNT = 10;
 	
 	private HttpConnectionManager(){}
 	
@@ -55,7 +58,7 @@ public final class HttpConnectionManager {
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, "GET", isSSL, followRedirects, connOrReadTimeout, requestHeaders);
+			httpConn = openConnection(url, "GET", isSSL, followRedirects, connOrReadTimeout, 0, requestHeaders);
 			HttpResponseResult result = new HttpResponseResult();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -98,7 +101,7 @@ public final class HttpConnectionManager {
 		OutputStream output = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, "POST", isSSL, followRedirects, connOrReadTimeout, requestHeaders);
+			httpConn = openConnection(url, "POST", isSSL, followRedirects, connOrReadTimeout, 0, requestHeaders);
 			if(params != null){
 				Iterator<String> keys = params.keySet().iterator();
 				StringBuffer paramsBuff = new StringBuffer();
@@ -150,11 +153,13 @@ public final class HttpConnectionManager {
 	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
+	 * @param currentRedirectCount 当前是第几次重定向
 	 * @param requestHeaders 请求头，不需要时可传null
 	 * @return HttpURLConnection实例
 	 * @throws IOException
 	 */
-	private static HttpURLConnection openConnection(String url,String method,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+	private static HttpURLConnection openConnection(String url,String method,boolean isSSL,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders) throws IOException{
+		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
 		URL myUrl = new URL(url);
 		HttpURLConnection httpConn = null;
 		try{
@@ -192,7 +197,7 @@ public final class HttpConnectionManager {
 			if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
 			if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 			httpConn.disconnect();
-			return openConnection(location,method,isSSL,followRedirects,connOrReadTimeout,requestHeaders);
+			return openConnection(location,method,isSSL,followRedirects,connOrReadTimeout,++currentRedirectCount,requestHeaders);
 		}catch(IOException e){
 			if(httpConn != null) httpConn.disconnect();
 			throw e;
