@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
@@ -32,6 +33,7 @@ public final class NetManager {
 			}
 			return false;
 		}catch(IOException e){
+			Log.e("NetManager", "connect to "+USEFUL_TEST_URL+" for method of isNetUseful occered an error,will return false.", e);
 			return false;
 		}
 	}
