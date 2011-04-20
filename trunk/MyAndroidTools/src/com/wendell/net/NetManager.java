@@ -19,7 +19,9 @@ public final class NetManager {
 	private NetManager(){}
 	
 	public static boolean isNetConnected(Context context){
-		return getActiveNetworkInfo(context).isConnected();
+		NetworkInfo info = getActiveNetworkInfo(context);
+		if(info != null) return info.isConnected();
+		return false;
 	}
 	
 	public static boolean isNetUseful(int timeout){
