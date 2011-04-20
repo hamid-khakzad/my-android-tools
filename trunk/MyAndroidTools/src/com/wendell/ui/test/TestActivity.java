@@ -12,7 +12,7 @@ public class TestActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
-		ToastManager.showLong(this, String.valueOf(NetManager.isNetUseful(6000)));
+		ToastManager.showLong(this, String.valueOf(NetManager.isNetUseful(6000, 2)));
 	}
 	
 }
