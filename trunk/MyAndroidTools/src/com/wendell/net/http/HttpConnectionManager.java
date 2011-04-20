@@ -25,7 +25,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.3
+ * @version 1.4
  */
 public final class HttpConnectionManager {
 	
@@ -159,6 +159,7 @@ public final class HttpConnectionManager {
 	 * @throws IOException
 	 */
 	private static HttpURLConnection openConnection(String url,String method,boolean isSSL,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders) throws IOException{
+		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
 		URL myUrl = new URL(url);
 		HttpURLConnection httpConn = null;
