@@ -42,7 +42,7 @@ public final class NetManager {
 			}
 			th++;
 		}
-		Log.e("NetManager", "checking net for method of isNetUseful has all failed,net is not useful,will return false.");
+		Log.e("NetManager", "checking net for method of isNetUseful has all failed,will return false.");
 		return false;
 	}
 	
