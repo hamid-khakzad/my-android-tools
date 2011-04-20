@@ -25,7 +25,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.1
+ * @version 1.2
  */
 public final class HttpConnectionManager {
 	
@@ -55,8 +55,7 @@ public final class HttpConnectionManager {
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, isSSL, followRedirects, connOrReadTimeout, requestHeaders);
-			httpConn.setRequestMethod("GET");
+			httpConn = openConnection(url, "GET", isSSL, followRedirects, connOrReadTimeout, requestHeaders);
 			HttpResponseResult result = new HttpResponseResult();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -99,8 +98,7 @@ public final class HttpConnectionManager {
 		OutputStream output = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, isSSL, followRedirects, connOrReadTimeout, requestHeaders);
-			httpConn.setRequestMethod("POST");
+			httpConn = openConnection(url, "POST", isSSL, followRedirects, connOrReadTimeout, requestHeaders);
 			if(params != null){
 				Iterator<String> keys = params.keySet().iterator();
 				StringBuffer paramsBuff = new StringBuffer();
@@ -148,6 +146,7 @@ public final class HttpConnectionManager {
 	/**
 	 * 返回HttpURLConnection实例
 	 * @param url 请求的url
+	 * @param method 请求的方式，如GET,POST
 	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
@@ -155,7 +154,7 @@ public final class HttpConnectionManager {
 	 * @return HttpURLConnection实例
 	 * @throws IOException
 	 */
-	private static HttpURLConnection openConnection(String url,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+	private static HttpURLConnection openConnection(String url,String method,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
 		URL myUrl = new URL(url);
 		HttpURLConnection httpConn = null;
 		try{
@@ -168,6 +167,7 @@ public final class HttpConnectionManager {
 			} else {
 				httpConn = (HttpURLConnection)myUrl.openConnection();
 			}
+			httpConn.setRequestMethod(method);
 			HttpURLConnection.setFollowRedirects(false);
 			httpConn.setInstanceFollowRedirects(false);
 			httpConn.setDoInput(true);
@@ -185,13 +185,14 @@ public final class HttpConnectionManager {
 				}
 			}
 			if(!followRedirects) return httpConn;
+			//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
 			int rspCode = httpConn.getResponseCode();
 			if(rspCode != HttpURLConnection.HTTP_MOVED_PERM && rspCode != HttpURLConnection.HTTP_MOVED_TEMP && rspCode != HttpURLConnection.HTTP_SEE_OTHER) return httpConn;
 			String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
 			if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
 			if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 			httpConn.disconnect();
-			return openConnection(location,isSSL,followRedirects,connOrReadTimeout,requestHeaders);
+			return openConnection(location,method,isSSL,followRedirects,connOrReadTimeout,requestHeaders);
 		}catch(IOException e){
 			if(httpConn != null) httpConn.disconnect();
 			throw e;
