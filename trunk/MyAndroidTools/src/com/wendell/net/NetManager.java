@@ -24,20 +24,26 @@ public final class NetManager {
 		return false;
 	}
 	
-	public static boolean isNetUseful(int timeout){
-		try{
-			HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, false, true, timeout, null);
-			if(result.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
-			String host = result.getResponseURL().getHost();
-			String content = result.getDataString("gb2312");
-			if(USEFUL_TEST_HOST.equalsIgnoreCase(host) && content.indexOf(USEFUL_TEST_HOST) >= 0) {    //若能访问到原始站点，证明网络有效
-				return true;
+	public static boolean isNetUseful(int timeout,int tryTimes){
+		if(tryTimes <= 0) throw new IllegalArgumentException("trying times should be greater than zero.");
+		int th = 1;
+		while(th <= tryTimes){
+			try{
+				HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, false, true, timeout, null);
+				if(result.getResponseCode() == HttpURLConnection.HTTP_OK){
+					String host = result.getResponseURL().getHost();
+					String content = result.getDataString("gb2312");
+					if(USEFUL_TEST_HOST.equalsIgnoreCase(host) && content.indexOf(USEFUL_TEST_HOST) >= 0) {    //若能访问到原始站点，证明网络有效
+						return true;
+					}
+				}
+			}catch(IOException e){
+				Log.e("NetManager", "the "+th+" time to check net for method of isNetUseful failed.", e);
 			}
-			return false;
-		}catch(IOException e){
-			Log.e("NetManager", "connect to "+USEFUL_TEST_URL+" for method of isNetUseful occered an error,will return false.", e);
-			return false;
+			th++;
 		}
+		Log.e("NetManager", "checking net for method of isNetUseful has all failed,net is not useful,will return false.");
+		return false;
 	}
 	
 	public static NetworkInfo getActiveNetworkInfo(Context context){
