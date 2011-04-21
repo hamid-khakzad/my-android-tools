@@ -4,6 +4,11 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
+/**
+ * <p>该类支持在非UI-Thread中创建并启动
+ * @author Wendell
+ * @version 1.1
+ */
 public class UIThread extends Thread {
 	
 	protected Context context = null;
