@@ -98,17 +98,15 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					}
 					onWifiDisabling();
 				}
-    		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){
+    		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){    //WIFI_STATE_UNKNOWN×´Ì¬µÄÌØÊâÐÔ
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) < 0) onWifiUnknown();
-				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) > -1) {
-						isDoneForAutoUnregisterActions = true;
-						unregisterMe();
-					}
-					onWifiUnknown();
 				}
+				if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) > -1) {
+					isDoneForAutoUnregisterActions = true;
+					unregisterMe();
+				}
+				onWifiUnknown();
     		}
 		}else if(action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
 			List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
