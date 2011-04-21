@@ -13,12 +13,15 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
+import android.os.Handler;
+import android.os.Looper;
 
 public final class WifiUtils {
 	
 	private Context context = null;
 	private WifiManager wifiManager = null;
 	private WifiLock wifiLock = null;
+	private Handler handler = new Handler(Looper.getMainLooper());
 	
 	public static WifiUtils getInstance(Context context){
 		return new WifiUtils(context);
@@ -84,11 +87,26 @@ public final class WifiUtils {
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public void setWifiEnabled(boolean enabled,WifiCallback callback,int timeout){
+	public void setWifiEnabled(boolean enabled,final WifiCallback callback,int timeout){
 		if(enabled == isWifiEnabled()){
 			if(callback != null){
-				if(enabled) callback.onWifiEnabled();
-				else callback.onWifiDisabled();
+				if(enabled) {
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							callback.onWifiEnabled();
+						}
+					});
+				}else {
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							callback.onWifiDisabled();
+						}
+					});
+				}
 			}
 			return;
 		}
@@ -101,7 +119,13 @@ public final class WifiUtils {
 		boolean circs = wifiManager.setWifiEnabled(enabled);
 		if(!circs) if(callback != null) {
 			callback.unregisterMe();
-			callback.onCallbackFailure();
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					callback.onCallbackFailure();
+				}
+			});
 		}
 	}
 	
@@ -109,9 +133,17 @@ public final class WifiUtils {
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public void startScan(WifiCallback callback,int timeout){
+	public void startScan(final WifiCallback callback,int timeout){
 		if(!isWifiEnabled()) {
-			if(callback != null) callback.onCallbackFailure();
+			if(callback != null) {
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onCallbackFailure();
+					}
+				});
+			}
 			return;
 		}
 		if(callback != null){
@@ -122,7 +154,13 @@ public final class WifiUtils {
 		boolean circs = wifiManager.startScan();
 		if(!circs) if(callback != null){
 			callback.unregisterMe();
-			callback.onCallbackFailure();
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					callback.onCallbackFailure();
+				}
+			});
 		}
 	}
 	
@@ -131,9 +169,17 @@ public final class WifiUtils {
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public void connect(WifiConfiguration wc,WifiCallback callback,int timeout){
+	public void connect(WifiConfiguration wc,final WifiCallback callback,int timeout){
 		if(!isWifiEnabled()) {
-			if(callback != null) callback.onCallbackFailure();
+			if(callback != null) {
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onCallbackFailure();
+					}
+				});
+			}
 			return;
 		}
 		if(callback != null){
@@ -144,7 +190,13 @@ public final class WifiUtils {
 		boolean circs = Wifi.connectToConfiguredNetwork(context, wifiManager, wc, true);
 		if(!circs) if(callback != null){
 			callback.unregisterMe();
-			callback.onCallbackFailure();
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					callback.onCallbackFailure();
+				}
+			});
 		}
 	}
 	
@@ -154,9 +206,17 @@ public final class WifiUtils {
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public void connect(ScanResult sr,String password,WifiCallback callback,int timeout){
+	public void connect(ScanResult sr,String password,final WifiCallback callback,int timeout){
 		if(!isWifiEnabled()) {
-			if(callback != null) callback.onCallbackFailure();
+			if(callback != null) {
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onCallbackFailure();
+					}
+				});
+			}
 			return;
 		}
 		WifiConfiguration old = getConfiguration(sr);
@@ -164,7 +224,15 @@ public final class WifiUtils {
 			String security = getScanResultSecurity(sr);
 			Wifi.setupSecurity(old, security, password);
 			if(!wifiManager.saveConfiguration()) {
-				if(callback != null) callback.onCallbackFailure();
+				if(callback != null) {
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							callback.onCallbackFailure();
+						}
+					});
+				}
 				return;
 			}
 		}
@@ -178,7 +246,13 @@ public final class WifiUtils {
 		else circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);
 		if(!circs) if(callback != null) {
 			callback.unregisterMe();
-			callback.onCallbackFailure();
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					callback.onCallbackFailure();
+				}
+			});
 		}
 	}
 	
