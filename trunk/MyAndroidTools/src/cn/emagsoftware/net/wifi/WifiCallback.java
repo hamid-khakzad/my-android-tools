@@ -114,6 +114,21 @@ public abstract class WifiCallback extends BroadcastReceiver {
 				isDoneForAutoUnregisterActions = true;
 				unregisterMe();
 			}
+			for(int i = 0;i < results.size();i++){
+				ScanResult curr = results.get(i);
+				for(int j = 0;j < i;j++){
+					ScanResult pre = results.get(j);
+					if(curr.SSID.equals(pre.SSID) && wifiUtils.getScanResultSecurity(curr).equals(wifiUtils.getScanResultSecurity(pre))){
+						results.remove(i);
+						i--;
+						if(curr.level > pre.level){
+							results.remove(j);
+							results.add(j, curr);
+						}
+						break;
+					}
+				}
+			}
 			onScanResults(results);
 		}else if(action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)){
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
