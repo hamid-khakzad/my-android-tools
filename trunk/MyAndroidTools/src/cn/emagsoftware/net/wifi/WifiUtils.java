@@ -93,8 +93,8 @@ public final class WifiUtils {
 			return;
 		}
 		if(callback != null){
-			if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED});
-			else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED});
+			if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
+			else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -115,7 +115,7 @@ public final class WifiUtils {
 			return;
 		}
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_SCAN_RESULTS});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_UNKNOWN,WifiCallback.ACTION_SCAN_RESULTS});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -137,7 +137,7 @@ public final class WifiUtils {
 			return;
 		}
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_UNKNOWN,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -169,7 +169,7 @@ public final class WifiUtils {
 			}
 		}
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_UNKNOWN,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
