@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.view.View;
 
@@ -206,8 +207,8 @@ public abstract class DialogManager {
 	        Object obj = field.get(dialog); 
 	        field = obj.getClass().getDeclaredField("mHandler");
 	        field.setAccessible(true); 
-	        //replace mHandler with our own handler 
-	        field.set(obj, new Handler(){
+	        //replace mHandler with our own handler
+	        field.set(obj, new Handler(Looper.getMainLooper()){
 	        	@Override
 	        	public void handleMessage(Message msg) {
 	        		// TODO Auto-generated method stub
