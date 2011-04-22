@@ -99,46 +99,44 @@ public final class WifiUtils {
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public void setWifiEnabled(boolean enabled,final WifiCallback callback,int timeout){
-		if(enabled == isWifiEnabled()){
-			if(callback != null){
-				if(enabled) {
-					handler.post(new Runnable() {
-						@Override
-						public void run() {
-							// TODO Auto-generated method stub
+	public void setWifiEnabled(final boolean enabled,final WifiCallback callback,final int timeout){
+		checkWifiExist(new WifiCallback(context) {
+			@Override
+			public void onWifiExist() {
+				// TODO Auto-generated method stub
+				if(enabled == isWifiEnabled()){
+					if(callback != null){
+						if(enabled) {
 							callback.onWifiEnabled();
-						}
-					});
-				}else {
-					handler.post(new Runnable() {
-						@Override
-						public void run() {
-							// TODO Auto-generated method stub
+						}else {
 							callback.onWifiDisabled();
 						}
-					});
+					}
+					return;
 				}
-			}
-			return;
-		}
-		if(callback != null){
-			if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
-			else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
-			callback.setTimeoutForAutoUnregisterActions(timeout);
-			callback.registerMe();
-		}
-		boolean circs = wifiManager.setWifiEnabled(enabled);
-		if(!circs) if(callback != null) {
-			callback.unregisterMe();
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
+				if(callback != null){
+					if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
+					else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
+					callback.setTimeoutForAutoUnregisterActions(timeout);
+					callback.registerMe();
+				}
+				boolean circs = wifiManager.setWifiEnabled(enabled);
+				if(!circs) if(callback != null) {
+					callback.unregisterMe();
 					callback.onCallbackFailure();
 				}
-			});
-		}
+			}
+			@Override
+			public void onWifiUnknown() {    //如果Wifi不存在
+				// TODO Auto-generated method stub
+				if(callback != null) callback.onCallbackFailure();    //与其他的回调保持一致：若Wifi不存在时，将回调onCallbackFailure方法
+			}
+			@Override
+			public void onTimeout() {    //如果检测Wifi是否存在的过程超时
+				// TODO Auto-generated method stub
+				if(callback != null) callback.onTimeout();
+			}
+		},timeout);
 	}
 	
 	/**
@@ -146,7 +144,7 @@ public final class WifiUtils {
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
 	public void startScan(final WifiCallback callback,int timeout){
-		if(!isWifiEnabled()) {
+		if(!isWifiEnabled()) {    //如果Wifi不存在或已关闭
 			if(callback != null) {
 				handler.post(new Runnable() {
 					@Override
@@ -182,7 +180,7 @@ public final class WifiUtils {
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
 	public void connect(WifiConfiguration wc,final WifiCallback callback,int timeout){
-		if(!isWifiEnabled()) {
+		if(!isWifiEnabled()) {    //如果Wifi不存在或已关闭
 			if(callback != null) {
 				handler.post(new Runnable() {
 					@Override
@@ -219,7 +217,7 @@ public final class WifiUtils {
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
 	public void connect(ScanResult sr,String password,final WifiCallback callback,int timeout){
-		if(!isWifiEnabled()) {
+		if(!isWifiEnabled()) {    //如果Wifi不存在或已关闭
 			if(callback != null) {
 				handler.post(new Runnable() {
 					@Override
