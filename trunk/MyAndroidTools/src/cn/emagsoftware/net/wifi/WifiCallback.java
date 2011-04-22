@@ -25,11 +25,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	public static final int ACTION_WIFI_ENABLING = 2;
 	public static final int ACTION_WIFI_DISABLED = 3;
 	public static final int ACTION_WIFI_DISABLING = 4;
-	public static final int ACTION_WIFI_UNKNOWN = 5;
-	public static final int ACTION_SCAN_RESULTS = 6;
-	public static final int ACTION_NETWORK_CONNECTED = 7;
-	public static final int ACTION_NETWORK_OBTAININGIP = 8;
-	public static final int ACTION_NETWORK_DISCONNECTED = 9;
+	public static final int ACTION_SCAN_RESULTS = 5;
+	public static final int ACTION_NETWORK_CONNECTED = 6;
+	public static final int ACTION_NETWORK_OBTAININGIP = 7;
+	public static final int ACTION_NETWORK_DISCONNECTED = 8;
+	public static final int ACTION_ERROR = 9;
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
@@ -127,11 +127,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
 				}
-				if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_UNKNOWN) > -1) {
+				if(Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1) {
 					isDoneForAutoUnregisterActions = true;
 					unregisterMe();
 				}
-				onWifiUnknown();
+				onError();
     		}
 		}else if(action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)){
 			List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
@@ -222,8 +222,6 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onWifiDisabling(){}
 	
-	public void onWifiUnknown(){}
-	
 	public void onScanResults(List<ScanResult> scanResults){}
 	
 	public void onNetworkConnected(WifiInfo wifiInfo){}
@@ -232,12 +230,9 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onNetworkDisconnected(WifiInfo wifiInfo){}
 	
-	public void onTimeout(){}
+	public void onError(){}
 	
-	/**
-	 * 留给外部在无法回调时使用的接口，WifiCallback自身不会回调该接口
-	 */
-	public void onCallbackFailure(){}
+	public void onTimeout(){}
 	
 	public void registerMe(){
 		IntentFilter wifiIntentFilter = new IntentFilter();
