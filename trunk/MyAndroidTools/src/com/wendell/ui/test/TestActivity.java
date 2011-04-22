@@ -13,18 +13,23 @@ public class TestActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
-		WifiUtils.getInstance(this).checkWifiExist(new WifiCallback(this) {
+		WifiUtils.getInstance(this).setWifiEnabled(true, new WifiCallback(this) {
 			@Override
-			public void onWifiExist() {
+			public void onWifiEnabled() {
 				// TODO Auto-generated method stub
-				ToastManager.showLong(TestActivity.this, "onWifiExist");
+				ToastManager.showLong(TestActivity.this, "onWifiEnabled");
 			}
 			@Override
-			public void onWifiUnknown() {
+			public void onError() {
 				// TODO Auto-generated method stub
-				ToastManager.showLong(TestActivity.this, "onWifiUnknown");
+				ToastManager.showLong(TestActivity.this, "onError");
 			}
-		}, 0);
+			@Override
+			public void onTimeout() {
+				// TODO Auto-generated method stub
+				ToastManager.showLong(TestActivity.this, "onTimeout");
+			}
+		}, 20000);
 	}
 	
 }
