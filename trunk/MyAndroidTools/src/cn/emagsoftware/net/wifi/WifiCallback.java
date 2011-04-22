@@ -123,10 +123,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					onWifiExist();
 					onWifiDisabling();
 				}
-    		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){    //WIFI_STATE_UNKNOWN状态的特殊性
+    		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
 				}
+				//ACTION_ERROR若被设为自动反注册，将在第一次接收到时即进行，ACTION_WIFI_EXIST也是如此
 				if(Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1) {
 					isDoneForAutoUnregisterActions = true;
 					unregisterMe();
