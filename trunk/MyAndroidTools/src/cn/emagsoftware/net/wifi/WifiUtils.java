@@ -88,7 +88,7 @@ public final class WifiUtils {
 	 */
 	public void checkWifiExist(WifiCallback callback,int timeout){
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_EXIST,WifiCallback.ACTION_WIFI_UNKNOWN});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_EXIST,WifiCallback.ACTION_ERROR});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -115,21 +115,21 @@ public final class WifiUtils {
 					return;
 				}
 				if(callback != null){
-					if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
-					else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED,WifiCallback.ACTION_WIFI_UNKNOWN});
+					if(enabled) callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_ENABLED,WifiCallback.ACTION_ERROR});
+					else callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_DISABLED,WifiCallback.ACTION_ERROR});
 					callback.setTimeoutForAutoUnregisterActions(timeout);
 					callback.registerMe();
 				}
 				boolean circs = wifiManager.setWifiEnabled(enabled);
 				if(!circs) if(callback != null) {
 					callback.unregisterMe();
-					callback.onCallbackFailure();
+					callback.onError();
 				}
 			}
 			@Override
-			public void onWifiUnknown() {    //如果Wifi不存在
+			public void onError() {    //如果Wifi不存在
 				// TODO Auto-generated method stub
-				if(callback != null) callback.onCallbackFailure();    //与其他的回调保持一致：若Wifi不存在时，将回调onCallbackFailure方法
+				if(callback != null) callback.onError();
 			}
 			@Override
 			public void onTimeout() {    //如果检测Wifi是否存在的过程超时
@@ -150,14 +150,14 @@ public final class WifiUtils {
 					@Override
 					public void run() {
 						// TODO Auto-generated method stub
-						callback.onCallbackFailure();
+						callback.onError();
 					}
 				});
 			}
 			return;
 		}
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_UNKNOWN,WifiCallback.ACTION_SCAN_RESULTS});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_ERROR,WifiCallback.ACTION_SCAN_RESULTS});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -168,7 +168,7 @@ public final class WifiUtils {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					callback.onCallbackFailure();
+					callback.onError();
 				}
 			});
 		}
@@ -186,14 +186,14 @@ public final class WifiUtils {
 					@Override
 					public void run() {
 						// TODO Auto-generated method stub
-						callback.onCallbackFailure();
+						callback.onError();
 					}
 				});
 			}
 			return;
 		}
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_UNKNOWN,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_ERROR,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -204,7 +204,7 @@ public final class WifiUtils {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					callback.onCallbackFailure();
+					callback.onError();
 				}
 			});
 		}
@@ -223,7 +223,7 @@ public final class WifiUtils {
 					@Override
 					public void run() {
 						// TODO Auto-generated method stub
-						callback.onCallbackFailure();
+						callback.onError();
 					}
 				});
 			}
@@ -239,7 +239,7 @@ public final class WifiUtils {
 						@Override
 						public void run() {
 							// TODO Auto-generated method stub
-							callback.onCallbackFailure();
+							callback.onError();
 						}
 					});
 				}
@@ -247,7 +247,7 @@ public final class WifiUtils {
 			}
 		}
 		if(callback != null){
-			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_UNKNOWN,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_ERROR,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.setTimeoutForAutoUnregisterActions(timeout);
 			callback.registerMe();
 		}
@@ -260,7 +260,7 @@ public final class WifiUtils {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					callback.onCallbackFailure();
+					callback.onError();
 				}
 			});
 		}
