@@ -83,6 +83,18 @@ public final class WifiUtils {
 	}
 	
 	/**
+	 * @param callback
+	 * @param timeout 单位为毫秒，设为0将永不超时
+	 */
+	public void checkWifiExist(WifiCallback callback,int timeout){
+		if(callback != null){
+			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_WIFI_EXIST,WifiCallback.ACTION_WIFI_UNKNOWN});
+			callback.setTimeoutForAutoUnregisterActions(timeout);
+			callback.registerMe();
+		}
+	}
+	
+	/**
 	 * @param enabled
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
