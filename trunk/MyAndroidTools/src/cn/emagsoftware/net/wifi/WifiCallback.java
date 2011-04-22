@@ -20,15 +20,16 @@ import android.util.Log;
 
 public abstract class WifiCallback extends BroadcastReceiver {
 	
-	public static final int ACTION_WIFI_ENABLED = 0;
-	public static final int ACTION_WIFI_ENABLING = 1;
-	public static final int ACTION_WIFI_DISABLED = 2;
-	public static final int ACTION_WIFI_DISABLING = 3;
-	public static final int ACTION_WIFI_UNKNOWN = 4;
-	public static final int ACTION_SCAN_RESULTS = 5;
-	public static final int ACTION_NETWORK_CONNECTED = 6;
-	public static final int ACTION_NETWORK_OBTAININGIP = 7;
-	public static final int ACTION_NETWORK_DISCONNECTED = 8;
+	public static final int ACTION_WIFI_EXIST = 0;
+	public static final int ACTION_WIFI_ENABLED = 1;
+	public static final int ACTION_WIFI_ENABLING = 2;
+	public static final int ACTION_WIFI_DISABLED = 3;
+	public static final int ACTION_WIFI_DISABLING = 4;
+	public static final int ACTION_WIFI_UNKNOWN = 5;
+	public static final int ACTION_SCAN_RESULTS = 6;
+	public static final int ACTION_NETWORK_CONNECTED = 7;
+	public static final int ACTION_NETWORK_OBTAININGIP = 8;
+	public static final int ACTION_NETWORK_DISCONNECTED = 9;
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
@@ -57,45 +58,69 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			if(state == WifiManager.WIFI_STATE_ENABLED){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) < 0) onWifiEnabled();
-				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1) {
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						unregisterMe();
 					}
+					onWifiExist();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) < 0) onWifiEnabled();
+				}else{
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1 || Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
+					onWifiExist();
 					onWifiEnabled();
 				}
 			}else if(state == WifiManager.WIFI_STATE_ENABLING){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) < 0) onWifiEnabling();
-				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) {
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						unregisterMe();
 					}
+					onWifiExist();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) < 0) onWifiEnabling();
+				}else{
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1 || Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
+					onWifiExist();
 					onWifiEnabling();
 				}
     		}else if(state == WifiManager.WIFI_STATE_DISABLED){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) < 0) onWifiDisabled();
-				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1) {
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						unregisterMe();
 					}
+					onWifiExist();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) < 0) onWifiDisabled();
+				}else{
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1 || Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
+					onWifiExist();
 					onWifiDisabled();
 				}
     		}else if(state == WifiManager.WIFI_STATE_DISABLING){
 				if(!isWifiStateRefreshed) {
 					isWifiStateRefreshed = true;
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) < 0) onWifiDisabling();
-				}else{
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) {
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						unregisterMe();
 					}
+					onWifiExist();
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) < 0) onWifiDisabling();
+				}else{
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_EXIST) > -1 || Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						unregisterMe();
+					}
+					onWifiExist();
 					onWifiDisabling();
 				}
     		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){    //WIFI_STATE_UNKNOWN×´Ì¬µÄÌØÊâÐÔ
@@ -186,6 +211,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			}
 		}
 	}
+	
+	public void onWifiExist(){}
 	
 	public void onWifiEnabled(){}
 	
