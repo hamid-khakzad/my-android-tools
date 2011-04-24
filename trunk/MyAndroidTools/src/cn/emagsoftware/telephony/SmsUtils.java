@@ -22,6 +22,13 @@ public final class SmsUtils {
 	private SmsUtils(){
 	}
 	
+	/**
+	 * <p>发送短信
+	 * @param context
+	 * @param to
+	 * @param text
+	 * @param ssc
+	 */
 	public static void sendMessage(Context context,String to,String text,SmsSendCallback ssc){
 		sendMessageToken = sendMessageToken + 1;
 		Intent sentIntent = new Intent(SMS_SENT_ACTION);
@@ -42,27 +49,44 @@ public final class SmsUtils {
 		smsManager.sendTextMessage(to, null, text, sentPI, deliveredPI);
 	}
 	
+	/**
+	 * <p>接收短信
+	 * @param sr
+	 * @param millisecond 单位为毫秒，设为0将永不超时，此时，需手工反注册
+	 * @param interruptWhenReceive
+	 */
 	public static void receiveMessage(final SmsReceiver sr,long millisecond,boolean interruptWhenReceive){
+		if(millisecond < 0) throw new IllegalArgumentException("millisecond could not be below zero.");
 		sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
 		sr.registerMe();
-		new Timer().schedule(new TimerTask(){
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				sr.unregisterMe();
-			}
-		}, millisecond);
+		if(millisecond > 0){
+			new Timer().schedule(new TimerTask(){
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					sr.unregisterMe();
+				}
+			}, millisecond);
+		}
 	}
 	
+	/**
+	 * <p>拦截短信
+	 * @param si
+	 * @param millisecond 单位为毫秒，设为0将永不超时，此时，需手工反注册
+	 */
 	public static void interceptMessage(final SmsInterceptor si,long millisecond){
+		if(millisecond < 0) throw new IllegalArgumentException("millisecond could not be below zero.");
 		si.registerMe(1000);
-		new Timer().schedule(new TimerTask(){
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				si.unregisterMe();
-			}
-		}, millisecond);
+		if(millisecond > 0){
+			new Timer().schedule(new TimerTask(){
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					si.unregisterMe();
+				}
+			}, millisecond);
+		}
 	}
 	
 }
