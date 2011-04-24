@@ -17,17 +17,17 @@ public class TestActivity extends Activity {
 			@Override
 			public void onWifiExist() {
 				// TODO Auto-generated method stub
-				ToastManager.showForEver(TestActivity.this, "wifi exist.");
+				ToastManager.showLong(TestActivity.this, "wifi exist.");
 			}
 			@Override
 			public void onTimeout() {
 				// TODO Auto-generated method stub
-				ToastManager.showForEver(TestActivity.this, "time out");
+				ToastManager.showLong(TestActivity.this, "time out");
 			}
 			@Override
 			public void onError() {
 				// TODO Auto-generated method stub
-				ToastManager.showForEver(TestActivity.this, "wifi not exist.");
+				ToastManager.showLong(TestActivity.this, "wifi not exist.");
 			}
 		}, 10000);
 	}
