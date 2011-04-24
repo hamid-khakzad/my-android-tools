@@ -1,13 +1,10 @@
 package com.wendell.ui.test;
 
-import java.util.List;
-
 import com.wendell.ui.ToastManager;
 
 import cn.emagsoftware.net.wifi.WifiCallback;
 import cn.emagsoftware.net.wifi.WifiUtils;
 import android.app.Activity;
-import android.net.wifi.ScanResult;
 import android.os.Bundle;
 
 public class TestActivity extends Activity {
@@ -16,16 +13,21 @@ public class TestActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
-		WifiUtils.getInstance(this).startScan(new WifiCallback(this) {
+		WifiUtils.getInstance(this).checkWifiExist(new WifiCallback(this) {
 			@Override
-			public void onScanResults(List<ScanResult> scanResults) {
+			public void onWifiExist() {
 				// TODO Auto-generated method stub
-				ToastManager.showLong(TestActivity.this, "onScanResults");
+				ToastManager.showForEver(TestActivity.this, "wifi exist.");
+			}
+			@Override
+			public void onTimeout() {
+				// TODO Auto-generated method stub
+				ToastManager.showForEver(TestActivity.this, "time out");
 			}
 			@Override
 			public void onError() {
 				// TODO Auto-generated method stub
-				ToastManager.showLong(TestActivity.this, "onError");
+				ToastManager.showForEver(TestActivity.this, "wifi not exist.");
 			}
 		}, 10000);
 	}
