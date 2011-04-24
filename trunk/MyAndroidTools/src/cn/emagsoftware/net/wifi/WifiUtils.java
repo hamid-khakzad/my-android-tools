@@ -200,14 +200,15 @@ public final class WifiUtils {
 		}
 		boolean circs = wifiManager.setWifiEnabled(enabled);
 		if(!circs) if(callback != null) {
-			callback.unregisterMe();
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					callback.onError();
-				}
-			});
+			if(callback.unregisterMe()){
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onError();
+					}
+				});
+			}
 		}
 	}
 	
@@ -236,14 +237,15 @@ public final class WifiUtils {
 		}
 		boolean circs = wifiManager.startScan();
 		if(!circs) if(callback != null){
-			callback.unregisterMe();
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					callback.onError();
-				}
-			});
+			if(callback.unregisterMe()){
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onError();
+					}
+				});
+			}
 		}
 	}
 	
@@ -273,14 +275,15 @@ public final class WifiUtils {
 		}
 		boolean circs = Wifi.connectToConfiguredNetwork(context, wifiManager, wc, true);
 		if(!circs) if(callback != null){
-			callback.unregisterMe();
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					callback.onError();
-				}
-			});
+			if(callback.unregisterMe()){
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onError();
+					}
+				});
+			}
 		}
 	}
 	
@@ -330,14 +333,15 @@ public final class WifiUtils {
 		if(old != null) circs = Wifi.connectToConfiguredNetwork(context, wifiManager, old, true);
 		else circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);
 		if(!circs) if(callback != null) {
-			callback.unregisterMe();
-			handler.post(new Runnable() {
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					callback.onError();
-				}
-			});
+			if(callback.unregisterMe()){
+				handler.post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						callback.onError();
+					}
+				});
+			}
 		}
 	}
 	
