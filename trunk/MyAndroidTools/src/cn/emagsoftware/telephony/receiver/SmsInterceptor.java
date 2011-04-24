@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.util.Log;
 
 public abstract class SmsInterceptor extends BroadcastReceiver {
 	
@@ -52,8 +53,15 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
         context.registerReceiver(this,smsIntentFilter);
 	}
 	
-	public void unregisterMe(){
-		context.unregisterReceiver(this);
+	public boolean unregisterMe(){
+		try{
+			context.unregisterReceiver(this);
+			return true;
+		}catch(IllegalArgumentException e){
+			//重复反注册会抛出该异常，如通过代码注册的receiver在当前activity销毁时会自动反注册，若再反注册，即会抛出该异常
+			Log.e("SmsInterceptor", "unregister receiver failed.", e);
+			return false;
+		}
 	}
 	
 }
