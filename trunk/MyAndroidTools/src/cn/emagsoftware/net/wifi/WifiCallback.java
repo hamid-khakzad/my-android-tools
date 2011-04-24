@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.2
+ * @version 1.3
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -241,7 +241,12 @@ public abstract class WifiCallback extends BroadcastReceiver {
 		isNetworkStateRefreshed = false;
 		isNetworkStateRefreshedToConnected = false;
 		networkDisconnectedCount = 0;
-		context.unregisterReceiver(this);
+		try{
+			context.unregisterReceiver(this);
+		}catch(IllegalArgumentException e){
+			//通过代码注册的receiver在当前activity销毁时会自动反注册，如果重复反注册会抛出该异常，该异常不需要通知到用户，所以隐藏
+			Log.e("WifiCallback", "unregister receiver failed.", e);
+		}
 	}
 	
 	public void setAutoUnregisterActions(int[] actions){
