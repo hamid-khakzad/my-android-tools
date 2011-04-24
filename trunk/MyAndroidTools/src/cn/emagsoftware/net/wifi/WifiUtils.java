@@ -35,16 +35,30 @@ public final class WifiUtils {
 		wifiLock = wifiManager.createWifiLock("cn.emagsoftware.net.wifi.WifiUtils");
 	}
 	
+	/**
+	 * <p>Wifi是否已打开
+	 * @return true,Wifi已打开;false,Wifi不存在或已关闭
+	 */
 	public boolean isWifiEnabled(){
 		return wifiManager.isWifiEnabled();
 	}
 	
+	/**
+	 * <p>Wifi是否已连接
+	 * @return
+	 */
 	public boolean isWifiConnected(){
 		NetworkInfo wifiNetworkInfo = NetManager.getWifiNetworkInfo(context);
 		if (wifiNetworkInfo != null && wifiNetworkInfo.isConnected()) return true;
 		return false;
 	}
 	
+	/**
+	 * <p>Wifi是否可用，即是否能请求互联网
+	 * @param timeout
+	 * @param tryTimes
+	 * @return
+	 */
 	public boolean isWifiUseful(int timeout,int tryTimes){
 		return isWifiConnected() && NetManager.isNetUseful(timeout,tryTimes);
 	}
@@ -84,6 +98,7 @@ public final class WifiUtils {
 	}
 	
 	/**
+	 * <p>检测Wifi是否存在
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
@@ -159,6 +174,7 @@ public final class WifiUtils {
 	}
 	
 	/**
+	 * <p>打开或关闭Wifi
 	 * @param enabled
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
@@ -196,6 +212,7 @@ public final class WifiUtils {
 	}
 	
 	/**
+	 * <p>查找Wifi热点
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
@@ -231,6 +248,7 @@ public final class WifiUtils {
 	}
 	
 	/**
+	 * <p>连接到已保存的Wifi热点
 	 * @param wc
 	 * @param callback
 	 * @param timeout 单位为毫秒，设为0将永不超时
@@ -267,6 +285,7 @@ public final class WifiUtils {
 	}
 	
 	/**
+	 * <p>连接到查找到的Wifi热点
 	 * @param sr
 	 * @param password
 	 * @param callback
