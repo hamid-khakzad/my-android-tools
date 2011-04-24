@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.3
+ * @version 1.4
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -202,6 +202,9 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onError(){}
 	
+	/**
+	 * <p>注册当前receiver
+	 */
 	public void registerMe(){
 		IntentFilter wifiIntentFilter = new IntentFilter();
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
@@ -220,22 +223,28 @@ public abstract class WifiCallback extends BroadcastReceiver {
     				if(isDoneForAutoUnregisterActions){
     					cancel();
     				}else if(timeCount >= timeoutForAutoUnregisterActions){   //已超时
-    					unregisterMe();
     					cancel();
-    					handler.post(new Runnable() {
-							@Override
-							public void run() {
-								// TODO Auto-generated method stub
-								onTimeout();
-							}
-						});
+    					boolean result = unregisterMe();
+    					if(result){    //只在反注册成功时回调超时接口，若由于当前Activity的销毁等情况导致已被反注册，将不回调，这合乎逻辑，且避免了onTimeout中UI操作的出错
+        					handler.post(new Runnable() {
+    							@Override
+    							public void run() {
+    								// TODO Auto-generated method stub
+    								onTimeout();
+    							}
+    						});
+    					}
     				}
     			}
     		},100,100);
         }
 	}
 	
-	public void unregisterMe(){
+	/**
+	 * <p>反注册当前receiver
+	 * @return true,反注册成功;false,当前receiver已被反注册
+	 */
+	public boolean unregisterMe(){
 		isDoneForAutoUnregisterActions = true;   //在反注册时置为true，使计时器能够尽快退出
 		isUnregistered = true;
 		isNetworkStateRefreshed = false;
@@ -243,9 +252,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 		networkDisconnectedCount = 0;
 		try{
 			context.unregisterReceiver(this);
+			return true;
 		}catch(IllegalArgumentException e){
-			//通过代码注册的receiver在当前activity销毁时会自动反注册，如果重复反注册会抛出该异常，该异常不需要通知到用户，所以隐藏
-			Log.e("WifiCallback", "unregister receiver failed.", e);
+			//通过代码注册的receiver在当前activity销毁时会自动反注册，如果重复反注册会抛出该异常
+			Log.e("WifiCallback", "receiver has been already unregistered.", e);
+			return false;
 		}
 	}
 	
