@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.4
+ * @version 1.5
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -66,35 +66,35 @@ public abstract class WifiCallback extends BroadcastReceiver {
 				Log.d("WifiCallback", "receive wifi state -> WIFI_STATE_ENABLED");
 				if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1) {
 					isDoneForAutoUnregisterActions = true;
-					unregisterMe();
+					if(!unregisterMe()) return;
 				}
 				onWifiEnabled();
 			}else if(state == WifiManager.WIFI_STATE_ENABLING){
 				Log.d("WifiCallback", "receive wifi state -> WIFI_STATE_ENABLING");
 				if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1) {
 					isDoneForAutoUnregisterActions = true;
-					unregisterMe();
+					if(!unregisterMe()) return;
 				}
 				onWifiEnabling();
     		}else if(state == WifiManager.WIFI_STATE_DISABLED){
     			Log.d("WifiCallback", "receive wifi state -> WIFI_STATE_DISABLED");
 				if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1) {
 					isDoneForAutoUnregisterActions = true;
-					unregisterMe();
+					if(!unregisterMe()) return;
 				}
 				onWifiDisabled();
     		}else if(state == WifiManager.WIFI_STATE_DISABLING){
     			Log.d("WifiCallback", "receive wifi state -> WIFI_STATE_DISABLING");
 				if(Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1) {
 					isDoneForAutoUnregisterActions = true;
-					unregisterMe();
+					if(!unregisterMe()) return;
 				}
 				onWifiDisabling();
     		}else if(state == WifiManager.WIFI_STATE_UNKNOWN){
     			Log.d("WifiCallback", "receive wifi state -> WIFI_STATE_UNKNOWN");
 				if(Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1) {
 					isDoneForAutoUnregisterActions = true;
-					unregisterMe();
+					if(!unregisterMe()) return;
 				}
 				onError();
     		}
@@ -102,7 +102,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			Log.d("WifiCallback", "receive wifi state -> SCAN_RESULTS_AVAILABLE");
 			if(Arrays.binarySearch(autoUnregisterActions, ACTION_SCAN_RESULTS) > -1) {
 				isDoneForAutoUnregisterActions = true;
-				unregisterMe();
+				if(!unregisterMe()) return;
 			}
 			List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
 			if(results != null){
@@ -136,7 +136,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
 							isDoneForAutoUnregisterActions = true;
-							unregisterMe();
+							if(!unregisterMe()) return;
 						}
 						onNetworkConnected(wifiUtils.getConnectionInfo());
 					}
@@ -148,7 +148,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					}else{
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
 							isDoneForAutoUnregisterActions = true;
-							unregisterMe();
+							if(!unregisterMe()) return;
 						}
 						onNetworkObtainingIp(wifiUtils.getConnectionInfo());
 					}
@@ -163,12 +163,12 @@ public abstract class WifiCallback extends BroadcastReceiver {
 							if(isNetworkStateRefreshedToConnected){
 								if(networkDisconnectedCount >= 2){
 									isDoneForAutoUnregisterActions = true;
-									unregisterMe();
+									if(!unregisterMe()) return;
 									onNetworkDisconnected(wifiUtils.getConnectionInfo());
 								}
 							}else{
 								isDoneForAutoUnregisterActions = true;
-								unregisterMe();
+								if(!unregisterMe()) return;
 								onNetworkDisconnected(wifiUtils.getConnectionInfo());
 							}
 						}else{
@@ -224,9 +224,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
     					cancel();
     				}else if(timeCount >= timeoutForAutoUnregisterActions){   //已超时
     					cancel();
-    					boolean result = unregisterMe();
-    					if(result){    //只在反注册成功时回调超时接口，若由于当前Activity的销毁等情况导致已被反注册，将不回调，这合乎逻辑，且避免了onTimeout中UI操作的出错
-        					handler.post(new Runnable() {
+    					if(unregisterMe()){
+    						handler.post(new Runnable() {
     							@Override
     							public void run() {
     								// TODO Auto-generated method stub
