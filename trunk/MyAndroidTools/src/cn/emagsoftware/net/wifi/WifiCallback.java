@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.6
+ * @version 1.7
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -188,6 +188,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onWifiDisabling(){}
 	
+	public void onError(){}
+	
 	public void onScanResults(List<ScanResult> scanResults){}
 	
 	public void onNetworkConnected(WifiInfo wifiInfo){}
@@ -196,11 +198,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onNetworkDisconnected(WifiInfo wifiInfo){}
 	
-	public void onTimeout(){}
-	
 	public void onWifiExist(){}
 	
-	public void onError(){}
+	public void onWifiNotExist(){}
+	
+	public void onTimeout(){}
 	
 	public void registerMe(){
 		IntentFilter wifiIntentFilter = new IntentFilter();

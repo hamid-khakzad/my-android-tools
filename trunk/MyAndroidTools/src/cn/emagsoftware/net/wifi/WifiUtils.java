@@ -127,18 +127,23 @@ public final class WifiUtils {
 						callback.onWifiExist();
 					}
 					@Override
-					public void onTimeout() {
-						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state time out.");
-						callback.onWifiExist();
-					}
-					@Override
 					public void onError() {
 						// TODO Auto-generated method stub
 						Log.d("WifiUtils", "revert to previous wifi state unsuccessfully.");
 						callback.onWifiExist();
 					}
+					@Override
+					public void onTimeout() {
+						// TODO Auto-generated method stub
+						Log.d("WifiUtils", "revert to previous wifi state time out.");
+						callback.onWifiExist();
+					}
 				}, timeout);
+			}
+			@Override
+			public void onError() {
+				// TODO Auto-generated method stub
+				callback.onWifiNotExist();
 			}
 			@Override
 			public void onTimeout() {
@@ -152,23 +157,18 @@ public final class WifiUtils {
 						callback.onTimeout();
 					}
 					@Override
-					public void onTimeout() {
-						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state time out.");
-						callback.onTimeout();
-					}
-					@Override
 					public void onError() {
 						// TODO Auto-generated method stub
 						Log.d("WifiUtils", "revert to previous wifi state unsuccessfully.");
 						callback.onTimeout();
 					}
+					@Override
+					public void onTimeout() {
+						// TODO Auto-generated method stub
+						Log.d("WifiUtils", "revert to previous wifi state time out.");
+						callback.onTimeout();
+					}
 				}, timeout);
-			}
-			@Override
-			public void onError() {
-				// TODO Auto-generated method stub
-				callback.onError();
 			}
 		}, timeout);
 	}
