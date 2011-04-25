@@ -52,7 +52,7 @@ public final class SmsUtils {
 	 * <p>接收短信
 	 * @param sr
 	 * @param interruptWhenReceive
-	 * @param timeout 单位为毫秒，设为0将永不超时
+	 * @param timeout 单位为毫秒，设为0将永不超时，此时可能需要手工反注册
 	 */
 	public static void receiveMessage(SmsReceiver sr,boolean interruptWhenReceive,int timeout){
 		if(sr == null) throw new NullPointerException();
@@ -65,7 +65,7 @@ public final class SmsUtils {
 	 * <p>拦截短信
 	 * @param si
 	 * @param interruptWhenIntercept
-	 * @param timeout 单位为毫秒，设为0将永不超时
+	 * @param timeout 单位为毫秒，设为0将永不超时，此时可能需要手工反注册
 	 */
 	public static void interceptMessage(SmsInterceptor si,boolean interruptWhenIntercept,int timeout){
 		if(si == null) throw new NullPointerException();
