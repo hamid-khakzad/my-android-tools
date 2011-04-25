@@ -1,15 +1,12 @@
 package com.wendell.ui.test;
 
-import java.util.List;
-
 import com.wendell.ui.ToastManager;
 
-import cn.emagsoftware.net.wifi.WifiCallback;
-import cn.emagsoftware.net.wifi.WifiUtils;
+import cn.emagsoftware.telephony.SmsUtils;
+import cn.emagsoftware.telephony.receiver.SmsInterceptor;
 import android.app.Activity;
-import android.net.wifi.ScanResult;
 import android.os.Bundle;
-import android.util.Log;
+import android.telephony.SmsMessage;
 
 public class TestActivity extends Activity {
 	
@@ -17,26 +14,18 @@ public class TestActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
-		final WifiUtils wifiUtils = WifiUtils.getInstance(this);
-		wifiUtils.setWifiEnabled(true,new WifiCallback(this) {
+		SmsUtils.interceptMessage(new SmsInterceptor(this,null) {
 			@Override
-			public void onWifiEnabled() {
+			public void onIntercept(SmsMessage[] msg) {
 				// TODO Auto-generated method stub
-				Log.e("TestActivity", String.valueOf(wifiUtils.isWifiEnabled()));
-				wifiUtils.startScan(new WifiCallback(TestActivity.this) {
-					@Override
-					public void onScanResults(List<ScanResult> scanResults) {
-						// TODO Auto-generated method stub
-						ToastManager.showLong(TestActivity.this, "onScanResults");
-					}
-					@Override
-					public void onError() {
-						// TODO Auto-generated method stub
-						ToastManager.showLong(TestActivity.this, "onError");
-					}
-				}, 10000);
+				ToastManager.showLong(TestActivity.this, "À¹½Øµ½¶ÌÐÅ:["+msg[0].getMessageBody()+"]");
 			}
-		}, 0);
+			@Override
+			public void onTimeout() {
+				// TODO Auto-generated method stub
+				ToastManager.showLong(TestActivity.this, "À¹½Ø³¬Ê±");
+			}
+		}, true, 0);
 	}
 	
 }
