@@ -18,6 +18,7 @@ public abstract class SmsSendCallback extends BroadcastReceiver {
 	protected Context context = null;
 	protected int token = -1;
 	protected int[] autoUnregisterActions = new int[]{};
+	protected boolean isUnregistered = true;
 	
 	public SmsSendCallback(Context context){
 		if(context == null) throw new NullPointerException();
@@ -36,6 +37,7 @@ public abstract class SmsSendCallback extends BroadcastReceiver {
 	@Override
 	public final void onReceive(Context arg0, Intent arg1) {
 		// TODO Auto-generated method stub
+		if(isUnregistered) return;    //如果已经反注册，将直接返回
 		String actionStr = arg1.getAction();
 		int code = getResultCode();
 		int srcToken = arg1.getIntExtra("SMS_TOKEN", -1);
@@ -76,10 +78,12 @@ public abstract class SmsSendCallback extends BroadcastReceiver {
 		IntentFilter smsIntentFilter = new IntentFilter();
 		smsIntentFilter.addAction(SmsUtils.SMS_SENT_ACTION);
 		smsIntentFilter.addAction(SmsUtils.SMS_DELIVERED_ACTION);
+		isUnregistered = false;
         context.registerReceiver(this,smsIntentFilter);
 	}
 	
 	public boolean unregisterMe(){
+		isUnregistered = true;
 		try{
 			context.unregisterReceiver(this);
 			return true;

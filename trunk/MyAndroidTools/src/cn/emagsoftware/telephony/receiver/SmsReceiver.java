@@ -21,6 +21,7 @@ public abstract class SmsReceiver extends BroadcastReceiver {
 		}
 	};
 	protected boolean autoUnregisterWhenReceive = false;
+	protected boolean isUnregistered = true;
 	
 	public SmsReceiver(Context context,SmsFilter receiveFilter){
 		if(context == null) throw new NullPointerException();
@@ -31,6 +32,7 @@ public abstract class SmsReceiver extends BroadcastReceiver {
 	@Override
 	public final void onReceive(Context arg0, Intent arg1) {
 		// TODO Auto-generated method stub
+		if(isUnregistered) return;    //如果已经反注册，将直接返回
 		Bundle bundle = arg1.getExtras();
 		Object[] messages = (Object[])bundle.get("pdus");
 		SmsMessage[] smsMessages = new SmsMessage[messages.length];
@@ -59,10 +61,12 @@ public abstract class SmsReceiver extends BroadcastReceiver {
 	public void registerMe(){
 		IntentFilter smsIntentFilter = new IntentFilter();
 		smsIntentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
+		isUnregistered = false;
         context.registerReceiver(this,smsIntentFilter);
 	}
 	
 	public boolean unregisterMe(){
+		isUnregistered = true;
 		try{
 			context.unregisterReceiver(this);
 			return true;
