@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.7
+ * @version 1.8
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -261,8 +261,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	}
 	
 	/**
-	 * 设置等待自动反注册ACTION被执行的超时时间，超时时将回调onTimeout方法并自动反注册
-	 * timeout设为0，将永不超时
+	 * <p>设置等待自动反注册ACTION被执行的超时时间，超时时将回调onTimeout方法并自动反注册
+	 * timeout 设为0，将永不超时
 	 * @param timeout
 	 */
 	public void setTimeoutForAutoUnregisterActions(int timeout){
