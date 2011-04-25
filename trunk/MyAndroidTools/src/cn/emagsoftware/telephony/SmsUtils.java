@@ -55,11 +55,10 @@ public final class SmsUtils {
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
 	public static void receiveMessage(SmsReceiver sr,boolean interruptWhenReceive,int timeout){
-		if(sr != null){
-			sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
-			sr.setTimeout(timeout);
-			sr.registerMe();
-		}
+		if(sr == null) throw new NullPointerException();
+		sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
+		sr.setTimeout(timeout);
+		sr.registerMe();
 	}
 	
 	/**
@@ -69,11 +68,10 @@ public final class SmsUtils {
 	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
 	public static void interceptMessage(SmsInterceptor si,boolean interruptWhenIntercept,int timeout){
-		if(si != null){
-			si.setAutoUnregisterWhenIntercept(interruptWhenIntercept);
-			si.setTimeout(timeout);
-			si.registerMe(1000);
-		}
+		if(si == null) throw new NullPointerException();
+		si.setAutoUnregisterWhenIntercept(interruptWhenIntercept);
+		si.setTimeout(timeout);
+		si.registerMe(1000);
 	}
 	
 }
