@@ -1,8 +1,5 @@
 package cn.emagsoftware.telephony;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import cn.emagsoftware.telephony.receiver.SmsInterceptor;
 import cn.emagsoftware.telephony.receiver.SmsReceiver;
 import cn.emagsoftware.telephony.receiver.SmsSendCallback;
@@ -28,8 +25,9 @@ public final class SmsUtils {
 	 * @param to
 	 * @param text
 	 * @param ssc
+	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public static void sendMessage(Context context,String to,String text,SmsSendCallback ssc){
+	public static void sendMessage(Context context,String to,String text,SmsSendCallback ssc,int timeout){
 		sendMessageToken = sendMessageToken + 1;
 		Intent sentIntent = new Intent(SMS_SENT_ACTION);
 		sentIntent.putExtra("SMS_TOKEN", sendMessageToken);
@@ -44,6 +42,7 @@ public final class SmsUtils {
 		if(ssc != null){
 			ssc.setToken(sendMessageToken);
 			ssc.setAutoUnregisterActions(new int[]{SmsSendCallback.ACTION_SENT});
+			ssc.setTimeout(timeout);
 			ssc.registerMe();
 		}
 		smsManager.sendTextMessage(to, null, text, sentPI, deliveredPI);
@@ -52,40 +51,28 @@ public final class SmsUtils {
 	/**
 	 * <p>接收短信
 	 * @param sr
-	 * @param millisecond 单位为毫秒，设为0将永不超时，此时，需手工反注册
 	 * @param interruptWhenReceive
+	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public static void receiveMessage(final SmsReceiver sr,long millisecond,boolean interruptWhenReceive){
-		if(millisecond < 0) throw new IllegalArgumentException("millisecond could not be below zero.");
-		sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
-		sr.registerMe();
-		if(millisecond > 0){
-			new Timer().schedule(new TimerTask(){
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					sr.unregisterMe();
-				}
-			}, millisecond);
+	public static void receiveMessage(SmsReceiver sr,boolean interruptWhenReceive,int timeout){
+		if(sr != null){
+			sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
+			sr.setTimeout(timeout);
+			sr.registerMe();
 		}
 	}
 	
 	/**
 	 * <p>拦截短信
 	 * @param si
-	 * @param millisecond 单位为毫秒，设为0将永不超时，此时，需手工反注册
+	 * @param interruptWhenIntercept
+	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public static void interceptMessage(final SmsInterceptor si,long millisecond){
-		if(millisecond < 0) throw new IllegalArgumentException("millisecond could not be below zero.");
-		si.registerMe(1000);
-		if(millisecond > 0){
-			new Timer().schedule(new TimerTask(){
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					si.unregisterMe();
-				}
-			}, millisecond);
+	public static void interceptMessage(SmsInterceptor si,boolean interruptWhenIntercept,int timeout){
+		if(si != null){
+			si.setAutoUnregisterWhenIntercept(interruptWhenIntercept);
+			si.setTimeout(timeout);
+			si.registerMe(1000);
 		}
 	}
 	
