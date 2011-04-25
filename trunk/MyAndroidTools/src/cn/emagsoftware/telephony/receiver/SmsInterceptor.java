@@ -89,6 +89,7 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 		IntentFilter smsIntentFilter = new IntentFilter();
 		smsIntentFilter.setPriority(priority);
 		smsIntentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
+		isDoneForAutoUnregisterWhenIntercept = false;
 		isUnregistered = false;
         context.registerReceiver(this,smsIntentFilter);
         if(timeout > 0){   //为0时将永不超时
@@ -118,6 +119,7 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 	}
 	
 	public boolean unregisterMe(){
+		isDoneForAutoUnregisterWhenIntercept = true;   //在反注册时置为true，使计时器能够尽快退出
 		isUnregistered = true;
 		try{
 			context.unregisterReceiver(this);

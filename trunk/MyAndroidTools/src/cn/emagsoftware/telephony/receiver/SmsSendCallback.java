@@ -89,6 +89,7 @@ public abstract class SmsSendCallback extends BroadcastReceiver {
 		IntentFilter smsIntentFilter = new IntentFilter();
 		smsIntentFilter.addAction(SmsUtils.SMS_SENT_ACTION);
 		smsIntentFilter.addAction(SmsUtils.SMS_DELIVERED_ACTION);
+		isDoneForAutoUnregisterActions = false;
 		isUnregistered = false;
         context.registerReceiver(this,smsIntentFilter);
         if(timeout > 0){   //为0时将永不超时
@@ -118,6 +119,7 @@ public abstract class SmsSendCallback extends BroadcastReceiver {
 	}
 	
 	public boolean unregisterMe(){
+		isDoneForAutoUnregisterActions = true;   //在反注册时置为true，使计时器能够尽快退出
 		isUnregistered = true;
 		try{
 			context.unregisterReceiver(this);

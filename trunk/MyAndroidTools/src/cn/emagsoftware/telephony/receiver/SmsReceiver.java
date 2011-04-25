@@ -72,6 +72,7 @@ public abstract class SmsReceiver extends BroadcastReceiver {
 	public void registerMe(){
 		IntentFilter smsIntentFilter = new IntentFilter();
 		smsIntentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
+		isDoneForAutoUnregisterWhenReceive = false;
 		isUnregistered = false;
         context.registerReceiver(this,smsIntentFilter);
         if(timeout > 0){   //为0时将永不超时
@@ -101,6 +102,7 @@ public abstract class SmsReceiver extends BroadcastReceiver {
 	}
 	
 	public boolean unregisterMe(){
+		isDoneForAutoUnregisterWhenReceive = true;   //在反注册时置为true，使计时器能够尽快退出
 		isUnregistered = true;
 		try{
 			context.unregisterReceiver(this);
