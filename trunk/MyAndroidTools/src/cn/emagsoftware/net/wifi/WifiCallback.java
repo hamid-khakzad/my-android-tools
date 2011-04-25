@@ -262,8 +262,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	/**
 	 * <p>设置等待自动反注册ACTION被执行的超时时间，超时时将回调onTimeout方法并自动反注册
-	 * timeout 设为0，将永不超时
-	 * @param timeout
+	 * @param timeout 设为0，将永不超时
 	 */
 	public void setTimeoutForAutoUnregisterActions(int timeout){
 		if(timeout < 0) throw new IllegalArgumentException("timeout could not be below zero.");
