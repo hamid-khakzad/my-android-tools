@@ -1,5 +1,8 @@
 package cn.emagsoftware.telephony.receiver;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import cn.emagsoftware.telephony.SmsFilter;
 
 import android.content.BroadcastReceiver;
@@ -7,6 +10,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.telephony.SmsMessage;
 import android.util.Log;
 
@@ -20,6 +25,10 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 			return true;
 		}
 	};
+	protected Handler handler = new Handler(Looper.getMainLooper());
+	protected boolean autoUnregisterWhenIntercept = false;
+	protected int timeout = 0;
+	protected boolean isDoneForAutoUnregisterWhenIntercept = false;
 	protected boolean isUnregistered = true;
 	
 	public SmsInterceptor(Context context,SmsFilter interceptFilter){
@@ -29,12 +38,12 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 	}
 	
 	@Override
-	public final void onReceive(Context arg0, Intent arg1) {
+	public final void onReceive(Context arg0, final Intent arg1) {
 		// TODO Auto-generated method stub
 		if(isUnregistered) return;    //如果已经反注册，将直接返回
 		Bundle bundle = arg1.getExtras();
 		Object[] messages = (Object[])bundle.get("pdus");
-		SmsMessage[] smsMessages = new SmsMessage[messages.length];
+		final SmsMessage[] smsMessages = new SmsMessage[messages.length];
 		boolean isIntercept = false;
 		for (int i = 0; i < messages.length; i++) {
 			smsMessages[i] = SmsMessage.createFromPdu((byte[])messages[i]);
@@ -43,10 +52,38 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 				this.abortBroadcast();
 			}
 		}
-		if(isIntercept) onIntercept(smsMessages);
+		if(isIntercept) {
+			//推迟处理，使abortBroadcast能够生效
+			handler.post(new Runnable() {
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					dealInterceptDelay(arg1,smsMessages);
+				}
+			});
+		}
+	}
+	
+	protected final void dealInterceptDelay(Intent smsIntent,SmsMessage[] smsMessages){
+		if(isUnregistered){
+			Log.i("SmsInterceptor", "current interceptor has been invalid,resend sms broadcast what has been intercepted already.");
+			context.sendBroadcast(smsIntent);    //重新发送短信，防止短信丢失
+			return;
+		}
+		if(autoUnregisterWhenIntercept){
+			isDoneForAutoUnregisterWhenIntercept = true;
+			if(!unregisterMe()) {
+				Log.i("SmsInterceptor", "current interceptor has been invalid,resend sms broadcast what has been intercepted already.");
+				context.sendBroadcast(smsIntent);    //重新发送短信，防止短信丢失
+				return;
+			}
+		}
+		onIntercept(smsMessages);
 	}
 	
 	public void onIntercept(SmsMessage[] msg){}
+	
+	public void onTimeout(){}
 	
 	public void registerMe(int priority){
 		IntentFilter smsIntentFilter = new IntentFilter();
@@ -54,6 +91,30 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 		smsIntentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
 		isUnregistered = false;
         context.registerReceiver(this,smsIntentFilter);
+        if(timeout > 0){   //为0时将永不超时
+            new Timer().schedule(new TimerTask() {
+            	protected long timeCount = 0;
+    			@Override
+    			public void run() {
+    				// TODO Auto-generated method stub
+    				timeCount = timeCount + 100;
+    				if(isDoneForAutoUnregisterWhenIntercept){
+    					cancel();
+    				}else if(timeCount >= timeout){   //已超时
+    					cancel();
+    					if(unregisterMe()){
+    						handler.post(new Runnable() {
+    							@Override
+    							public void run() {
+    								// TODO Auto-generated method stub
+    								onTimeout();
+    							}
+    						});
+    					}
+    				}
+    			}
+    		},100,100);
+        }
 	}
 	
 	public boolean unregisterMe(){
@@ -66,6 +127,20 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 			Log.e("SmsInterceptor", "unregister receiver failed.", e);
 			return false;
 		}
+	}
+	
+	public void setAutoUnregisterWhenIntercept(boolean auto){
+		this.autoUnregisterWhenIntercept = auto;
+	}
+	
+	/**
+	 * <p>设置拦截短信的超时时间，超时时将回调onTimeout方法并自动反注册
+	 * <p>若设置了拦截到短信时自动反注册，在拦截到短信时，超时计时器将随之退出而不再计时
+	 * @param timeout 单位为毫秒，设为0将永不超时
+	 */
+	public void setTimeout(int timeout){
+		if(timeout < 0) throw new IllegalArgumentException("timeout could not be below zero.");
+		this.timeout = timeout;
 	}
 	
 }
