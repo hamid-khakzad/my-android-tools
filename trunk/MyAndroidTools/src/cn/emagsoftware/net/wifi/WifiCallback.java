@@ -40,7 +40,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
 	protected int[] autoUnregisterActions = new int[]{};
-	protected int timeoutForAutoUnregisterActions = 0;
+	protected int timeout = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
 	protected boolean isUnregistered = true;
 	
@@ -212,7 +212,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
         context.registerReceiver(this,wifiIntentFilter);
-        if(timeoutForAutoUnregisterActions > 0){   //为0时将永不超时
+        if(timeout > 0){   //为0时将永不超时
             new Timer().schedule(new TimerTask() {
             	protected long timeCount = 0;
     			@Override
@@ -221,7 +221,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     				timeCount = timeCount + 100;
     				if(isDoneForAutoUnregisterActions){
     					cancel();
-    				}else if(timeCount >= timeoutForAutoUnregisterActions){   //已超时
+    				}else if(timeCount >= timeout){   //已超时
     					cancel();
     					if(unregisterMe()){
     						handler.post(new Runnable() {
@@ -261,12 +261,13 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	}
 	
 	/**
-	 * <p>设置等待自动反注册ACTION被执行的超时时间，超时时将回调onTimeout方法并自动反注册
-	 * @param timeout 设为0，将永不超时
+	 * <p>设置接收Wifi消息的超时时间，超时时将回调onTimeout方法并自动反注册
+	 * <p>若设置了自动反注册action，在该action触发时，超时计时器将随之退出而不再计时
+	 * @param timeout 单位为毫秒，设为0将永不超时
 	 */
-	public void setTimeoutForAutoUnregisterActions(int timeout){
+	public void setTimeout(int timeout){
 		if(timeout < 0) throw new IllegalArgumentException("timeout could not be below zero.");
-		this.timeoutForAutoUnregisterActions = timeout;
+		this.timeout = timeout;
 	}
 	
 }
