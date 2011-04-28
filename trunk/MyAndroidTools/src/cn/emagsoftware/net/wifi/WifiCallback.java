@@ -139,6 +139,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 								isStartedForBindingBSSID = true;
 							}
 						}
+						Log.d("WifiCallback", "give up wifi state -> " + detailed);
 						return;
 					}
 				}
