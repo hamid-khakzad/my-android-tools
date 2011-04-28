@@ -133,14 +133,13 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					if(!isStartedForBindingBSSID){
 						if(detailed == NetworkInfo.DetailedState.IDLE){
 							isStartedForBindingBSSID = true;
-							return;
 						}else{
 							String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
 							if(bindingBSSID.equals(currBssid)){
 								isStartedForBindingBSSID = true;
-								return;
 							}
 						}
+						return;
 					}
 				}
 				if(detailed == NetworkInfo.DetailedState.CONNECTED){
