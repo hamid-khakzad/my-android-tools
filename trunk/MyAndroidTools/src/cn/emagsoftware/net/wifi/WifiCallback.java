@@ -39,7 +39,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
-	protected String bssid = null;
+	protected String bindingBSSID = null;
+	protected boolean isStartedForBindingBSSID = false;
 	protected int[] autoUnregisterActions = new int[]{};
 	protected int timeout = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
@@ -52,7 +53,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	}
 	
 	public void setBSSID(String bssid){
-		this.bssid = bssid;
+		this.bindingBSSID = bssid;
 	}
 	
 	@Override
@@ -126,33 +127,44 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			onScanResults(results);
 		}else if(action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)){
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-			String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
-				if(bssid == null || bssid.equals(currBssid)){
-					NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-					if(detailed == NetworkInfo.DetailedState.CONNECTED){
-						Log.d("WifiCallback", "receive wifi state -> CONNECTED");
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
-							isDoneForAutoUnregisterActions = true;
-							if(!unregisterMe()) return;
+				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
+				if(bindingBSSID != null){
+					if(!isStartedForBindingBSSID){
+						if(detailed == NetworkInfo.DetailedState.IDLE){
+							isStartedForBindingBSSID = true;
+							return;
+						}else{
+							String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
+							if(bindingBSSID.equals(currBssid)){
+								isStartedForBindingBSSID = true;
+								return;
+							}
 						}
-						onNetworkConnected(wifiUtils.getConnectionInfo());
-					}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-						Log.d("WifiCallback", "receive wifi state -> OBTAINING_IPADDR");
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
-							isDoneForAutoUnregisterActions = true;
-							if(!unregisterMe()) return;
-						}
-						onNetworkObtainingIp(wifiUtils.getConnectionInfo());
-	    			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
-	    				Log.d("WifiCallback", "receive wifi state -> DISCONNECTED");
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
-							isDoneForAutoUnregisterActions = true;
-							if(!unregisterMe()) return;
-						}
-						onNetworkDisconnected(wifiUtils.getConnectionInfo());
-	    			}
+					}
 				}
+				if(detailed == NetworkInfo.DetailedState.CONNECTED){
+					Log.d("WifiCallback", "receive wifi state -> CONNECTED");
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						if(!unregisterMe()) return;
+					}
+					onNetworkConnected(wifiUtils.getConnectionInfo());
+				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+					Log.d("WifiCallback", "receive wifi state -> OBTAINING_IPADDR");
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						if(!unregisterMe()) return;
+					}
+					onNetworkObtainingIp(wifiUtils.getConnectionInfo());
+    			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+    				Log.d("WifiCallback", "receive wifi state -> DISCONNECTED");
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
+						isDoneForAutoUnregisterActions = true;
+						if(!unregisterMe()) return;
+					}
+					onNetworkDisconnected(wifiUtils.getConnectionInfo());
+    			}
 			}
 		}
 	}
