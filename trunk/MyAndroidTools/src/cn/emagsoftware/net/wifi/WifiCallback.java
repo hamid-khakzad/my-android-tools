@@ -149,7 +149,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
 							isDoneForAutoUnregisterActions = true;
 							if(!unregisterMe()) return;
-						}    				
+						}
 						onNetworkDisconnected(wifiUtils.getConnectionInfo());
 	    			}
 				}
