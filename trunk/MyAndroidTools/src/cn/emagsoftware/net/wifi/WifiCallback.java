@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.8
+ * @version 1.9
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -39,19 +39,20 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
+	protected String bssid = null;
 	protected int[] autoUnregisterActions = new int[]{};
 	protected int timeout = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
 	protected boolean isUnregistered = true;
 	
-	protected boolean isNetworkStateRefreshed = false;
-	protected boolean isNetworkStateRefreshedToConnected = false;
-	protected int networkDisconnectedCount = 0;
-	
 	public WifiCallback(Context context){
 		if(context == null) throw new NullPointerException();
 		this.context = context;
 		Arrays.sort(autoUnregisterActions);
+	}
+	
+	public void setBSSID(String bssid){
+		this.bssid = bssid;
 	}
 	
 	@Override
@@ -125,57 +126,33 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			onScanResults(results);
 		}else if(action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)){
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+			String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
-				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-				if(detailed == NetworkInfo.DetailedState.CONNECTED){
-					Log.d("WifiCallback", "receive wifi state -> CONNECTED");
-					if(!isNetworkStateRefreshed) {
-						isNetworkStateRefreshed = true;
-						isNetworkStateRefreshedToConnected = true;
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) < 0) onNetworkConnected(wifiUtils.getConnectionInfo());
-					}else{
+				if(bssid == null || bssid.equals(currBssid)){
+					NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
+					if(detailed == NetworkInfo.DetailedState.CONNECTED){
+						Log.d("WifiCallback", "receive wifi state -> CONNECTED");
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
 							isDoneForAutoUnregisterActions = true;
 							if(!unregisterMe()) return;
 						}
 						onNetworkConnected(wifiUtils.getConnectionInfo());
-					}
-				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-					Log.d("WifiCallback", "receive wifi state -> OBTAINING_IPADDR");
-					if(!isNetworkStateRefreshed) {
-						isNetworkStateRefreshed = true;
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) < 0) onNetworkObtainingIp(wifiUtils.getConnectionInfo());
-					}else{
+					}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+						Log.d("WifiCallback", "receive wifi state -> OBTAINING_IPADDR");
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
 							isDoneForAutoUnregisterActions = true;
 							if(!unregisterMe()) return;
 						}
 						onNetworkObtainingIp(wifiUtils.getConnectionInfo());
-					}
-    			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
-    				Log.d("WifiCallback", "receive wifi state -> DISCONNECTED");
-					if(!isNetworkStateRefreshed) {
-						isNetworkStateRefreshed = true;
-						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) < 0) onNetworkDisconnected(wifiUtils.getConnectionInfo());
-					}else{
-						networkDisconnectedCount = networkDisconnectedCount + 1;
+	    			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+	    				Log.d("WifiCallback", "receive wifi state -> DISCONNECTED");
 						if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
-							if(isNetworkStateRefreshedToConnected){
-								if(networkDisconnectedCount >= 2){
-									isDoneForAutoUnregisterActions = true;
-									if(!unregisterMe()) return;
-									onNetworkDisconnected(wifiUtils.getConnectionInfo());
-								}
-							}else{
-								isDoneForAutoUnregisterActions = true;
-								if(!unregisterMe()) return;
-								onNetworkDisconnected(wifiUtils.getConnectionInfo());
-							}
-						}else{
-							onNetworkDisconnected(wifiUtils.getConnectionInfo());
-						}
-					}
-    			}
+							isDoneForAutoUnregisterActions = true;
+							if(!unregisterMe()) return;
+						}    				
+						onNetworkDisconnected(wifiUtils.getConnectionInfo());
+	    			}
+				}
 			}
 		}
 	}
@@ -241,9 +218,6 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	public boolean unregisterMe(){
 		isDoneForAutoUnregisterActions = true;   //在反注册时置为true，使计时器能够尽快退出
 		isUnregistered = true;
-		isNetworkStateRefreshed = false;
-		isNetworkStateRefreshedToConnected = false;
-		networkDisconnectedCount = 0;
 		try{
 			context.unregisterReceiver(this);
 			return true;

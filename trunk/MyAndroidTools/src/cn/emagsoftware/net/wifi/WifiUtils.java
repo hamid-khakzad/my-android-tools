@@ -269,6 +269,7 @@ public final class WifiUtils {
 			return;
 		}
 		if(callback != null){
+			callback.setBSSID(wc.BSSID);
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_ERROR,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.setTimeout(timeout);
 			callback.registerMe();
@@ -325,6 +326,7 @@ public final class WifiUtils {
 			}
 		}
 		if(callback != null){
+			callback.setBSSID(sr.BSSID);
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_ERROR,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
 			callback.setTimeout(timeout);
 			callback.registerMe();
