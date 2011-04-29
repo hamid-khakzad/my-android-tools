@@ -239,8 +239,15 @@ public class Wifi {
 		}
 		return pri;
 	}
-
-	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final ScanResult hotsopt, String hotspotSecurity) {
+	
+	/**
+	 * Edited by Wendell on 2011.04.29,let the comparison do not necessarily contain security
+	 * @param wifiMgr
+	 * @param hotsopt
+	 * @param compareSecurity
+	 * @return
+	 */
+	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final ScanResult hotsopt, boolean compareSecurity) {
 		final String ssid = convertToQuotedString(hotsopt.SSID);
 		if(ssid.length() == 0) {
 			return null;
@@ -251,9 +258,7 @@ public class Wifi {
 			return null;
 		}
 		
-		if(hotspotSecurity == null) {
-			hotspotSecurity = getScanResultSecurity(hotsopt);
-		}
+		String hotspotSecurity = getScanResultSecurity(hotsopt);
 		
 		final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
 		if(configurations == null) {
@@ -265,6 +270,7 @@ public class Wifi {
 				continue;
 			}
 			if(config.BSSID == null || bssid.equals(config.BSSID)) {
+				if(!compareSecurity) return config;
 				final String configSecurity = getWifiConfigurationSecurity(config);
 				if(hotspotSecurity.equals(configSecurity)) {
 					return config;
