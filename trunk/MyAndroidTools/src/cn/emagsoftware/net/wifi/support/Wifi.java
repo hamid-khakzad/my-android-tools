@@ -79,6 +79,7 @@ public class Wifi {
 	
 	/**
 	 * Configure a network, and connect to it.
+	 * Edited by Wendell on 2011.04.29,use the new 'getWifiConfiguration' method
 	 * @param wifiMgr
 	 * @param scanResult
 	 * @param password Password for secure network or is ignored.
@@ -105,7 +106,7 @@ public class Wifi {
 			return false;
 		}
 		
-		config = getWifiConfiguration(wifiMgr, config, security);
+		config = getWifiConfiguration(wifiMgr, config, true);
 		if(config == null) {
 			return false;
 		}
@@ -115,20 +116,19 @@ public class Wifi {
 	
 	/**
 	 * Connect to a configured network.
+	 * Edited by Wendell on 2011.04.29,use the new 'getWifiConfiguration' method
 	 * @param wifiManager
 	 * @param config
 	 * @param numOpenNetworksKept Settings.Secure.WIFI_NUM_OPEN_NETWORKS_KEPT
 	 * @return
 	 */
 	public static boolean connectToConfiguredNetwork(final Context ctx, final WifiManager wifiMgr, WifiConfiguration config, boolean reassociate) {
-		final String security = getWifiConfigurationSecurity(config);
-		
 		int oldPri = config.priority;
 		// Make it the highest priority.
 		int newPri = getMaxPriority(wifiMgr) + 1;
 		if(newPri > MAX_PRIORITY) {
 			newPri = shiftPriorityAndSave(wifiMgr);
-			config = getWifiConfiguration(wifiMgr, config, security);
+			config = getWifiConfiguration(wifiMgr, config, true);
 			if(config == null) {
 				return false;
 			}
@@ -153,7 +153,7 @@ public class Wifi {
 		}
 		
 		// We have to retrieve the WifiConfiguration after save.
-		config = getWifiConfiguration(wifiMgr, config, security);
+		config = getWifiConfiguration(wifiMgr, config, true);
 		if(config == null) {
 			return false;
 		}
@@ -280,18 +280,22 @@ public class Wifi {
 		return null;
 	}
 	
-	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final WifiConfiguration configToFind, String security) {
+	/**
+	 * Edited by Wendell on 2011.04.29,let the comparison do not necessarily contain security
+	 * @param wifiMgr
+	 * @param configToFind
+	 * @param compareSecurity
+	 * @return
+	 */
+	public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final WifiConfiguration configToFind, boolean compareSecurity) {
 		final String ssid = configToFind.SSID;
 		if(ssid.length() == 0) {
 			return null;
 		}
 		
 		final String bssid = configToFind.BSSID;
-
 		
-		if(security == null) {
-			security = getWifiConfigurationSecurity(configToFind);
-		}
+		String security = getWifiConfigurationSecurity(configToFind);
 		
 		final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
 
@@ -300,6 +304,7 @@ public class Wifi {
 				continue;
 			}
 			if(config.BSSID == null || bssid == null || bssid.equals(config.BSSID)) {
+				if(!compareSecurity) return config;
 				final String configSecurity = getWifiConfigurationSecurity(config);
 				if(security.equals(configSecurity)) {
 					return config;
