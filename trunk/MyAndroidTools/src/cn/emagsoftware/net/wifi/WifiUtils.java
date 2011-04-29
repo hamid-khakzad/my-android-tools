@@ -81,12 +81,20 @@ public final class WifiUtils {
 		return wifiManager.getConfiguredNetworks();
 	}
 	
-	public WifiConfiguration getConfiguration(ScanResult sr){
-		return Wifi.getWifiConfiguration(wifiManager, sr, null);
+	public WifiConfiguration getConfiguration(ScanResult sr,boolean compareSecurity){
+		return Wifi.getWifiConfiguration(wifiManager, sr, compareSecurity);
+	}
+	
+	public WifiConfiguration getConfiguration(WifiConfiguration wc,boolean compareSecurity){
+		return Wifi.getWifiConfiguration(wifiManager, wc, compareSecurity);
 	}
 	
 	public String getScanResultSecurity(ScanResult sr){
 		return Wifi.getScanResultSecurity(sr);
+	}
+	
+	public void setupSecurity(WifiConfiguration wc,String security,String password){
+		Wifi.setupSecurity(wc, security, password);
 	}
 	
 	public boolean disconnect(){
@@ -308,10 +316,10 @@ public final class WifiUtils {
 			}
 			return;
 		}
-		WifiConfiguration old = getConfiguration(sr);
+		WifiConfiguration old = getConfiguration(sr,false);
 		if(old != null){
 			String security = getScanResultSecurity(sr);
-			Wifi.setupSecurity(old, security, password);
+			setupSecurity(old, security, password);
 			if(!wifiManager.saveConfiguration()) {
 				if(callback != null) {
 					handler.post(new Runnable() {
