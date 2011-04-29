@@ -39,8 +39,9 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
-	protected String bindingBSSID = null;
-	protected boolean isStartedForBindingBSSID = false;
+	protected String bindBSSID = null;
+	protected boolean isBindedBSSID = false;
+	protected boolean isStartedForBindBSSID = false;
 	protected int[] autoUnregisterActions = new int[]{};
 	protected int timeout = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
@@ -52,8 +53,14 @@ public abstract class WifiCallback extends BroadcastReceiver {
 		Arrays.sort(autoUnregisterActions);
 	}
 	
-	public void setBSSID(String bssid){
-		this.bindingBSSID = bssid;
+	public void bindBSSID(String bssid){
+		bindBSSID = bssid;
+		isBindedBSSID = true;
+	}
+	
+	public void unBindBSSID(){
+		bindBSSID = null;
+		isBindedBSSID = false;
 	}
 	
 	@Override
@@ -129,11 +136,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
 				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-				if(bindingBSSID != null){
-					if(!isStartedForBindingBSSID){
+				if(isBindedBSSID){
+					if(!isStartedForBindBSSID){
 						String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
-						if(currBssid == null || bindingBSSID.equals(currBssid)){
-							isStartedForBindingBSSID = true;
+						if(bindBSSID == null || currBssid == null || bindBSSID.equals(currBssid)){
+							isStartedForBindBSSID = true;
 						}
 						Log.d("WifiCallback", "give up wifi state -> " + detailed);
 						return;
