@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 1.9
+ * @version 2.0
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -39,8 +39,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
-	protected String bindBSSID = null;
-	protected boolean isBindedBSSID = false;
+	protected String bindBSSID = "";
 	protected boolean isStartedForBindBSSID = false;
 	protected int[] autoUnregisterActions = new int[]{};
 	protected int timeout = 0;
@@ -53,14 +52,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 		Arrays.sort(autoUnregisterActions);
 	}
 	
-	public void bindBSSID(String bssid){
+	public void setBSSID(String bssid){
+		//OPhone在获取WifiConfiguration的BSSID时可能为null，所以这里显式抛出异常，方面外部快速发现并做调整。取消设置可传入一个空字符串而非null
+		if(bssid == null) throw new NullPointerException("BSSID could not be set to null,if you want to cancel setting,use the empty string instead.");
 		bindBSSID = bssid;
-		isBindedBSSID = true;
-	}
-	
-	public void unBindBSSID(){
-		bindBSSID = null;
-		isBindedBSSID = false;
 	}
 	
 	@Override
@@ -136,10 +131,10 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
 				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-				if(isBindedBSSID){
+				if(!bindBSSID.equals("")){
 					if(!isStartedForBindBSSID){
 						String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
-						if(bindBSSID == null || currBssid == null || bindBSSID.equals(currBssid)){
+						if(detailed == NetworkInfo.DetailedState.IDLE || bindBSSID.equals(currBssid)){
 							isStartedForBindBSSID = true;
 						}
 						Log.d("WifiCallback", "give up wifi state -> " + detailed);
