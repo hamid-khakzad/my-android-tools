@@ -33,14 +33,16 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	public static final int ACTION_WIFI_DISABLING = 3;
 	public static final int ACTION_ERROR = 4;
 	public static final int ACTION_SCAN_RESULTS = 5;
-	public static final int ACTION_NETWORK_CONNECTED = 6;
+	public static final int ACTION_NETWORK_SCANNING = 6;
 	public static final int ACTION_NETWORK_OBTAININGIP = 7;
-	public static final int ACTION_NETWORK_DISCONNECTED = 8;
+	public static final int ACTION_NETWORK_CONNECTED = 8;
+	public static final int ACTION_NETWORK_DISCONNECTED = 9;
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
-	protected String bindBSSID = "";
-	protected boolean isStartedForBindBSSID = false;
+	protected boolean isNetCallbackUntilNew = false;
+	protected boolean isBeginForNetCallbackUntilNew = false;
+	protected NetworkInfo.DetailedState lastDetailed = null;
 	protected int[] autoUnregisterActions = new int[]{};
 	protected int timeout = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
@@ -52,10 +54,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 		Arrays.sort(autoUnregisterActions);
 	}
 	
-	public void setBSSID(String bssid){
-		//OPhone在获取WifiConfiguration的BSSID时可能为null，所以这里显式抛出异常，方面外部快速发现并做调整。取消设置可传入一个空字符串而非null
-		if(bssid == null) throw new NullPointerException("BSSID could not be set to null,if you want to cancel setting,use the empty string instead.");
-		bindBSSID = bssid;
+	public void setNetCallbackUntilNew(boolean isUntilNew){
+		this.isNetCallbackUntilNew = isUntilNew;
 	}
 	
 	@Override
@@ -131,31 +131,61 @@ public abstract class WifiCallback extends BroadcastReceiver {
 			NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
 			if(networkInfo.getType() == ConnectivityManager.TYPE_WIFI){
 				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-				if(!bindBSSID.equals("")){
-					if(!isStartedForBindBSSID){
-						String currBssid = arg1.getStringExtra(WifiManager.EXTRA_BSSID);
-						if(detailed == NetworkInfo.DetailedState.IDLE || bindBSSID.equals(currBssid)){
-							isStartedForBindBSSID = true;
+				if(isNetCallbackUntilNew){
+					if(!isBeginForNetCallbackUntilNew){
+						if(detailed == NetworkInfo.DetailedState.IDLE || detailed == NetworkInfo.DetailedState.SCANNING){
+							isBeginForNetCallbackUntilNew = true;
+						}else{
+							if(lastDetailed == null){
+								lastDetailed = detailed;
+								Log.d("WifiCallback", "give up wifi state -> " + detailed);
+								return;
+							}
+							if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+								if(lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+									lastDetailed = detailed;
+									Log.d("WifiCallback", "give up wifi state -> " + detailed);
+									return;
+								}
+							}else if(detailed == NetworkInfo.DetailedState.CONNECTED){
+								if(lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+									lastDetailed = detailed;
+									Log.d("WifiCallback", "give up wifi state -> " + detailed);
+									return;
+								}
+							}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+								if(lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR || lastDetailed == NetworkInfo.DetailedState.CONNECTED || lastDetailed == NetworkInfo.DetailedState.DISCONNECTED){
+									lastDetailed = detailed;
+									Log.d("WifiCallback", "give up wifi state -> " + detailed);
+									return;
+								}
+							}
+							isBeginForNetCallbackUntilNew = true;
 						}
-						Log.d("WifiCallback", "give up wifi state -> " + detailed);
-						return;
 					}
 				}
-				if(detailed == NetworkInfo.DetailedState.CONNECTED){
-					Log.d("WifiCallback", "receive wifi state -> CONNECTED");
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
+				if(detailed == NetworkInfo.DetailedState.SCANNING){
+					Log.d("WifiCallback", "receive wifi state -> SCANNING");
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_SCANNING) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						if(!unregisterMe()) return;
 					}
-					onNetworkConnected(wifiUtils.getConnectionInfo());
-				}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+					onNetworkScanning(wifiUtils.getConnectionInfo());
+    			}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
 					Log.d("WifiCallback", "receive wifi state -> OBTAINING_IPADDR");
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						if(!unregisterMe()) return;
 					}
 					onNetworkObtainingIp(wifiUtils.getConnectionInfo());
-    			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+    			}else if(detailed == NetworkInfo.DetailedState.CONNECTED){
+					Log.d("WifiCallback", "receive wifi state -> CONNECTED");
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
+						isDoneForAutoUnregisterActions = true;
+						if(!unregisterMe()) return;
+					}
+					onNetworkConnected(wifiUtils.getConnectionInfo());
+				}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
     				Log.d("WifiCallback", "receive wifi state -> DISCONNECTED");
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
 						isDoneForAutoUnregisterActions = true;
@@ -179,9 +209,11 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onScanResults(List<ScanResult> scanResults){}
 	
-	public void onNetworkConnected(WifiInfo wifiInfo){}
+	public void onNetworkScanning(WifiInfo wifiInfo){}
 	
 	public void onNetworkObtainingIp(WifiInfo wifiInfo){}
+	
+	public void onNetworkConnected(WifiInfo wifiInfo){}
 	
 	public void onNetworkDisconnected(WifiInfo wifiInfo){}
 	
@@ -226,6 +258,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	}
 	
 	public boolean unregisterMe(){
+		isBeginForNetCallbackUntilNew = false;
+		lastDetailed = null;
 		isDoneForAutoUnregisterActions = true;   //在反注册时置为true，使计时器能够尽快退出
 		isUnregistered = true;
 		try{
