@@ -332,6 +332,8 @@ public final class WifiUtils {
 				}
 				return;
 			}
+			connect(old, callback, timeout);
+			return;
 		}
 		if(callback != null){
 			callback.setNetCallbackUntilNew(true);
@@ -339,9 +341,7 @@ public final class WifiUtils {
 			callback.setTimeout(timeout);
 			callback.registerMe();
 		}
-		boolean circs;
-		if(old != null) circs = Wifi.connectToConfiguredNetwork(context, wifiManager, old, true);
-		else circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);
+		boolean circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);
 		if(!circs) if(callback != null) {
 			if(callback.unregisterMe()){
 				handler.post(new Runnable() {
