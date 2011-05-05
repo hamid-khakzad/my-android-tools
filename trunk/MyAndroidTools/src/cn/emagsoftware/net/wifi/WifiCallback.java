@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 2.2
+ * @version 2.3
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -168,29 +168,31 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						}
 					}
 				}
-				if(detailed == NetworkInfo.DetailedState.SCANNING){
-					Log.d("WifiCallback", "receive wifi state -> SCANNING");
+				if(detailed == NetworkInfo.DetailedState.IDLE){
+					Log.d("WifiCallback", "receive wifi state -> " + detailed);
+				}else if(detailed == NetworkInfo.DetailedState.SCANNING){
+					Log.d("WifiCallback", "receive wifi state -> " + detailed);
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_SCANNING) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						if(!unregisterMe()) return;
 					}
 					onNetworkScanning(wifiUtils.getConnectionInfo());
     			}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-					Log.d("WifiCallback", "receive wifi state -> OBTAINING_IPADDR");
+    				Log.d("WifiCallback", "receive wifi state -> " + detailed);
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						if(!unregisterMe()) return;
 					}
 					onNetworkObtainingIp(wifiUtils.getConnectionInfo());
     			}else if(detailed == NetworkInfo.DetailedState.CONNECTED){
-					Log.d("WifiCallback", "receive wifi state -> CONNECTED");
+    				Log.d("WifiCallback", "receive wifi state -> " + detailed);
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
 						isDoneForAutoUnregisterActions = true;
 						if(!unregisterMe()) return;
 					}
 					onNetworkConnected(wifiUtils.getConnectionInfo());
 				}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
-    				Log.d("WifiCallback", "receive wifi state -> DISCONNECTED");
+					Log.d("WifiCallback", "receive wifi state -> " + detailed);
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
 						isDoneForAutoUnregisterActions = true;
 						if(!unregisterMe()) return;
