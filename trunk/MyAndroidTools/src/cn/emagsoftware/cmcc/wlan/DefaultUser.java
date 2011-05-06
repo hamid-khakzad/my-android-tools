@@ -251,8 +251,9 @@ class DefaultUser extends User {
 				Log.e("DefaultUser", "parsing code from logining result page failed.", e);
 				return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
 			}
+			Log.d("DefaultUser", "logging returns code:"+code);
 			if(code == 1 || code == 3) return User.RETURN_FALSE_NAME_OR_PWD_WRONG;   //用户名或密码有误
-			else if(code == 55) return User.RETURN_FALSE_ALREADY_LOGIN;    //当前帐户已登录
+			else if(code == 26 || code == 55) return User.RETURN_FALSE_ALREADY_LOGIN;    //当前帐户已登录
 			else if(code != 0) return User.RETURN_FALSE_GENERIC;    //其他登录失败情况
 			try{
 				//when it is login response html, extract the parameters
