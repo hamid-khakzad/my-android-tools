@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -29,9 +31,9 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 	protected Float tabTextSize;
 	protected Integer selectedTabTextColor;
 	protected Integer unSelectedTabTextColor;
-	protected Integer selectedTabBg;
-	protected Integer unSelectedTabBg;
-	protected Integer tabSeparatorBg;
+	protected Drawable selectedTabBg;
+	protected Drawable unSelectedTabBg;
+	protected Drawable tabSeparatorBg;
 	
 	protected GestureDetector gestureDetector = null;
 	protected OnTabChangedListener onTabChangedListener = null;
@@ -81,6 +83,12 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 				return false;
 			}
 		});
+		//默认UI设置
+        setTabTextSize(14);
+        setTabTextColor(Color.WHITE, Color.GRAY);
+        setTabBg(context.getResources().getIdentifier("selector_generic_tab_sel","drawable",context.getPackageName()), context.getResources().getIdentifier("selector_generic_tab","drawable",context.getPackageName()));
+        setTabSeparatorBg(context.getResources().getIdentifier("shape_generic_tab_separator","drawable",context.getPackageName()));
+        setTabShadowBg(context.getResources().getIdentifier("shape_generic_tab_shadow","drawable",context.getPackageName()));
 	}
 	
 	public void setTabTextSize(float size){
@@ -101,31 +109,43 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 		this.unSelectedTabTextColor = unselectedColor;
 	}
 	
-	public void setTabBg(int selectedResId,int unselectedResId){
+	public void setTabBg(Drawable selectedDrawable,Drawable unselectedDrawable){
 		for(int i = 0;i < titles.size();i++){
 			Button title = titles.get(i);
-			if(title == selectedTitle) title.setBackgroundResource(selectedResId);
-			else title.setBackgroundResource(unselectedResId);
+			if(title == selectedTitle) title.setBackgroundDrawable(selectedDrawable);
+			else title.setBackgroundDrawable(unselectedDrawable);
 		}
-		this.selectedTabBg = selectedResId;
-		this.unSelectedTabBg = unselectedResId;
+		this.selectedTabBg = selectedDrawable;
+		this.unSelectedTabBg = unselectedDrawable;
 	}
 	
-	public void setTabSeparatorBg(int resId){
+	public void setTabBg(int selectedResId,int unselectedResId){
+		setTabBg(context.getResources().getDrawable(selectedResId),context.getResources().getDrawable(unselectedResId));
+	}
+	
+	public void setTabSeparatorBg(Drawable drawable){
 		int addCount = titles.size() - 1;
 		int addIndex = 1;
 		for(int i = 0;i < addCount;i++){
 			Button separator = new Button(context);
 			separator.setPadding(0, separator.getPaddingTop(), 0, separator.getPaddingBottom());
-			separator.setBackgroundResource(resId);
+			separator.setBackgroundDrawable(drawable);
 			titleBox.addView(separator, addIndex);
 			addIndex = addIndex + 2;
 		}
-		this.tabSeparatorBg = resId;
+		this.tabSeparatorBg = drawable;
+	}
+	
+	public void setTabSeparatorBg(int resId){
+		setTabSeparatorBg(context.getResources().getDrawable(resId));
+	}
+	
+	public void setTabShadowBg(Drawable drawable){
+		titleShadowBox.setBackgroundDrawable(drawable);
 	}
 	
 	public void setTabShadowBg(int resId){
-		titleShadowBox.setBackgroundResource(resId);
+		setTabShadowBg(context.getResources().getDrawable(resId));
 	}
 	
 	public void addTab(String title,View content){
@@ -133,7 +153,7 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 		if(tabSeparatorBg != null && getTabCount() > 0){
 			Button separator = new Button(context);
 			separator.setPadding(0, separator.getPaddingTop(), 0, separator.getPaddingBottom());
-			separator.setBackgroundResource(tabSeparatorBg);
+			separator.setBackgroundDrawable(tabSeparatorBg);
 			titleBox.addView(separator, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.FILL_PARENT));
 		}
 		
@@ -154,11 +174,11 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 		
 		if(selectedTitle == null) {   //当前容器没有选中的Tab，即当前容器没有Tab
 			if(selectedTabTextColor != null) titleBtn.setTextColor(selectedTabTextColor);
-			if(selectedTabBg != null) titleBtn.setBackgroundResource(selectedTabBg);
+			if(selectedTabBg != null) titleBtn.setBackgroundDrawable(selectedTabBg);
 			selectedTitle = titleBtn;
 		}else {
 			if(unSelectedTabTextColor != null) titleBtn.setTextColor(unSelectedTabTextColor);
-			if(unSelectedTabBg != null) titleBtn.setBackgroundResource(unSelectedTabBg);
+			if(unSelectedTabBg != null) titleBtn.setBackgroundDrawable(unSelectedTabBg);
 			content.setVisibility(View.GONE);
 		}
 	}
@@ -203,14 +223,14 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 		
 		if(selectedTitle != null){
 			if(unSelectedTabTextColor != null) selectedTitle.setTextColor(unSelectedTabTextColor);
-			if(unSelectedTabBg != null) selectedTitle.setBackgroundResource(unSelectedTabBg);
+			if(unSelectedTabBg != null) selectedTitle.setBackgroundDrawable(unSelectedTabBg);
 			View oldContent = contents.get(selectedTitle);
 			oldContent.setVisibility(View.GONE);
 		}
 		
 		Button newTitle = (Button)v;
 		if(selectedTabTextColor != null) newTitle.setTextColor(selectedTabTextColor);
-		if(selectedTabBg != null) newTitle.setBackgroundResource(selectedTabBg);
+		if(selectedTabBg != null) newTitle.setBackgroundDrawable(selectedTabBg);
 		View newContent = contents.get(newTitle);
 		newContent.setVisibility(View.VISIBLE);
 		selectedTitle = newTitle;
