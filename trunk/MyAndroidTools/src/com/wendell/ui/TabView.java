@@ -28,7 +28,7 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 	
 	protected Float tabTextSize;
 	protected Integer selectedTabTextColor;
-	protected Integer unSelectedTabTextColor;	
+	protected Integer unSelectedTabTextColor;
 	protected Integer selectedTabBg;
 	protected Integer unSelectedTabBg;
 	protected Integer tabSeparatorBg;
