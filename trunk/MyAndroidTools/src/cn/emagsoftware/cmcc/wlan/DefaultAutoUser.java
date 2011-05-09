@@ -62,14 +62,19 @@ class DefaultAutoUser extends AutoUser {
 			ScriptTag st = (ScriptTag)nl.elementAt(0);
 			String scriptCode = st.getScriptCode();
 			int index = 0;
-			while(true){    //排除var showurl被注释掉的情况
-				index = scriptCode.indexOf("var showurl",index);
+			while(true){    //排除showurl被注释掉的情况
+				index = scriptCode.indexOf("showurl",index);
 				if(index == -1) throw new ParserException();
 				index = index + 1;
 				String beforeShowurl = scriptCode.substring(0, index);
 				int lineIndex = beforeShowurl.lastIndexOf("\n");
-				if(lineIndex != -1 && beforeShowurl.substring(lineIndex).contains("//")) continue;
-				else break;
+				if(lineIndex == -1){
+					if(beforeShowurl.contains("//")) continue;    //不考虑字符串中含有//的情况
+					else break;
+				}else{
+					if(beforeShowurl.substring(lineIndex).contains("//")) continue;    //不考虑字符串中含有//的情况
+					else break;
+				}
 			}
 			int begin = scriptCode.indexOf("\"", index);
 			if(begin == -1){
@@ -82,7 +87,7 @@ class DefaultAutoUser extends AutoUser {
 			url = StringUtilities.replaceWordsAll(url, " ", "");
 			url = StringUtilities.replaceWordsAll(url, "\"", "");
 			url = StringUtilities.replaceWordsAll(url, "\'", "");
-			url = StringUtilities.replaceWordsAll(url, "+username+", super.userName);
+			url = StringUtilities.replaceWordsAll(url, "+username", super.userName);
 			url = StringUtilities.replaceWordsAll(url, "+math.random()", String.valueOf(MathUtilities.Random(10000)));
 			url = StringUtilities.replaceWordsAll(url, "+", "");
 			if(url.startsWith("./")){    //解析路径
