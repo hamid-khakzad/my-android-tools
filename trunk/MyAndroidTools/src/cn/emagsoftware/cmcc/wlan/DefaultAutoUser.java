@@ -24,7 +24,7 @@ import com.wendell.util.StringUtilities;
 
 class DefaultAutoUser extends AutoUser {
 	
-	protected static final String GUIDE_URL = "http://221.176.1.140/wlan/index.php?wlanuserip=10.0.216.182&wlanacname=0003.0025.250.00&wlanacip=221.178.160.66";
+	protected static final String GUIDE_URL = "http://www.baidu.com";
 	protected static final String GUIDE_HOST = "www.baidu.com";
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
