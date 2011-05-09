@@ -3,8 +3,6 @@ package com.wendell.ui.dialog;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.wendell.ui.R;
-
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -49,15 +47,15 @@ public class ThemeDialog extends Dialog implements android.view.View.OnClickList
 		this.context = context;
 		getWindow().requestFeature(Window.FEATURE_NO_TITLE);
 		getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));		
-		setContentView(R.layout.themedialog);
-		icon = (ImageView)findViewById(R.id.ImageView01);
-		title = (TextView)findViewById(R.id.TextView01);
-		content = (LinearLayout)findViewById(R.id.LinearLayout04);
-		message = (TextView)findViewById(R.id.TextView02);
-		buttonsLayout = (LinearLayout)findViewById(R.id.LinearLayout05);
-		buttonPositive = (Button)findViewById(R.id.Button01);
-		buttonNeutral = (Button)findViewById(R.id.Button02);
-		buttonNegative = (Button)findViewById(R.id.Button03);
+		setContentView(context.getResources().getIdentifier("themedialog", "layout", context.getPackageName()));
+		icon = (ImageView)findViewById(context.getResources().getIdentifier("ImageView01", "id", context.getPackageName()));
+		title = (TextView)findViewById(context.getResources().getIdentifier("TextView01", "id", context.getPackageName()));
+		content = (LinearLayout)findViewById(context.getResources().getIdentifier("LinearLayout04", "id", context.getPackageName()));
+		message = (TextView)findViewById(context.getResources().getIdentifier("TextView02", "id", context.getPackageName()));
+		buttonsLayout = (LinearLayout)findViewById(context.getResources().getIdentifier("LinearLayout05", "id", context.getPackageName()));
+		buttonPositive = (Button)findViewById(context.getResources().getIdentifier("Button01", "id", context.getPackageName()));
+		buttonNeutral = (Button)findViewById(context.getResources().getIdentifier("Button02", "id", context.getPackageName()));
+		buttonNegative = (Button)findViewById(context.getResources().getIdentifier("Button03", "id", context.getPackageName()));
 		buttonPositive.setOnClickListener(this);
 		buttonNeutral.setOnClickListener(this);
 		buttonNegative.setOnClickListener(this);
