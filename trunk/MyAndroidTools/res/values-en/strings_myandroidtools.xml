@@ -1,3 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources>    
+    <string name="DefaultAutoUser_username_empty">User name can not be empty</string>
+    <string name="DefaultAutoUser_password_empty">Password can not be empty</string>
+    <string name="DefaultAutoUser_requestpwd_alreadylogin">The user has logged in, can not get dynamic password</string>
+    <string name="DefaultAutoUser_login_cancel">Cancelled Login</string>
+    <string name="DefaultAutoUser_net_error">Network Error</string>
+    <string name="DefaultAutoUser_parse_error">Parse error</string>
+    
 </resources>
