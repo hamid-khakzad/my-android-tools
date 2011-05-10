@@ -18,6 +18,8 @@ import org.htmlparser.tags.ScriptTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
+import android.util.Log;
+
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
 import com.wendell.util.MathUtilities;
@@ -25,11 +27,12 @@ import com.wendell.util.StringUtilities;
 
 class DefaultAutoUser extends AutoUser {
 	
-	protected static final String GUIDE_URL = "http://221.176.1.140/wlan/index.php?wlanuserip=10.0.216.182&wlanacname=0003.0025.250.00&wlanacip=221.178.160.66";
+	protected static final String GUIDE_URL = "http://www.baidu.com";
 	protected static final String GUIDE_HOST = "www.baidu.com";
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
 	
+	protected boolean isCancelLogin = false;
 	protected String sessionCookie = null;
 	protected String cmccPageUrl = null;
 	protected String cmccPageHtml = null;
@@ -118,8 +121,10 @@ class DefaultAutoUser extends AutoUser {
 			if("rtn_0000".equalsIgnoreCase(responseArr[0])) return null;    //请求成功
 			else return responseArr[1];
 		}catch(IOException e){
+			Log.e("DefaultAutoUser", "requestPassword failed.", e);
 			return "网络错误";
 		}catch(ParserException e){
+			Log.e("DefaultAutoUser", "requestPassword failed.", e);
 			return "解析错误";
 		}
 	}
@@ -127,11 +132,14 @@ class DefaultAutoUser extends AutoUser {
 	@Override
 	public String login() {
 		// TODO Auto-generated method stub
+		isCancelLogin = false;
+		if(isCancelLogin) return "已取消登录";
 		if(super.userName == null) return "用户名不能为空";
 		if(super.password == null) return "密码不能为空";
 		try{
 			boolean isLogged = isLogged();
 			if(isLogged) return null;    //已经登录，将直接返回null表示登录成功
+			if(isCancelLogin) return "已取消登录";
 			Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
 			NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
 			NodeList nl = mHtmlParser.parse(frameFilter);
@@ -141,6 +149,7 @@ class DefaultAutoUser extends AutoUser {
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
 			boolean isSSL = loginUrl.toLowerCase().startsWith("https");
 			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
+			if(isCancelLogin) return "已取消登录";
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
 			FormFilter filter = new FormFilter("autologin");
 			NodeList formList = mHtmlParser.parse(filter);
@@ -163,12 +172,26 @@ class DefaultAutoUser extends AutoUser {
 			}
 			params.put("autousername", super.userName);
 			params.put("autopassword", super.password);
+			if(isCancelLogin) return "已取消登录";
 			String loginResult = doHttpPostContainsRedirect(submitUrl,isSSL,params).getDataString("gb2312");
-			
-			return loginResult;
+			int alertIndex = loginResult.indexOf("alert");
+			if(alertIndex == -1) return null;
+			int begin = loginResult.indexOf("\"",alertIndex);
+			if(begin == -1){
+				begin = loginResult.indexOf("\'",alertIndex);
+				if(begin == -1) throw new ParserException();
+			}
+			int end = loginResult.indexOf("\"",begin + 1);
+			if(end == -1){
+				end = loginResult.indexOf("\'",begin + 1);
+				if(end == -1) throw new ParserException();
+			}
+			return loginResult.substring(begin + 1, end);
 		}catch(IOException e){
+			Log.e("DefaultAutoUser", "logining failed.", e);
 			return "网络错误";
 		}catch(ParserException e){
+			Log.e("DefaultAutoUser", "logining failed.", e);
 			return "解析错误";
 		}
 	}
@@ -176,7 +199,7 @@ class DefaultAutoUser extends AutoUser {
 	@Override
 	public void cancelLogin() {
 		// TODO Auto-generated method stub
-		
+		isCancelLogin = true;
 	}
 	
 	@Override
@@ -261,7 +284,7 @@ class DefaultAutoUser extends AutoUser {
 	@Override
 	public String logout() {
 		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException("Not supported yet");
 	}
 	
 	protected class FormFilter extends NodeClassFilter{
