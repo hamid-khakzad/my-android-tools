@@ -114,7 +114,8 @@ class DefaultAutoUser extends AutoUser {
 			isSSL = url.toLowerCase().startsWith("https");
 			String responseText = doHttpGetContainsRedirect(url,isSSL).getDataString("gb2312");
 			String [] responseArr = responseText.split("@");
-			if(responseArr[0].equals("rtn_0000")) return null;    //请求成功
+			if(responseArr.length != 2) throw new ParserException();
+			if("rtn_0000".equalsIgnoreCase(responseArr[0])) return null;    //请求成功
 			else return responseArr[1];
 		}catch(ParserException e){
 			return "解析错误";
