@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="DefaultAutoUser_islogged_not">当前未登录</string>
-    <string name="DefaultAutoUser_net_error">网络错误</string>
     <string name="DefaultAutoUser_username_empty">用户名不能为空</string>
+    <string name="DefaultAutoUser_password_empty">密码不能为空</string>
     <string name="DefaultAutoUser_requestpwd_alreadylogin">用户已登录，无法获取动态密码</string>
+    <string name="DefaultAutoUser_net_error">网络错误</string>
     <string name="DefaultAutoUser_parse_error">解析错误</string>
     
     
