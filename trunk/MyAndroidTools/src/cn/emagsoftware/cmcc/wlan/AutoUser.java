@@ -2,10 +2,12 @@ package cn.emagsoftware.cmcc.wlan;
 
 import java.io.IOException;
 
+import android.content.Context;
+
 public abstract class AutoUser {
 	
-	public static AutoUser getDefaultImpl(){
-		return new DefaultAutoUser();
+	public static AutoUser getDefaultImpl(Context context){
+		return new DefaultAutoUser(context);
 	}
 	
 	protected String userName = null;
