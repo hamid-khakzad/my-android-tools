@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 2.3
+ * @version 2.4
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -153,12 +153,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 									Log.d("WifiCallback", "give up wifi state -> " + detailed);
 									return;
 								}
-							}else if(detailed == NetworkInfo.DetailedState.CONNECTED){
-								if(lastDetailed == NetworkInfo.DetailedState.SCANNING || lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-									lastDetailed = detailed;
-									Log.d("WifiCallback", "give up wifi state -> " + detailed);
-									return;
-								}
+							}else if(detailed == NetworkInfo.DetailedState.CONNECTED){    //CONNECTED状态的特殊性
 							}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){    //DISCONNECTED状态的特殊性
 								isBeginForNetCallbackUntilNew = true;
 								Log.d("WifiCallback", "give up wifi state -> " + detailed);
