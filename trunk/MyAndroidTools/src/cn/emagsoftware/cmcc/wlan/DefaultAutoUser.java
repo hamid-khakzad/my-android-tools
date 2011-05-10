@@ -18,6 +18,7 @@ import org.htmlparser.tags.ScriptTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.wendell.net.http.HttpConnectionManager;
@@ -32,23 +33,26 @@ class DefaultAutoUser extends AutoUser {
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
 	
+	protected Context context = null;
 	protected boolean isCancelLogin = false;
 	protected String sessionCookie = null;
 	protected String cmccPageUrl = null;
 	protected String cmccPageHtml = null;
 	protected String cmccLoginPageHtml = null;
 	
-	public DefaultAutoUser(){
+	public DefaultAutoUser(Context context){
 		super();
+		if(context == null) throw new NullPointerException();
+		this.context = context;
 	}
 	
 	@Override
 	public String requestPassword() {
 		// TODO Auto-generated method stub
-		if(super.userName == null) return "用户名不能为空";
+		if(super.userName == null) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_username_empty", "string", context.getPackageName()));
 		try{
 			boolean isLogged = isLogged();
-			if(isLogged) return "用户已登录，无法获取动态密码";
+			if(isLogged) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_requestpwd_alreadylogin", "string", context.getPackageName()));
 			Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
 			NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
 			NodeList nl = mHtmlParser.parse(frameFilter);
@@ -122,10 +126,10 @@ class DefaultAutoUser extends AutoUser {
 			else return responseArr[1];
 		}catch(IOException e){
 			Log.e("DefaultAutoUser", "requestPassword failed.", e);
-			return "网络错误";
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
 		}catch(ParserException e){
 			Log.e("DefaultAutoUser", "requestPassword failed.", e);
-			return "解析错误";
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
 		}
 	}
 	
@@ -133,13 +137,13 @@ class DefaultAutoUser extends AutoUser {
 	public String login() {
 		// TODO Auto-generated method stub
 		isCancelLogin = false;
-		if(isCancelLogin) return "已取消登录";
-		if(super.userName == null) return "用户名不能为空";
-		if(super.password == null) return "密码不能为空";
+		if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
+		if(super.userName == null) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_username_empty", "string", context.getPackageName()));
+		if(super.password == null) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_password_empty", "string", context.getPackageName()));
 		try{
 			boolean isLogged = isLogged();
 			if(isLogged) return null;    //已经登录，将直接返回null表示登录成功
-			if(isCancelLogin) return "已取消登录";
+			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
 			NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
 			NodeList nl = mHtmlParser.parse(frameFilter);
@@ -149,7 +153,7 @@ class DefaultAutoUser extends AutoUser {
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
 			boolean isSSL = loginUrl.toLowerCase().startsWith("https");
 			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
-			if(isCancelLogin) return "已取消登录";
+			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
 			FormFilter filter = new FormFilter("autologin");
 			NodeList formList = mHtmlParser.parse(filter);
@@ -172,7 +176,7 @@ class DefaultAutoUser extends AutoUser {
 			}
 			params.put("autousername", super.userName);
 			params.put("autopassword", super.password);
-			if(isCancelLogin) return "已取消登录";
+			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			String loginResult = doHttpPostContainsRedirect(submitUrl,isSSL,params).getDataString("gb2312");
 			int alertIndex = loginResult.indexOf("alert");
 			if(alertIndex == -1) return null;
@@ -189,10 +193,10 @@ class DefaultAutoUser extends AutoUser {
 			return loginResult.substring(begin + 1, end);
 		}catch(IOException e){
 			Log.e("DefaultAutoUser", "logining failed.", e);
-			return "网络错误";
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
 		}catch(ParserException e){
 			Log.e("DefaultAutoUser", "logining failed.", e);
-			return "解析错误";
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
 		}
 	}
 	
