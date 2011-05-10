@@ -8,14 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.htmlparser.Node;
 import org.htmlparser.Parser;
 import org.htmlparser.filters.NodeClassFilter;
+import org.htmlparser.tags.FormTag;
 import org.htmlparser.tags.FrameTag;
+import org.htmlparser.tags.InputTag;
 import org.htmlparser.tags.ScriptTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
-
-import android.util.Log;
 
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
@@ -24,7 +25,7 @@ import com.wendell.util.StringUtilities;
 
 class DefaultAutoUser extends AutoUser {
 	
-	protected static final String GUIDE_URL = "http://www.baidu.com";
+	protected static final String GUIDE_URL = "http://221.176.1.140/wlan/index.php?wlanuserip=10.0.216.182&wlanacname=0003.0025.250.00&wlanacip=221.178.160.66";
 	protected static final String GUIDE_HOST = "www.baidu.com";
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
@@ -42,11 +43,11 @@ class DefaultAutoUser extends AutoUser {
 	public String requestPassword() {
 		// TODO Auto-generated method stub
 		if(super.userName == null) return "用户名不能为空";
-		String result = isLogged();
-		if(result == null) return "用户已登录，无法获取动态密码";
-		Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
-		NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
 		try{
+			boolean isLogged = isLogged();
+			if(isLogged) return "用户已登录，无法获取动态密码";
+			Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
+			NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
 			NodeList nl = mHtmlParser.parse(frameFilter);
 			if(nl == null || nl.size() == 0) throw new ParserException();
 			FrameTag ft = (FrameTag)nl.elementAt(0);
@@ -54,7 +55,6 @@ class DefaultAutoUser extends AutoUser {
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
 			boolean isSSL = loginUrl.toLowerCase().startsWith("https");
 			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
-			
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
 			NodeClassFilter scriptFilter = new NodeClassFilter(ScriptTag.class);
 			nl = mHtmlParser.parse(scriptFilter);
@@ -117,17 +117,60 @@ class DefaultAutoUser extends AutoUser {
 			if(responseArr.length != 2) throw new ParserException();
 			if("rtn_0000".equalsIgnoreCase(responseArr[0])) return null;    //请求成功
 			else return responseArr[1];
-		}catch(ParserException e){
-			return "解析错误";
 		}catch(IOException e){
 			return "网络错误";
+		}catch(ParserException e){
+			return "解析错误";
 		}
 	}
 	
 	@Override
 	public String login() {
 		// TODO Auto-generated method stub
-		return null;
+		if(super.userName == null) return "用户名不能为空";
+		if(super.password == null) return "密码不能为空";
+		try{
+			boolean isLogged = isLogged();
+			if(isLogged) return null;    //已经登录，将直接返回null表示登录成功
+			Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
+			NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
+			NodeList nl = mHtmlParser.parse(frameFilter);
+			if(nl == null || nl.size() == 0) throw new ParserException();
+			FrameTag ft = (FrameTag)nl.elementAt(0);
+			String loginUrl = ft.getAttribute("src");
+			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
+			boolean isSSL = loginUrl.toLowerCase().startsWith("https");
+			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
+			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
+			FormFilter filter = new FormFilter("autologin");
+			NodeList formList = mHtmlParser.parse(filter);
+			if(formList == null || formList.size() == 0) throw new ParserException();
+			FormTag formTag = (FormTag)formList.elementAt(0);
+			String submitUrl = formTag.getFormLocation();
+			if(submitUrl == null || submitUrl.equals("")) throw new ParserException();
+			isSSL = submitUrl.toLowerCase().startsWith("https");
+			//获取表单元素
+			Map<String,String> params = new HashMap<String, String>();
+			NodeList inputTags = formTag.getFormInputs();
+			for (int j = 0; j < inputTags.size(); j++) {
+				Node node = inputTags.elementAt(j);
+				InputTag input = (InputTag) node;
+				String attrName = input.getAttribute("name");
+				String attrValue = input.getAttribute("value");
+				if(attrName != null && attrValue != null) {
+					params.put(attrName.trim(), attrValue.trim()); 
+				}
+			}
+			params.put("autousername", super.userName);
+			params.put("autopassword", super.password);
+			String loginResult = doHttpPostContainsRedirect(submitUrl,isSSL,params).getDataString("gb2312");
+			
+			return loginResult;
+		}catch(IOException e){
+			return "网络错误";
+		}catch(ParserException e){
+			return "解析错误";
+		}
 	}
 	
 	@Override
@@ -137,24 +180,19 @@ class DefaultAutoUser extends AutoUser {
 	}
 	
 	@Override
-	public String isLogged() {
+	public boolean isLogged() throws IOException {
 		// TODO Auto-generated method stub
-		try{
-			HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL,false);
-			URL url = result.getResponseURL();
-			String host = url.getHost();
-			String html = result.getDataString("gb2312");
-			if(GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0) {   //若能访问到原始站点，证明已登录
-				return null;
-			}
-			//若不能访问原始站点，即重定向到了CMCC页面
-			this.cmccPageUrl = url.toString();
-			this.cmccPageHtml = html;
-			return "当前未登录";
-		}catch(IOException e){
-			Log.e("DefaultAutoUser", "requesting "+GUIDE_URL+" failed.", e);
-			return "网络错误";
+		HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL,false);
+		URL url = result.getResponseURL();
+		String host = url.getHost();
+		String html = result.getDataString("gb2312");
+		if(GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0) {   //若能访问到原始站点，证明已登录
+			return true;
 		}
+		//若不能访问原始站点，即重定向到了CMCC页面
+		this.cmccPageUrl = url.toString();
+		this.cmccPageHtml = html;
+		return false;
 	}
 	
 	protected HttpResponseResult doHttpGetContainsRedirect(String url,boolean isSSL) throws IOException {
@@ -224,6 +262,27 @@ class DefaultAutoUser extends AutoUser {
 	public String logout() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	protected class FormFilter extends NodeClassFilter{
+		private static final long serialVersionUID = 1L;
+		protected String formName = null;
+		public FormFilter(String formName) {
+			super(FormTag.class);
+			this.formName = formName;
+		}
+		@Override
+		public boolean accept(Node node) {
+			if (super.accept(node)) {
+				if (node instanceof FormTag) {
+					FormTag form = (FormTag) node;
+					if (formName != null & formName.equals(form.getFormName())) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
 	}
 	
 }

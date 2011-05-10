@@ -1,5 +1,7 @@
 package cn.emagsoftware.cmcc.wlan;
 
+import java.io.IOException;
+
 public abstract class AutoUser {
 	
 	public static AutoUser getDefaultImpl(){
@@ -35,9 +37,10 @@ public abstract class AutoUser {
 	public abstract void cancelLogin();
 	
 	/**
-	 * @return 成功返回null，失败将返回具体描述信息
+	 * @return 已登录返回true，否则返回false
+	 * @throws IOException
 	 */
-	public abstract String isLogged();
+	public abstract boolean isLogged() throws IOException;
 	
 	/**
 	 * @return 成功返回null，失败将返回具体描述信息
