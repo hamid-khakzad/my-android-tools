@@ -11,10 +11,12 @@ import android.graphics.drawable.Drawable;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 
 public class TabView extends LinearLayout implements OnClickListener,OnTouchListener {
 	
@@ -48,7 +50,9 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 		this.titleShadowBox = new LinearLayout(context);
 		addView(titleShadowBox, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 		this.contentBox = new LinearLayout(context);
-		addView(contentBox, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT));
+		ScrollView contentWrap = new ScrollView(context);
+		contentWrap.addView(contentBox,new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.FILL_PARENT));
+		addView(contentWrap, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT));
 		gestureDetector = new GestureDetector(new OnGestureBaseListener(){
 			@Override
 			public boolean onSwipeBottom(MotionEvent e1, MotionEvent e2,float velocityX, float velocityY) {
@@ -84,7 +88,7 @@ public class TabView extends LinearLayout implements OnClickListener,OnTouchList
 			}
 		});
 		//ƒ¨»œUI…Ë÷√
-        setTabTextSize(14);
+        setTabTextSize(16);
         setTabTextColor(Color.WHITE, Color.GRAY);
         setTabBg(context.getResources().getIdentifier("selector_generic_tab_sel","drawable",context.getPackageName()), context.getResources().getIdentifier("selector_generic_tab","drawable",context.getPackageName()));
         setTabSeparatorBg(context.getResources().getIdentifier("shape_generic_tab_separator","drawable",context.getPackageName()));
