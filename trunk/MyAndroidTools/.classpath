@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="lib/htmlparser/sitecapturer.jar"/>
 	<classpathentry kind="lib" path="lib/htmlparser/thumbelina.jar"/>
 	<classpathentry kind="lib" path="lib/jxl-2.6.9.jar"/>
+	<classpathentry kind="lib" path="lib/g3wlanservice.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
