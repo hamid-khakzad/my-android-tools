@@ -1,30 +1,28 @@
 package cn.emagsoftware.cmcc.wlan;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
 
 import com.chinamobile.g3wlan.export.G3WlanStatus;
 import com.chinamobile.g3wlan.export.ServiceCore;
 import com.chinamobile.g3wlan.export.ServiceInterface;
 
-public class CMCCImplUser extends User {
+public class CMCCImplUser {
 	
+	private static final String TAG = CMCCImplUser.class.getSimpleName();
+	protected Context context = null;
 	protected ServiceInterface serviceCore = null;
 	
-	public CMCCImplUser(Context context, String userName, String password) {
-		super(userName,password);
+	public CMCCImplUser(Context context) {
+		this.context = context;
 		serviceCore = new ServiceCore(context);
-
 		InitHelper w = new InitHelper();
 		Thread t = new Thread(w);
 		t.start();
 	}
-
+	
 	class InitHelper implements Runnable {
 		public void run() {
 			init();
@@ -44,98 +42,62 @@ public class CMCCImplUser extends User {
 			System.out.println("EXIT: " + txt);
 		}
 	}
-
-	public int login(String IMSI, String user, String password) {
-//		LoginHelper helper = new LoginHelper(IMSI, user, password);
-//		Thread t = new Thread(helper);
-//		t.start();
-		return serviceCore.login(IMSI, user, password, 0);
-	}
-
-	public static boolean isNullStr(String str) {
-		if (null == str || "null".equals(str) || "".equals(str.trim())) {
-			return true;
-		}
-		return false;
-	}
-
-	class LoginHelper implements Runnable {
-		/**
-		 * @param iMSI
-		 * @param user
-		 * @param password
-		 */
-		public LoginHelper(String iMSI, String user, String password) {
-			super();
-			IMSI = iMSI;
-			this.user = user;
-			this.password = password;
-		}
-
-		String IMSI;
-		String user;
-		String password;
-
-		public void run() {
-
-			if (isNullStr(user) || isNullStr(password)) {
-				System.out.println("Checking profile");
-				List<String> profile = serviceCore.getProfile(IMSI);
-				System.out.println("current profile " + profile);
-				if (profile.size() > 0) {
-					System.out.println("Profile already registered");
-				} else {
-					System.out.println("Exit: Profile not registered");
-					// return;
-				}
+	
+	public int login(String IMSI,String user,String password) {
+		// TODO Auto-generated method stub
+		if(isNullStr(user) || isNullStr(password)){
+			System.out.println("Checking profile");
+			List<String> profile = serviceCore.getProfile(IMSI);
+			System.out.println("current profile "+profile);
+			if(profile.size()>0){
+				System.out.println("Profile already registered");
+			}else{
+				System.out.println("Exit: Profile not registered");
+//				return;
 			}
-
-			System.out.println("Logging in...");
-
-			int ret = serviceCore.login(IMSI, user, password, 0);
-			System.out.println("login result " + ret);
-
-			checkLoginStatus();
 		}
+		System.out.println("Logging in...");
+		int ret = serviceCore.login(IMSI, user, password, 0);
+		System.out.println("login result " + ret);
+		return checkLoginStatus();		
 	}
-
-	int waitStatus(ServiceInterface serviceCore, Integer[] states, long timeout) {
-
+	
+	public static boolean isNullStr(String str){
+	    if(null==str || "null".equals(str) || "".equals(str.trim())
+	            ){
+	        return true;
+	    }
+	    return false;
+	}
+	
+	int waitStatus(ServiceInterface serviceCore, Integer[] states, long timeout){		
 		long now = System.currentTimeMillis();
 		long s = now;
-		long e = s + timeout;
+		long e = s+timeout;
 		int st = -1;
-		while (now < e) {
-
+		while(now<e){			
 			st = serviceCore.getStatus();
-			for (int i = 0; i < states.length; i++) {
-				if (st == states[i]) {
+			for(int i=0;i<states.length;i++){
+				if(st==states[i]){
 					return st;
 				}
-			}
-
+			}			
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
-			}
-
+			}			
 			now = System.currentTimeMillis();
 		}
 		return st;
 	}
-
-	private int status;
-	public int getStatus(){
-		return status;
-	}
 	
-	void checkLoginStatus() {
+	int checkLoginStatus() {
 		Log.d(TAG, "wait status");
-		status = waitStatus(serviceCore, new Integer[] {
+		int status = waitStatus(serviceCore, new Integer[] {
 				G3WlanStatus.LOGGED_IN, G3WlanStatus.AUTH_DATA_REQUIRED,
 				G3WlanStatus.LOGIN_FAIL, G3WlanStatus.SERVICE_UPGRADING,
-				G3WlanStatus.READY // in case cancelled
+				G3WlanStatus.READY //in case cancelled
 				}, 15000);
 
 		Log.d(TAG, "now status " + status);
@@ -146,10 +108,10 @@ public class CMCCImplUser extends User {
 			 * waited long time still logging in, should check error and cancel
 			 * login
 			 */
-			// print("Timeout, cancel login");
-			// serviceCore.cancelLogin();
+//			print("Timeout, cancel login");
+//			serviceCore.cancelLogin();
 			System.out.println("Login timeout");
-
+			
 		} else if (G3WlanStatus.LOGGED_IN == status) {
 			/*
 			 * logged in, client can go ahead for service logic
@@ -180,28 +142,63 @@ public class CMCCImplUser extends User {
 			 * later
 			 */
 			System.out.println("Service upgrading. please try again later");
-		} else if (G3WlanStatus.READY == status) {
+		}
+		else if(G3WlanStatus.READY==status){
 			System.out.println("Login cancelled");
 		}
+		return status;
 	}
 	
 	public void cancelLogin(){
-		CancelLoginHelper c = new CancelLoginHelper();
-		(new Thread(c)).start();
+		int ret = serviceCore.cancelLogin();
+		System.out.println("cancellogin "+ret);
 	}
 	
-	class CancelLoginHelper implements Runnable{
-
-		/* (non-Javadoc)
-		 * @see java.lang.Runnable#run()
-		 */
-		@Override
-		public void run() {
-			int ret = serviceCore.cancelLogin();
-			System.out.println("cancellogin "+ret);
-			checkLoginStatus();
-		}
-		
+	public boolean isLogged() {
+		boolean ret = ((ServiceCore)serviceCore).getCaller().isOnline();
+		System.out.println("isonline "+ret);
+		return ret;
 	}
-
+	
+	/**
+	 * @param force 为ture将强制下线，否则执行一般下线指令
+	 * @return
+	 */
+	public int logout(boolean force) {
+		int ret = -1;
+		if(force){
+			System.out.println("force logging out...");
+			ret = serviceCore.eWalkLogout();
+			System.out.println("logout result "+ret);
+		}else{
+			System.out.println("logging out...");
+			ret = serviceCore.logout();
+			System.out.println("logout result "+ret);
+		}
+        int status = waitStatus(serviceCore,
+        		new Integer[]{
+        		G3WlanStatus.LOGGED_IN,
+        		G3WlanStatus.INIT,
+        		G3WlanStatus.READY,
+        		},
+        		5000);
+        
+        Log.d(TAG, "logout status "+status);
+        
+        switch(status){
+        case G3WlanStatus.INIT:
+        case G3WlanStatus.READY:
+        	System.out.println("logout successful");
+        	break;
+        default:
+        	System.out.println("logout failed");
+        	break;
+        }
+        return status;
+	}
+	
+	public void uninitialize(){
+		serviceCore.uninitialize();
+	}
+	
 }
