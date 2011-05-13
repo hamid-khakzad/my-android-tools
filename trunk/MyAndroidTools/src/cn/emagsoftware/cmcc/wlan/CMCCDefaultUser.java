@@ -12,38 +12,12 @@ import com.chinamobile.g3wlan.export.G3WlanStatus;
 import com.chinamobile.g3wlan.export.ServiceCore;
 import com.chinamobile.g3wlan.export.ServiceInterface;
 
-public class CMCCDefaultUser {
-	protected static final String TAG = "CMCCDefaultUser";
-	protected static final String GUIDE_URL = "http://www.baidu.com";
-	protected static final String GUIDE_HOST = "www.baidu.com";
-	protected static final String GD_JSESSIONID = "JSESSIONID=";
-	protected static final String BJ_PHPSESSID = "PHPSESSID=";
-	protected static final String KEYWORD_CMCCCS = "cmcccs";
-	protected static final String KEYWORD_LOGINREQ = "login_req";
-	protected static final String KEYWORD_LOGINRES = "login_res";
-	protected static final String KEYWORD_OFFLINERES = "offline_res";
-	protected static final String SEPARATOR = "|";
-	protected static final String CMCC_PORTAL_URL = "https://221.176.1.140/wlan/index.php";
-	protected static final String PREFIX_HTTPS = "https";
-	// for redirection
-	protected static final String INDICATOR_REDIRECT_PORTALURL = "portalurl";
-	protected static final String INDICATOR_LOGIN_AC_NAME = "wlanacname";
-	protected static final String INDICATOR_LOGIN_USER_IP = "wlanuserip";
-	// form parameters in cmcc logining page
-	protected static final String CMCC_LOGINFORM_NAME = "loginform";
-	protected static final String INDICATOR_LOGIN_USERNAME = "USER";
-	protected static final String INDICATOR_LOGIN_PASSWORD = "PWD";
-
-	protected boolean isCancelLogin = false;
-	protected String sessionCookie = null;
-	protected String cmccPageHtml = null;
-	protected Map<String, String> cmccLoginPageFields = new HashMap<String, String>();
-
-	Handler msgHandler = null;
-	private ServiceInterface serviceCore = null;
-
-	public CMCCDefaultUser(String userName, String password, Context context) {
-
+public class CMCCDefaultUser extends User {
+	
+	protected ServiceInterface serviceCore = null;
+	
+	public CMCCDefaultUser(Context context, String userName, String password) {
+		super(userName,password);
 		serviceCore = new ServiceCore(context);
 
 		InitHelper w = new InitHelper();
@@ -52,13 +26,11 @@ public class CMCCDefaultUser {
 	}
 
 	class InitHelper implements Runnable {
-
 		public void run() {
 			init();
 		}
 
 		void init() {
-
 			System.out.println("init...");
 			int ready = serviceCore.initialize();
 			if (G3WlanStatus.READY != ready) {
@@ -66,7 +38,6 @@ public class CMCCDefaultUser {
 				return;
 			}
 			System.out.println("service ready");
-
 		}
 
 		void exit(String txt) {
