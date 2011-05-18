@@ -21,6 +21,7 @@ import org.htmlparser.util.ParserException;
 import android.content.Context;
 import android.util.Log;
 
+import com.wendell.net.http.HtmlManager;
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
 import com.wendell.util.MathUtilities;
@@ -32,6 +33,12 @@ class DefaultAutoUser extends AutoUser {
 	protected static final String GUIDE_HOST = "www.baidu.com";
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
+	protected static final String KEYWORD_CMCCCS = "cmcccs";
+	protected static final String KEYWORD_OFFLINERES = "offline_res";
+	protected static final String SEPARATOR = "|";
+	protected static final String CMCC_PORTAL_URL = "https://221.176.1.140/wlan/index.php";
+	protected static final String PREFIX_HTTPS = "https";
+	protected static final String CMCC_LOGINFORM_NAME = "loginform";
 	
 	protected Context context = null;
 	protected boolean isCancelLogin = false;
@@ -39,6 +46,7 @@ class DefaultAutoUser extends AutoUser {
 	protected String cmccPageUrl = null;
 	protected String cmccPageHtml = null;
 	protected String cmccLoginPageHtml = null;
+	protected Map<String,String> cmccLoginPageFields = new HashMap<String, String>();
 	
 	public DefaultAutoUser(Context context){
 		super();
@@ -60,7 +68,7 @@ class DefaultAutoUser extends AutoUser {
 			FrameTag ft = (FrameTag)nl.elementAt(0);
 			String loginUrl = ft.getAttribute("src");
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
-			boolean isSSL = loginUrl.toLowerCase().startsWith("https");
+			boolean isSSL = loginUrl.toLowerCase().startsWith(PREFIX_HTTPS);
 			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
 			NodeClassFilter scriptFilter = new NodeClassFilter(ScriptTag.class);
@@ -118,7 +126,7 @@ class DefaultAutoUser extends AutoUser {
 				if(mainIndex == -1) url = this.cmccPageUrl + "/" + url;
 				else url = this.cmccPageUrl.substring(0, mainIndex + httpIndex + 3) + "/" + url;
 			}
-			isSSL = url.toLowerCase().startsWith("https");
+			isSSL = url.toLowerCase().startsWith(PREFIX_HTTPS);
 			String responseText = doHttpGetContainsRedirect(url,isSSL).getDataString("gb2312");
 			String [] responseArr = responseText.split("@");
 			if(responseArr.length != 2) throw new ParserException();
@@ -151,7 +159,7 @@ class DefaultAutoUser extends AutoUser {
 			FrameTag ft = (FrameTag)nl.elementAt(0);
 			String loginUrl = ft.getAttribute("src");
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
-			boolean isSSL = loginUrl.toLowerCase().startsWith("https");
+			boolean isSSL = loginUrl.toLowerCase().startsWith(PREFIX_HTTPS);
 			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
 			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
@@ -161,7 +169,7 @@ class DefaultAutoUser extends AutoUser {
 			FormTag formTag = (FormTag)formList.elementAt(0);
 			String submitUrl = formTag.getFormLocation();
 			if(submitUrl == null || submitUrl.equals("")) throw new ParserException();
-			isSSL = submitUrl.toLowerCase().startsWith("https");
+			isSSL = submitUrl.toLowerCase().startsWith(PREFIX_HTTPS);
 			//获取表单元素
 			Map<String,String> params = new HashMap<String, String>();
 			NodeList inputTags = formTag.getFormInputs();
@@ -179,7 +187,38 @@ class DefaultAutoUser extends AutoUser {
 			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			String loginResult = doHttpPostContainsRedirect(submitUrl,isSSL,params).getDataString("gb2312");
 			int alertIndex = loginResult.indexOf("alert");
-			if(alertIndex == -1) return null;
+			if(alertIndex == -1) {    //登录成功
+				try{
+					//获取表单参数，为下线提供条件
+					String formatHtml = HtmlManager.removeComment(loginResult);
+					Parser mParser = Parser.createParser(formatHtml, "gb2312");
+					FormFilter formFilter = new FormFilter(CMCC_LOGINFORM_NAME);
+					NodeList formLi = mParser.parse(formFilter);
+					if(formLi == null || formLi.size() == 0) throw new ParserException("could not find the form named '"+CMCC_LOGINFORM_NAME+"'");
+					Node tag = formLi.elementAt(0);
+					FormTag form = (FormTag) tag;
+					cmccLoginPageFields.clear();
+					//获取提交表单的URL
+					String formAction = form.getFormLocation();
+					if(formAction != null && formAction.trim().length() > 0) {
+						cmccLoginPageFields.put("action", formAction.trim());
+					}
+					//获取表单元素
+					NodeList inputs = form.getFormInputs();
+					for (int j = 0; j < inputs.size(); j++) {
+						Node node = inputs.elementAt(j);
+						InputTag input = (InputTag) node;
+						String attrName = input.getAttribute("name");
+						String attrValue = input.getAttribute("value");
+						if(attrName != null && attrValue != null) {
+							cmccLoginPageFields.put(attrName.trim(), attrValue.trim()); 
+						}
+					}					
+				}catch(ParserException e){
+					Log.e("DefaultAutoUser", "parsing parameters from logining result page failed.", e);
+				}				
+				return null;
+			}
 			int begin = loginResult.indexOf("\"",alertIndex);
 			if(begin == -1){
 				begin = loginResult.indexOf("\'",alertIndex);
@@ -288,7 +327,35 @@ class DefaultAutoUser extends AutoUser {
 	@Override
 	public String logout() {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Not supported yet");
+		String action = cmccLoginPageFields.remove("action");
+		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
+		boolean isSSL = action.startsWith(PREFIX_HTTPS);
+		try{
+			HttpResponseResult result = doHttpPostContainsRedirect(action, isSSL, cmccLoginPageFields);
+			String html = result.getDataString("gb2312");
+			String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_OFFLINERES;
+			if(keywordLoginRes == null || html.indexOf(keywordLoginRes) == -1) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
+			//获取登录后的code，通过code可以判断出登录结果
+			int code = -1;
+			if (!keywordLoginRes.endsWith(SEPARATOR)) keywordLoginRes += SEPARATOR;
+			int start = html.indexOf(keywordLoginRes) + keywordLoginRes.length();
+			String temp = html.substring(start);
+			int end = temp.indexOf(SEPARATOR);
+			if(end == -1) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
+			temp = temp.substring(0, end);
+			try {
+				code = Integer.valueOf(temp);
+			} catch (NumberFormatException e){
+				Log.e("DefaultAutoUser", "parsing code from logouting result page failed.", e);
+				return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
+			}
+			Log.d("DefaultAutoUser", "logouting returns code:"+code);
+			if (code != 0) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_logout_failure", "string", context.getPackageName()));
+			return null;
+		}catch(IOException e){
+			Log.e("DefaultAutoUser", "logouting failed.", e);
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
+		}
 	}
 	
 	protected class FormFilter extends NodeClassFilter{

@@ -381,6 +381,7 @@ class DefaultUser extends User {
 				Log.e("DefaultUser", "parsing code from logouting result page failed.", e);
 				return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
 			}
+			Log.d("DefaultUser", "logouting returns code:"+code);
 			if (code != 0) return User.RETURN_FALSE_GENERIC;
 			return User.RETURN_TRUE;
 		}catch(IOException e){
