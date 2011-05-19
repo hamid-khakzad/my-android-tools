@@ -29,7 +29,7 @@ public final class NetManager {
 		int th = 1;
 		while(th <= tryTimes){
 			try{
-				HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, false, true, timeout, null);
+				HttpResponseResult result = HttpConnectionManager.doGet(USEFUL_TEST_URL, "gb2312", false, true, timeout, null);
 				if(result.getResponseCode() == HttpURLConnection.HTTP_OK){
 					String host = result.getResponseURL().getHost();
 					String content = result.getDataString("gb2312");
