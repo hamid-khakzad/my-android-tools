@@ -259,7 +259,9 @@ class DefaultUser extends User {
 				//when it is login response html, extract the parameters
 				doParseLoginPage(html);
 			}catch(ParserException e){
-				Log.e("DefaultUser", "parsing parameters from logining result page failed.", e);
+				Log.e("DefaultUser", "deal logining result page failed.", e);
+			}catch(RuntimeException e){
+				Log.e("DefaultUser", "deal logining result page failed.", e);
 			}
 			return User.RETURN_TRUE;
 		}catch(IOException e){
@@ -304,12 +306,12 @@ class DefaultUser extends User {
 		values = new ArrayList<String>();
 		values.add("G3WLAN");
 		requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-		HttpResponseResult result = HttpConnectionManager.doGet(url, isSSL, false, 15000, requestHeaders);
+		HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", isSSL, false, 15000, requestHeaders);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
-			result = HttpConnectionManager.doGet(location, false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
@@ -341,7 +343,7 @@ class DefaultUser extends User {
 		values = new ArrayList<String>();
 		values.add("G3WLAN");
 		requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-		HttpResponseResult result = HttpConnectionManager.doPost(url, isSSL, false, 15000, requestHeaders, params, "gb2312");
+		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", isSSL, false, 15000, requestHeaders, params);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
@@ -349,7 +351,7 @@ class DefaultUser extends User {
 			values = new ArrayList<String>();
 			values.add(sessionCookie);
 			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);
-			result = HttpConnectionManager.doGet(location, false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
