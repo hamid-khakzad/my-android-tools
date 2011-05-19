@@ -21,7 +21,6 @@ import org.htmlparser.util.ParserException;
 import android.content.Context;
 import android.util.Log;
 
-import com.wendell.net.http.HtmlManager;
 import com.wendell.net.http.HttpConnectionManager;
 import com.wendell.net.http.HttpResponseResult;
 import com.wendell.util.MathUtilities;
@@ -33,12 +32,8 @@ class DefaultAutoUser extends AutoUser {
 	protected static final String GUIDE_HOST = "www.baidu.com";
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
-	protected static final String KEYWORD_CMCCCS = "cmcccs";
-	protected static final String KEYWORD_OFFLINERES = "offline_res";
-	protected static final String SEPARATOR = "|";
-	protected static final String CMCC_PORTAL_URL = "https://221.176.1.140/wlan/index.php";
 	protected static final String PREFIX_HTTPS = "https";
-	protected static final String CMCC_LOGINFORM_NAME = "loginform";
+	protected static final String CMCC_LOGOUTFORM_NAME = "portal";
 	
 	protected Context context = null;
 	protected boolean isCancelLogin = false;
@@ -46,7 +41,7 @@ class DefaultAutoUser extends AutoUser {
 	protected String cmccPageUrl = null;
 	protected String cmccPageHtml = null;
 	protected String cmccLoginPageHtml = null;
-	protected Map<String,String> cmccLoginPageFields = new HashMap<String, String>();
+	protected Map<String,String> cmccLogoutPageFields = new HashMap<String, String>();
 	
 	public DefaultAutoUser(Context context){
 		super();
@@ -190,33 +185,70 @@ class DefaultAutoUser extends AutoUser {
 			if(alertIndex == -1) {    //登录成功
 				try{
 					//获取表单参数，为下线提供条件
-					String formatHtml = HtmlManager.removeComment(loginResult);
-					Parser mParser = Parser.createParser(formatHtml, "gb2312");
-					FormFilter formFilter = new FormFilter(CMCC_LOGINFORM_NAME);
+					Parser mParser = Parser.createParser(loginResult.toLowerCase(), "gb2312");
+					NodeClassFilter fFilter = new NodeClassFilter(FrameTag.class);
+					NodeList nodeL = mParser.parse(fFilter);
+					if(nodeL == null || nodeL.size() == 0) throw new ParserException();
+					FrameTag fTag = (FrameTag)nodeL.elementAt(0);
+					String frameUrl = fTag.getAttribute("src");
+					if(frameUrl == null || frameUrl.equals("")) throw new ParserException();
+					boolean ssl = frameUrl.toLowerCase().startsWith(PREFIX_HTTPS);
+					String offLinePage = doHttpGetContainsRedirect(frameUrl,ssl).getDataString("gb2312");
+					mParser = Parser.createParser(offLinePage, "gb2312");
+					FormFilter formFilter = new FormFilter(CMCC_LOGOUTFORM_NAME);
 					NodeList formLi = mParser.parse(formFilter);
-					if(formLi == null || formLi.size() == 0) throw new ParserException("could not find the form named '"+CMCC_LOGINFORM_NAME+"'");
+					if(formLi == null || formLi.size() == 0) throw new ParserException("could not find the form named '"+CMCC_LOGOUTFORM_NAME+"'");
 					Node tag = formLi.elementAt(0);
 					FormTag form = (FormTag) tag;
-					cmccLoginPageFields.clear();
+					cmccLogoutPageFields.clear();
 					//获取提交表单的URL
 					String formAction = form.getFormLocation();
-					if(formAction != null && formAction.trim().length() > 0) {
-						cmccLoginPageFields.put("action", formAction.trim());
+					if(formAction == null || formAction.trim().length() == 0){
+						int index = offLinePage.indexOf("thisform.action");
+						if(index == -1) throw new ParserException();
+						int beginAction = offLinePage.indexOf("\'", index);
+						if(beginAction == -1){
+							beginAction = offLinePage.indexOf("\"", index);
+							if(beginAction == -1) throw new ParserException();
+						}
+						int endAction = offLinePage.indexOf("\'", beginAction + 1);
+						if(endAction == -1){
+							endAction = offLinePage.indexOf("\"", beginAction + 1);
+							if(endAction == -1) throw new ParserException();
+						}
+						String action = offLinePage.substring(beginAction + 1, endAction).trim();
+						if(action.toLowerCase().startsWith("http")){
+							formAction = action;
+						}else{
+							int urlIndex = frameUrl.lastIndexOf("/");
+							if(urlIndex == -1) throw new ParserException();
+							formAction = frameUrl.substring(0, urlIndex) + "/" + action;
+						}
 					}
+					cmccLogoutPageFields.put("action", formAction.trim());
 					//获取表单元素
 					NodeList inputs = form.getFormInputs();
 					for (int j = 0; j < inputs.size(); j++) {
 						Node node = inputs.elementAt(j);
 						InputTag input = (InputTag) node;
+						String type = input.getAttribute("type");
+						if("checkbox".equalsIgnoreCase(type) || "button".equalsIgnoreCase(type)) continue;
 						String attrName = input.getAttribute("name");
 						String attrValue = input.getAttribute("value");
 						if(attrName != null && attrValue != null) {
-							cmccLoginPageFields.put(attrName.trim(), attrValue.trim()); 
+							cmccLogoutPageFields.put(attrName.trim(), attrValue.trim()); 
 						}
-					}					
+					}
+					
+					cmccLogoutPageFields.put("logouttype", "TYPESUBMIT");
+					
 				}catch(ParserException e){
-					Log.e("DefaultAutoUser", "parsing parameters from logining result page failed.", e);
-				}				
+					Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+				}catch(IOException e){
+					Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+				}catch(RuntimeException e){
+					Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+				}
 				return null;
 			}
 			int begin = loginResult.indexOf("\"",alertIndex);
@@ -272,26 +304,33 @@ class DefaultAutoUser extends AutoUser {
 		values = new ArrayList<String>();
 		values.add("G3WLAN");
 		requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-		HttpResponseResult result = HttpConnectionManager.doGet(url, isSSL, false, 15000, requestHeaders);
+		if(sessionCookie != null){
+			values = new ArrayList<String>();
+			values.add(sessionCookie);
+			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);			
+		}
+		HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", isSSL, false, 15000, requestHeaders);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
-			result = HttpConnectionManager.doGet(location, false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
 		//以下获取cookie
 		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE.toLowerCase());
-		String setCookieValue = setCookieValues.get(0);
-		if(setCookieValue != null) {
-			String[] setCookieGroup = setCookieValue.split(";");
-			for(String tmp:setCookieGroup) {
-				if(tmp.trim().startsWith(GD_JSESSIONID) //for Guangdong: "JSESSIONID="
-				   || tmp.trim().startsWith(BJ_PHPSESSID) //for Beijing: "PHPSESSID="
-				){
-					this.sessionCookie = tmp.trim();
-					break;
+		if(setCookieValues != null){
+			String setCookieValue = setCookieValues.get(0);
+			if(setCookieValue != null) {
+				String[] setCookieGroup = setCookieValue.split(";");
+				for(String tmp:setCookieGroup) {
+					if(tmp.trim().startsWith(GD_JSESSIONID) //for Guangdong: "JSESSIONID="
+					   || tmp.trim().startsWith(BJ_PHPSESSID) //for Beijing: "PHPSESSID="
+					){
+						this.sessionCookie = tmp.trim();
+						break;
+					}
 				}
 			}
 		}
@@ -309,48 +348,50 @@ class DefaultAutoUser extends AutoUser {
 		values = new ArrayList<String>();
 		values.add("G3WLAN");
 		requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-		HttpResponseResult result = HttpConnectionManager.doPost(url, isSSL, false, 15000, requestHeaders, params, "gb2312");
+		if(sessionCookie != null){
+			values = new ArrayList<String>();
+			values.add(sessionCookie);
+			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);			
+		}
+		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", isSSL, false, 15000, requestHeaders, params);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
-			values = new ArrayList<String>();
-			values.add(sessionCookie);
-			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);
-			result = HttpConnectionManager.doGet(location, false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
+		//以下获取cookie
+		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE.toLowerCase());
+		if(setCookieValues != null){
+			String setCookieValue = setCookieValues.get(0);
+			if(setCookieValue != null) {
+				String[] setCookieGroup = setCookieValue.split(";");
+				for(String tmp:setCookieGroup) {
+					if(tmp.trim().startsWith(GD_JSESSIONID) //for Guangdong: "JSESSIONID="
+					   || tmp.trim().startsWith(BJ_PHPSESSID) //for Beijing: "PHPSESSID="
+					){
+						this.sessionCookie = tmp.trim();
+						break;
+					}
+				}
+			}
+		}
 		return result;
 	}
 	
 	@Override
 	public String logout() {
 		// TODO Auto-generated method stub
-		String action = cmccLoginPageFields.remove("action");
-		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
+		String action = cmccLogoutPageFields.remove("action");
 		boolean isSSL = action.startsWith(PREFIX_HTTPS);
 		try{
-			HttpResponseResult result = doHttpPostContainsRedirect(action, isSSL, cmccLoginPageFields);
+			HttpResponseResult result = doHttpPostContainsRedirect(action, isSSL, cmccLogoutPageFields);
 			String html = result.getDataString("gb2312");
-			String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_OFFLINERES;
-			if(keywordLoginRes == null || html.indexOf(keywordLoginRes) == -1) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
-			//获取登录后的code，通过code可以判断出登录结果
-			int code = -1;
-			if (!keywordLoginRes.endsWith(SEPARATOR)) keywordLoginRes += SEPARATOR;
-			int start = html.indexOf(keywordLoginRes) + keywordLoginRes.length();
-			String temp = html.substring(start);
-			int end = temp.indexOf(SEPARATOR);
-			if(end == -1) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
-			temp = temp.substring(0, end);
-			try {
-				code = Integer.valueOf(temp);
-			} catch (NumberFormatException e){
-				Log.e("DefaultAutoUser", "parsing code from logouting result page failed.", e);
-				return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
-			}
-			Log.d("DefaultAutoUser", "logouting returns code:"+code);
-			if (code != 0) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_logout_failure", "string", context.getPackageName()));
+			
+			Log.i("DefaultAutoUser",html);
+			
 			return null;
 		}catch(IOException e){
 			Log.e("DefaultAutoUser", "logouting failed.", e);
