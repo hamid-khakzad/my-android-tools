@@ -112,6 +112,11 @@ public class CMCCImplUser {
 //			serviceCore.cancelLogin();
 			System.out.println("Login timeout");
 			
+		} else if (G3WlanStatus.LOGIN_FAIL == status) {
+			
+			List reason = serviceCore.getReason();
+			System.out.println("Login failed. Reason: "+reason);
+			
 		} else if (G3WlanStatus.LOGGED_IN == status) {
 			/*
 			 * logged in, client can go ahead for service logic
