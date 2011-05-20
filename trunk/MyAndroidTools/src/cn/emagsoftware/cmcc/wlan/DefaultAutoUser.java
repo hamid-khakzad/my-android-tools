@@ -181,76 +181,105 @@ class DefaultAutoUser extends AutoUser {
 			params.put("autopassword", super.password);
 			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			String loginResult = doHttpPostContainsRedirect(submitUrl,isSSL,params).getDataString("gb2312");
-			int alertIndex = loginResult.indexOf("alert");
-			if(alertIndex == -1) {    //登录成功
-				try{
-					//获取表单参数，为下线提供条件
-					Parser mParser = Parser.createParser(loginResult.toLowerCase(), "gb2312");
-					NodeClassFilter fFilter = new NodeClassFilter(FrameTag.class);
-					NodeList nodeL = mParser.parse(fFilter);
-					if(nodeL == null || nodeL.size() == 0) throw new ParserException();
-					FrameTag fTag = (FrameTag)nodeL.elementAt(0);
-					String frameUrl = fTag.getAttribute("src");
-					if(frameUrl == null || frameUrl.equals("")) throw new ParserException();
-					boolean ssl = frameUrl.toLowerCase().startsWith(PREFIX_HTTPS);
-					String offLinePage = doHttpGetContainsRedirect(frameUrl,ssl).getDataString("gb2312");
-					mParser = Parser.createParser(offLinePage, "gb2312");
-					FormFilter formFilter = new FormFilter(CMCC_LOGOUTFORM_NAME);
-					NodeList formLi = mParser.parse(formFilter);
-					if(formLi == null || formLi.size() == 0) throw new ParserException("could not find the form named '"+CMCC_LOGOUTFORM_NAME+"'");
-					Node tag = formLi.elementAt(0);
-					FormTag form = (FormTag) tag;
-					cmccLogoutPageFields.clear();
-					//获取提交表单的URL
-					String formAction = form.getFormLocation();
-					if(formAction == null || formAction.trim().length() == 0){
-						int index = offLinePage.indexOf("thisform.action");
-						if(index == -1) throw new ParserException();
-						int beginAction = offLinePage.indexOf("\'", index);
-						if(beginAction == -1){
-							beginAction = offLinePage.indexOf("\"", index);
-							if(beginAction == -1) throw new ParserException();
-						}
-						int endAction = offLinePage.indexOf("\'", beginAction + 1);
-						if(endAction == -1){
-							endAction = offLinePage.indexOf("\"", beginAction + 1);
-							if(endAction == -1) throw new ParserException();
-						}
-						String action = offLinePage.substring(beginAction + 1, endAction).trim();
-						if(action.toLowerCase().startsWith("http")){
-							formAction = action;
-						}else{
-							int urlIndex = frameUrl.lastIndexOf("/");
-							if(urlIndex == -1) throw new ParserException();
-							formAction = frameUrl.substring(0, urlIndex) + "/" + action;
-						}
+			return parseLoginResult(loginResult);
+		}catch(IOException e){
+			Log.e("DefaultAutoUser", "logining failed.", e);
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
+		}catch(ParserException e){
+			Log.e("DefaultAutoUser", "logining failed.", e);
+			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
+		}
+	}
+	
+	protected String parseLoginResult(String loginResult) throws ParserException,IOException{
+		int alertIndex = loginResult.indexOf("alert");
+		int confirmIndex = loginResult.indexOf("confirm");
+		if(alertIndex == -1 && confirmIndex == -1) {    //登录成功
+			try{
+				//获取表单参数，为下线提供条件
+				Parser mParser = Parser.createParser(loginResult.toLowerCase(), "gb2312");
+				NodeClassFilter fFilter = new NodeClassFilter(FrameTag.class);
+				NodeList nodeL = mParser.parse(fFilter);
+				if(nodeL == null || nodeL.size() == 0) throw new ParserException();
+				FrameTag fTag = (FrameTag)nodeL.elementAt(0);
+				String frameUrl = fTag.getAttribute("src");
+				if(frameUrl == null || frameUrl.equals("")) throw new ParserException();
+				boolean ssl = frameUrl.toLowerCase().startsWith(PREFIX_HTTPS);
+				String offLinePage = doHttpGetContainsRedirect(frameUrl,ssl).getDataString("gb2312");
+				mParser = Parser.createParser(offLinePage, "gb2312");
+				FormFilter formFilter = new FormFilter(CMCC_LOGOUTFORM_NAME);
+				NodeList formLi = mParser.parse(formFilter);
+				if(formLi == null || formLi.size() == 0) throw new ParserException("could not find the form named '"+CMCC_LOGOUTFORM_NAME+"'");
+				Node tag = formLi.elementAt(0);
+				FormTag form = (FormTag) tag;
+				cmccLogoutPageFields.clear();
+				//获取提交表单的URL
+				String formAction = form.getFormLocation();
+				if(formAction == null || formAction.trim().length() == 0){
+					int index = offLinePage.indexOf("thisform.action");
+					if(index == -1) throw new ParserException();
+					int beginAction = offLinePage.indexOf("\'", index);
+					if(beginAction == -1){
+						beginAction = offLinePage.indexOf("\"", index);
+						if(beginAction == -1) throw new ParserException();
 					}
-					cmccLogoutPageFields.put("action", formAction.trim());
-					//获取表单元素
-					NodeList inputs = form.getFormInputs();
-					for (int j = 0; j < inputs.size(); j++) {
-						Node node = inputs.elementAt(j);
-						InputTag input = (InputTag) node;
-						String type = input.getAttribute("type");
-						if("checkbox".equalsIgnoreCase(type) || "button".equalsIgnoreCase(type)) continue;
-						String attrName = input.getAttribute("name");
-						String attrValue = input.getAttribute("value");
-						if(attrName != null && attrValue != null) {
-							cmccLogoutPageFields.put(attrName.trim(), attrValue.trim()); 
-						}
+					int endAction = offLinePage.indexOf("\'", beginAction + 1);
+					if(endAction == -1){
+						endAction = offLinePage.indexOf("\"", beginAction + 1);
+						if(endAction == -1) throw new ParserException();
 					}
-					
-					cmccLogoutPageFields.put("logouttype", "TYPESUBMIT");
-					
-				}catch(ParserException e){
-					Log.e("DefaultAutoUser", "deal logining result page failed.", e);
-				}catch(IOException e){
-					Log.e("DefaultAutoUser", "deal logining result page failed.", e);
-				}catch(RuntimeException e){
-					Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+					String action = offLinePage.substring(beginAction + 1, endAction).trim();
+					if(action.toLowerCase().startsWith("http")){
+						formAction = action;
+					}else{
+						int urlIndex = frameUrl.lastIndexOf("/");
+						if(urlIndex == -1) throw new ParserException();
+						formAction = frameUrl.substring(0, urlIndex) + "/" + action;
+					}
 				}
-				return null;
+				cmccLogoutPageFields.put("action", formAction.trim());
+				//获取表单元素
+				NodeList inputs = form.getFormInputs();
+				for (int j = 0; j < inputs.size(); j++) {
+					Node node = inputs.elementAt(j);
+					InputTag input = (InputTag) node;
+					String type = input.getAttribute("type");
+					if("checkbox".equalsIgnoreCase(type) || "button".equalsIgnoreCase(type)) continue;
+					String attrName = input.getAttribute("name");
+					String attrValue = input.getAttribute("value");
+					if(attrName != null && attrValue != null) {
+						cmccLogoutPageFields.put(attrName.trim(), attrValue.trim()); 
+					}
+				}
+				
+				cmccLogoutPageFields.put("logouttype", "TYPESUBMIT");
+				
+			}catch(ParserException e){
+				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+			}catch(IOException e){
+				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+			}catch(RuntimeException e){
+				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
 			}
+			return null;
+		}else if(confirmIndex != -1){    //当前登录的用户已在线
+			int locationIndex = loginResult.indexOf("window.location",confirmIndex);
+			if(locationIndex == -1) throw new ParserException();
+			int beginIndex = loginResult.indexOf("\'",locationIndex);
+			if(beginIndex == -1){
+				beginIndex = loginResult.indexOf("\"",locationIndex);
+				if(beginIndex == -1) throw new ParserException();
+			}
+			int endIndex = loginResult.indexOf("\'",beginIndex + 1);
+			if(endIndex == -1){
+				endIndex = loginResult.indexOf("\"",beginIndex + 1);
+				if(endIndex == -1) throw new ParserException();
+			}
+			String secondLoginUrl = loginResult.substring(beginIndex + 1, endIndex);
+			boolean isSSL = secondLoginUrl.toLowerCase().startsWith(PREFIX_HTTPS);
+			String secondLoginResult = doHttpGetContainsRedirect(secondLoginUrl, isSSL).getDataString("gb2312");
+			return parseLoginResult(secondLoginResult);
+		}else{    //登录失败
 			int begin = loginResult.indexOf("\"",alertIndex);
 			if(begin == -1){
 				begin = loginResult.indexOf("\'",alertIndex);
@@ -262,13 +291,7 @@ class DefaultAutoUser extends AutoUser {
 				if(end == -1) throw new ParserException();
 			}
 			return loginResult.substring(begin + 1, end);
-		}catch(IOException e){
-			Log.e("DefaultAutoUser", "logining failed.", e);
-			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
-		}catch(ParserException e){
-			Log.e("DefaultAutoUser", "logining failed.", e);
-			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
-		}
+		}		
 	}
 	
 	@Override
