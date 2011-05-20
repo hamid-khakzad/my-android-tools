@@ -18,29 +18,25 @@ public class CMCCImplUser {
 	public CMCCImplUser(Context context) {
 		this.context = context;
 		serviceCore = new ServiceCore(context);
-		InitHelper w = new InitHelper();
-		Thread t = new Thread(w);
-		t.start();
 	}
 	
-	class InitHelper implements Runnable {
-		public void run() {
-			init();
+	/**
+	 * 初始化。检查是否安装了认证模块。若未安装，将提示用户安装，该方法将一直堵塞直到用户安装完毕、选择不安装或等待超时。
+	 * @return true表示认证模块安装成功，false表示用户选择了不安装或等待超时。
+	 */
+	public boolean initialize(){
+		System.out.println("init...");
+		int ready = serviceCore.initialize();
+		if (G3WlanStatus.READY != ready) {
+			System.out.println("EXIT: service not ready: " + ready);
+			return false;
 		}
-
-		void init() {
-			System.out.println("init...");
-			int ready = serviceCore.initialize();
-			if (G3WlanStatus.READY != ready) {
-				exit("service not ready: " + ready);
-				return;
-			}
-			System.out.println("service ready");
-		}
-
-		void exit(String txt) {
-			System.out.println("EXIT: " + txt);
-		}
+		System.out.println("service ready");
+		return true;
+	}
+	
+	public void uninitialize(){
+		serviceCore.uninitialize();
 	}
 	
 	public int login(String IMSI,String user,String password) {
@@ -202,8 +198,8 @@ public class CMCCImplUser {
         return status;
 	}
 	
-	public void uninitialize(){
-		serviceCore.uninitialize();
+	public List getReason(){
+		return serviceCore.getReason();
 	}
 	
 }
