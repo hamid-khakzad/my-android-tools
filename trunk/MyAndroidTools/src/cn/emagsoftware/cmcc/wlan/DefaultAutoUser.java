@@ -32,7 +32,6 @@ class DefaultAutoUser extends AutoUser {
 	protected static final String GUIDE_HOST = "www.baidu.com";
 	protected static final String GD_JSESSIONID = "JSESSIONID=";
 	protected static final String BJ_PHPSESSID = "PHPSESSID=";
-	protected static final String PREFIX_HTTPS = "https";
 	protected static final String CMCC_LOGOUTFORM_NAME = "portal";
 	
 	protected Context context = null;
@@ -63,8 +62,7 @@ class DefaultAutoUser extends AutoUser {
 			FrameTag ft = (FrameTag)nl.elementAt(0);
 			String loginUrl = ft.getAttribute("src");
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
-			boolean isSSL = loginUrl.toLowerCase().startsWith(PREFIX_HTTPS);
-			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
+			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl).getDataString("gb2312");
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
 			NodeClassFilter scriptFilter = new NodeClassFilter(ScriptTag.class);
 			nl = mHtmlParser.parse(scriptFilter);
@@ -121,8 +119,7 @@ class DefaultAutoUser extends AutoUser {
 				if(mainIndex == -1) url = this.cmccPageUrl + "/" + url;
 				else url = this.cmccPageUrl.substring(0, mainIndex + httpIndex + 3) + "/" + url;
 			}
-			isSSL = url.toLowerCase().startsWith(PREFIX_HTTPS);
-			String responseText = doHttpGetContainsRedirect(url,isSSL).getDataString("gb2312");
+			String responseText = doHttpGetContainsRedirect(url).getDataString("gb2312");
 			String [] responseArr = responseText.split("@");
 			if(responseArr.length != 2) throw new ParserException();
 			if("rtn_0000".equalsIgnoreCase(responseArr[0])) return null;    //请求成功
@@ -154,8 +151,7 @@ class DefaultAutoUser extends AutoUser {
 			FrameTag ft = (FrameTag)nl.elementAt(0);
 			String loginUrl = ft.getAttribute("src");
 			if(loginUrl == null || loginUrl.equals("")) throw new ParserException();
-			boolean isSSL = loginUrl.toLowerCase().startsWith(PREFIX_HTTPS);
-			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl,isSSL).getDataString("gb2312");
+			this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl).getDataString("gb2312");
 			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
 			mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
 			FormFilter filter = new FormFilter("autologin");
@@ -164,7 +160,6 @@ class DefaultAutoUser extends AutoUser {
 			FormTag formTag = (FormTag)formList.elementAt(0);
 			String submitUrl = formTag.getFormLocation();
 			if(submitUrl == null || submitUrl.equals("")) throw new ParserException();
-			isSSL = submitUrl.toLowerCase().startsWith(PREFIX_HTTPS);
 			//获取表单元素
 			Map<String,String> params = new HashMap<String, String>();
 			NodeList inputTags = formTag.getFormInputs();
@@ -180,7 +175,7 @@ class DefaultAutoUser extends AutoUser {
 			params.put("autousername", super.userName);
 			params.put("autopassword", super.password);
 			if(isCancelLogin) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_login_cancel", "string", context.getPackageName()));
-			String loginResult = doHttpPostContainsRedirect(submitUrl,isSSL,params).getDataString("gb2312");
+			String loginResult = doHttpPostContainsRedirect(submitUrl,params).getDataString("gb2312");
 			return parseLoginResult(loginResult);
 		}catch(IOException e){
 			Log.e("DefaultAutoUser", "logining failed.", e);
@@ -204,8 +199,7 @@ class DefaultAutoUser extends AutoUser {
 				FrameTag fTag = (FrameTag)nodeL.elementAt(0);
 				String frameUrl = fTag.getAttribute("src");
 				if(frameUrl == null || frameUrl.equals("")) throw new ParserException();
-				boolean ssl = frameUrl.toLowerCase().startsWith(PREFIX_HTTPS);
-				String offLinePage = doHttpGetContainsRedirect(frameUrl,ssl).getDataString("gb2312");
+				String offLinePage = doHttpGetContainsRedirect(frameUrl).getDataString("gb2312");
 				mParser = Parser.createParser(offLinePage, "gb2312");
 				FormFilter formFilter = new FormFilter(CMCC_LOGOUTFORM_NAME);
 				NodeList formLi = mParser.parse(formFilter);
@@ -276,8 +270,7 @@ class DefaultAutoUser extends AutoUser {
 				if(endIndex == -1) throw new ParserException();
 			}
 			String secondLoginUrl = loginResult.substring(beginIndex + 1, endIndex);
-			boolean isSSL = secondLoginUrl.toLowerCase().startsWith(PREFIX_HTTPS);
-			String secondLoginResult = doHttpGetContainsRedirect(secondLoginUrl, isSSL).getDataString("gb2312");
+			String secondLoginResult = doHttpGetContainsRedirect(secondLoginUrl).getDataString("gb2312");
 			return parseLoginResult(secondLoginResult);
 		}else{    //登录失败
 			int begin = loginResult.indexOf("\"",alertIndex);
@@ -303,7 +296,7 @@ class DefaultAutoUser extends AutoUser {
 	@Override
 	public boolean isLogged() throws IOException {
 		// TODO Auto-generated method stub
-		HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL,false);
+		HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL);
 		URL url = result.getResponseURL();
 		String host = url.getHost();
 		String html = result.getDataString("gb2312");
@@ -316,7 +309,7 @@ class DefaultAutoUser extends AutoUser {
 		return false;
 	}
 	
-	protected HttpResponseResult doHttpGetContainsRedirect(String url,boolean isSSL) throws IOException {
+	protected HttpResponseResult doHttpGetContainsRedirect(String url) throws IOException {
 		Map<String,List<String>> requestHeaders = new HashMap<String,List<String>>();
 		List<String> values = new ArrayList<String>();
 		values.add("gb2312");
@@ -332,12 +325,12 @@ class DefaultAutoUser extends AutoUser {
 			values.add(sessionCookie);
 			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);			
 		}
-		HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", isSSL, false, 15000, requestHeaders);
+		HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", false, 15000, requestHeaders);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
-			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
@@ -360,7 +353,7 @@ class DefaultAutoUser extends AutoUser {
 		return result;
 	}
 	
-	protected HttpResponseResult doHttpPostContainsRedirect(String url,boolean isSSL,Map<String,String> params) throws IOException{
+	protected HttpResponseResult doHttpPostContainsRedirect(String url,Map<String,String> params) throws IOException{
 		Map<String,List<String>> requestHeaders = new HashMap<String,List<String>>();
 		List<String> values = new ArrayList<String>();
 		values.add("gb2312");
@@ -376,12 +369,12 @@ class DefaultAutoUser extends AutoUser {
 			values.add(sessionCookie);
 			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);			
 		}
-		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", isSSL, false, 15000, requestHeaders, params);
+		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", false, 15000, requestHeaders, params);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
-			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
@@ -408,9 +401,8 @@ class DefaultAutoUser extends AutoUser {
 	public String logout() {
 		// TODO Auto-generated method stub
 		String action = cmccLogoutPageFields.remove("action");
-		boolean isSSL = action.startsWith(PREFIX_HTTPS);
 		try{
-			HttpResponseResult result = doHttpPostContainsRedirect(action, isSSL, cmccLogoutPageFields);
+			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLogoutPageFields);
 			String html = result.getDataString("gb2312");
 			
 			Log.i("DefaultAutoUser",html);

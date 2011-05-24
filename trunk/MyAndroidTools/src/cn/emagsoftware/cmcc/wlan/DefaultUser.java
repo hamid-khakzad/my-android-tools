@@ -33,7 +33,6 @@ class DefaultUser extends User {
 	protected static final String KEYWORD_OFFLINERES = "offline_res";
 	protected static final String SEPARATOR = "|";
 	protected static final String CMCC_PORTAL_URL = "https://221.176.1.140/wlan/index.php";
-	protected static final String PREFIX_HTTPS = "https";
 	//for redirection
 	protected static final String INDICATOR_REDIRECT_PORTALURL = "portalurl";
 	protected static final String INDICATOR_LOGIN_AC_NAME = "wlanacname";
@@ -89,7 +88,7 @@ class DefaultUser extends User {
 				}
 			}
 			try{
-				HttpResponseResult result = doHttpGetContainsRedirect(location, false);
+				HttpResponseResult result = doHttpGetContainsRedirect(location);
 				return parseLoginPage(result.getDataString("gb2312"));
 			}catch(IOException e){
 				Log.e("DefaultUser", "requesting "+location+" failed.", e);
@@ -229,11 +228,10 @@ class DefaultUser extends User {
 	protected int doLogin(){
 		String action = cmccLoginPageFields.remove("action");
 		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
-		boolean isSSL = action.startsWith(PREFIX_HTTPS);
 		cmccLoginPageFields.put(INDICATOR_LOGIN_USERNAME, super.userName);
 		cmccLoginPageFields.put(INDICATOR_LOGIN_PASSWORD, super.password);
 		try{
-			HttpResponseResult result = doHttpPostContainsRedirect(action, isSSL, cmccLoginPageFields);
+			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);
 			String html = result.getDataString("gb2312");
 			String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_LOGINRES;
 			if(keywordLoginRes == null || html.indexOf(keywordLoginRes) == -1) return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
@@ -280,7 +278,7 @@ class DefaultUser extends User {
 	public int isLogged() {
 		// TODO Auto-generated method stub
 		try{
-			HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL,false);
+			HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL);
 			String host = result.getResponseURL().getHost();
 			String html = result.getDataString("gb2312");
 			if(GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0) {   //若能访问到原始站点，证明已登录
@@ -295,7 +293,7 @@ class DefaultUser extends User {
 		}
 	}
 	
-	protected HttpResponseResult doHttpGetContainsRedirect(String url,boolean isSSL) throws IOException {
+	protected HttpResponseResult doHttpGetContainsRedirect(String url) throws IOException {
 		Map<String,List<String>> requestHeaders = new HashMap<String,List<String>>();
 		List<String> values = new ArrayList<String>();
 		values.add("gb2312");
@@ -306,12 +304,12 @@ class DefaultUser extends User {
 		values = new ArrayList<String>();
 		values.add("G3WLAN");
 		requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-		HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", isSSL, false, 15000, requestHeaders);
+		HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", false, 15000, requestHeaders);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
 			String location = headerValues.get(0);
-			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
@@ -332,7 +330,7 @@ class DefaultUser extends User {
 		return result;
 	}
 	
-	protected HttpResponseResult doHttpPostContainsRedirect(String url,boolean isSSL,Map<String,String> params) throws IOException{
+	protected HttpResponseResult doHttpPostContainsRedirect(String url,Map<String,String> params) throws IOException{
 		Map<String,List<String>> requestHeaders = new HashMap<String,List<String>>();
 		List<String> values = new ArrayList<String>();
 		values.add("gb2312");
@@ -343,7 +341,7 @@ class DefaultUser extends User {
 		values = new ArrayList<String>();
 		values.add("G3WLAN");
 		requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", isSSL, false, 15000, requestHeaders, params);
+		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", false, 15000, requestHeaders, params);
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
@@ -351,7 +349,7 @@ class DefaultUser extends User {
 			values = new ArrayList<String>();
 			values.add(sessionCookie);
 			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);
-			result = HttpConnectionManager.doGet(location, "gb2312", false, false, 15000, requestHeaders);
+			result = HttpConnectionManager.doGet(location, "gb2312", false, 15000, requestHeaders);
 			code = result.getResponseCode();
 		}
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
@@ -363,9 +361,8 @@ class DefaultUser extends User {
 		// TODO Auto-generated method stub
 		String action = cmccLoginPageFields.remove("action");
 		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
-		boolean isSSL = action.startsWith(PREFIX_HTTPS);
 		try{
-			HttpResponseResult result = doHttpPostContainsRedirect(action, isSSL, cmccLoginPageFields);
+			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);
 			String html = result.getDataString("gb2312");
 			String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_OFFLINERES;
 			if(keywordLoginRes == null || html.indexOf(keywordLoginRes) == -1) return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
