@@ -25,9 +25,11 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.5
+ * @version 1.6
  */
 public final class HttpConnectionManager {
+	
+	public static final String HTTPS_PREFIX = "https";
 	
 	public static final String HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
 	public static final String HEADER_REQUEST_CONNECTION = "Connection";
@@ -48,18 +50,17 @@ public final class HttpConnectionManager {
 	 * 进行http get请求
 	 * @param url 请求的url
 	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
-	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
 	 * @return HttpResponseResult实例
 	 * @throws IOException
 	 */
-	public static HttpResponseResult doGet(String url,String urlEnc,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+	public static HttpResponseResult doGet(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, urlEnc, "GET", isSSL, followRedirects, connOrReadTimeout, 0, requestHeaders);
+			httpConn = openConnection(url, urlEnc, "GET", followRedirects, connOrReadTimeout, 0, requestHeaders, null);
 			HttpResponseResult result = new HttpResponseResult();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -89,35 +90,18 @@ public final class HttpConnectionManager {
 	 * 进行http post请求
 	 * @param url 请求的url
 	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
-	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
-	 * @param params POST的数据，不需要时可传null，将会以传入的urlEnc字符集进行编码
+	 * @param postParams 提交的POST数据，不需要时可传null，将会以传入的urlEnc字符集进行编码
 	 * @return HttpResponseResult实例
 	 * @throws IOException
 	 */
-	public static HttpResponseResult doPost(String url,String urlEnc,boolean isSSL,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> params) throws IOException{
+	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
 		HttpURLConnection httpConn = null;
-		OutputStream output = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, urlEnc, "POST", isSSL, followRedirects, connOrReadTimeout, 0, requestHeaders);
-			if(params != null){
-				Iterator<String> keys = params.keySet().iterator();
-				StringBuffer paramsBuff = new StringBuffer();
-				while(keys.hasNext()){
-					String key = keys.next();
-					String value = params.get(key);
-					paramsBuff.append(key.concat("=").concat(value).concat("&"));
-				}
-				String paramsStr = paramsBuff.toString();
-				if(!paramsStr.equals("")) paramsStr = paramsStr.substring(0, paramsStr.length()-1);
-				output = httpConn.getOutputStream();
-				BufferedOutputStream buffOutput = new BufferedOutputStream(output);
-				buffOutput.write(HttpManager.encodeParams(paramsStr, urlEnc).getBytes());
-				buffOutput.flush();
-			}
+			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, postParams);
 			HttpResponseResult result = new HttpResponseResult();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -138,11 +122,7 @@ public final class HttpConnectionManager {
 			try{
 				if(input != null) input.close();
 			}finally{
-				try{
-					if(output != null) output.close();
-				}finally{
-					if(httpConn != null) httpConn.disconnect();
-				}
+				if(httpConn != null) httpConn.disconnect();
 			}
 		}
 	}
@@ -152,19 +132,22 @@ public final class HttpConnectionManager {
 	 * @param url 请求的url
 	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
 	 * @param method 请求的方式，如GET,POST
-	 * @param isSSL 是否是加密的https请求
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param currentRedirectCount 当前是第几次重定向
 	 * @param requestHeaders 请求头，不需要时可传null
+	 * @param postParams method为POST时提交的数据，不需要时可传null，将会以传入的urlEnc字符集进行编码
 	 * @return HttpURLConnection实例
 	 * @throws IOException
 	 */
-	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean isSSL,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders) throws IOException{
+	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
 		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
-		URL myUrl = new URL(HttpManager.encodeURL(url, urlEnc));
+		url = HttpManager.encodeURL(url, urlEnc);
+		boolean isSSL = url.toLowerCase().startsWith(HTTPS_PREFIX);
+		URL myUrl = new URL(url);
 		HttpURLConnection httpConn = null;
+		OutputStream output = null;
 		try{
 			if(isSSL) {
 				SSLContext sslCont = SSLContext.getInstance("TLS"); 
@@ -192,6 +175,22 @@ public final class HttpConnectionManager {
 					}
 				}
 			}
+			if(method.equalsIgnoreCase("POST") && postParams != null){
+				Iterator<String> keys = postParams.keySet().iterator();
+				StringBuffer paramsBuff = new StringBuffer();
+				while(keys.hasNext()){
+					String key = keys.next();
+					String value = postParams.get(key);
+					paramsBuff.append(key.concat("=").concat(value).concat("&"));
+				}
+				String paramsStr = paramsBuff.toString();
+				if(!paramsStr.equals("")) paramsStr = paramsStr.substring(0, paramsStr.length()-1);
+				output = httpConn.getOutputStream();
+				BufferedOutputStream buffOutput = new BufferedOutputStream(output);
+				buffOutput.write(HttpManager.encodeParams(paramsStr, urlEnc).getBytes());
+				buffOutput.flush();
+				output.close();
+			}
 			if(!followRedirects) return httpConn;
 			//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
 			int rspCode = httpConn.getResponseCode();
@@ -200,12 +199,20 @@ public final class HttpConnectionManager {
 			if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
 			if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 			httpConn.disconnect();
-			return openConnection(location,urlEnc,method,isSSL,followRedirects,connOrReadTimeout,++currentRedirectCount,requestHeaders);
+			return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,requestHeaders,null);
 		}catch(IOException e){
-			if(httpConn != null) httpConn.disconnect();
+			try{
+				if(output != null) output.close();
+			}finally{
+				if(httpConn != null) httpConn.disconnect();
+			}
 			throw e;
 		}catch(Exception e){
-			if(httpConn != null) httpConn.disconnect();
+			try{
+				if(output != null) output.close();
+			}finally{
+				if(httpConn != null) httpConn.disconnect();
+			}
 			throw new RuntimeException(e);
 		}
 	}
