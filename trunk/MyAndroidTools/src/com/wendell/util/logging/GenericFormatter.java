@@ -18,11 +18,10 @@ public class GenericFormatter extends Formatter {
 				       .concat("]")
 				       .concat(r.getSourceClassName())
 				       .concat(":")
-				       .concat(r.getMessage());
+				       .concat(r.getMessage())
+				       .concat("\n");
 		Throwable t = r.getThrown();
-		if(t != null){
-			result = result.concat("\n").concat(ExceptionUtilities.getStackTrace(t));
-		}
+		if(t != null) result = result.concat(ExceptionUtilities.getStackTrace(t));
 		result = result.concat("\n");
 		return result;
 	}
