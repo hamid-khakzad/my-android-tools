@@ -7,15 +7,16 @@ import java.util.logging.Logger;
 /**
  * <p>日志管理器类
  * @author Wendell
- * @version 1.0
+ * @version 1.1
  */
 public final class LogManager {
 	
 	static{
 		try{
 			loadNativeConfig();
-		}catch(IOException e){
-			throw new RuntimeException(e);
+		}catch(Exception e){
+			System.err.println("Loading native configuration failed");
+			e.printStackTrace(System.err);
 		}
 	}
 	
