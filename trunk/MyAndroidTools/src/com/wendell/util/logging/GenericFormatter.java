@@ -27,8 +27,7 @@ public class GenericFormatter extends SimpleFormatter {
 			}
 		}
 		String levelName = r.getLevel().getLocalizedName();
-		result = result.concat(")]")
-				       .concat("\n")
+		result = result.concat(")]\n")
 				       .concat(levelName)
 				       .concat(": ")
 				       .concat(r.getMessage())
