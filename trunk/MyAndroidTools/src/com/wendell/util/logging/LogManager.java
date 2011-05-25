@@ -53,8 +53,4 @@ public final class LogManager {
 		return Logger.getLogger(name,resourceBundleName);
 	}
 	
-	public static Logger getLogger(Class<Object> clazz){
-		return getLogger(clazz.getName());
-	}
-	
 }
