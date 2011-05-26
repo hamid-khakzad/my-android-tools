@@ -41,7 +41,7 @@ public final class JLog {
 	private static void loadNativeConfig() throws IOException {
 		InputStream input = null;
 		try{
-			input = JLog.class.getResourceAsStream("/com/wendell/util/jlog/templat/logging.properties");
+			input = JLog.class.getResourceAsStream("/com/wendell/util/jlog/templat/jlog.properties");
 			loadConfig(input);
 		}finally{
 			if(input != null) input.close();
