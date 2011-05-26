@@ -9,12 +9,13 @@ import java.util.logging.Logger;
 /**
  * <p>java自带日志的操作类
  * @author Wendell
- * @version 1.1
+ * @version 1.2
  */
 public final class JLog {
 	
 	static{
 		try{
+			Thread.currentThread().setContextClassLoader(JLog.class.getClassLoader());
 			loadNativeConfig();
 		}catch(Exception e){
 			System.err.println("Loading native configuration failed");
