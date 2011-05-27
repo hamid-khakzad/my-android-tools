@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 2.4
+ * @version 2.5
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -44,7 +44,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	protected boolean isBeginForNetCallbackUntilNew = false;
 	protected NetworkInfo.DetailedState lastDetailed = null;
 	protected int[] autoUnregisterActions = new int[]{};
-	protected int timeout = 0;
+	protected int timeouts = 0;
 	protected boolean isDoneForAutoUnregisterActions = false;
 	protected boolean isUnregistered = true;
 	
@@ -232,7 +232,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
         context.registerReceiver(this,wifiIntentFilter);
-        if(timeout > 0){   //为0时将永不超时
+        if(timeouts > 0){   //为0时将永不超时
             new Timer().schedule(new TimerTask() {
             	protected long timeCount = 0;
     			@Override
@@ -241,7 +241,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
     				timeCount = timeCount + 100;
     				if(isDoneForAutoUnregisterActions){
     					cancel();
-    				}else if(timeCount >= timeout){   //已超时
+    				}else if(timeCount >= timeouts){   //已超时
     					cancel();
     					if(unregisterMe()){
     						handler.post(new Runnable() {
@@ -286,7 +286,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	 */
 	public void setTimeout(int timeout){
 		if(timeout < 0) throw new IllegalArgumentException("timeout could not be below zero.");
-		this.timeout = timeout;
+		this.timeouts = timeout;
 	}
 	
 }
