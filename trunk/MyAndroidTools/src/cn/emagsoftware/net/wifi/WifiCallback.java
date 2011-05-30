@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 2.6
+ * @version 2.7
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -109,26 +109,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 				if(!unregisterMe()) return;
 			}
 			List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
-			//移除搜索到的相同WLAN热点
 			if(results != null){
-				for(int i = 0;i < results.size();i++){
-					ScanResult curr = results.get(i);
-					for(int j = 0;j < i;j++){
-						ScanResult pre = results.get(j);
-						if(curr.SSID.equals(pre.SSID) && wifiUtils.getScanResultSecurity(curr).equals(wifiUtils.getScanResultSecurity(pre))){
-							results.remove(i);
-							i--;
-							if(curr.level > pre.level){
-								results.remove(j);
-								results.add(j, curr);
-							}
-							break;
-						}
-					}
-				}
-			}
-			//使WLAN热点按信号由强到弱排序(采用冒泡排序算法)
-			if(results != null){
+				//使WLAN热点按信号由强到弱排序(采用冒泡排序算法)
 				for(int i = 0;i < results.size();i++){
 					ScanResult curr = results.get(i);
 					for(int j = i - 1;j >= 0;j--){
@@ -140,6 +122,18 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						}else if(j == 0){    //当前的WLAN热点信号是最强的，已经排到了第一位
 							results.remove(i);
 							results.add(0, curr);
+						}
+					}
+				}
+				//移除搜索到的相同WLAN热点
+				for(int i = 0;i < results.size();i++){
+					ScanResult curr = results.get(i);
+					for(int j = 0;j < i;j++){
+						ScanResult pre = results.get(j);
+						if(curr.SSID.equals(pre.SSID) && wifiUtils.getScanResultSecurity(curr).equals(wifiUtils.getScanResultSecurity(pre))){
+							results.remove(i);
+							i--;
+							break;
 						}
 					}
 				}
