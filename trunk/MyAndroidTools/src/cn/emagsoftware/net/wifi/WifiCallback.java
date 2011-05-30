@@ -116,12 +116,16 @@ public abstract class WifiCallback extends BroadcastReceiver {
 					for(int j = i - 1;j >= 0;j--){
 						ScanResult pre = results.get(j);
 						if(curr.level <= pre.level){    //当前的WLAN热点已经不能再向前排了
-							results.remove(i);
-							results.add(j + 1, curr);
+							if(i != j + 1){
+								results.remove(i);
+								results.add(j + 1, curr);
+							}
 							break;
 						}else if(j == 0){    //当前的WLAN热点信号是最强的，已经排到了第一位
-							results.remove(i);
-							results.add(0, curr);
+							if(i != 0){
+								results.remove(i);
+								results.add(0, curr);
+							}
 						}
 					}
 				}
