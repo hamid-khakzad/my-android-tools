@@ -190,7 +190,7 @@ class DefaultAutoUser extends AutoUser {
 		int alertIndex = loginResult.indexOf("alert");
 		int confirmIndex = loginResult.indexOf("confirm");
 		if(alertIndex == -1 && confirmIndex == -1) {    //登录成功
-			try{
+/*			try{
 				//获取表单参数，为下线提供条件
 				Parser mParser = Parser.createParser(loginResult.toLowerCase(), "gb2312");
 				NodeClassFilter fFilter = new NodeClassFilter(FrameTag.class);
@@ -245,16 +245,15 @@ class DefaultAutoUser extends AutoUser {
 						cmccLogoutPageFields.put(attrName.trim(), attrValue.trim()); 
 					}
 				}
-				
+				//暂时直接写死该项的值，以后将作修改
 				cmccLogoutPageFields.put("logouttype", "TYPESUBMIT");
-				
 			}catch(ParserException e){
 				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
 			}catch(IOException e){
 				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
 			}catch(RuntimeException e){
 				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
-			}
+			}*/
 			return null;
 		}else if(confirmIndex != -1){    //当前登录的用户已在线
 			int locationIndex = loginResult.indexOf("window.location",confirmIndex);
@@ -400,7 +399,8 @@ class DefaultAutoUser extends AutoUser {
 	@Override
 	public String logout() {
 		// TODO Auto-generated method stub
-		String action = cmccLogoutPageFields.remove("action");
+		throw new UnsupportedOperationException("this method has not supported yet.");
+/*		String action = cmccLogoutPageFields.remove("action");
 		try{
 			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLogoutPageFields);
 			String html = result.getDataString("gb2312");
@@ -411,7 +411,7 @@ class DefaultAutoUser extends AutoUser {
 		}catch(IOException e){
 			Log.e("DefaultAutoUser", "logouting failed.", e);
 			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
-		}
+		}*/
 	}
 	
 	protected class FormFilter extends NodeClassFilter{
