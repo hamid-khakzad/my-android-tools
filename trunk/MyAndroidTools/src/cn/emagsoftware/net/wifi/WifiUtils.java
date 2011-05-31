@@ -280,7 +280,7 @@ public final class WifiUtils {
 			final WifiInfo info = getConnectionInfo();
 			String ssid = info == null ? null : info.getSSID();
 			String bssid = info == null ? null : info.getBSSID();
-			if(info != null && ssid != null && ssid.equals(wc.SSID) && bssid != null && (wc.BSSID == null || bssid.equals(wc.BSSID))){
+			if(info != null && ssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && bssid != null && (wc.BSSID == null || bssid.equals(wc.BSSID))){
 				if(callback != null) {
 					handler.post(new Runnable() {
 						@Override

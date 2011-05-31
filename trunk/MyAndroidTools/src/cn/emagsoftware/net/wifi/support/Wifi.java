@@ -450,8 +450,13 @@ public class Wifi {
         
         return true;
     }
-	
-	private static String convertToQuotedString(String string) {
+    
+    /**
+     * Edited by Wendell on 2011.05.31,changed the method field from private to public
+     * @param string
+     * @return
+     */
+	public static String convertToQuotedString(String string) {
         if (TextUtils.isEmpty(string)) {
             return "";
         }
