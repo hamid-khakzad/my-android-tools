@@ -41,6 +41,7 @@ class DefaultAutoUser extends AutoUser {
 	protected String cmccPageHtml = null;
 	protected String cmccLoginPageHtml = null;
 	protected Map<String,String> cmccLogoutPageFields = new HashMap<String, String>();
+	protected String cmccLogoutUrl = null;
 	
 	public DefaultAutoUser(Context context){
 		super();
@@ -190,7 +191,7 @@ class DefaultAutoUser extends AutoUser {
 		int alertIndex = loginResult.indexOf("alert");
 		int confirmIndex = loginResult.indexOf("confirm");
 		if(alertIndex == -1 && confirmIndex == -1) {    //登录成功
-/*			try{
+			/*try{
 				//获取表单参数，为下线提供条件
 				Parser mParser = Parser.createParser(loginResult.toLowerCase(), "gb2312");
 				NodeClassFilter fFilter = new NodeClassFilter(FrameTag.class);
@@ -231,7 +232,7 @@ class DefaultAutoUser extends AutoUser {
 						formAction = frameUrl.substring(0, urlIndex) + "/" + action;
 					}
 				}
-				cmccLogoutPageFields.put("action", formAction.trim());
+				cmccLogoutUrl = formAction.trim();
 				//获取表单元素
 				NodeList inputs = form.getFormInputs();
 				for (int j = 0; j < inputs.size(); j++) {
@@ -400,7 +401,8 @@ class DefaultAutoUser extends AutoUser {
 	public String logout() {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("this method has not supported yet.");
-/*		String action = cmccLogoutPageFields.get("action");
+		/*String action = cmccLogoutUrl;
+		if(action == null) return context.getString(context.getResources().getIdentifier("DefaultAutoUser_logout_failure", "string", context.getPackageName()));
 		try{
 			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLogoutPageFields);
 			String html = result.getDataString("gb2312");
