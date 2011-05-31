@@ -276,6 +276,23 @@ public final class WifiUtils {
 			}
 			return;
 		}
+		if(isWifiConnected()){    //如果要连接的Wifi热点已经连接，将直接回调onNetworkConnected方法，因为某些设备在指定热点已连接的情况下重新连接将不起作用，如SAMSUNG GT-I9008L
+			final WifiInfo info = getConnectionInfo();
+			String ssid = info == null ? null : info.getSSID();
+			String bssid = info == null ? null : info.getBSSID();
+			if(info != null && ssid != null && ssid.equals(wc.SSID) && bssid != null && (wc.BSSID == null || bssid.equals(wc.BSSID))){
+				if(callback != null) {
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							callback.onNetworkConnected(info);
+						}
+					});
+				}
+				return;
+			}
+		}
 		if(callback != null){
 			callback.setNetCallbackUntilNew(true);
 			callback.setAutoUnregisterActions(new int[]{WifiCallback.ACTION_ERROR,WifiCallback.ACTION_NETWORK_CONNECTED,WifiCallback.ACTION_NETWORK_DISCONNECTED});
@@ -315,6 +332,23 @@ public final class WifiUtils {
 				});
 			}
 			return;
+		}
+		if(isWifiConnected()){    //如果要连接的Wifi热点已经连接，将直接回调onNetworkConnected方法，因为某些设备在指定热点已连接的情况下重新连接将不起作用，如SAMSUNG GT-I9008L
+			final WifiInfo info = getConnectionInfo();
+			String ssid = info == null ? null : info.getSSID();
+			String bssid = info == null ? null : info.getBSSID();
+			if(info != null && ssid != null && ssid.equals(sr.SSID) && bssid != null && bssid.equals(sr.BSSID)){
+				if(callback != null) {
+					handler.post(new Runnable() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							callback.onNetworkConnected(info);
+						}
+					});
+				}
+				return;
+			}
 		}
 		WifiConfiguration old = getConfiguration(sr,false);
 		if(old != null){
