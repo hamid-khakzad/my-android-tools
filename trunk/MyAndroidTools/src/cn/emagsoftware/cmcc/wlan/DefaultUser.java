@@ -46,6 +46,7 @@ class DefaultUser extends User {
 	protected String sessionCookie = null;
 	protected String cmccPageHtml = null;
 	protected Map<String,String> cmccLoginPageFields = new HashMap<String, String>();
+	protected String cmccPortalUrl = null;
 	
 	public DefaultUser(String userName,String password){
 		super(userName, password);
@@ -109,7 +110,7 @@ class DefaultUser extends User {
 		//获取提交表单的URL
 		String formAction = formTag.getFormLocation();
 		if(formAction != null && formAction.trim().length() > 0) {
-			cmccLoginPageFields.put("action", formAction.trim());
+			this.cmccPortalUrl = formAction.trim();
 		}
 		//获取表单元素
 		NodeList inputTags = formTag.getFormInputs();
@@ -226,7 +227,8 @@ class DefaultUser extends User {
 	}
 	
 	protected int doLogin(){
-		String action = cmccLoginPageFields.remove("action");
+		String action = cmccPortalUrl;
+		cmccPortalUrl = null;
 		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
 		cmccLoginPageFields.put(INDICATOR_LOGIN_USERNAME, super.userName);
 		cmccLoginPageFields.put(INDICATOR_LOGIN_PASSWORD, super.password);
@@ -359,7 +361,7 @@ class DefaultUser extends User {
 	@Override
 	public int logout() {
 		// TODO Auto-generated method stub
-		String action = cmccLoginPageFields.get("action");
+		String action = cmccPortalUrl;
 		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
 		try{
 			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);
