@@ -23,7 +23,7 @@ import android.util.Log;
  * <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。
  * <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * @author Wendell
- * @version 2.7
+ * @version 2.8
  */
 public abstract class WifiCallback extends BroadcastReceiver {
 	
@@ -35,8 +35,8 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	public static final int ACTION_SCAN_RESULTS = 5;
 	public static final int ACTION_NETWORK_SCANNING = 6;
 	public static final int ACTION_NETWORK_OBTAININGIP = 7;
-	public static final int ACTION_NETWORK_CONNECTED = 8;
-	public static final int ACTION_NETWORK_DISCONNECTED = 9;
+	public static final int ACTION_NETWORK_DISCONNECTED = 8;
+	public static final int ACTION_NETWORK_CONNECTED = 9;
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
@@ -149,34 +149,41 @@ public abstract class WifiCallback extends BroadcastReceiver {
 				NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
 				if(isNetCallbackUntilNew){
 					if(!isBeginForNetCallbackUntilNew){
-						if(detailed == NetworkInfo.DetailedState.IDLE){
-							isBeginForNetCallbackUntilNew = true;
-						}else{
-							if(lastDetailed == null){
+						if(lastDetailed == null){
+							//初始状态将直接舍弃
+							lastDetailed = detailed;
+							Log.d("WifiCallback", "give up wifi state -> " + detailed);
+							return;
+						}else if(detailed == NetworkInfo.DetailedState.IDLE){
+							//该状态直接认为有效
+						}else if(detailed == NetworkInfo.DetailedState.SCANNING){
+							//只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
+							if(lastDetailed == NetworkInfo.DetailedState.SCANNING){
 								lastDetailed = detailed;
 								Log.d("WifiCallback", "give up wifi state -> " + detailed);
 								return;
 							}
-							if(detailed == NetworkInfo.DetailedState.SCANNING){
-								if(lastDetailed == NetworkInfo.DetailedState.SCANNING){
-									lastDetailed = detailed;
-									Log.d("WifiCallback", "give up wifi state -> " + detailed);
-									return;
-								}
-							}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-								if(lastDetailed == NetworkInfo.DetailedState.SCANNING || lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
-									lastDetailed = detailed;
-									Log.d("WifiCallback", "give up wifi state -> " + detailed);
-									return;
-								}
-							}else if(detailed == NetworkInfo.DetailedState.CONNECTED){    //CONNECTED状态的特殊性
-							}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){    //DISCONNECTED状态的特殊性
-								isBeginForNetCallbackUntilNew = true;
+						}else if(detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+							//只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
+							if(lastDetailed == NetworkInfo.DetailedState.SCANNING || lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR){
+								lastDetailed = detailed;
 								Log.d("WifiCallback", "give up wifi state -> " + detailed);
 								return;
 							}
+						}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+							//由于已经舍弃了初始状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
 							isBeginForNetCallbackUntilNew = true;
+							Log.d("WifiCallback", "give up wifi state -> " + detailed);
+							return;
+						}else if(detailed == NetworkInfo.DetailedState.FAILED){
+							//由于已经舍弃了初始状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
+							isBeginForNetCallbackUntilNew = true;
+							Log.d("WifiCallback", "give up wifi state -> " + detailed);
+							return;
+						}else if(detailed == NetworkInfo.DetailedState.CONNECTED){
+							//由于已经舍弃了初始状态，该状态直接认为有效
 						}
+						isBeginForNetCallbackUntilNew = true;
 					}
 				}
 				if(detailed == NetworkInfo.DetailedState.IDLE){
@@ -195,6 +202,20 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						if(!unregisterMe()) return;
 					}
 					onNetworkObtainingIp(wifiUtils.getConnectionInfo());
+    			}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
+					Log.d("WifiCallback", "receive wifi state -> " + detailed);
+					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
+						isDoneForAutoUnregisterActions = true;
+						if(!unregisterMe()) return;
+					}
+					onNetworkDisconnected(wifiUtils.getConnectionInfo());
+    			}else if(detailed == NetworkInfo.DetailedState.FAILED){
+    				Log.d("WifiCallback", "receive wifi state -> " + detailed);
+    				if(Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1) {
+    					isDoneForAutoUnregisterActions = true;
+    					if(!unregisterMe()) return;
+    				}
+    				onError();
     			}else if(detailed == NetworkInfo.DetailedState.CONNECTED){
     				Log.d("WifiCallback", "receive wifi state -> " + detailed);
 					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1) {
@@ -202,14 +223,7 @@ public abstract class WifiCallback extends BroadcastReceiver {
 						if(!unregisterMe()) return;
 					}
 					onNetworkConnected(wifiUtils.getConnectionInfo());
-				}else if(detailed == NetworkInfo.DetailedState.DISCONNECTED){
-					Log.d("WifiCallback", "receive wifi state -> " + detailed);
-					if(Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1){
-						isDoneForAutoUnregisterActions = true;
-						if(!unregisterMe()) return;
-					}
-					onNetworkDisconnected(wifiUtils.getConnectionInfo());
-    			}
+				}
 			}
 		}
 	}
@@ -230,9 +244,9 @@ public abstract class WifiCallback extends BroadcastReceiver {
 	
 	public void onNetworkObtainingIp(WifiInfo wifiInfo){}
 	
-	public void onNetworkConnected(WifiInfo wifiInfo){}
-	
 	public void onNetworkDisconnected(WifiInfo wifiInfo){}
+	
+	public void onNetworkConnected(WifiInfo wifiInfo){}
 	
 	public void onWifiExist(){}
 	
