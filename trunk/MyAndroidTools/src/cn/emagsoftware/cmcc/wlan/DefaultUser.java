@@ -359,7 +359,7 @@ class DefaultUser extends User {
 	@Override
 	public int logout() {
 		// TODO Auto-generated method stub
-		String action = cmccLoginPageFields.remove("action");
+		String action = cmccLoginPageFields.get("action");
 		if(action == null || action.trim().length() == 0) action = CMCC_PORTAL_URL;
 		try{
 			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);

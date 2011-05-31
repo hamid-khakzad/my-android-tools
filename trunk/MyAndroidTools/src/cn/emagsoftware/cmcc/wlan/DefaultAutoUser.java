@@ -400,7 +400,7 @@ class DefaultAutoUser extends AutoUser {
 	public String logout() {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("this method has not supported yet.");
-/*		String action = cmccLogoutPageFields.remove("action");
+/*		String action = cmccLogoutPageFields.get("action");
 		try{
 			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLogoutPageFields);
 			String html = result.getDataString("gb2312");
