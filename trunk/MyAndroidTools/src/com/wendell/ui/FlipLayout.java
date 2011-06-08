@@ -11,10 +11,9 @@ import android.view.ViewGroup;
 import android.widget.Scroller;
 
 /**
- * 仿Launcher中的WorkSapce，可以左右滑动切换屏幕的类
- * @author Yao.GUET
- * blog: http://blog.csdn.net/Yao_GUET
- * date: 2011-05-04
+ * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
+ * 该类是在Yao.GUET提供的ScrollLayout类的基础上修改完成，Yao.GUET的blog地址为http://blog.csdn.net/Yao_GUET
+ * @author Wendell
  */
 public class FlipLayout extends ViewGroup {
 
@@ -34,17 +33,21 @@ public class FlipLayout extends ViewGroup {
 	private int mTouchSlop;
 	private float mLastMotionX;
 	//private float mLastMotionY;
-
+	
+	private OnFlingChangedListener listener;
+	
+	public FlipLayout(Context context){
+		this(context,null,0);
+	}
+	
 	public FlipLayout(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
-		// TODO Auto-generated constructor stub
 	}
 
 	public FlipLayout(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 		// TODO Auto-generated constructor stub
 		mScroller = new Scroller(context);
-		
 		mCurScreen = mDefaultScreen;
 		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
@@ -108,12 +111,13 @@ public class FlipLayout extends ViewGroup {
     	// get the valid layout page
     	whichScreen = Math.max(0, Math.min(whichScreen, getChildCount()-1));
     	if (getScrollX() != (whichScreen*getWidth())) {
-    		
     		final int delta = whichScreen*getWidth()-getScrollX();
-    		mScroller.startScroll(getScrollX(), 0, 
-    				delta, 0, Math.abs(delta)*2);
-    		mCurScreen = whichScreen;
+    		mScroller.startScroll(getScrollX(), 0, delta, 0, Math.abs(delta)*2);
     		invalidate();		// Redraw the layout
+    		if(mCurScreen != whichScreen){
+    			mCurScreen = whichScreen;
+    			if(listener != null) listener.onFlingChanged(whichScreen);
+    		}
     	}
     }
     
@@ -177,14 +181,14 @@ public class FlipLayout extends ViewGroup {
             if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {   
                 // Fling enough to move left   
             	Log.e(TAG, "snap left");
-                snapToScreen(mCurScreen - 1);   
+                snapToScreen(mCurScreen - 1);
             } else if (velocityX < -SNAP_VELOCITY   
                     && mCurScreen < getChildCount() - 1) {   
                 // Fling enough to move right   
             	Log.e(TAG, "snap right");
-                snapToScreen(mCurScreen + 1);   
+                snapToScreen(mCurScreen + 1);
             } else {   
-                snapToDestination();   
+                snapToDestination();
             }   
 
             if (mVelocityTracker != null) {   
@@ -238,6 +242,14 @@ public class FlipLayout extends ViewGroup {
 		}
 		
 		return mTouchState != TOUCH_STATE_REST;
+	}
+	
+	public void setOnFlingChangedListener(OnFlingChangedListener listener){
+		this.listener = listener;
+	}
+	
+	public abstract static interface OnFlingChangedListener{
+		public abstract void onFlingChanged(int whichScreen);
 	}
 	
 }
