@@ -14,6 +14,7 @@ import android.widget.Scroller;
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * 该类是在Yao.GUET提供的ScrollLayout类的基础上修改完成，Yao.GUET的blog地址为http://blog.csdn.net/Yao_GUET
  * @author Wendell
+ * @version 1.0
  */
 public class FlipLayout extends ViewGroup {
 
