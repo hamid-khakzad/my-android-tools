@@ -1,6 +1,7 @@
 package com.wendell.ui;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
@@ -9,17 +10,19 @@ import android.view.WindowManager;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-public class ToastWindow extends PopupWindow{
+public class ToastWindow {
 	
+	private PopupWindow pw = null;
 	private TextView text = null;
 	
 	public ToastWindow(Context context){
-		super(context);
+		pw = new PopupWindow(context);
+		pw.setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
+		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
+		pw.setFocusable(false);
 		text = new TextView(context);
-		setContentView(text);
+		pw.setContentView(text);
 		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
-		setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
-		setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
 	}
 	
 	public ToastWindow(Context context,int textResId){
@@ -32,6 +35,10 @@ public class ToastWindow extends PopupWindow{
 		text.setText(textStr);
 	}
 	
+	public void setBackgroundDrawable(Drawable background){
+		pw.setBackgroundDrawable(background);
+	}
+	
 	public void setText(int textResId){
 		text.setText(textResId);
 	}
@@ -40,30 +47,42 @@ public class ToastWindow extends PopupWindow{
 		text.setText(textStr);
 	}
 	
-	public void show(Window window,int distanceToBottom){
-		showAtLocation(window.getDecorView(), Gravity.BOTTOM, 0, distanceToBottom);
+	public void show(Window mainWindow,int distanceToBottom){
+		pw.showAtLocation(mainWindow.getDecorView(), Gravity.BOTTOM, 0, distanceToBottom);
 	}
 	
-	public void showCenter(Window window){
-		showAtLocation(window.getDecorView(),Gravity.CENTER,0,0);
-	}
-	
-	public void dismissDelayed(int delayMillis){
+	public void showForMillis(Window mainWindow,int distanceToBottom,int millis){
+		show(mainWindow,distanceToBottom);
 		new Handler().postDelayed(new Runnable(){
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				try{
-					ToastWindow.this.dismiss();
-				}catch(RuntimeException e){   //如果依附的window已关闭，则调用dismiss会导致异常，这里原则上不应该向外抛出
-					Log.e("ToastWindow", "dismiss ToastWindow failed.", e);
-				}
+				dismiss();
 			}
-		}, delayMillis);
+		}, millis);
 	}
 	
-	public void dismissDelayed(){
-		dismissDelayed(2800);
+	public void showCenter(Window mainWindow){
+		pw.showAtLocation(mainWindow.getDecorView(),Gravity.CENTER,0,0);
+	}
+	
+	public void showCenterForMillis(Window mainWindow,int millis){
+		showCenter(mainWindow);
+		new Handler().postDelayed(new Runnable(){
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				dismiss();
+			}
+		}, millis);
+	}
+	
+	public void dismiss(){
+		try{
+			pw.dismiss();
+		}catch(RuntimeException e){   //如果依附的window已关闭，则调用dismiss会导致异常，这里原则上不应该向外抛出
+			Log.e("ToastWindow", "dismiss ToastWindow failed.", e);
+		}
 	}
 	
 }
