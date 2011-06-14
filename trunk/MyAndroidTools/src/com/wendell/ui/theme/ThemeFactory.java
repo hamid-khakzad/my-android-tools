@@ -189,45 +189,66 @@ public class ThemeFactory implements LayoutInflater.Factory {
     			applyStyle(view, style);
 		    }else if(value.startsWith("@")){
 		    	int drawableId = Integer.valueOf(value.substring(1)).intValue();
-		    	Drawable d = packageRes.getDrawable(drawableId);
-		    	if(d != null){
-	    			if(name.equals("android:background")){
-					    int i = view.getPaddingLeft();
-					    int j = view.getPaddingTop();
-					    int k = view.getPaddingRight();
-					    int m = view.getPaddingBottom();
-					    view.setBackgroundDrawable(d);
-					    view.setPadding(i, j, k, m);
-	    			}else if(name.equals("android:divider")){
-	    				if(view instanceof ListView){
-	    					((ListView)view).setDivider(d);
-	    				}
-	    			}else if(name.equals("android:groupIndicator")){
-	    				if(view instanceof ExpandableListView){
-	    					((ExpandableListView)view).setGroupIndicator(d);
-	    				}
-	    			}else if(name.equals("android:childDivider")){
-	    				if(view instanceof ExpandableListView){
-	    					((ExpandableListView)view).setChildDivider(d);
-	    				}
-	    			}else if(name.equals("android:src")){
-	    				if(view instanceof ImageView){
-	    					((ImageView)view).setImageDrawable(d);
-	    				}
-	    			}else if(name.equals("android:progressDrawable")){
-	    				if(view instanceof ProgressBar){
-	    					((ProgressBar)view).setProgressDrawable(d);
-	    				}
-	    			}else if(name.equals("android:listSelector")){
-	    				if(view instanceof AbsListView){
-	    					((AbsListView)view).setSelector(d);
-	    				}
-	    			}else if(name.equals("android:drawableRight")){
-	    				if(view instanceof TextView){
-	    					((TextView)view).setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
-	    				}
-	    			}
-		    	}
+    			if(name.equals("android:background")){
+    				Drawable d = packageRes.getDrawable(drawableId);
+    				if(d != null){
+    					int i = view.getPaddingLeft();
+    				    int j = view.getPaddingTop();
+    				    int k = view.getPaddingRight();
+    				    int m = view.getPaddingBottom();
+    				    view.setBackgroundDrawable(d);
+    				    view.setPadding(i, j, k, m);
+    				}
+    			}else if(name.equals("android:divider")){
+    				if(view instanceof ListView){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((ListView)view).setDivider(d);
+    					}
+    				}
+    			}else if(name.equals("android:groupIndicator")){
+    				if(view instanceof ExpandableListView){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((ExpandableListView)view).setGroupIndicator(d);
+    					}
+    				}
+    			}else if(name.equals("android:childDivider")){
+    				if(view instanceof ExpandableListView){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((ExpandableListView)view).setChildDivider(d);
+    					}
+    				}
+    			}else if(name.equals("android:src")){
+    				if(view instanceof ImageView){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((ImageView)view).setImageDrawable(d);
+    					}
+    				}
+    			}else if(name.equals("android:progressDrawable")){
+    				if(view instanceof ProgressBar){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((ProgressBar)view).setProgressDrawable(d);
+    					}
+    				}
+    			}else if(name.equals("android:listSelector")){
+    				if(view instanceof AbsListView){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((AbsListView)view).setSelector(d);
+    					}
+    				}
+    			}else if(name.equals("android:drawableRight")){
+    				if(view instanceof TextView){
+    					Drawable d = packageRes.getDrawable(drawableId);
+    					if(d != null){
+    						((TextView)view).setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
+    					}
+    				}
+    			}
 		    }
 		}
 	}
