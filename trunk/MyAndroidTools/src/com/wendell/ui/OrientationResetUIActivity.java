@@ -1,51 +1,37 @@
 package com.wendell.ui;
 
-import android.app.Activity;
-import android.content.res.Configuration;
-import android.view.View;
-import android.view.ViewGroup.LayoutParams;
+import com.wendell.ui.theme.ThemeActivity;
 
-public abstract class OrientationResetUIActivity extends Activity {
-	
-	protected int contentViewResID = View.NO_ID;
-	
-	@Override
-	public void setContentView(int layoutResID) {
-		// TODO Auto-generated method stub
-		super.setContentView(layoutResID);
-		contentViewResID = layoutResID;
-	}
-	
-	@Override
-	public void setContentView(View view) {
-		// TODO Auto-generated method stub
-		super.setContentView(view);
-		contentViewResID = view.getId();
-	}
-	
-	@Override
-	public void setContentView(View view, LayoutParams params) {
-		// TODO Auto-generated method stub
-		super.setContentView(view, params);
-		contentViewResID = view.getId();
-	}
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+
+public abstract class OrientationResetUIActivity extends ThemeActivity {
 	
 	@Override
 	public final void onConfigurationChanged(Configuration newConfig) {
 		// TODO Auto-generated method stub
 		super.onConfigurationChanged(newConfig);
-		if(contentViewResID != View.NO_ID){
-			setContentView(contentViewResID);
-			if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-				onUIResetedWhenPortrait();
-			}else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
-				onUIResetedWhenLandscape();
-			}
+		super.resetUI();
+		if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+			onInitWhenPortrait();
+		}else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+			onInitWhenLandscape();
 		}
 	}
 	
-	protected abstract void onUIResetedWhenPortrait();
+	@Override
+	protected void onInit() {
+		// TODO Auto-generated method stub
+		int orientation = getRequestedOrientation();
+		if(orientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
+			onInitWhenLandscape();
+		}else if(orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
+			onInitWhenPortrait();
+		}
+	}
 	
-	protected abstract void onUIResetedWhenLandscape();
+	protected abstract void onInitWhenPortrait();
+	
+	protected abstract void onInitWhenLandscape();
 	
 }

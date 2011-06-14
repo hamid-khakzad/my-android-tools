@@ -35,6 +35,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	
 	private Context context = null;
 	private String packageName = null;
+	private String themeName = null;
 	private Resources packageRes = null;
 	private HashMap<String, HashMap<String, String>> stylesMap = new HashMap<String, HashMap<String,String>>();
 	private HashMap<String, String> themeMap = null;
@@ -59,15 +60,29 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	}
 	
 	private ThemeFactory(Context context,String packageName,String themeName){
+		if(context == null || packageName == null) throw new NullPointerException();
 		this.context = context;
 		this.packageName = packageName;
+		this.themeName = themeName;
 		try{
 			loadStyles();
 		}catch(Exception e){
 			throw new RuntimeException(e);
 		}
-		if(themeName != null){
-			this.themeMap = stylesMap.get(themeName);
+	}
+	
+	public void update(String packageName,String themeName){
+		if(packageName == null) throw new NullPointerException();
+		if(this.packageName.equals(packageName) && ((this.themeName == null && themeName == null) || this.themeName.equals(themeName))) return;
+		this.packageName = packageName;
+		this.themeName = themeName;
+		this.packageRes = null;
+		this.stylesMap.clear();
+		this.themeMap = null;
+		try{
+			loadStyles();
+		}catch(Exception e){
+			throw new RuntimeException(e);
 		}
 	}
 	
@@ -100,22 +115,29 @@ public class ThemeFactory implements LayoutInflater.Factory {
 				}
 				eventType = parser.next();
 			}
+			if(themeName != null){
+				this.themeMap = stylesMap.get(themeName);
+			}
 		}
 	}
 	
 	@Override
 	public View onCreateView(String name, Context context, AttributeSet attrs) {
 		// TODO Auto-generated method stub
-		LayoutInflater inflater = null;
+		LayoutInflater inflater = LayoutInflater.from(context);
+		View view = null;
 		for(int i = 0;i < ANDROID_VIEW_FULLNAME_PREFIX.length;i++){
 			try{
-				View view = inflater.createView(name, ANDROID_VIEW_FULLNAME_PREFIX[i], attrs);
-				return view;
+				view = inflater.createView(name, ANDROID_VIEW_FULLNAME_PREFIX[i], attrs);
+				break;
 			}catch(ClassNotFoundException e){
 				continue;
 			}
 		}
-		return null;
+		if(view == null) return null;
+		applyTheme(view);
+		applyThemeFromLayout(view, attrs);
+		return view;
 	}
 	
 	private void applyTheme(View view){
@@ -165,6 +187,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 		    }else if(value.startsWith("@")){
 		    	realValue = value;
 		    }
+		    if(realValue == null) continue;
 		    if(realValue.startsWith("@style/")){
 		    	if(name.equals("style")){
 	    			String style = realValue.substring("@style/".length());
