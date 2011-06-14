@@ -104,8 +104,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 						style = new HashMap<String, String>();
 						stylesMap.put(parser.getAttributeValue(null,"name"), style);
 					}else if(tagName.equals("item")){
-						String text = parser.nextText();
-						style.put(parser.getAttributeValue(null,"name"), text);
+						style.put(parser.getAttributeValue(null,"name"), parser.nextText());
 					}
 					break;
 				case XmlPullParser.TEXT:
@@ -177,25 +176,20 @@ public class ThemeFactory implements LayoutInflater.Factory {
 		for(int p = 0;p < count;p++){
 			String name = paramAttributeSet.getAttributeName(p);
 		    String value = paramAttributeSet.getAttributeValue(p);
-		    String realValue = null;
 		    if(value.startsWith("?")){
 		    	if(themeMap == null) continue;
 	    		String theme = null;
 	    		if(value.startsWith("?attr/")) theme = value.substring("?attr/".length());
 	    		else theme = value.substring(1);
-	    		realValue = themeMap.get(theme);
-		    }else if(value.startsWith("@")){
-		    	realValue = value;
+	    		value = themeMap.get(theme);
+	    		if(value == null) continue;
 		    }
-		    if(realValue == null) continue;
-		    if(realValue.startsWith("@style/")){
-		    	if(name.equals("style")){
-	    			String style = realValue.substring("@style/".length());
-	    			applyStyle(view, style);
-		    	}
-		    }else if(realValue.startsWith("@drawable/")){
-		    	String drawable = realValue.substring("@drawable/".length());
-		    	Drawable d = getPackageDrawable(drawable);
+		    if(value.startsWith("@style/")){
+    			String style = value.substring("@style/".length());
+    			applyStyle(view, style);
+		    }else if(value.startsWith("@")){
+		    	int drawableId = Integer.valueOf(value.substring(1)).intValue();
+		    	Drawable d = packageRes.getDrawable(drawableId);
 		    	if(d != null){
 	    			if(name.equals("android:background")){
 					    int i = view.getPaddingLeft();
