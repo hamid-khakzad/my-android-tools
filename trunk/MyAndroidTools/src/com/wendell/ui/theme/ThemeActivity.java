@@ -7,7 +7,7 @@ import android.view.ViewGroup.LayoutParams;
 
 public abstract class ThemeActivity extends Activity {
 	
-	protected int contentViewResID = View.NO_ID;
+	protected int currContentViewResID = View.NO_ID;
 	protected View currContentView = null;
 	
 	@Override
@@ -28,7 +28,7 @@ public abstract class ThemeActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.setContentView(view);
 		onInit(currContentView);
-		contentViewResID = view.getId();
+		currContentViewResID = view.getId();
 		currContentView = view;
 	}
 	
@@ -37,13 +37,14 @@ public abstract class ThemeActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.setContentView(view, params);
 		onInit(currContentView);
-		contentViewResID = view.getId();
+		currContentViewResID = view.getId();
 		currContentView = view;
 	}
 	
 	@Override
 	protected void onDestroy() {
 		// TODO Auto-generated method stub
+		super.onDestroy();
 		ThemeEngine.removeThemeActivity(this);
 	}
 	
@@ -60,15 +61,17 @@ public abstract class ThemeActivity extends Activity {
 			tf.update(packageName, themeName);
 		}
 		View prevContentView = currContentView;
-		resetUI();
-		onInit(prevContentView);
+		if(resetUI()) onInit(prevContentView);
 	}
 	
-	protected void resetUI(){
-		if(contentViewResID == View.NO_ID) throw new RuntimeException("Could not reset UI,there is no content view now.");
-		View newContentView = getLayoutInflater().inflate(contentViewResID, null);
-		super.setContentView(newContentView);
-		currContentView = newContentView;
+	protected boolean resetUI(){
+		if(currContentViewResID != View.NO_ID){
+			View newContentView = getLayoutInflater().inflate(currContentViewResID, null);
+			super.setContentView(newContentView);
+			currContentView = newContentView;
+			return true;
+		}
+		return false;
 	}
 	
 	/**
