@@ -28,10 +28,8 @@ import android.widget.TextView;
 
 public class ThemeFactory implements LayoutInflater.Factory {
 	
-	private static ThemeFactory previousFactory = null;
-	private static String previousPackageName = null;
-	private static String previousThemeName = null;
 	private static String[] ANDROID_VIEW_FULLNAME_PREFIX = {"android.widget.","android.webkit.","android.view."};
+	private static ThemeFactory factory = null;
 	
 	private Context context = null;
 	private String packageName = null;
@@ -41,37 +39,24 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	private HashMap<String, String> themeMap = null;
 	
 	/**
-	 * <p>获取ThemeFactory实例
+	 * <p>创建或修改ThemeFactory实例，当前类是单例的
 	 * @param context
 	 * @param packageName 需要应用的主题包名
 	 * @param themeName 主题包styles.xml中主题样式的名字，如果没有通用的主题样式，可传null
 	 * @return
 	 */
-	public synchronized static ThemeFactory getInstance(Context context,String packageName,String themeName){
-		if(previousFactory != null){
-			if(previousPackageName.equals(packageName) && ((previousThemeName == null && themeName == null) || previousThemeName.equals(themeName))){
-				return previousFactory;
-			}
-		}
-		previousFactory = new ThemeFactory(context,packageName,themeName);
-		previousPackageName = packageName;
-		previousThemeName = themeName;
-		return previousFactory;
+	public static ThemeFactory createOrUpdateInstance(Context context,String packageName,String themeName){
+		if(factory == null) factory = new ThemeFactory(context);
+		factory.update(packageName,themeName);
+		return factory;
 	}
 	
-	private ThemeFactory(Context context,String packageName,String themeName){
-		if(context == null || packageName == null) throw new NullPointerException();
+	private ThemeFactory(Context context){
+		if(context == null) throw new NullPointerException();
 		this.context = context;
-		this.packageName = packageName;
-		this.themeName = themeName;
-		try{
-			loadStyles();
-		}catch(Exception e){
-			throw new RuntimeException(e);
-		}
 	}
 	
-	public void update(String packageName,String themeName){
+	private void update(String packageName,String themeName){
 		if(packageName == null) throw new NullPointerException();
 		if(this.packageName.equals(packageName) && ((this.themeName == null && themeName == null) || this.themeName.equals(themeName))) return;
 		this.packageName = packageName;
