@@ -8,34 +8,37 @@ import android.view.ViewGroup.LayoutParams;
 public abstract class ThemeActivity extends Activity {
 	
 	protected int contentViewResID = View.NO_ID;
+	protected View currContentView = null;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		ThemeEngine.addThemeActivity(this);
-		onInit();
 	}
 	
 	@Override
 	public void setContentView(int layoutResID) {
 		// TODO Auto-generated method stub
-		super.setContentView(layoutResID);
-		contentViewResID = layoutResID;
+		setContentView(getLayoutInflater().inflate(layoutResID, null));
 	}
 	
 	@Override
 	public void setContentView(View view) {
 		// TODO Auto-generated method stub
 		super.setContentView(view);
+		onInit(currContentView);
 		contentViewResID = view.getId();
+		currContentView = view;
 	}
 	
 	@Override
 	public void setContentView(View view, LayoutParams params) {
 		// TODO Auto-generated method stub
 		super.setContentView(view, params);
+		onInit(currContentView);
 		contentViewResID = view.getId();
+		currContentView = view;
 	}
 	
 	@Override
@@ -56,19 +59,22 @@ public abstract class ThemeActivity extends Activity {
 		}else{
 			tf.update(packageName, themeName);
 		}
+		View prevContentView = currContentView;
 		resetUI();
-		onInit();
+		onInit(prevContentView);
 	}
 	
 	protected void resetUI(){
-		if(contentViewResID != View.NO_ID){
-			setContentView(contentViewResID);
-		}
+		if(contentViewResID == View.NO_ID) throw new RuntimeException("Could not reset UI,there is no content view now.");
+		View newContentView = getLayoutInflater().inflate(contentViewResID, null);
+		super.setContentView(newContentView);
+		currContentView = newContentView;
 	}
 	
 	/**
 	 * <p>对UI的初始化操作须统一在该方法中进行，因为改变主题将会重构界面，此时会自动回调该方法重新初始化
+	 * @param prevContentView 上一个ContentView，第一次初始化时将传入null，传入该参数是为了方便状态保存
 	 */
-	protected abstract void onInit();
+	protected abstract void onInit(View prevContentView);
 	
 }
