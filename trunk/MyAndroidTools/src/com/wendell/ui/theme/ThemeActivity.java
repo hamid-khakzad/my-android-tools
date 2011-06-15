@@ -16,7 +16,7 @@ public abstract class ThemeActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		ThemeEngine.addThemeActivity(this);
 		if(ThemeEngine.CURR_PACKAGENAME != null){
-			changeTheme(ThemeEngine.CURR_PACKAGENAME,ThemeEngine.CURR_THEMENAME);
+			getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CURR_PACKAGENAME, ThemeEngine.CURR_THEMENAME));
 		}
 	}
 	
@@ -56,11 +56,9 @@ public abstract class ThemeActivity extends Activity {
 	 * @param themeName 主题包styles.xml中主题样式的名字，如果没有通用的主题样式，可传null
 	 */
 	public void changeTheme(String packageName,String themeName){
-		ThemeFactory tf = (ThemeFactory)getLayoutInflater().getFactory();
-		if(tf == null){
-			getLayoutInflater().setFactory(ThemeFactory.getInstance(this, packageName, themeName));
-		}else{
-			tf.update(packageName, themeName);
+		ThemeFactory tf = ThemeFactory.createOrUpdateInstance(this, packageName, themeName);
+		if(getLayoutInflater().getFactory() == null){
+			getLayoutInflater().setFactory(tf);
 		}
 		View prevContentView = currContentView;
 		if(resetUI()) onInit(prevContentView);
