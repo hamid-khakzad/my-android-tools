@@ -20,25 +20,24 @@ public abstract class ThemeActivity extends Activity {
 	@Override
 	public void setContentView(int layoutResID) {
 		// TODO Auto-generated method stub
-		setContentView(getLayoutInflater().inflate(layoutResID, null));
+		View newView = getLayoutInflater().inflate(layoutResID, null);
+		super.setContentView(newView);
+		currContentViewResID = layoutResID;
+		View prevContentView = currContentView;
+		currContentView = newView;
+		onInit(prevContentView);
 	}
 	
 	@Override
 	public void setContentView(View view) {
 		// TODO Auto-generated method stub
-		super.setContentView(view);
-		onInit(currContentView);
-		currContentViewResID = view.getId();
-		currContentView = view;
+		throw new UnsupportedOperationException("ThemeActivity can only use 'setContentView(int layoutResID)' to set content view.");
 	}
 	
 	@Override
 	public void setContentView(View view, LayoutParams params) {
 		// TODO Auto-generated method stub
-		super.setContentView(view, params);
-		onInit(currContentView);
-		currContentViewResID = view.getId();
-		currContentView = view;
+		throw new UnsupportedOperationException("ThemeActivity can only use 'setContentView(int layoutResID)' to set content view.");
 	}
 	
 	@Override

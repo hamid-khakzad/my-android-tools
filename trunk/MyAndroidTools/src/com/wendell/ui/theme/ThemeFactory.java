@@ -189,46 +189,66 @@ public class ThemeFactory implements LayoutInflater.Factory {
     			applyStyle(view, style);
 		    }else if(value.startsWith("@")){
 		    	int resId = Integer.valueOf(value.substring(1)).intValue();
-		    	String resName = context.getResources().getResourceEntryName(resId);
-		    	Drawable d = getPackageDrawable(resName);
-		    	if(d != null){
-	    			if(name.equals("background")){
+		    	if(name.equals("background")){
+    				Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    				if(d != null){
     					int i = view.getPaddingLeft();
     				    int j = view.getPaddingTop();
     				    int k = view.getPaddingRight();
     				    int m = view.getPaddingBottom();
     				    view.setBackgroundDrawable(d);
     				    view.setPadding(i, j, k, m);
-	    			}else if(name.equals("divider")){
-	    				if(view instanceof ListView){
-	    					((ListView)view).setDivider(d);
-	    				}
-	    			}else if(name.equals("groupIndicator")){
-	    				if(view instanceof ExpandableListView){
-	    					((ExpandableListView)view).setGroupIndicator(d);
-	    				}
-	    			}else if(name.equals("childDivider")){
-	    				if(view instanceof ExpandableListView){
-	    					((ExpandableListView)view).setChildDivider(d);
-	    				}
-	    			}else if(name.equals("src")){
-	    				if(view instanceof ImageView){
-	    					((ImageView)view).setImageDrawable(d);
-	    				}
-	    			}else if(name.equals("progressDrawable")){
-	    				if(view instanceof ProgressBar){
-	    					((ProgressBar)view).setProgressDrawable(d);
-	    				}
-	    			}else if(name.equals("listSelector")){
-	    				if(view instanceof AbsListView){
-	    					((AbsListView)view).setSelector(d);
-	    				}
-	    			}else if(name.equals("drawableRight")){
-	    				if(view instanceof TextView){
-	    					((TextView)view).setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
-	    				}
-	    			}
-		    	}
+    				}
+    			}else if(name.equals("divider")){
+    				if(view instanceof ListView){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((ListView)view).setDivider(d);
+    					}
+    				}
+    			}else if(name.equals("groupIndicator")){
+    				if(view instanceof ExpandableListView){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((ExpandableListView)view).setGroupIndicator(d);
+    					}
+    				}
+    			}else if(name.equals("childDivider")){
+    				if(view instanceof ExpandableListView){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((ExpandableListView)view).setChildDivider(d);
+    					}
+    				}
+    			}else if(name.equals("src")){
+    				if(view instanceof ImageView){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((ImageView)view).setImageDrawable(d);
+    					}
+    				}
+    			}else if(name.equals("progressDrawable")){
+    				if(view instanceof ProgressBar){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((ProgressBar)view).setProgressDrawable(d);
+    					}
+    				}
+    			}else if(name.equals("listSelector")){
+    				if(view instanceof AbsListView){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((AbsListView)view).setSelector(d);
+    					}
+    				}
+    			}else if(name.equals("drawableRight")){
+    				if(view instanceof TextView){
+    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
+    					if(d != null){
+    						((TextView)view).setCompoundDrawablesWithIntrinsicBounds(null, null, d, null);
+    					}
+    				}
+    			}
 		    }
 		}
 	}
