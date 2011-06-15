@@ -34,13 +34,21 @@ public abstract class ThemeActivity extends Activity {
 	@Override
 	public void setContentView(View view) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("ThemeActivity can only use 'setContentView(int layoutResID)' to set content view.");
+		super.setContentView(view);
+		currContentViewResID = View.NO_ID;
+		View prevContentView = currContentView;
+		currContentView = view;
+		onInit(prevContentView);
 	}
 	
 	@Override
 	public void setContentView(View view, LayoutParams params) {
 		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("ThemeActivity can only use 'setContentView(int layoutResID)' to set content view.");
+		super.setContentView(view, params);
+		currContentViewResID = View.NO_ID;
+		View prevContentView = currContentView;
+		currContentView = view;
+		onInit(prevContentView);
 	}
 	
 	@Override
