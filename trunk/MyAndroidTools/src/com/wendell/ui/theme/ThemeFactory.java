@@ -58,7 +58,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	
 	private void update(String packageName,String themeName){
 		if(packageName == null) throw new NullPointerException();
-		if(this.packageName.equals(packageName) && ((this.themeName == null && themeName == null) || this.themeName.equals(themeName))) return;
+		if(this.packageName != null && this.packageName.equals(packageName) && ((this.themeName == null && themeName == null) || this.themeName.equals(themeName))) return;
 		this.packageName = packageName;
 		this.themeName = themeName;
 		this.packageRes = null;
