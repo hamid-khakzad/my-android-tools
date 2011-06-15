@@ -10,6 +10,9 @@ import android.content.pm.ResolveInfo;
 
 public final class ThemeEngine {
 	
+	public static String CURR_PACKAGENAME = null;
+	public static String CURR_THEMENAME = null;
+	
 	private static String THEME_INTENT_ACTION = "android.intent.action.MYANDROIDTOOLS_THEME";
 	private static String THEME_INTENT_CATEGORY = "android.intent.category.MYANDROIDTOOLS_THEME";
 	private static Vector<ThemeActivity> mThemeActivities = new Vector<ThemeActivity>();
@@ -29,6 +32,8 @@ public final class ThemeEngine {
 		for(int i = 0;i < mThemeActivities.size();i++){
 			mThemeActivities.get(i).changeTheme(packageName, themeName);
 		}
+		CURR_PACKAGENAME = packageName;
+		CURR_THEMENAME = themeName;
 	}
 	
 	public static boolean addThemeActivity(ThemeActivity mThemeActivity){

@@ -15,6 +15,9 @@ public abstract class ThemeActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		ThemeEngine.addThemeActivity(this);
+		if(ThemeEngine.CURR_PACKAGENAME != null){
+			changeTheme(ThemeEngine.CURR_PACKAGENAME,ThemeEngine.CURR_THEMENAME);
+		}
 	}
 	
 	@Override
