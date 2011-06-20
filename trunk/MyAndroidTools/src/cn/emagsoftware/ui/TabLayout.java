@@ -73,20 +73,7 @@ public class TabLayout extends ViewGroup {
 			content = childGroup1;
 		}
 		tabs.clear();
-		for(int i = 0;i < head.getChildCount();i++){
-			View view = head.getChildAt(i);
-			if(view.getClass().equals(tabClass)){
-				tabs.add(view);
-				final int index = tabs.size()-1;
-				view.setOnClickListener(new View.OnClickListener(){
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-						setSelectedTab(index);
-					}
-				});
-			}
-		}
+		initTabs(head);
 		if(tempSelectedTabIndex != -1){
 			selectedTabIndex = -1;
 			int tempSelectedTabIndexCopy = tempSelectedTabIndex;
@@ -100,6 +87,29 @@ public class TabLayout extends ViewGroup {
 			}
 		}else{
 			selectedTabIndex = -1;
+		}
+	}
+	
+	/**
+	 * <p>使用递归方法初始化所有Tab
+	 * @param view
+	 */
+	protected void initTabs(View view){
+		if(view.getClass().equals(tabClass)){
+			tabs.add(view);
+			final int index = tabs.size()-1;
+			view.setOnClickListener(new View.OnClickListener(){
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					setSelectedTab(index);
+				}
+			});
+		}else if(view instanceof ViewGroup){
+			ViewGroup vg = (ViewGroup)view;
+			for(int i = 0;i < vg.getChildCount();i++){
+				initTabs(vg.getChildAt(i));
+			}
 		}
 	}
 	
