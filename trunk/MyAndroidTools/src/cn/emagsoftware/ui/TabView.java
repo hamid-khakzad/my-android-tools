@@ -18,6 +18,10 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+/**
+ * @deprecated 该类已舍弃，可使用TabLayout代替
+ * @author Wendell
+ */
 public class TabView extends LinearLayout implements OnClickListener,OnTouchListener {
 	
 	protected Context context = null;
