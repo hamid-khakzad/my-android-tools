@@ -21,7 +21,7 @@ public class TabLayout extends ViewGroup {
 	public static final String HEAD_POSITION_LEFT = "left";
 	public static final String HEAD_POSITION_RIGHT = "right";
 	
-	protected Class<? extends View> tabClass = Button.class;
+	protected Class<?> tabClass = Button.class;
 	protected String headPosition = HEAD_POSITION_TOP;
 	protected int selectedTabIndex = -1;
 	
@@ -44,7 +44,19 @@ public class TabLayout extends ViewGroup {
 
 	public TabLayout(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
-		
+		if(attrs != null){
+			//TabLayout支持以下定义属性
+			String tabClassName = attrs.getAttributeValue(null, "tab_class");
+			String headPosition = attrs.getAttributeValue(null, "head_position");
+			String selectedTabIndexStr = attrs.getAttributeValue(null, "selected_tab");
+			try{
+				if(tabClassName != null) setTabClass(Class.forName(tabClassName));
+			}catch(ClassNotFoundException e){
+				throw new RuntimeException(e);
+			}
+			if(headPosition != null) setHeadPosition(headPosition);
+			if(selectedTabIndexStr != null) setSelectedTab(Integer.valueOf(selectedTabIndexStr));			
+		}
 	}
 	
 	protected void initUI(){
@@ -83,7 +95,7 @@ public class TabLayout extends ViewGroup {
 		}else if(tabs.size() > 0) setSelectedTab(0);
 	}
 	
-	public void setTabClass(Class<? extends View> tabClass){
+	public void setTabClass(Class<?> tabClass){
 		if(tabClass == null) throw new NullPointerException();
 		this.tabClass = tabClass;
 	}
