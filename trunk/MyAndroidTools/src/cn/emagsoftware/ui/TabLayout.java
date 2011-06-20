@@ -21,13 +21,15 @@ public class TabLayout extends ViewGroup {
 	public static final String HEAD_POSITION_LEFT = "left";
 	public static final String HEAD_POSITION_RIGHT = "right";
 	
-	protected Class<? extends View> headClass = Button.class;
+	protected Class<? extends View> tabClass = Button.class;
 	protected String headPosition = HEAD_POSITION_TOP;
-	protected int selectedIndex = -1;
+	protected int selectedTabIndex = -1;
 	
 	protected ViewGroup head = null;
 	protected ViewGroup content = null;
-	protected List<View> headItems = new ArrayList<View>();
+	protected List<View> tabs = new ArrayList<View>();
+	
+	protected OnTabChangedListener mOnTabChangedListener = null;
 	
 	public TabLayout(Context context){
 		this(context,null,0);
@@ -55,26 +57,26 @@ public class TabLayout extends ViewGroup {
 			head = childGroup2;
 			content = childGroup1;
 		}
-		headItems.clear();
+		tabs.clear();
 		for(int i = 0;i < head.getChildCount();i++){
 			View view = head.getChildAt(i);
-			if(view.getClass().equals(headClass)){
-				headItems.add(view);
+			if(view.getClass().equals(tabClass)){
+				tabs.add(view);
 				view.setOnClickListener(new View.OnClickListener(){
 					@Override
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
-						setSelectedIndex(headItems.size()-1);
+						setSelectedTab(tabs.size()-1);
 					}
 				});
 			}
 		}
-		if(headItems.size() > 0) setSelectedIndex(0);
+		if(tabs.size() > 0) setSelectedTab(0);
 	}
 	
-	public void setHeadClass(Class<? extends View> headClass){
-		if(headClass == null) throw new NullPointerException();
-		this.headClass = headClass;
+	public void setTabClass(Class<? extends View> tabClass){
+		if(tabClass == null) throw new NullPointerException();
+		this.tabClass = tabClass;
 	}
 	
 	public void setHeadPosition(String headPosition){
@@ -84,21 +86,30 @@ public class TabLayout extends ViewGroup {
 		this.headPosition = headPosition;
 	}
 	
-	public void setSelectedIndex(int index){
-		if(index < 0 || index >= headItems.size()) throw new IllegalArgumentException("index is invalid!");
-		if(index == selectedIndex) return;
+	public void setSelectedTab(int index){
+		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
+		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
 			View view = content.getChildAt(i);
 			if(index == i) view.setVisibility(View.VISIBLE);
 			else view.setVisibility(View.GONE);
 		}
-		
-		
-		
+		this.selectedTabIndex = index;
+		if(mOnTabChangedListener != null){
+			mOnTabChangedListener.onTabChanged(tabs.get(index), content.getChildAt(index), index);
+		}
 	}
 	
-	public int getSelectedIndex(){
-		return selectedIndex;
+	public int getSelectedTabIndex(){
+		return selectedTabIndex;
+	}
+	
+	public int getTabCount(){
+		return tabs.size();
+	}
+	
+	public void setOnTabChangedListener(OnTabChangedListener mOnTabChangedListener){
+		this.mOnTabChangedListener = mOnTabChangedListener;
 	}
 	
 	@Override
@@ -180,4 +191,8 @@ public class TabLayout extends ViewGroup {
 		initUI();
     }
     
+	public interface OnTabChangedListener{
+		public void onTabChanged(View tab,View contentItem,int index);
+	}
+	
 }
