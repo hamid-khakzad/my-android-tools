@@ -87,12 +87,20 @@ public class TabLayout extends ViewGroup {
 				});
 			}
 		}
-		selectedTabIndex = -1;
 		if(tempSelectedTabIndex != -1){
+			selectedTabIndex = -1;
 			int tempSelectedTabIndexCopy = tempSelectedTabIndex;
 			tempSelectedTabIndex = -1;
 			setSelectedTab(tempSelectedTabIndexCopy);
-		}else if(tabs.size() > 0) setSelectedTab(0);
+		}else if(tabs.size() > 0) {
+			if(selectedTabIndex >= 0 && selectedTabIndex < tabs.size()) setSelectedTab(selectedTabIndex);
+			else{
+				selectedTabIndex = -1;
+				setSelectedTab(0);
+			}
+		}else{
+			selectedTabIndex = -1;
+		}
 	}
 	
 	public void setTabClass(Class<?> tabClass){
@@ -140,23 +148,21 @@ public class TabLayout extends ViewGroup {
 	@Override
 	protected void onLayout(boolean changed, int l, int t, int r, int b) {
 		// TODO Auto-generated method stub
-		if (changed) {
-			View child1 = getChildAt(0);
-			View child2 = getChildAt(1);
-			if(headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_BOTTOM)){
-				int child1Width = child1.getMeasuredWidth();
-				int child1Height = child1.getMeasuredHeight();
-				if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
-				if(child2.getVisibility() != View.GONE) child2.layout(0, child1Height, child2.getMeasuredWidth(), child1Height + child2.getMeasuredHeight());
-			}else if(headPosition.equals(HEAD_POSITION_LEFT) || headPosition.equals(HEAD_POSITION_RIGHT)){
-				int child1Width = child1.getMeasuredWidth();
-				int child1Height = child1.getMeasuredHeight();
-				if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
-				if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
-			}
-			isLayout = true;
-			initUI();
+		View child1 = getChildAt(0);
+		View child2 = getChildAt(1);
+		if(headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_BOTTOM)){
+			int child1Width = child1.getMeasuredWidth();
+			int child1Height = child1.getMeasuredHeight();
+			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
+			if(child2.getVisibility() != View.GONE) child2.layout(0, child1Height, child2.getMeasuredWidth(), child1Height + child2.getMeasuredHeight());
+		}else if(headPosition.equals(HEAD_POSITION_LEFT) || headPosition.equals(HEAD_POSITION_RIGHT)){
+			int child1Width = child1.getMeasuredWidth();
+			int child1Height = child1.getMeasuredHeight();
+			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
+			if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
 		}
+		isLayout = true;
+		initUI();
 	}
 	
     @Override  
