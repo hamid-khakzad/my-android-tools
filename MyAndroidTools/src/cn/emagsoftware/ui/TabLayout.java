@@ -62,11 +62,12 @@ public class TabLayout extends ViewGroup {
 			View view = head.getChildAt(i);
 			if(view.getClass().equals(tabClass)){
 				tabs.add(view);
+				final int index = tabs.size()-1;
 				view.setOnClickListener(new View.OnClickListener(){
 					@Override
 					public void onClick(View v) {
 						// TODO Auto-generated method stub
-						setSelectedTab(tabs.size()-1);
+						setSelectedTab(index);
 					}
 				});
 			}
