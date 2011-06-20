@@ -29,6 +29,9 @@ public class TabLayout extends ViewGroup {
 	protected ViewGroup content = null;
 	protected List<View> tabs = new ArrayList<View>();
 	
+	protected boolean isLayout = false;
+	protected int tempSelectedTabIndex = -1;
+	
 	protected OnTabChangedListener mOnTabChangedListener = null;
 	
 	public TabLayout(Context context){
@@ -72,7 +75,12 @@ public class TabLayout extends ViewGroup {
 				});
 			}
 		}
-		if(tabs.size() > 0) setSelectedTab(0);
+		selectedTabIndex = -1;
+		if(tempSelectedTabIndex != -1){
+			int tempSelectedTabIndexCopy = tempSelectedTabIndex;
+			tempSelectedTabIndex = -1;
+			setSelectedTab(tempSelectedTabIndexCopy);
+		}else if(tabs.size() > 0) setSelectedTab(0);
 	}
 	
 	public void setTabClass(Class<? extends View> tabClass){
@@ -88,6 +96,10 @@ public class TabLayout extends ViewGroup {
 	}
 	
 	public void setSelectedTab(int index){
+		if(!isLayout){
+			this.tempSelectedTabIndex = index;
+			return;
+		}
 		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
@@ -130,6 +142,8 @@ public class TabLayout extends ViewGroup {
 				if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
 				if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
 			}
+			isLayout = true;
+			initUI();
 		}
 	}
 	
@@ -189,7 +203,6 @@ public class TabLayout extends ViewGroup {
 			child1.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
 		}
 		setMeasuredDimension(widthSize, heightSize);
-		initUI();
     }
     
 	public interface OnTabChangedListener{
