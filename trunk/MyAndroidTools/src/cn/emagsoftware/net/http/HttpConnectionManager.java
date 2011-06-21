@@ -11,6 +11,8 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +27,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.6
+ * @version 1.7
  */
 public final class HttpConnectionManager {
 	
@@ -44,7 +46,18 @@ public final class HttpConnectionManager {
 	
 	public static final int REDIRECT_MAX_COUNT = 10;
 	
+	private static boolean isKeepSession = false;
+	private static Map<String, String> sessions = Collections.synchronizedMap(new HashMap<String, String>());
+	
 	private HttpConnectionManager(){}
+	
+	public static void setKeepSession(boolean isKeepSession){
+		HttpConnectionManager.isKeepSession = isKeepSession;
+	}
+	
+	public static void clearSessions(){
+		sessions.clear();
+	}
 	
 	/**
 	 * 进行http get请求
@@ -66,6 +79,7 @@ public final class HttpConnectionManager {
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
+			if(isKeepSession) saveSession(result);
 			if(rspCode != HttpURLConnection.HTTP_OK) return result;
 			input = httpConn.getInputStream();
 			BufferedInputStream buffInput = new BufferedInputStream(input);
@@ -107,6 +121,7 @@ public final class HttpConnectionManager {
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
+			if(isKeepSession) saveSession(result);
 			if(rspCode != HttpURLConnection.HTTP_OK) return result;
 			input = httpConn.getInputStream();
 			BufferedInputStream buffInput = new BufferedInputStream(input);
@@ -165,6 +180,12 @@ public final class HttpConnectionManager {
 			httpConn.setDoOutput(true);
 			httpConn.setReadTimeout(connOrReadTimeout);
 			httpConn.setConnectTimeout(connOrReadTimeout);
+			if(isKeepSession){
+				String session = querySession(myUrl);
+				if(session != null){
+					httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
+				}
+			}
 			if(requestHeaders != null){
 				Iterator<String> keys = requestHeaders.keySet().iterator();
 				while(keys.hasNext()){
@@ -215,6 +236,23 @@ public final class HttpConnectionManager {
 			}
 			throw new RuntimeException(e);
 		}
+	}
+	
+	/**
+	 * <p>根据url从缓存中查找能够维持session的cookie值，若未找到将返回null
+	 * @param url
+	 * @return
+	 */
+	private static String querySession(URL url){
+		return null;
+	}
+	
+	/**
+	 * <p>保存当前响应结果中用于维持session的cookie值
+	 * @param result
+	 */
+	private static void saveSession(HttpResponseResult result){
+		
 	}
 	
 	private static class MyX509TrustManager implements X509TrustManager{
