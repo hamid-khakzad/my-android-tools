@@ -74,15 +74,12 @@ public class TabLayout extends ViewGroup {
 		}
 		tabs.clear();
 		initTabs(head);
-		int tempSelectedTabIndexCopy = tempSelectedTabIndex;
-		int selectedTabIndexCopy = selectedTabIndex;
-		tempSelectedTabIndex = -1;
-		selectedTabIndex = -1;
-		if(tempSelectedTabIndexCopy != -1){
+		if(tempSelectedTabIndex != -1){
+			int tempSelectedTabIndexCopy = tempSelectedTabIndex;
+			tempSelectedTabIndex = -1;
 			setSelectedTab(tempSelectedTabIndexCopy);
-		}else if(tabs.size() > 0) {
-			if(selectedTabIndexCopy >= 0 && selectedTabIndexCopy < tabs.size()) setSelectedTab(selectedTabIndexCopy);
-			else setSelectedTab(0);
+		}else if(tabs.size() > 0 && selectedTabIndex == -1) {
+			setSelectedTab(0);
 		}
 	}
 	
