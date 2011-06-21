@@ -244,7 +244,19 @@ public final class HttpConnectionManager {
 	 * @return
 	 */
 	private static String querySession(URL url){
-		return null;
+		String host = url.getHost();
+		String path = url.getPath();
+		if(path.equals("") || path.equals("/")){
+			return sessions.get(host);
+		}else{
+			int index = path.indexOf("/", 1);
+			if(index != -1) path = path.substring(0, index);
+			String sessionCookie = sessions.get(host.concat(path));
+			if(sessionCookie == null){
+				sessionCookie = sessions.get(host);
+			}
+			return sessionCookie;
+		}
 	}
 	
 	/**
@@ -252,7 +264,36 @@ public final class HttpConnectionManager {
 	 * @param result
 	 */
 	private static void saveSession(HttpResponseResult result){
-		
+		Map<String, List<String>> headers = result.getResponseHeaders();
+		if(headers != null){
+			List<String> cookies = headers.get(HEADER_RESPONSE_SET_COOKIE);
+			if(cookies != null){
+				for(String cookie:cookies){
+					if(cookie != null){
+						String[] cookieArr = cookie.split(";");
+						String sessionCookie = null;
+						for(String perCookie:cookieArr){
+							perCookie = perCookie.trim();
+							if(perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID=")){
+								sessionCookie = perCookie;
+								break;
+							}
+						}
+						if(sessionCookie == null) sessionCookie = cookieArr[0];
+						URL url = result.getResponseURL();
+						String host = url.getHost();
+						String path = url.getPath();
+						if(path.equals("") || path.equals("/")){
+							sessions.put(host, sessionCookie);
+						}else{
+							int index = path.indexOf("/", 1);
+							if(index != -1) path = path.substring(0, index);
+							sessions.put(host.concat(path), sessionCookie);
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	private static class MyX509TrustManager implements X509TrustManager{
