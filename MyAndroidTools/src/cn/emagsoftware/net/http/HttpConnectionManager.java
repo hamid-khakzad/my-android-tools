@@ -27,7 +27,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.7
+ * @version 1.8
  */
 public final class HttpConnectionManager {
 	
@@ -244,16 +244,20 @@ public final class HttpConnectionManager {
 	 * @return
 	 */
 	private static String querySession(URL url){
-		String host = url.getHost();
+		String host = url.getHost().toLowerCase();
+		if(host.equals("localhost")) host = "127.0.0.1";
+		int port = url.getPort();
+		if(port == -1) port = url.getDefaultPort();
+		String authority = host.concat(":").concat(String.valueOf(port));
 		String path = url.getPath();
 		if(path.equals("") || path.equals("/")){
-			return sessions.get(host);
+			return sessions.get(authority);
 		}else{
 			int index = path.indexOf("/", 1);
 			if(index != -1) path = path.substring(0, index);
-			String sessionCookie = sessions.get(host.concat(path));
+			String sessionCookie = sessions.get(authority.concat(path));
 			if(sessionCookie == null){
-				sessionCookie = sessions.get(host);
+				sessionCookie = sessions.get(authority);
 			}
 			return sessionCookie;
 		}
@@ -281,14 +285,18 @@ public final class HttpConnectionManager {
 						}
 						if(sessionCookie == null) sessionCookie = cookieArr[0];
 						URL url = result.getResponseURL();
-						String host = url.getHost();
+						String host = url.getHost().toLowerCase();
+						if(host.equals("localhost")) host = "127.0.0.1";
+						int port = url.getPort();
+						if(port == -1) port = url.getDefaultPort();
+						String authority = host.concat(":").concat(String.valueOf(port));
 						String path = url.getPath();
 						if(path.equals("") || path.equals("/")){
-							sessions.put(host, sessionCookie);
+							sessions.put(authority, sessionCookie);
 						}else{
 							int index = path.indexOf("/", 1);
 							if(index != -1) path = path.substring(0, index);
-							sessions.put(host.concat(path), sessionCookie);
+							sessions.put(authority.concat(path), sessionCookie);
 						}
 					}
 				}
