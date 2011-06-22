@@ -2,6 +2,8 @@ package cn.emagsoftware.net.http;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Iterator;
+import java.util.Map;
 
 import cn.emagsoftware.util.StringUtilities;
 
@@ -21,6 +23,19 @@ public final class HttpManager {
 		}catch(UnsupportedEncodingException e){
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static String concatParams(Map<String,String> params){
+		Iterator<String> keys = params.keySet().iterator();
+		StringBuffer paramsBuff = new StringBuffer();
+		while(keys.hasNext()){
+			String key = keys.next();
+			String value = params.get(key);
+			paramsBuff.append(key.concat("=").concat(value).concat("&"));
+		}
+		String paramsStr = paramsBuff.toString();
+		if(!paramsStr.equals("")) paramsStr = paramsStr.substring(0, paramsStr.length()-1);
+		return paramsStr;
 	}
 	
 	public static String encodeParams(String params,String enc){
