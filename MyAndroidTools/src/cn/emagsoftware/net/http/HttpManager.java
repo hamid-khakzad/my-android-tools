@@ -38,12 +38,12 @@ public final class HttpManager {
 		return paramsStr;
 	}
 	
-	public static String encodeParams(String params,String enc){
+	public static String encodeParams(String concatedParams,String enc){
 		try{
-			params = URLEncoder.encode(params,enc);
-			params = StringUtilities.replaceWordsAll(params, URLEncoder.encode("="), "=");
-			params = StringUtilities.replaceWordsAll(params, URLEncoder.encode("&"), "&");
-			return params;
+			concatedParams = URLEncoder.encode(concatedParams,enc);
+			concatedParams = StringUtilities.replaceWordsAll(concatedParams, URLEncoder.encode("="), "=");
+			concatedParams = StringUtilities.replaceWordsAll(concatedParams, URLEncoder.encode("&"), "&");
+			return concatedParams;
 		}catch(UnsupportedEncodingException e){
 			throw new RuntimeException(e);
 		}
