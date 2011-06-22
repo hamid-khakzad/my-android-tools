@@ -28,7 +28,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 1.9
+ * @version 2.0
  */
 public final class HttpConnectionManager {
 	
@@ -102,13 +102,13 @@ public final class HttpConnectionManager {
 	}
 	
 	/**
-	 * 进行http post请求
+	 * 进行http post请求，将以值为application/x-www-form-urlencoded的Content-Type来提交键值对参数
 	 * @param url 请求的url
 	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
-	 * @param postParams 提交的POST数据，不需要时可传null，将会以传入的urlEnc字符集进行编码
+	 * @param postParams 提交的POST参数，不需要时可传null
 	 * @return HttpResponseResult实例
 	 * @throws IOException
 	 */
@@ -116,7 +116,65 @@ public final class HttpConnectionManager {
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, postParams);
+			if(requestHeaders == null) requestHeaders = new HashMap<String, List<String>>();
+			List<String> contentTypes = requestHeaders.get(HEADER_REQUEST_CONTENT_TYPE);
+			if(contentTypes == null) contentTypes = new ArrayList<String>();
+			contentTypes.add("application/x-www-form-urlencoded");
+			requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
+			byte[] paramsData = null;
+			if(postParams != null){
+				String postParamsStr = HttpManager.concatParams(postParams);
+				postParamsStr = HttpManager.encodeParams(postParamsStr, urlEnc);    //post参数时，需对参数进行url编码
+				paramsData = postParamsStr.getBytes();    //经过url编码之后的参数只含有英文字符，可用任意字符集对其编码
+			}
+			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, paramsData);
+			HttpResponseResult result = new HttpResponseResult();
+			result.setResponseURL(httpConn.getURL());
+			int rspCode = httpConn.getResponseCode();
+			result.setResponseCode(rspCode);
+			result.setResponseHeaders(httpConn.getHeaderFields());
+			if(isKeepSession) saveSession(result);
+			if(rspCode != HttpURLConnection.HTTP_OK) return result;
+			input = httpConn.getInputStream();
+			BufferedInputStream buffInput = new BufferedInputStream(input);
+			ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
+			byte[] b = new byte[2*1024];
+			int len;
+			while ((len = buffInput.read(b)) > 0) {
+				tempOutput.write(b,0,len);
+			}
+			result.setData(tempOutput.toByteArray());
+			return result;
+		}finally{
+			try{
+				if(input != null) input.close();
+			}finally{
+				if(httpConn != null) httpConn.disconnect();
+			}
+		}
+	}
+	
+	/**
+	 * 进行http post请求，将以值为application/octet-stream的Content-Type来提交数据
+	 * @param url 请求的url
+	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
+	 * @param followRedirects 是否自动重定向
+	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
+	 * @param requestHeaders 请求头，不需要时可传null
+	 * @param postData 提交的POST数据，不需要时可传null
+	 * @return HttpResponseResult实例
+	 * @throws IOException
+	 */
+	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
+		HttpURLConnection httpConn = null;
+		InputStream input = null;
+		try{
+			if(requestHeaders == null) requestHeaders = new HashMap<String, List<String>>();
+			List<String> contentTypes = requestHeaders.get(HEADER_REQUEST_CONTENT_TYPE);
+			if(contentTypes == null) contentTypes = new ArrayList<String>();
+			contentTypes.add("application/octet-stream");
+			requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
+			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, postData);
 			HttpResponseResult result = new HttpResponseResult();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -152,11 +210,11 @@ public final class HttpConnectionManager {
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param currentRedirectCount 当前是第几次重定向
 	 * @param requestHeaders 请求头，不需要时可传null
-	 * @param postParams method为POST时提交的数据，不需要时可传null，将会以传入的urlEnc字符集进行编码
+	 * @param postData method为POST时提交的数据，不需要时可传null
 	 * @return HttpURLConnection实例
 	 * @throws IOException
 	 */
-	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
+	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
 		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
 		url = HttpManager.encodeURL(url, urlEnc);
@@ -166,7 +224,7 @@ public final class HttpConnectionManager {
 		OutputStream output = null;
 		try{
 			if(isSSL) {
-				SSLContext sslCont = SSLContext.getInstance("TLS"); 
+				SSLContext sslCont = SSLContext.getInstance("TLS");
 				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
 				HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
 				HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(myUrl.getHost()));
@@ -197,19 +255,10 @@ public final class HttpConnectionManager {
 					}
 				}
 			}
-			if(method.equalsIgnoreCase("POST") && postParams != null){
-				Iterator<String> keys = postParams.keySet().iterator();
-				StringBuffer paramsBuff = new StringBuffer();
-				while(keys.hasNext()){
-					String key = keys.next();
-					String value = postParams.get(key);
-					paramsBuff.append(key.concat("=").concat(value).concat("&"));
-				}
-				String paramsStr = paramsBuff.toString();
-				if(!paramsStr.equals("")) paramsStr = paramsStr.substring(0, paramsStr.length()-1);
+			if(method.equalsIgnoreCase("POST") && postData != null){
 				output = httpConn.getOutputStream();
 				BufferedOutputStream buffOutput = new BufferedOutputStream(output);
-				buffOutput.write(HttpManager.encodeParams(paramsStr, urlEnc).getBytes());
+				buffOutput.write(postData);
 				buffOutput.flush();
 				output.close();
 			}
