@@ -1,8 +1,6 @@
 package cn.emagsoftware.net.http;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,7 +26,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.0
+ * @version 2.5
  */
 public final class HttpConnectionManager {
 	
@@ -67,38 +65,38 @@ public final class HttpConnectionManager {
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
-	 * @return HttpResponseResult实例
+	 * @return HttpResponseResultStream实例
 	 * @throws IOException
 	 */
-	public static HttpResponseResult doGet(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+	public static HttpResponseResultStream doGetForStream(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
 			httpConn = openConnection(url, urlEnc, "GET", followRedirects, connOrReadTimeout, 0, requestHeaders, null);
-			HttpResponseResult result = new HttpResponseResult();
+			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
 			if(isKeepSession) saveSession(result);
-			if(rspCode != HttpURLConnection.HTTP_OK) return result;
 			input = httpConn.getInputStream();
-			BufferedInputStream buffInput = new BufferedInputStream(input);
-			ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
-			byte[] b = new byte[2*1024];
-			int len;
-			while ((len = buffInput.read(b)) > 0) {
-				tempOutput.write(b,0,len);
-			}
-			result.setData(tempOutput.toByteArray());
+			result.setResultStream(input);
+			result.setHttpURLConn(httpConn);
 			return result;
-		}finally{
+		}catch(IOException e){
 			try{
 				if(input != null) input.close();
 			}finally{
-				if(httpConn != null) httpConn.disconnect();
+				httpConn.disconnect();
 			}
+			throw e;
 		}
+	}
+	
+	public static HttpResponseResult doGet(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders) throws IOException{
+		HttpResponseResultStream result = doGetForStream(url,urlEnc,followRedirects,connOrReadTimeout,requestHeaders);
+		result.generateData();
+		return result;
 	}
 	
 	/**
@@ -109,10 +107,10 @@ public final class HttpConnectionManager {
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
 	 * @param postParams 提交的POST参数，不需要时可传null
-	 * @return HttpResponseResult实例
+	 * @return HttpResponseResultStream实例
 	 * @throws IOException
 	 */
-	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
+	public static HttpResponseResultStream doPostForStream(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
@@ -128,30 +126,30 @@ public final class HttpConnectionManager {
 				paramsData = postParamsStr.getBytes();    //经过url编码之后的参数只含有英文字符，可用任意字符集对其编码
 			}
 			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, paramsData);
-			HttpResponseResult result = new HttpResponseResult();
+			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
 			if(isKeepSession) saveSession(result);
-			if(rspCode != HttpURLConnection.HTTP_OK) return result;
 			input = httpConn.getInputStream();
-			BufferedInputStream buffInput = new BufferedInputStream(input);
-			ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
-			byte[] b = new byte[2*1024];
-			int len;
-			while ((len = buffInput.read(b)) > 0) {
-				tempOutput.write(b,0,len);
-			}
-			result.setData(tempOutput.toByteArray());
+			result.setResultStream(input);
+			result.setHttpURLConn(httpConn);
 			return result;
-		}finally{
+		}catch(IOException e){
 			try{
 				if(input != null) input.close();
 			}finally{
 				if(httpConn != null) httpConn.disconnect();
 			}
+			throw e;
 		}
+	}
+	
+	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
+		HttpResponseResultStream result = doPostForStream(url,urlEnc,followRedirects,connOrReadTimeout,requestHeaders,postParams);
+		result.generateData();
+		return result;
 	}
 	
 	/**
@@ -162,10 +160,10 @@ public final class HttpConnectionManager {
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
 	 * @param postData 提交的POST数据，不需要时可传null
-	 * @return HttpResponseResult实例
+	 * @return HttpResponseResultStream实例
 	 * @throws IOException
 	 */
-	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
+	public static HttpResponseResultStream doPostForStream(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
@@ -175,30 +173,30 @@ public final class HttpConnectionManager {
 			contentTypes.add("application/octet-stream");
 			requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
 			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, postData);
-			HttpResponseResult result = new HttpResponseResult();
+			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
 			if(isKeepSession) saveSession(result);
-			if(rspCode != HttpURLConnection.HTTP_OK) return result;
 			input = httpConn.getInputStream();
-			BufferedInputStream buffInput = new BufferedInputStream(input);
-			ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
-			byte[] b = new byte[2*1024];
-			int len;
-			while ((len = buffInput.read(b)) > 0) {
-				tempOutput.write(b,0,len);
-			}
-			result.setData(tempOutput.toByteArray());
+			result.setResultStream(input);
+			result.setHttpURLConn(httpConn);
 			return result;
-		}finally{
+		}catch(IOException e){
 			try{
 				if(input != null) input.close();
 			}finally{
 				if(httpConn != null) httpConn.disconnect();
 			}
+			throw e;
 		}
+	}
+	
+	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
+		HttpResponseResultStream result = doPostForStream(url,urlEnc,followRedirects,connOrReadTimeout,requestHeaders,postData);
+		result.generateData();
+		return result;
 	}
 	
 	/**
