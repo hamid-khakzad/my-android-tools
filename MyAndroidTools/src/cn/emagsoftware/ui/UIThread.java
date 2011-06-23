@@ -6,6 +6,7 @@ import android.os.Looper;
 
 /**
  * <p>该类支持在非UI-Thread中创建并启动
+ * @deprecated 该类已废弃，请使用具有类似功能且实现良好的android.os.AsyncTask类
  * @author Wendell
  * @version 1.2
  */
