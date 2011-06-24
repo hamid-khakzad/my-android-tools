@@ -23,6 +23,7 @@ public class FlipLayout extends ViewGroup {
 	private VelocityTracker mVelocityTracker;
 	
 	private int mCurScreen = -1;
+	private int mTempCurScreen = -1;
 	
 	private static final int TOUCH_STATE_REST = 0;
 	private static final int TOUCH_STATE_SCROLLING = 1;
@@ -51,7 +52,7 @@ public class FlipLayout extends ViewGroup {
 		if(attrs != null){
 			//FlipLayout支持以下定义属性
 			String toScreen = attrs.getAttributeValue(null, "toScreen");
-			if(toScreen != null) setToScreen(Integer.valueOf(toScreen));
+			if(toScreen != null) mTempCurScreen = Integer.valueOf(toScreen);
 		}
 		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
@@ -98,7 +99,13 @@ public class FlipLayout extends ViewGroup {
         }
         
         // Log.e(TAG, "moving to screen "+mCurScreen);
-        if(mCurScreen == -1){
+        if(mTempCurScreen != -1){
+        	mTempCurScreen = Math.max(0, Math.min(mTempCurScreen, count-1));
+        	scrollTo(mTempCurScreen*width,0);
+        	mCurScreen = mTempCurScreen;
+        	mTempCurScreen = -1;
+        	if(listener != null) listener.onFlingChanged(mCurScreen);
+        }else if(mCurScreen == -1){
         	scrollTo(0,0);
         	mCurScreen = 0;
         	if(listener != null) listener.onFlingChanged(mCurScreen);
