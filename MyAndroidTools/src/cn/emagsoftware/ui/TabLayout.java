@@ -21,16 +21,15 @@ public class TabLayout extends ViewGroup {
 	public static final String HEAD_POSITION_LEFT = "left";
 	public static final String HEAD_POSITION_RIGHT = "right";
 	
+	protected boolean isRendered = false;
 	protected Class<?> tabClass = Button.class;
 	protected String headPosition = HEAD_POSITION_TOP;
 	protected int selectedTabIndex = -1;
+	protected int tempSelectedTabIndex = -1;
 	
 	protected ViewGroup head = null;
 	protected ViewGroup content = null;
 	protected List<View> tabs = new ArrayList<View>();
-	
-	protected boolean isLayout = false;
-	protected int tempSelectedTabIndex = -1;
 	
 	protected OnTabChangedListener mOnTabChangedListener = null;
 	
@@ -119,7 +118,7 @@ public class TabLayout extends ViewGroup {
 	}
 	
 	public void setSelectedTab(int index){
-		if(!isLayout){
+		if(!isRendered){
 			this.tempSelectedTabIndex = index;
 			return;
 		}
@@ -164,8 +163,8 @@ public class TabLayout extends ViewGroup {
 			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
 			if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
 		}
-		isLayout = true;
 		initUI();
+		isRendered = true;
 	}
 	
     @Override  
