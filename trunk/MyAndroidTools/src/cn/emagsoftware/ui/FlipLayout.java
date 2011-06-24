@@ -23,7 +23,6 @@ public class FlipLayout extends ViewGroup {
 	private VelocityTracker mVelocityTracker;
 	
 	private int mCurScreen = -1;
-	private int mTempCurScreen = -1;
 	
 	private static final int TOUCH_STATE_REST = 0;
 	private static final int TOUCH_STATE_SCROLLING = 1;
@@ -51,8 +50,8 @@ public class FlipLayout extends ViewGroup {
 		mScroller = new Scroller(context);
 		if(attrs != null){
 			//FlipLayout支持以下定义属性
-			String selectedScreen = attrs.getAttributeValue(null, "selected_screen");
-			if(selectedScreen != null) mTempCurScreen = Integer.valueOf(selectedScreen);
+			String toScreen = attrs.getAttributeValue(null, "toScreen");
+			if(toScreen != null) setToScreen(Integer.valueOf(toScreen));
 		}
 		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
@@ -81,7 +80,7 @@ public class FlipLayout extends ViewGroup {
     	Log.e(TAG, "onMeasure");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);   
   
-        //final int width = MeasureSpec.getSize(widthMeasureSpec);   
+        final int width = MeasureSpec.getSize(widthMeasureSpec);   
         final int widthMode = MeasureSpec.getMode(widthMeasureSpec);   
         if (widthMode != MeasureSpec.EXACTLY) {   
             throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!"); 
@@ -99,12 +98,12 @@ public class FlipLayout extends ViewGroup {
         }
         
         // Log.e(TAG, "moving to screen "+mCurScreen);
-        if(mTempCurScreen != -1) {
-        	int mTempCurScreenCopy = mTempCurScreen;
-        	mTempCurScreen = -1;
-        	setToScreen(mTempCurScreenCopy);
-        }else {
-        	setToScreen(mCurScreen);
+        if(mCurScreen == -1){
+        	scrollTo(0,0);
+        	mCurScreen = 0;
+        	if(listener != null) listener.onFlingChanged(mCurScreen);
+        }else{
+        	scrollTo(mCurScreen*width,0);
         }
     }
     
