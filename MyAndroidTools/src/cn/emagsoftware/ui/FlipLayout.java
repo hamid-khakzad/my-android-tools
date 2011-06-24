@@ -73,15 +73,6 @@ public class FlipLayout extends ViewGroup {
 					childLeft += childWidth;
 				}
 			}
-			
-	        // Log.e(TAG, "moving to screen "+mCurScreen);
-	        if(mTempCurScreen != -1) {
-	        	int mTempCurScreenCopy = mTempCurScreen;
-	        	mTempCurScreen = -1;
-	        	setToScreen(mTempCurScreenCopy);
-	        }else if(childCount > 0 && mCurScreen == -1) {
-	        	setToScreen(0);
-	        }
 		}
 	}
 
@@ -105,6 +96,15 @@ public class FlipLayout extends ViewGroup {
         final int count = getChildCount();   
         for (int i = 0; i < count; i++) {   
             getChildAt(i).measure(widthMeasureSpec, heightMeasureSpec);   
+        }
+        
+        // Log.e(TAG, "moving to screen "+mCurScreen);
+        if(mTempCurScreen != -1) {
+        	int mTempCurScreenCopy = mTempCurScreen;
+        	mTempCurScreen = -1;
+        	setToScreen(mTempCurScreenCopy);
+        }else {
+        	setToScreen(mCurScreen);
         }
     }
     
