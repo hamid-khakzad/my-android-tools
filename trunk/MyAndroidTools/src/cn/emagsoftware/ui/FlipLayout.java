@@ -14,7 +14,7 @@ import android.widget.Scroller;
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * 该类是在Yao.GUET提供的ScrollLayout类的基础上修改完成，Yao.GUET的blog地址为http://blog.csdn.net/Yao_GUET
  * @author Wendell
- * @version 1.1
+ * @version 1.2
  */
 public class FlipLayout extends ViewGroup {
 
@@ -22,8 +22,8 @@ public class FlipLayout extends ViewGroup {
 	private Scroller mScroller;
 	private VelocityTracker mVelocityTracker;
 	
-	private int mCurScreen;
-	private int mDefaultScreen = 0;
+	private int mCurScreen = -1;
+	private int mTempCurScreen = -1;
 	
 	private static final int TOUCH_STATE_REST = 0;
 	private static final int TOUCH_STATE_SCROLLING = 1;
@@ -49,11 +49,10 @@ public class FlipLayout extends ViewGroup {
 		super(context, attrs, defStyle);
 		// TODO Auto-generated constructor stub
 		mScroller = new Scroller(context);
-		mCurScreen = mDefaultScreen;
 		if(attrs != null){
 			//FlipLayout支持以下定义属性
 			String selectedScreen = attrs.getAttributeValue(null, "selected_screen");
-			if(selectedScreen != null) mCurScreen = Integer.valueOf(selectedScreen);
+			if(selectedScreen != null) mTempCurScreen = Integer.valueOf(selectedScreen);
 		}
 		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
@@ -77,13 +76,12 @@ public class FlipLayout extends ViewGroup {
 		}
 	}
 
-
     @Override  
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {   
     	Log.e(TAG, "onMeasure");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);   
   
-        final int width = MeasureSpec.getSize(widthMeasureSpec);   
+        //final int width = MeasureSpec.getSize(widthMeasureSpec);   
         final int widthMode = MeasureSpec.getMode(widthMeasureSpec);   
         if (widthMode != MeasureSpec.EXACTLY) {   
             throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!"); 
@@ -98,10 +96,16 @@ public class FlipLayout extends ViewGroup {
         final int count = getChildCount();   
         for (int i = 0; i < count; i++) {   
             getChildAt(i).measure(widthMeasureSpec, heightMeasureSpec);   
-        }   
-        // Log.e(TAG, "moving to screen "+mCurScreen);   
-        scrollTo(mCurScreen * width, 0);         
-    }  
+        }
+        // Log.e(TAG, "moving to screen "+mCurScreen);
+        if(mTempCurScreen != -1) {
+        	int mTempCurScreenCopy = mTempCurScreen;
+        	mTempCurScreen = -1;
+        	setToScreen(mTempCurScreenCopy);
+        }else if(count > 0 && mCurScreen == -1) {
+        	setToScreen(0);
+        }
+    }
     
     /**
      * According to the position of current layout
@@ -129,8 +133,11 @@ public class FlipLayout extends ViewGroup {
     
     public void setToScreen(int whichScreen) {
     	whichScreen = Math.max(0, Math.min(whichScreen, getChildCount()-1));
-    	mCurScreen = whichScreen;
     	scrollTo(whichScreen*getWidth(), 0);
+    	if(mCurScreen != whichScreen){
+    		mCurScreen = whichScreen;
+    		if(listener != null) listener.onFlingChanged(whichScreen);
+    	}
     }
     
     public int getCurScreen() {
