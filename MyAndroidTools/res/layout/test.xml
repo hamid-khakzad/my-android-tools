@@ -3,7 +3,7 @@
   xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent">
-  <cn.emagsoftware.ui.TabLayout android:layout_width="fill_parent" android:layout_height="fill_parent" tab_class="android.widget.Button" head_position="top" selected_tab="1">
+  <cn.emagsoftware.ui.TabLayout android:layout_width="fill_parent" android:layout_height="fill_parent" tabClass="android.widget.Button" headPosition="top" selectedTab="1">
      <RelativeLayout android:layout_width="fill_parent" android:layout_height="100px">
          <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true">
             <Button android:text="tab1" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
