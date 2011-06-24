@@ -73,11 +73,20 @@ public class FlipLayout extends ViewGroup {
 					childLeft += childWidth;
 				}
 			}
+			
+	        // Log.e(TAG, "moving to screen "+mCurScreen);
+	        if(mTempCurScreen != -1) {
+	        	int mTempCurScreenCopy = mTempCurScreen;
+	        	mTempCurScreen = -1;
+	        	setToScreen(mTempCurScreenCopy);
+	        }else if(childCount > 0 && mCurScreen == -1) {
+	        	setToScreen(0);
+	        }
 		}
 	}
 
     @Override  
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {   
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     	Log.e(TAG, "onMeasure");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);   
   
@@ -85,7 +94,7 @@ public class FlipLayout extends ViewGroup {
         final int widthMode = MeasureSpec.getMode(widthMeasureSpec);   
         if (widthMode != MeasureSpec.EXACTLY) {   
             throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!"); 
-        }   
+        }
   
         final int heightMode = MeasureSpec.getMode(heightMeasureSpec);   
         if (heightMode != MeasureSpec.EXACTLY) {   
@@ -96,14 +105,6 @@ public class FlipLayout extends ViewGroup {
         final int count = getChildCount();   
         for (int i = 0; i < count; i++) {   
             getChildAt(i).measure(widthMeasureSpec, heightMeasureSpec);   
-        }
-        // Log.e(TAG, "moving to screen "+mCurScreen);
-        if(mTempCurScreen != -1) {
-        	int mTempCurScreenCopy = mTempCurScreen;
-        	mTempCurScreen = -1;
-        	setToScreen(mTempCurScreenCopy);
-        }else if(count > 0 && mCurScreen == -1) {
-        	setToScreen(0);
         }
     }
     
