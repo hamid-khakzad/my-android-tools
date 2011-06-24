@@ -46,9 +46,9 @@ public class TabLayout extends ViewGroup {
 		super(context, attrs, defStyle);
 		if(attrs != null){
 			//TabLayout支持以下定义属性
-			String tabClassName = attrs.getAttributeValue(null, "tab_class");
-			String headPosition = attrs.getAttributeValue(null, "head_position");
-			String selectedTabIndexStr = attrs.getAttributeValue(null, "selected_tab");
+			String tabClassName = attrs.getAttributeValue(null, "tabClass");
+			String headPosition = attrs.getAttributeValue(null, "headPosition");
+			String selectedTabIndexStr = attrs.getAttributeValue(null, "selectedTab");
 			try{
 				if(tabClassName != null) setTabClass(Class.forName(tabClassName));
 			}catch(ClassNotFoundException e){
