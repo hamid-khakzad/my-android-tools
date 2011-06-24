@@ -14,7 +14,7 @@ import android.widget.Scroller;
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * 该类是在Yao.GUET提供的ScrollLayout类的基础上修改完成，Yao.GUET的blog地址为http://blog.csdn.net/Yao_GUET
  * @author Wendell
- * @version 1.2
+ * @version 1.3
  */
 public class FlipLayout extends ViewGroup {
 
@@ -105,11 +105,11 @@ public class FlipLayout extends ViewGroup {
         	scrollTo(mTempCurScreen*width,0);
         	mCurScreen = mTempCurScreen;
         	mTempCurScreen = -1;
-        	if(listener != null) listener.onFlingChanged(mCurScreen);
+        	if(listener != null) listener.onFlingChanged(getChildAt(mCurScreen),mCurScreen);
         }else if(mCurScreen == -1){
         	scrollTo(0,0);
         	mCurScreen = 0;
-        	if(listener != null) listener.onFlingChanged(mCurScreen);
+        	if(listener != null) listener.onFlingChanged(getChildAt(mCurScreen),mCurScreen);
         }else{
         	scrollTo(mCurScreen*width,0);
         }
@@ -139,7 +139,7 @@ public class FlipLayout extends ViewGroup {
     		invalidate();		// Redraw the layout
     		if(mCurScreen != whichScreen){
     			mCurScreen = whichScreen;
-    			if(listener != null) listener.onFlingChanged(whichScreen);
+    			if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
     		}
     	}
     }
@@ -153,7 +153,7 @@ public class FlipLayout extends ViewGroup {
     	scrollTo(whichScreen*getWidth(), 0);
     	if(mCurScreen != whichScreen){
     		mCurScreen = whichScreen;
-    		if(listener != null) listener.onFlingChanged(whichScreen);
+    		if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
     	}
     }
     
@@ -279,7 +279,7 @@ public class FlipLayout extends ViewGroup {
 	}
 	
 	public abstract static interface OnFlingChangedListener{
-		public abstract void onFlingChanged(int whichScreen);
+		public abstract void onFlingChanged(View whichView,int whichScreen);
 	}
 	
 }
