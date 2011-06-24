@@ -22,6 +22,7 @@ public class FlipLayout extends ViewGroup {
 	private Scroller mScroller;
 	private VelocityTracker mVelocityTracker;
 	
+	private boolean isRendered = false;
 	private int mCurScreen = -1;
 	private int mTempCurScreen = -1;
 	
@@ -52,7 +53,7 @@ public class FlipLayout extends ViewGroup {
 		if(attrs != null){
 			//FlipLayout支持以下定义属性
 			String toScreen = attrs.getAttributeValue(null, "toScreen");
-			if(toScreen != null) mTempCurScreen = Integer.valueOf(toScreen);
+			if(toScreen != null) setToScreen(Integer.valueOf(toScreen));
 		}
 		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
@@ -112,6 +113,7 @@ public class FlipLayout extends ViewGroup {
         }else{
         	scrollTo(mCurScreen*width,0);
         }
+        isRendered = true;
     }
     
     /**
@@ -126,6 +128,10 @@ public class FlipLayout extends ViewGroup {
     
     public void snapToScreen(int whichScreen) {
     	// get the valid layout page
+    	if(!isRendered){
+    		this.mTempCurScreen = whichScreen;
+    		return;
+    	}
     	whichScreen = Math.max(0, Math.min(whichScreen, getChildCount()-1));
     	if (getScrollX() != (whichScreen*getWidth())) {
     		final int delta = whichScreen*getWidth()-getScrollX();
@@ -139,6 +145,10 @@ public class FlipLayout extends ViewGroup {
     }
     
     public void setToScreen(int whichScreen) {
+    	if(!isRendered){
+    		this.mTempCurScreen = whichScreen;
+    		return;
+    	}
     	whichScreen = Math.max(0, Math.min(whichScreen, getChildCount()-1));
     	scrollTo(whichScreen*getWidth(), 0);
     	if(mCurScreen != whichScreen){
