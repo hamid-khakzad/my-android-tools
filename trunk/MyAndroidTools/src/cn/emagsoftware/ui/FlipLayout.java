@@ -52,8 +52,8 @@ public class FlipLayout extends ViewGroup {
 		mScroller = new Scroller(context);
 		if(attrs != null){
 			//FlipLayout支持以下定义属性
-			String toScreen = attrs.getAttributeValue(null, "toScreen");
-			if(toScreen != null) setToScreen(Integer.valueOf(toScreen));
+			String toScreenIndexStr = attrs.getAttributeValue(null, "toScreen");
+			if(toScreenIndexStr != null) setToScreen(Integer.valueOf(toScreenIndexStr));
 		}
 		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
