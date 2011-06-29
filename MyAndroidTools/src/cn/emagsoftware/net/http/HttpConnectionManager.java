@@ -97,7 +97,7 @@ public final class HttpConnectionManager {
 			try{
 				if(input != null) input.close();
 			}finally{
-				httpConn.disconnect();
+				if(httpConn != null) httpConn.disconnect();
 			}
 			throw e;
 		}
