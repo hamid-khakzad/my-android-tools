@@ -26,7 +26,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.5
+ * @version 2.6
  */
 public final class HttpConnectionManager {
 	
@@ -48,6 +48,8 @@ public final class HttpConnectionManager {
 	private static boolean isKeepSession = false;
 	private static Map<String, List<String>> sessions = Collections.synchronizedMap(new HashMap<String, List<String>>());
 	
+	private static boolean isUseCMWap = false;
+	
 	private HttpConnectionManager(){}
 	
 	public static void setKeepSession(boolean isKeepSession){
@@ -56,6 +58,14 @@ public final class HttpConnectionManager {
 	
 	public static void clearSessions(){
 		sessions.clear();
+	}
+	
+	/**
+	 * <p>设置是否使用了中国移动CMWap接入
+	 * @param isUseCMWap
+	 */
+	public static void setUseCMWap(boolean isUseCMWap){
+		HttpConnectionManager.isUseCMWap = isUseCMWap;
 	}
 	
 	/**
@@ -216,8 +226,16 @@ public final class HttpConnectionManager {
 		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
 		url = HttpManager.encodeURL(url, urlEnc);
-		boolean isSSL = url.toLowerCase().startsWith(HTTPS_PREFIX);
 		URL myUrl = new URL(url);
+		String prefix = null;
+		if(isUseCMWap){
+			prefix = myUrl.getProtocol().concat("://").concat(myUrl.getAuthority());
+			url = "http://10.0.0.172".concat(myUrl.getPath());
+			String query = myUrl.getQuery();
+			if(query != null) url = url.concat("?").concat(query);
+			myUrl = new URL(url);
+		}
+		boolean isSSL = url.toLowerCase().startsWith(HTTPS_PREFIX);
 		HttpURLConnection httpConn = null;
 		OutputStream output = null;
 		try{
@@ -242,6 +260,9 @@ public final class HttpConnectionManager {
 				if(session != null){
 					httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
 				}
+			}
+			if(isUseCMWap){
+				httpConn.addRequestProperty("X-Online-Host", prefix);
 			}
 			if(requestHeaders != null){
 				Iterator<String> keys = requestHeaders.keySet().iterator();
