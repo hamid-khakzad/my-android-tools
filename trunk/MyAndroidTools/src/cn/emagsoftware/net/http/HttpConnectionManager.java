@@ -26,7 +26,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.6
+ * @version 2.7
  */
 public final class HttpConnectionManager {
 	
@@ -40,10 +40,12 @@ public final class HttpConnectionManager {
 	public static final String HEADER_REQUEST_USER_AGENT = "User-Agent";
 	public static final String HEADER_REQUEST_COOKIE = "Cookie";
 	
+	public static final String HEADER_RESPONSE_CONTENT_TYPE = "Content-Type";
 	public static final String HEADER_RESPONSE_LOCATION = "Location";
 	public static final String HEADER_RESPONSE_SET_COOKIE = "Set-Cookie";
 	
 	public static final int REDIRECT_MAX_COUNT = 10;
+	public static final int CMWAP_CHARGEPAGE_MAX_COUNT = 5;
 	
 	private static boolean isKeepSession = false;
 	private static Map<String, List<String>> sessions = Collections.synchronizedMap(new HashMap<String, List<String>>());
@@ -82,7 +84,7 @@ public final class HttpConnectionManager {
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
-			httpConn = openConnection(url, urlEnc, "GET", followRedirects, connOrReadTimeout, 0, requestHeaders, null);
+			httpConn = openConnection(url, urlEnc, "GET", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, null);
 			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -135,7 +137,7 @@ public final class HttpConnectionManager {
 				postParamsStr = HttpManager.encodeParams(postParamsStr, urlEnc);    //post参数时，需对参数进行url编码
 				paramsData = postParamsStr.getBytes();    //经过url编码之后的参数只含有英文字符，可用任意字符集对其编码
 			}
-			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, paramsData);
+			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, paramsData);
 			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -182,7 +184,7 @@ public final class HttpConnectionManager {
 			if(contentTypes == null) contentTypes = new ArrayList<String>();
 			contentTypes.add("application/octet-stream");
 			requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
-			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, requestHeaders, postData);
+			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, postData);
 			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
 			int rspCode = httpConn.getResponseCode();
@@ -217,25 +219,28 @@ public final class HttpConnectionManager {
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param currentRedirectCount 当前是第几次重定向
+	 * @param currentCMWapChargePageCount 当前是第几次出现CMWap资费提示页面
 	 * @param requestHeaders 请求头，不需要时可传null
 	 * @param postData method为POST时提交的数据，不需要时可传null
 	 * @return HttpURLConnection实例
 	 * @throws IOException
 	 */
-	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
+	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,int currentCMWapChargePageCount,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
 		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
-		url = HttpManager.encodeURL(url, urlEnc);
-		URL myUrl = new URL(url);
+		if(currentCMWapChargePageCount < 0) throw new IllegalArgumentException("current CMWap charge page count can not set to below zero.");
+		if(currentCMWapChargePageCount > CMWAP_CHARGEPAGE_MAX_COUNT) throw new IOException("too many showing CMWap charge page times.");
+		String packUrl = HttpManager.encodeURL(url, urlEnc);
+		URL myUrl = new URL(packUrl);
 		String prefix = null;
 		if(isUseCMWap){
-			prefix = myUrl.getProtocol().concat("://").concat(myUrl.getAuthority());
-			url = "http://10.0.0.172".concat(myUrl.getPath());
+			prefix = myUrl.getAuthority();
+			packUrl = "http://10.0.0.172".concat(myUrl.getPath());
 			String query = myUrl.getQuery();
-			if(query != null) url = url.concat("?").concat(query);
-			myUrl = new URL(url);
+			if(query != null) packUrl = packUrl.concat("?").concat(query);
+			myUrl = new URL(packUrl);
 		}
-		boolean isSSL = url.toLowerCase().startsWith(HTTPS_PREFIX);
+		boolean isSSL = packUrl.toLowerCase().startsWith(HTTPS_PREFIX);
 		HttpURLConnection httpConn = null;
 		OutputStream output = null;
 		try{
@@ -281,6 +286,14 @@ public final class HttpConnectionManager {
 				buffOutput.flush();
 				output.close();
 			}
+			if(isUseCMWap){
+				String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
+				if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){
+					//CMWap有时会出现资费提示页面，过滤之
+					httpConn.disconnect();
+					return openConnection(url,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
+				}
+			}
 			if(!followRedirects) return httpConn;
 			//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
 			int rspCode = httpConn.getResponseCode();
@@ -289,7 +302,7 @@ public final class HttpConnectionManager {
 			if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
 			if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 			httpConn.disconnect();
-			return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,requestHeaders,null);
+			return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 		}catch(IOException e){
 			try{
 				if(output != null) output.close();
