@@ -2,28 +2,23 @@ package cn.emagsoftware.ui.adapter;
 
 import android.view.View;
 
-public abstract class ViewHolder {
+public class ViewHolder {
 	
-	protected Object data = null;
+	protected View[] mParams = null;
 	
-	public ViewHolder(Object data){
-		this.data = data;
+	public ViewHolder(){
 	}
 	
-	public abstract View onCreateView(int position,Object data);
-	
-	public abstract void onUpdateView(int position,View view,Object data);
-	
-	
-	
-	
-	
-	public void updateData(Object data){
-		this.data = data;
+	public ViewHolder(View... params){
+		mParams = params;
 	}
 	
-	public Object getData(){
-		return data;
+	public void setParams(View... params){
+		mParams = params;
+	}
+	
+	public View[] getParams(){
+		return mParams;
 	}
 	
 }
