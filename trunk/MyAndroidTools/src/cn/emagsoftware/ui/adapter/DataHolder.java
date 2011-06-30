@@ -2,19 +2,19 @@ package cn.emagsoftware.ui.adapter;
 
 import android.view.View;
 
-public abstract class DataHolder<T> {
+public abstract class DataHolder {
 	
-	protected T mData = null;
+	protected Object mData = null;
 	
-	public DataHolder(T data){
+	public DataHolder(Object data){
 		mData = data;
 	}
 	
-	public abstract View onCreateView(int position,T data);
+	public abstract View onCreateView(int position,Object data);
 	
-	public abstract void onUpdateView(int position,View view,T data);
+	public abstract void onUpdateView(int position,View view,Object data);
 	
-	public T getData(){
+	public Object getData(){
 		return mData;
 	}
 	
