@@ -10,107 +10,94 @@ import android.widget.BaseAdapter;
 
 public class SimpleAdapter extends BaseAdapter {
 	
-	protected Context context = null;
-	protected List<ViewHolder> views = new ArrayList<ViewHolder>();
+	protected Context mContext = null;
+	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
 	
 	public SimpleAdapter(Context context){
-		this.context = context;
+		mContext = context;
 	}
 	
-	public SimpleAdapter(Context context,List<ViewHolder> views){
+	public SimpleAdapter(Context context,List<DataHolder> holders){
 		this(context);
-		addViews(views);
+		addDataHolders(holders);
 	}
 	
-	public void addView(ViewHolder holder){
-		views.add(holder);
+	public void addDataHolder(DataHolder holder){
+		mHolders.add(holder);
 		notifyDataSetChanged();
 	}
 	
-	public void addView(int location,ViewHolder holder){
-		views.add(location, holder);
+	public void addDataHolder(int location,DataHolder holder){
+		mHolders.add(location, holder);
 		notifyDataSetChanged();
 	}
 	
-	public void addViews(List<ViewHolder> views){
-		this.views.addAll(views);
+	public void addDataHolders(List<DataHolder> holders){
+		mHolders.addAll(holders);
 		notifyDataSetChanged();
 	}
 	
-	public void addViews(int location,List<ViewHolder> views){
-		this.views.addAll(location, views);
+	public void addDataHolders(int location,List<DataHolder> holders){
+		mHolders.addAll(location, holders);
 		notifyDataSetChanged();
 	}
 	
-	public void removeView(int location){
-		views.remove(location);
+	public void removeDataHolder(int location){
+		mHolders.remove(location);
 		notifyDataSetChanged();
 	}
 	
-	public void removeView(ViewHolder holder){
-		views.remove(holder);
+	public void removeDataHolder(DataHolder holder){
+		mHolders.remove(holder);
 		notifyDataSetChanged();
 	}
 	
-	public void removeViews(List<ViewHolder> views){
-		this.views.removeAll(views);
+	public void removeDataHolders(List<DataHolder> holders){
+		mHolders.removeAll(holders);
 		notifyDataSetChanged();
 	}
 	
-	public void updateView(int location,ViewHolder holder){
-		views.remove(location);
-		views.add(location, holder);
+	public void updateDataHolder(int location,DataHolder holder){
+		mHolders.remove(location);
+		mHolders.add(location, holder);
 		notifyDataSetChanged();
 	}
 	
-	public void updateViews(int location,List<ViewHolder> views){
-		int oldSize = this.views.size();
-		int tempSize = location + views.size();
+	public void updateDataHolders(int location,List<DataHolder> holders){
+		int oldSize = mHolders.size();
+		int tempSize = location + holders.size();
 		if(tempSize > oldSize) tempSize = oldSize;
-		List<ViewHolder> removeList = this.views.subList(location, tempSize);
-		this.views.removeAll(removeList);
-		this.views.addAll(location, views);
+		List<DataHolder> removeList = mHolders.subList(location, tempSize);
+		mHolders.removeAll(removeList);
+		mHolders.addAll(location, holders);
 		notifyDataSetChanged();
 	}
 	
-	public void updateViewData(int location,Object data){
-		views.get(location).updateData(data);
+	public DataHolder queryDataHolder(int location){
+		return mHolders.get(location);
 	}
 	
-	public void updateViewsData(int location,List<Object> data){
-		int index = 0;
-		for(int i = location;i < views.size();i++){
-			if(index >= data.size()) break;
-			views.get(i).updateData(data.get(index));
-			index = index + 1;
-		}
+	public int queryDataHolder(DataHolder holder){
+		return mHolders.indexOf(holder);
 	}
 	
-	public ViewHolder queryView(int location){
-		return views.get(location);
+	public List<DataHolder> queryDataHolders(int location,int end){
+		return mHolders.subList(location, end);
 	}
 	
-	public int queryView(ViewHolder holder){
-		return views.indexOf(holder);
+	public boolean queryDataHolders(List<DataHolder> holders){
+		return mHolders.containsAll(holders);
 	}
 	
-	public List<ViewHolder> queryViews(int location,int end){
-		return views.subList(location, end);
-	}
-	
-	public boolean queryViews(List<ViewHolder> views){
-		return this.views.containsAll(views);
-	}
-	
-	public void clearViews(){
-		views.clear();
+	public void clearDataHolders(){
+		mHolders.clear();
 		notifyDataSetChanged();
 	}
 	
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
-		return views.size();
+		return mHolders.size();
 	}
 
 	@Override
@@ -128,13 +115,13 @@ public class SimpleAdapter extends BaseAdapter {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
-		
-		
-		
-		
-		
-		
-		return null;
+		DataHolder holder = mHolders.get(position);
+		if(convertView == null){
+			return holder.onCreateView(position, holder.getData());
+		}else{
+			holder.onUpdateView(position, convertView, holder.getData());
+			return convertView;
+		}
 	}
 	
 }
