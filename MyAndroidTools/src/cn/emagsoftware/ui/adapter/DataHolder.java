@@ -5,6 +5,7 @@ import android.view.View;
 public abstract class DataHolder {
 	
 	protected Object mData = null;
+	protected boolean mIsAsyncDataCompleted = false;
 	
 	public DataHolder(Object data){
 		mData = data;
@@ -21,6 +22,8 @@ public abstract class DataHolder {
 	
 	/**
 	 * <p>使用当前data更新View时触发，出于节约资源的考虑，View会被复用，此时只需要更新View即可
+	 * <p>更新View时可通过isAsyncDataCompleted()方法来判断异步数据是否加载完成，若加载完成，也要更新到View上
+	 * <p>在异步数据加载完成时，会判断当前data是否处于显示位置，若处于显示位置，也会单独回调当前方法来更新View
 	 * <p>更新View可以利用ViewHolder来提高效率
 	 * @param position
 	 * @param view
@@ -28,15 +31,16 @@ public abstract class DataHolder {
 	 */
 	public abstract void onUpdateView(int position,View view,Object data);
 	
-	/**
-	 * <p>指示异步加载的数据是否已经完成，这可以从当前data的数据状态来判断
-	 * <p>如果当前data不需要通过异步来加载额外的数据，可直接返回true
-	 * @return
-	 */
-	public abstract boolean isAsyncDataCompleted();
-	
 	public Object getData(){
 		return mData;
+	}
+	
+	public boolean isAsyncDataCompleted(){
+		return mIsAsyncDataCompleted;
+	}
+	
+	public void setAsyncDataCompleted(boolean isAsyncDataCompleted){
+		mIsAsyncDataCompleted = isAsyncDataCompleted;
 	}
 	
 }
