@@ -6,12 +6,17 @@ import java.util.List;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 
 public class SimpleAdapter extends BaseAdapter {
 	
 	protected Context mContext = null;
 	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
+	/**使用此Adapter的容器*/
+	protected ViewGroup mOwner = null;
+	/**异步数据加载的调度器*/
+	protected AsyncDataScheduler mScheduler = null;
 	
 	public SimpleAdapter(Context context){
 		mContext = context;
@@ -94,6 +99,15 @@ public class SimpleAdapter extends BaseAdapter {
 		notifyDataSetChanged();
 	}
 	
+	/**
+	 * <p>绑定异步数据加载的调度器
+	 * @param scheduler
+	 */
+	public void bindAsyncDataScheduler(AsyncDataScheduler scheduler){
+		if(mScheduler != null) throw new RuntimeException("bindAsyncDataScheduler method can only be called once.");
+		mScheduler = scheduler;
+	}
+	
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
@@ -115,6 +129,14 @@ public class SimpleAdapter extends BaseAdapter {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
+		mOwner = parent;
+		if(mScheduler != null && mOwner instanceof AdapterView<?>){
+			AdapterView<?> adapterOwner = (AdapterView<?>)mOwner;
+			int first = adapterOwner.getFirstVisiblePosition();
+			int last = adapterOwner.getLastVisiblePosition();
+			mScheduler.updateQueue(first, last, queryDataHolders(first,last + 1));    //更新异步数据调度器的调度队列
+			if(!mScheduler.isStarted()) mScheduler.start();    //启动异步数据调度器
+		}
 		DataHolder holder = mHolders.get(position);
 		if(convertView == null){
 			return holder.onCreateView(position, holder.getData());
