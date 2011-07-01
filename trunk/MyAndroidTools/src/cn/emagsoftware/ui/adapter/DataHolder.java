@@ -30,10 +30,10 @@ public abstract class DataHolder {
 	
 	/**
 	 * <p>指示异步加载的数据是否已经完成，这可以从当前data的数据状态来判断
-	 * <p>如果当前data不需要通过异步来加载额外数据，可直接返回true
+	 * <p>如果当前data不需要通过异步来加载额外的数据，可直接返回true
 	 * @return
 	 */
-	public abstract boolean isAsyncCompleted();
+	public abstract boolean isAsyncDataCompleted();
 	
 	public Object getData(){
 		return mData;
