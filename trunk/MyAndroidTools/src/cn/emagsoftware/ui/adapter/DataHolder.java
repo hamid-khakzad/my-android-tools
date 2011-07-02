@@ -13,6 +13,7 @@ public abstract class DataHolder {
 	
 	/**
 	 * <p>使用当前data创建View时触发
+	 * <p>创建View时可通过isAsyncDataCompleted()方法来判断异步数据是否加载完成，若加载完成，也要更新到View上
 	 * <p>可以通过ViewHolder来绑定View的结构信息，从而提高更新时的效率
 	 * @param position
 	 * @param data

@@ -19,11 +19,10 @@ public abstract class AsyncDataExecutor {
 	/**
 	 * <p>加载异步数据的回调方法，注意，该方法可能会在多线程的环境中执行，所以要保证方法内部是线程安全的
 	 * <p>可抛出任何异常，抛出异常时，外部会认为当前异步数据的加载以失败告终
-	 * @param firstPosition
-	 * @param lastPosition
+	 * @param positions
 	 * @param holders
 	 * @throws Exception
 	 */
-	public abstract void onExecute(int firstPosition,int lastPosition,List<DataHolder> holders) throws Exception;
+	public abstract void onExecute(List<Integer> positions,List<DataHolder> holders) throws Exception;
 	
 }
