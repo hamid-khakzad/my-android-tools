@@ -160,7 +160,8 @@ public class AsyncDataScheduler extends Thread {
 											int position = positionsCopy.get(i);
 											if(position >= firstVisible && position <= lastVisible){
 												DataHolder dholder = holdersCopy.get(i);
-												dholder.onUpdateView(position, mAdapterView.getChildAt(position), dholder.getData());
+												int convertPosition = position - firstVisible;
+												dholder.onUpdateView(position, mAdapterView.getChildAt(convertPosition), dholder.getData());
 											}
 										}
 									}
