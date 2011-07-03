@@ -88,17 +88,25 @@ public class AsyncDataScheduler extends Thread {
 			}
 			//用新队列替换提取队列
 			synchronized(AsyncDataScheduler.this){
-				for(int i = 0;i < mExtractedIndex;i++){
-					DataHolder extractedHolder = mExtractedHolders.get(i);
-					int index = holders.indexOf(extractedHolder);
-					if(index != -1){
-						positions.remove(index);
-						holders.remove(index);
+				if(mExtractedPositions == null || positions.size() == 0){
+					mExtractedIndex = 0;
+					mExtractedPositions = positions;
+					mExtractedHolders = holders;
+				}else{
+					int tempIndex = 0;
+					for(int i = 0;i < mExtractedIndex;i++){
+						DataHolder extractedHolder = mExtractedHolders.get(i);
+						int index = holders.indexOf(extractedHolder);
+						if(index != -1){
+							positions.add(0, positions.remove(index));
+							holders.add(0,holders.remove(index));
+							tempIndex++;
+						}
 					}
+					mExtractedIndex = tempIndex;
+					mExtractedPositions = positions;
+					mExtractedHolders = holders;
 				}
-				mExtractedIndex = 0;
-				mExtractedPositions = positions;
-				mExtractedHolders = holders;
 			}
 			if(mExtractedPositions.size() == 0) continue;
 			//启动异步数据加载线程
