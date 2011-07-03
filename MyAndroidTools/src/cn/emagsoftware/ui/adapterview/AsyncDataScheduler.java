@@ -18,7 +18,7 @@ public class AsyncDataScheduler extends Thread {
 	
 	protected AdapterView<?> mAdapterView = null;
 	protected SimpleAdapter mSimpleAdapter = null;
-	protected int mMaxThreadCount = 0;
+	protected int mThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
 	protected boolean mIsCancelMe = false;
@@ -29,15 +29,15 @@ public class AsyncDataScheduler extends Thread {
 	protected List<DataHolder> mExtractedHolders = null;
 	protected List<Thread> threads = Collections.synchronizedList(new ArrayList<Thread>());
 	
-	public AsyncDataScheduler(AdapterView<?> adapterView,int maxThreadCount,AsyncDataExecutor executor){
+	public AsyncDataScheduler(AdapterView<?> adapterView,int threadCount,AsyncDataExecutor executor){
 		if(adapterView == null || executor == null) throw new NullPointerException();
-		if(maxThreadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
+		if(threadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
 		Adapter adapter = adapterView.getAdapter();
 		if(adapter == null) throw new RuntimeException("Adapter is null,call setAdapter function for AdapterView first.");
 		if(!(adapter instanceof SimpleAdapter)) throw new RuntimeException("To use AsyncDataScheduler,the type of adapter for AdapterView should only be cn.emagsoftware.ui.adapterview.SimpleAdapter.");
 		mAdapterView = adapterView;
 		mSimpleAdapter = (SimpleAdapter)adapter;
-		mMaxThreadCount = maxThreadCount;
+		mThreadCount = threadCount;
 		mExecutor = executor;
 	}
 	
@@ -110,7 +110,7 @@ public class AsyncDataScheduler extends Thread {
 			}
 			if(mExtractedPositions.size() == 0) continue;
 			//启动异步数据加载线程
-			int remainCount = mMaxThreadCount - threads.size();
+			int remainCount = mThreadCount - threads.size();
 			for(int i = 0;i < remainCount;i++){
 				Thread thread = new Thread(){
 					public void run() {
