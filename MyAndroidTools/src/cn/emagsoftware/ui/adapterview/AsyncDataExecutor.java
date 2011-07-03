@@ -4,11 +4,11 @@ import java.util.List;
 
 public abstract class AsyncDataExecutor {
 	
-	/**每次取得的要处理的DataHolder的个数*/
+	/**每次取得的要处理的DataHolder的个数,-1为取得所有的待处理个数*/
 	protected int mEachCount;
 	
 	public AsyncDataExecutor(int eachCount){
-		if(eachCount <= 0) throw new IllegalArgumentException("eachCount should be great than zero.");
+		if(eachCount <= 0 && eachCount != -1) throw new IllegalArgumentException("eachCount should be great than zero or equal -1.");
 		mEachCount = eachCount;
 	}
 	

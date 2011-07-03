@@ -123,9 +123,15 @@ public class AsyncDataScheduler extends Thread {
 							List<DataHolder> holders = null;
 							synchronized(AsyncDataScheduler.this){
 								int currIndex = mExtractedIndex;
-								int endIndex = currIndex + mExecutor.getEachCount();
-								int size = mExtractedPositions.size();
-								if(endIndex > size) endIndex = size;
+								int endIndex;
+								int eachCount = mExecutor.getEachCount();
+								if(eachCount == -1){
+									endIndex = mExtractedPositions.size();
+								}else{
+									endIndex = currIndex + eachCount;
+									int size = mExtractedPositions.size();
+									if(endIndex > size) endIndex = size;
+								}
 								if(currIndex < endIndex){
 									positions = mExtractedPositions.subList(currIndex, endIndex);
 									holders = mExtractedHolders.subList(currIndex, endIndex);
