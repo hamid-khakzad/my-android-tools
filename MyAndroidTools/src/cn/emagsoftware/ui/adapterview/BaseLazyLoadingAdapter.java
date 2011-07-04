@@ -14,6 +14,8 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	protected int mStart = 0;
 	/**每次加载的长度*/
 	protected int mLimit = 10;
+	/**是否已经加载了全部数据*/
+	protected boolean mIsLoadedAll = false;
 	
 	public BaseLazyLoadingAdapter(Context context,int limit){
 		super(context);
@@ -32,7 +34,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view, int firstVisibleItem,int visibleItemCount, int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(firstVisibleItem + visibleItemCount == totalItemCount){
+					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll()){
 						load();
 					}
 				}
@@ -76,12 +78,16 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				// TODO Auto-generated method stub
 				super.onPostExecute(result);
 				if(result == null){
+					mIsLoadedAll = true;
 					mIsLoading = false;
 					onAfterLoad(mContext,null);
 				}else if(result instanceof List<?>){
 					List<DataHolder> resultList = (List<DataHolder>)result;
 					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
-					mStart = mStart + resultList.size();
+					int size = resultList.size();
+					mStart = mStart + size;
+					if(size == 0) mIsLoadedAll = true;
+					else mIsLoadedAll = false;
 					mIsLoading = false;
 					onAfterLoad(mContext,null);
 				}else if(result instanceof Exception){
@@ -102,6 +108,14 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		// TODO Auto-generated method stub
 		super.clearDataHolders();
 		mStart = 0;
+	}
+	
+	/**
+	 * <p>是否已经加载了全部数据
+	 * @return
+	 */
+	public boolean isLoadedAll(){
+		return mIsLoadedAll;
 	}
 	
 	/**
