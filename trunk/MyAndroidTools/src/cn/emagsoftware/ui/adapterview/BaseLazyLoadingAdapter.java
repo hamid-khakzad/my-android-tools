@@ -16,46 +16,10 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	/**每次加载的长度*/
 	protected int mLimit = 10;
 	
-	public BaseLazyLoadingAdapter(final Context context,int limit){
+	public BaseLazyLoadingAdapter(Context context,int limit){
 		super(context);
 		if(limit <= 0) throw new IllegalArgumentException("limit should be great than zero.");
 		mLimit = limit;
-		super.mTask = new AsyncTask<Object, Integer, Object>(){
-			@Override
-			protected void onPreExecute() {
-				// TODO Auto-generated method stub
-				super.onPreExecute();
-				onBeginLoad(context);
-			}
-			@Override
-			protected Object doInBackground(Object... params) {
-				// TODO Auto-generated method stub
-				try{
-					return onLoad(mStart,mLimit);
-				}catch(Exception e){
-					Log.e("BaseLazyLoadingAdapter", "Execute lazy loading failed.", e);
-					return e;
-				}
-			}
-			@Override
-			protected void onPostExecute(Object result) {
-				// TODO Auto-generated method stub
-				super.onPostExecute(result);
-				if(result == null){
-					mIsLoading = false;
-					onAfterLoad(context,null);
-				}else if(result instanceof List<?>){
-					List<DataHolder> resultList = (List<DataHolder>)result;
-					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
-					mStart = mStart + resultList.size();
-					mIsLoading = false;
-					onAfterLoad(context,null);
-				}else if(result instanceof Exception){
-					mIsLoading = false;
-					onAfterLoad(context,(Exception)result);
-				}
-			}
-		};
 	}
 	
 	/**
@@ -83,6 +47,54 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		}else{
 			throw new UnsupportedOperationException("Only supports lazy loading for the AdapterView which is AbsListView.");
 		}
+	}
+	
+	/**
+	 * <p>覆盖了父类的同名方法，用来执行懒加载
+	 */
+	@Override
+	public boolean load() {
+		// TODO Auto-generated method stub
+		if(mIsLoading) return false;
+		mIsLoading = true;
+		mTask = new AsyncTask<Object, Integer, Object>(){
+			@Override
+			protected void onPreExecute() {
+				// TODO Auto-generated method stub
+				super.onPreExecute();
+				onBeginLoad(mContext);
+			}
+			@Override
+			protected Object doInBackground(Object... params) {
+				// TODO Auto-generated method stub
+				try{
+					return onLoad(mStart,mLimit);
+				}catch(Exception e){
+					Log.e("BaseLazyLoadingAdapter", "Execute lazy loading failed.", e);
+					return e;
+				}
+			}
+			@Override
+			protected void onPostExecute(Object result) {
+				// TODO Auto-generated method stub
+				super.onPostExecute(result);
+				if(result == null){
+					mIsLoading = false;
+					onAfterLoad(mContext,null);
+				}else if(result instanceof List<?>){
+					List<DataHolder> resultList = (List<DataHolder>)result;
+					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
+					mStart = mStart + resultList.size();
+					mIsLoading = false;
+					onAfterLoad(mContext,null);
+				}else if(result instanceof Exception){
+					mIsLoading = false;
+					onAfterLoad(mContext,(Exception)result);
+				}
+			}
+		};
+		mTask.execute("");
+		return true;
 	}
 	
 	/**
