@@ -5,6 +5,9 @@ import java.util.List;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.widget.AbsListView;
+import android.widget.AdapterView;
+import android.widget.AbsListView.OnScrollListener;
 
 public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	
@@ -56,6 +59,33 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
+	 * <p>绑定AdapterView，使其自动懒加载。如滑动ListView到最下面时才开始新的加载
+	 * @param adapterView
+	 */
+	public void bindLazyLoading(AdapterView<?> adapterView){
+		if(adapterView instanceof AbsListView){
+			AbsListView absList = (AbsListView)adapterView;
+			absList.setOnScrollListener(new AbsListView.OnScrollListener(){
+				@Override
+				public void onScroll(AbsListView view, int firstVisibleItem,int visibleItemCount, int totalItemCount) {
+					// TODO Auto-generated method stub
+				}
+				@Override
+				public void onScrollStateChanged(AbsListView view,int scrollState) {
+					// TODO Auto-generated method stub
+					if(scrollState == OnScrollListener.SCROLL_STATE_IDLE){
+						if(view.getLastVisiblePosition() == getCount() - 1){    //开始懒加载
+							load();
+						}
+					}
+				}
+			});
+		}else{
+			throw new UnsupportedOperationException("Only supports lazy loading for the AdapterView which is AbsListView.");
+		}
+	}
+	
+	/**
 	 * <p>覆盖了父类的同名方法，以重置当前类的一些属性
 	 */
 	@Override
@@ -66,7 +96,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>对于当前类而言，已使用onLoad(int start,int limit)替换了当前方法的作用，故将其简单实现以防止子类被强制要求实现
+	 * <p>对于当前类而言，已使用onLoad(int start,int limit)替换了onLoad()的作用，故将其简单实现以防止子类被强制要求实现
 	 */
 	@Override
 	public List<DataHolder> onLoad() throws Exception {
