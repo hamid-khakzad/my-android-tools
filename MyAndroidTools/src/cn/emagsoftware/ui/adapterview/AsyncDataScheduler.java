@@ -17,7 +17,7 @@ public class AsyncDataScheduler extends Thread {
 	public static final int SCHEDULER_DORMANCY_TIME = 2000;
 	
 	protected AdapterView<?> mAdapterView = null;
-	protected SimpleAdapter mSimpleAdapter = null;
+	protected GenericAdapter mSimpleAdapter = null;
 	protected int mThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
@@ -34,9 +34,9 @@ public class AsyncDataScheduler extends Thread {
 		if(threadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
 		Adapter adapter = adapterView.getAdapter();
 		if(adapter == null) throw new RuntimeException("Adapter is null,call setAdapter function for AdapterView first.");
-		if(!(adapter instanceof SimpleAdapter)) throw new RuntimeException("To use AsyncDataScheduler,the type of adapter for AdapterView should only be cn.emagsoftware.ui.adapterview.SimpleAdapter.");
+		if(!(adapter instanceof GenericAdapter)) throw new RuntimeException("To use AsyncDataScheduler,the type of adapter for AdapterView should only be cn.emagsoftware.ui.adapterview.SimpleAdapter.");
 		mAdapterView = adapterView;
-		mSimpleAdapter = (SimpleAdapter)adapter;
+		mSimpleAdapter = (GenericAdapter)adapter;
 		mThreadCount = threadCount;
 		mExecutor = executor;
 	}
