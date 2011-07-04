@@ -46,7 +46,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 					onAfterLoad(context,null);
 				}else if(result instanceof List<?>){
 					List<DataHolder> resultList = (List<DataHolder>)result;
-					addDataHolders(resultList);
+					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
 					mStart = mStart + resultList.size();
 					mIsLoading = false;
 					onAfterLoad(context,null);
@@ -74,7 +74,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				public void onScrollStateChanged(AbsListView view,int scrollState) {
 					// TODO Auto-generated method stub
 					if(scrollState == OnScrollListener.SCROLL_STATE_IDLE){
-						if(view.getLastVisiblePosition() == getCount() - 1){    //开始懒加载
+						if(view.getLastVisiblePosition() == view.getAdapter().getCount() - 1){    //不能使用当前类的getCount()，因为可能真正的Adapter是经过包装后的WrapperListAdapter
 							load();
 						}
 					}
