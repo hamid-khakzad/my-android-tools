@@ -40,6 +40,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				if(result == null){
 					onAfterLoad(context,null);
 				}else if(result instanceof List<?>){
+					addDataHolders((List<DataHolder>)result);
 					onAfterLoad(context,null);
 				}else if(result instanceof Exception){
 					onAfterLoad(context,(Exception)result);
