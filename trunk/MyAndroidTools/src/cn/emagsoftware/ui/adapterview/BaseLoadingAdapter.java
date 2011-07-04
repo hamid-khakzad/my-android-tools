@@ -13,14 +13,23 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	/**是否正在加载*/
 	protected boolean mIsLoading = false;
 	
-	public BaseLoadingAdapter(final Context context){
+	public BaseLoadingAdapter(Context context){
 		super(context);
+	}
+	
+	/**
+	 * <p>加载的执行方法
+	 * @return true表示开始加载；false表示已经在加载，本次的调用无效
+	 */
+	public boolean load(){
+		if(mIsLoading) return false;
+		mIsLoading = true;
 		mTask = new AsyncTask<Object, Integer, Object>(){
 			@Override
 			protected void onPreExecute() {
 				// TODO Auto-generated method stub
 				super.onPreExecute();
-				onBeginLoad(context);
+				onBeginLoad(mContext);
 			}
 			@Override
 			protected Object doInBackground(Object... params) {
@@ -38,26 +47,17 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				super.onPostExecute(result);
 				if(result == null){
 					mIsLoading = false;
-					onAfterLoad(context,null);
+					onAfterLoad(mContext,null);
 				}else if(result instanceof List<?>){
 					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
-					onAfterLoad(context,null);
+					onAfterLoad(mContext,null);
 				}else if(result instanceof Exception){
 					mIsLoading = false;
-					onAfterLoad(context,(Exception)result);
+					onAfterLoad(mContext,(Exception)result);
 				}
 			}
 		};
-	}
-	
-	/**
-	 * <p>加载的执行方法
-	 * @return true表示开始加载；false表示已经在加载，本次的调用无效
-	 */
-	public boolean load(){
-		if(mIsLoading) return false;
-		mIsLoading = true;
 		mTask.execute("");
 		return true;
 	}
