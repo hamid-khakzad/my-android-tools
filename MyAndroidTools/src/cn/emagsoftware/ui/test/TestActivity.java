@@ -4,17 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.emagsoftware.ui.R;
+import cn.emagsoftware.ui.ToastManager;
 import cn.emagsoftware.ui.adapterview.AsyncDataExecutor;
 import cn.emagsoftware.ui.adapterview.AsyncDataScheduler;
 import cn.emagsoftware.ui.adapterview.DataHolder;
 import cn.emagsoftware.ui.adapterview.SimpleAdapter;
 import cn.emagsoftware.ui.adapterview.ViewHolder;
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AbsListView;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 
 public class TestActivity extends Activity {
 	
@@ -30,23 +33,40 @@ public class TestActivity extends Activity {
 		for(int i = 0;i < 100;i++){
 			d.add(new DataHolder(i) {
 				@Override
-				public View onCreateView(int position, Object data) {
+				public View onCreateView(final Context context, int position, final Object data) {
 					// TODO Auto-generated method stub
-					TextView t = new TextView(TestActivity.this);
-					t.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT, 50));
-					if(isAsyncDataCompleted()) t.setText("text(OK):" + data);
-					else t.setText("text:" + data);
-					ViewHolder vh = new ViewHolder(t);
-					t.setTag(vh);
-					return t;
+					LinearLayout ll = new LinearLayout(context);
+					Button b = new Button(TestActivity.this);
+					b.setFocusable(false);
+					b.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							ToastManager.showShort(context, String.valueOf(data));
+						}
+					});
+					ll.addView(b);
+					ll.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT, 60));
+					if(isAsyncDataCompleted()) b.setText("complete");
+					else b.setText("prepare");
+					ViewHolder vh = new ViewHolder(b);
+					ll.setTag(vh);
+					return ll;
 				}
 				@Override
-				public void onUpdateView(int position, View view, Object data) {
+				public void onUpdateView(final Context context, int position, View view, final Object data) {
 					// TODO Auto-generated method stub
 					ViewHolder vh = (ViewHolder)view.getTag();
-					TextView tv = (TextView)vh.getParams()[0];
-					if(isAsyncDataCompleted()) tv.setText("text(OK):" + data);
-					else tv.setText("text:" + data);
+					Button b = (Button)vh.getParams()[0];
+					b.setOnClickListener(new View.OnClickListener() {
+						@Override
+						public void onClick(View v) {
+							// TODO Auto-generated method stub
+							ToastManager.showShort(context, String.valueOf(data));
+						}
+					});
+					if(isAsyncDataCompleted()) b.setText("complete");
+					else b.setText("prepare");
 				}
 			});
 		}
