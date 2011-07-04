@@ -8,7 +8,7 @@ import cn.emagsoftware.ui.ToastManager;
 import cn.emagsoftware.ui.adapterview.AsyncDataExecutor;
 import cn.emagsoftware.ui.adapterview.AsyncDataScheduler;
 import cn.emagsoftware.ui.adapterview.DataHolder;
-import cn.emagsoftware.ui.adapterview.SimpleAdapter;
+import cn.emagsoftware.ui.adapterview.GenericAdapter;
 import cn.emagsoftware.ui.adapterview.ViewHolder;
 import android.app.Activity;
 import android.content.Context;
@@ -71,7 +71,7 @@ public class TestActivity extends Activity {
 			});
 		}
 		ListView g = new ListView(this);
-		g.setAdapter(new SimpleAdapter(this, d));
+		g.setAdapter(new GenericAdapter(this, d));
 		mAsyncDataScheduler = new AsyncDataScheduler(g, 5, new AsyncDataExecutor(1) {
 			@Override
 			public void onExecute(List<Integer> positions, List<DataHolder> holders) throws Exception {
