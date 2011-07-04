@@ -54,7 +54,7 @@ public class TestActivity extends Activity {
 				for(int i = 0;i < 5;i++){
 					d.add(new DataHolder(i) {
 						@Override
-						public View onCreateView(final Context context, int position, final Object data) {
+						public View onCreateView(final Context context, final int position, Object data) {
 							// TODO Auto-generated method stub
 							LinearLayout ll = new LinearLayout(context);
 							Button b = new Button(TestActivity.this);
@@ -63,7 +63,7 @@ public class TestActivity extends Activity {
 								@Override
 								public void onClick(View v) {
 									// TODO Auto-generated method stub
-									ToastManager.showShort(context, String.valueOf(data));
+									ToastManager.showShort(context, String.valueOf(position));
 								}
 							});
 							ll.addView(b);
@@ -75,7 +75,7 @@ public class TestActivity extends Activity {
 							return ll;
 						}
 						@Override
-						public void onUpdateView(final Context context, int position, View view, final Object data) {
+						public void onUpdateView(final Context context, final int position, View view, Object data) {
 							// TODO Auto-generated method stub
 							ViewHolder vh = (ViewHolder)view.getTag();
 							Button b = (Button)vh.getParams()[0];
@@ -83,7 +83,7 @@ public class TestActivity extends Activity {
 								@Override
 								public void onClick(View v) {
 									// TODO Auto-generated method stub
-									ToastManager.showShort(context, String.valueOf(data));
+									ToastManager.showShort(context, String.valueOf(position));
 								}
 							});
 							if(isAsyncDataCompleted()) b.setText("complete");
@@ -95,6 +95,7 @@ public class TestActivity extends Activity {
 			}
 		};
 		g.setAdapter(blla);
+		blla.bindLazyLoading(g);
 		blla.load();
 		mAsyncDataScheduler = new AsyncDataScheduler(g, 5, new AsyncDataExecutor(1) {
 			@Override
