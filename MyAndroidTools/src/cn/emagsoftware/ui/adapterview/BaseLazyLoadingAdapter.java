@@ -7,7 +7,6 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.AbsListView.OnScrollListener;
 
 public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	
@@ -33,15 +32,13 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view, int firstVisibleItem,int visibleItemCount, int totalItemCount) {
 					// TODO Auto-generated method stub
+					if(firstVisibleItem + visibleItemCount == totalItemCount){
+						load();
+					}
 				}
 				@Override
 				public void onScrollStateChanged(AbsListView view,int scrollState) {
 					// TODO Auto-generated method stub
-					if(scrollState == OnScrollListener.SCROLL_STATE_IDLE){
-						if(view.getLastVisiblePosition() == view.getAdapter().getCount() - 1){    //不能使用当前类的getCount()，因为可能真正的Adapter是经过包装后的WrapperListAdapter
-							load();
-						}
-					}
 				}
 			});
 		}else{
