@@ -49,6 +49,8 @@ public class TestActivity extends Activity {
 			@Override
 			public List<DataHolder> onLoad(int start, int limit) throws Exception {
 				// TODO Auto-generated method stub
+				System.out.println("start:"+start);
+				System.out.println("limit:"+limit);
 				Thread.sleep(3000);
 				List<DataHolder> d = new ArrayList<DataHolder>();
 				for(int i = 0;i < 5;i++){
