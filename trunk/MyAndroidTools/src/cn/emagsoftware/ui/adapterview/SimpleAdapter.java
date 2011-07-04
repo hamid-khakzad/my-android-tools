@@ -14,6 +14,7 @@ public class SimpleAdapter extends BaseAdapter {
 	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
 	
 	public SimpleAdapter(Context context){
+		if(context == null) throw new NullPointerException();
 		mContext = context;
 	}
 	
@@ -117,9 +118,9 @@ public class SimpleAdapter extends BaseAdapter {
 		// TODO Auto-generated method stub
 		DataHolder holder = mHolders.get(position);
 		if(convertView == null){
-			return holder.onCreateView(position, holder.getData());
+			return holder.onCreateView(mContext, position, holder.getData());
 		}else{
-			holder.onUpdateView(position, convertView, holder.getData());
+			holder.onUpdateView(mContext, position, convertView, holder.getData());
 			return convertView;
 		}
 	}
