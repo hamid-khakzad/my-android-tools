@@ -40,7 +40,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 					mIsLoading = false;
 					onAfterLoad(context,null);
 				}else if(result instanceof List<?>){
-					addDataHolders((List<DataHolder>)result);
+					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
 					onAfterLoad(context,null);
 				}else if(result instanceof Exception){
