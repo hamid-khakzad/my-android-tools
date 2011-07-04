@@ -36,13 +36,15 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 			protected void onPostExecute(Object result) {
 				// TODO Auto-generated method stub
 				super.onPostExecute(result);
-				mIsLoading = false;
 				if(result == null){
+					mIsLoading = false;
 					onAfterLoad(context,null);
 				}else if(result instanceof List<?>){
 					addDataHolders((List<DataHolder>)result);
+					mIsLoading = false;
 					onAfterLoad(context,null);
 				}else if(result instanceof Exception){
+					mIsLoading = false;
 					onAfterLoad(context,(Exception)result);
 				}
 			}
