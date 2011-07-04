@@ -26,7 +26,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 			protected Object doInBackground(Object... params) {
 				// TODO Auto-generated method stub
 				try{
-					return onLoad(context);
+					return onLoad();
 				}catch(Exception e){
 					Log.e("BaseLoadingAdapter", "Execute loading failed.", e);
 					return e;
@@ -76,11 +76,10 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**
 	 * <p>加载的具体实现，该方法将在非UI线程中执行，要注意不能执行UI的操作
-	 * @param context
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract List<DataHolder> onLoad(Context context) throws Exception;
+	public abstract List<DataHolder> onLoad() throws Exception;
 	
 	/**
 	 * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
