@@ -10,6 +10,8 @@ import android.os.Looper;
 import android.util.Log;
 import android.widget.Adapter;
 import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.WrapperListAdapter;
 
 public class AsyncDataScheduler extends Thread {
 	
@@ -17,6 +19,7 @@ public class AsyncDataScheduler extends Thread {
 	public static final int SCHEDULER_DORMANCY_TIME = 2000;
 	
 	protected AdapterView<?> mAdapterView = null;
+	protected int mHeaderCount = 0;
 	protected GenericAdapter mGenericAdapter = null;
 	protected int mThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
@@ -34,8 +37,10 @@ public class AsyncDataScheduler extends Thread {
 		if(threadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
 		Adapter adapter = adapterView.getAdapter();
 		if(adapter == null) throw new RuntimeException("Adapter is null,call setAdapter function for AdapterView first.");
+		if(adapter instanceof WrapperListAdapter) adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
 		if(!(adapter instanceof GenericAdapter)) throw new RuntimeException("To use AsyncDataScheduler,the type of adapter for AdapterView should only be cn.emagsoftware.ui.adapterview.GenericAdapter.");
 		mAdapterView = adapterView;
+		if(adapterView instanceof ListView) mHeaderCount = ((ListView)adapterView).getHeaderViewsCount();
 		mGenericAdapter = (GenericAdapter)adapter;
 		mThreadCount = threadCount;
 		mExecutor = executor;
@@ -61,8 +66,17 @@ public class AsyncDataScheduler extends Thread {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					int first = mAdapterView.getFirstVisiblePosition();
-					int last = mAdapterView.getLastVisiblePosition();
+					int count = mGenericAdapter.getCount();
+					if(count <= 0) {
+						isOK[0] = true;
+						return;
+					}
+					int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+					int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+					if(first < 0) first = 0;
+					else if(first >= count) first = count - 1;
+					if(last < 0) last = 0;
+					else if(last >= count) last = count - 1;					
 					for(int i = first;i < last + 1;i++){
 						positions.add(i);
 					}
@@ -160,13 +174,19 @@ public class AsyncDataScheduler extends Thread {
 									@Override
 									public void run() {
 										// TODO Auto-generated method stub
-										int firstVisible = mAdapterView.getFirstVisiblePosition();
-										int lastVisible = mAdapterView.getLastVisiblePosition();
+										int count = mGenericAdapter.getCount();
+										if(count <= 0) return;
+										int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+										int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+										if(first < 0) first = 0;
+										else if(first >= count) first = count - 1;
+										if(last < 0) last = 0;
+										else if(last >= count) last = count - 1;
 										for(int i = 0;i < positionsCopy.size();i++){
 											int position = positionsCopy.get(i);
-											if(position >= firstVisible && position <= lastVisible){
+											if(position >= first && position <= last){
 												DataHolder dholder = holdersCopy.get(i);
-												int convertPosition = position - firstVisible;
+												int convertPosition = position - first;
 												dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData());
 											}
 										}
