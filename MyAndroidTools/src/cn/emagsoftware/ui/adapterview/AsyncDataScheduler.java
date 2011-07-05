@@ -57,6 +57,7 @@ public class AsyncDataScheduler {
 	public void start(){
 		synchronized(mLock1){
 			if(mIsStopped){
+				mIsStopping = false;
 				mIsStopped = false;
 			}else{
 				mIsStopping = false;
@@ -68,7 +69,6 @@ public class AsyncDataScheduler {
 				while(true){
 					synchronized(mLock1){
 						if(mIsStopping){
-							mIsStopping = false;
 							mIsStopped = true;
 							return;
 						}
@@ -80,7 +80,6 @@ public class AsyncDataScheduler {
 					}
 					synchronized(mLock1){
 						if(mIsStopping){
-							mIsStopping = false;
 							mIsStopped = true;
 							return;
 						}
@@ -120,7 +119,6 @@ public class AsyncDataScheduler {
 					}
 					synchronized(mLock1){
 						if(mIsStopping){
-							mIsStopping = false;
 							mIsStopped = true;
 							return;
 						}
@@ -160,7 +158,6 @@ public class AsyncDataScheduler {
 					if(size == 0 || mExtractedIndex == size) continue;    //如果当前提取队列没有增加新的项，将不会启动加载线程，以节约资源
 					synchronized(mLock1){
 						if(mIsStopping){
-							mIsStopping = false;
 							mIsStopped = true;
 							return;
 						}
