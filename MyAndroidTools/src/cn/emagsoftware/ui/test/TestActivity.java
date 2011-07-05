@@ -47,7 +47,7 @@ public class TestActivity extends Activity {
 				}
 			}
 			@Override
-			public List<DataHolder> onLoad(int start, int limit) throws Exception {
+			public List<DataHolder> onLoad(Context context, int start, int limit) throws Exception {
 				// TODO Auto-generated method stub
 				Thread.sleep(3000);
 				List<DataHolder> d = new ArrayList<DataHolder>();
