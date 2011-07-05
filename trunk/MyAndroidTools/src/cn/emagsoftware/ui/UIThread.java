@@ -5,8 +5,8 @@ import android.os.Handler;
 import android.os.Looper;
 
 /**
+ * <p>该类的功能实现类似于android.os.AsyncTask类，但AsyncTask类内部采用了线程池实现，线程资源不会被立即释放。该类以快速释放的实现，提供给用户一个第二选择
  * <p>该类支持在非UI-Thread中创建并启动
- * @deprecated 该类已废弃，请使用具有类似功能且实现良好的android.os.AsyncTask类
  * @author Wendell
  * @version 1.2
  */
