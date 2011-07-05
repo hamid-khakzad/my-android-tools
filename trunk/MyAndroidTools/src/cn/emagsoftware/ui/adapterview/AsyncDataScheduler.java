@@ -122,7 +122,8 @@ public class AsyncDataScheduler extends Thread {
 					mExtractedHolders = holders;
 				}
 			}
-			if(mExtractedPositions.size() == 0) continue;
+			int size = mExtractedPositions.size();
+			if(size == 0 || mExtractedIndex == size) continue;    //如果当前提取队列没有增加新的项，将不会启动加载线程，以节约资源
 			//启动异步数据加载线程
 			int remainCount = mThreadCount - threads.size();
 			for(int i = 0;i < remainCount;i++){
