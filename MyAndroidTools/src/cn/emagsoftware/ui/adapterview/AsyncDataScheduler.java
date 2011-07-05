@@ -76,7 +76,7 @@ public class AsyncDataScheduler extends Thread {
 					if(first < 0) first = 0;
 					else if(first >= count) first = count - 1;
 					if(last < 0) last = 0;
-					else if(last >= count) last = count - 1;					
+					else if(last >= count) last = count - 1;
 					for(int i = first;i < last + 1;i++){
 						positions.add(i);
 					}
