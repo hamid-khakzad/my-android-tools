@@ -21,7 +21,7 @@ public class AsyncDataScheduler {
 	protected AdapterView<?> mAdapterView = null;
 	protected int mHeaderCount = 0;
 	protected GenericAdapter mGenericAdapter = null;
-	protected int mThreadCount = 0;
+	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
 	protected int mExtractedIndex = 0;
@@ -35,14 +35,14 @@ public class AsyncDataScheduler {
 	/**当前的执行线程*/
 	protected List<Thread> mCurrExecutiveThreads = Collections.synchronizedList(new ArrayList<Thread>());
 	
-	/**用于同步代码块而创建的锁对象*/
-	protected byte[] mLock1 = new byte[0];
-	/**用于同步代码块而创建的锁对象*/
-	protected byte[] mLock2 = new byte[0];
+	/**用于同步停止调度线程代码块的锁对象*/
+	protected byte[] mLockStop = new byte[0];
+	/**用于同步提取队列代码块的锁对象*/
+	protected byte[] mLockExtract = new byte[0];
 	
-	public AsyncDataScheduler(AdapterView<?> adapterView,int threadCount,AsyncDataExecutor executor){
+	public AsyncDataScheduler(AdapterView<?> adapterView,int maxThreadCount,AsyncDataExecutor executor){
 		if(adapterView == null || executor == null) throw new NullPointerException();
-		if(threadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
+		if(maxThreadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
 		Adapter adapter = adapterView.getAdapter();
 		if(adapter == null) throw new RuntimeException("Adapter is null,call setAdapter function for AdapterView first.");
 		if(adapter instanceof WrapperListAdapter) adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
@@ -50,12 +50,12 @@ public class AsyncDataScheduler {
 		mAdapterView = adapterView;
 		if(adapterView instanceof ListView) mHeaderCount = ((ListView)adapterView).getHeaderViewsCount();
 		mGenericAdapter = (GenericAdapter)adapter;
-		mThreadCount = threadCount;
+		mMaxThreadCount = maxThreadCount;
 		mExecutor = executor;
 	}
 	
 	public void start(){
-		synchronized(mLock1){
+		synchronized(mLockStop){
 			if(mIsStopped){
 				mIsStopping = false;
 				mIsStopped = false;
@@ -67,7 +67,7 @@ public class AsyncDataScheduler {
 		new Thread(){
 			public void run() {
 				while(true){
-					synchronized(mLock1){
+					synchronized(mLockStop){
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
@@ -78,7 +78,7 @@ public class AsyncDataScheduler {
 					}catch(InterruptedException e){
 						throw new RuntimeException(e);
 					}
-					synchronized(mLock1){
+					synchronized(mLockStop){
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
@@ -117,7 +117,7 @@ public class AsyncDataScheduler {
 							throw new RuntimeException(e);
 						}
 					}
-					synchronized(mLock1){
+					synchronized(mLockStop){
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
@@ -133,7 +133,7 @@ public class AsyncDataScheduler {
 						}
 					}
 					//用新队列替换提取队列
-					synchronized(mLock2){
+					synchronized(mLockExtract){
 						if(mExtractedPositions == null || positions.size() == 0){
 							mExtractedIndex = 0;
 							mExtractedPositions = positions;
@@ -156,15 +156,27 @@ public class AsyncDataScheduler {
 					}
 					int size = mExtractedPositions.size();
 					if(size == 0 || mExtractedIndex == size) continue;    //如果当前提取队列没有增加新的项，将不会启动加载线程，以节约资源
-					synchronized(mLock1){
+					synchronized(mLockStop){
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
 						}
 					}
+					//计算需要启动的加载线程的个数
+					int needThreadCount;
+					int eachCount = mExecutor.getEachCount();
+					if(eachCount == -1){
+						needThreadCount = 1;
+					}else{
+						int execSize = size - mExtractedIndex;
+						int remainder = execSize%eachCount;
+						if(remainder == 0) needThreadCount = execSize/eachCount;
+						else needThreadCount = execSize/eachCount + 1;
+					}
+					int remainCount = mMaxThreadCount - mCurrExecutiveThreads.size();
+					if(needThreadCount > remainCount) needThreadCount = remainCount;
 					//启动异步数据加载线程
-					int remainCount = mThreadCount - mCurrExecutiveThreads.size();
-					for(int i = 0;i < remainCount;i++){
+					for(int i = 0;i < needThreadCount;i++){
 						Thread thread = new Thread(){
 							public void run() {
 								while(true){
@@ -174,7 +186,7 @@ public class AsyncDataScheduler {
 									}
 									List<Integer> positions = null;
 									List<DataHolder> holders = null;
-									synchronized(mLock2){
+									synchronized(mLockExtract){
 										int currIndex = mExtractedIndex;
 										int endIndex;
 										int eachCount = mExecutor.getEachCount();
@@ -193,10 +205,6 @@ public class AsyncDataScheduler {
 											mCurrExecutiveThreads.remove(this);
 											return;
 										}
-									}
-									if(mIsStopping){
-										mCurrExecutiveThreads.remove(this);
-										return;
 									}
 									//执行加载逻辑
 									try{
