@@ -2,14 +2,13 @@ package cn.emagsoftware.ui.adapterview;
 
 import java.util.List;
 
+import cn.emagsoftware.ui.UIThread;
+
 import android.content.Context;
-import android.os.AsyncTask;
 import android.util.Log;
 
 public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
-	/**执行异步任务的类*/
-	protected AsyncTask<Object, Integer, Object> mTask = null;
 	/**是否正在加载*/
 	protected boolean mIsLoading = false;
 	
@@ -24,41 +23,41 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	public boolean load(){
 		if(mIsLoading) return false;
 		mIsLoading = true;
-		mTask = new AsyncTask<Object, Integer, Object>(){
+		new UIThread(mContext,new UIThread.Callback(){
 			@Override
-			protected void onPreExecute() {
+			public void onBeginUI(Context context) {
 				// TODO Auto-generated method stub
-				super.onPreExecute();
-				onBeginLoad(mContext);
+				super.onBeginUI(context);
+				onBeginLoad(context);
 			}
 			@Override
-			protected Object doInBackground(Object... params) {
+			public Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
-				try{
-					return onLoad();
-				}catch(Exception e){
-					Log.e("BaseLoadingAdapter", "Execute loading failed.", e);
-					return e;
-				}
+				super.onRunNoUI(context);
+				return onLoad(context);
 			}
 			@Override
-			protected void onPostExecute(Object result) {
+			public void onSuccessUI(Context context, Object result) {
 				// TODO Auto-generated method stub
-				super.onPostExecute(result);
+				super.onSuccessUI(context, result);
 				if(result == null){
 					mIsLoading = false;
-					onAfterLoad(mContext,null);
-				}else if(result instanceof List<?>){
+					onAfterLoad(context,null);
+				}else{
 					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
-					onAfterLoad(mContext,null);
-				}else if(result instanceof Exception){
-					mIsLoading = false;
-					onAfterLoad(mContext,(Exception)result);
+					onAfterLoad(context,null);
 				}
 			}
-		};
-		mTask.execute("");
+			@Override
+			public void onExceptionUI(Context context, Exception e) {
+				// TODO Auto-generated method stub
+				super.onExceptionUI(context, e);
+				Log.e("BaseLoadingAdapter", "Execute loading failed.", e);
+				mIsLoading = false;
+				onAfterLoad(context,e);
+			}
+		}).start();
 		return true;
 	}
 	
@@ -78,10 +77,11 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**
 	 * <p>加载的具体实现，该方法将在非UI线程中执行，要注意不能执行UI的操作
+	 * @param context
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract List<DataHolder> onLoad() throws Exception;
+	public abstract List<DataHolder> onLoad(Context context) throws Exception;
 	
 	/**
 	 * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
