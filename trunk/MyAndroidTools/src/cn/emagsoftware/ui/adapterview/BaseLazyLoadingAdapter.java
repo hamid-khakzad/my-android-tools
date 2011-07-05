@@ -2,8 +2,9 @@ package cn.emagsoftware.ui.adapterview;
 
 import java.util.List;
 
+import cn.emagsoftware.ui.UIThread;
+
 import android.content.Context;
-import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -56,32 +57,28 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		// TODO Auto-generated method stub
 		if(mIsLoading) return false;
 		mIsLoading = true;
-		mTask = new AsyncTask<Object, Integer, Object>(){
+		new UIThread(mContext,new UIThread.Callback(){
 			@Override
-			protected void onPreExecute() {
+			public void onBeginUI(Context context) {
 				// TODO Auto-generated method stub
-				super.onPreExecute();
-				onBeginLoad(mContext);
+				super.onBeginUI(context);
+				onBeginLoad(context);
 			}
 			@Override
-			protected Object doInBackground(Object... params) {
+			public Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
-				try{
-					return onLoad(mStart,mLimit);
-				}catch(Exception e){
-					Log.e("BaseLazyLoadingAdapter", "Execute lazy loading failed.", e);
-					return e;
-				}
+				super.onRunNoUI(context);
+				return onLoad(context, mStart, mLimit);
 			}
 			@Override
-			protected void onPostExecute(Object result) {
+			public void onSuccessUI(Context context, Object result) {
 				// TODO Auto-generated method stub
-				super.onPostExecute(result);
+				super.onSuccessUI(context, result);
 				if(result == null){
 					mIsLoadedAll = true;
 					mIsLoading = false;
-					onAfterLoad(mContext,null);
-				}else if(result instanceof List<?>){
+					onAfterLoad(context,null);
+				}else{
 					List<DataHolder> resultList = (List<DataHolder>)result;
 					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
 					int size = resultList.size();
@@ -89,14 +86,18 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 					if(size == 0) mIsLoadedAll = true;
 					else mIsLoadedAll = false;
 					mIsLoading = false;
-					onAfterLoad(mContext,null);
-				}else if(result instanceof Exception){
-					mIsLoading = false;
-					onAfterLoad(mContext,(Exception)result);
+					onAfterLoad(context,null);
 				}
 			}
-		};
-		mTask.execute("");
+			@Override
+			public void onExceptionUI(Context context, Exception e) {
+				// TODO Auto-generated method stub
+				super.onExceptionUI(context, e);
+				Log.e("BaseLazyLoadingAdapter", "Execute lazy loading failed.", e);
+				mIsLoading = false;
+				onAfterLoad(context,e);
+			}
+		}).start();
 		return true;
 	}
 	
@@ -119,21 +120,22 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>对于当前类而言，已使用onLoad(int start,int limit)替换了onLoad()的作用，故将其简单实现以防止子类被强制要求实现
+	 * <p>对于当前类而言，已使用onLoad(Context context,int start,int limit)替换了onLoad(Context context)的作用，故将其简单实现以防止子类被强制要求实现
 	 */
 	@Override
-	public List<DataHolder> onLoad() throws Exception {
+	public List<DataHolder> onLoad(Context context) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	/**
 	 * <p>加载的具体实现，通过传入的参数可以实现分段的懒加载。该方法由非UI线程回调，所以可以执行耗时操作
+	 * @param context
 	 * @param start 本次加载的开始序号
 	 * @param limit 本次加载的长度
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract List<DataHolder> onLoad(int start,int limit) throws Exception;
+	public abstract List<DataHolder> onLoad(Context context,int start,int limit) throws Exception;
 	
 }
