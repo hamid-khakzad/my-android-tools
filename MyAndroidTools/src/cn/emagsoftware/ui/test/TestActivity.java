@@ -101,7 +101,6 @@ public class TestActivity extends Activity {
 			@Override
 			public void onExecute(List<Integer> positions, List<DataHolder> holders) throws Exception {
 				// TODO Auto-generated method stub
-				System.out.println(positions.get(0));
 				Thread.sleep(5*1000);
 			}
 		});
