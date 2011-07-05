@@ -64,7 +64,7 @@ public class AsyncDataScheduler {
 				return;
 			}
 		}
-		new Thread(){
+		new Thread("AsyncDataScheduler"){
 			public void run() {
 				while(true){
 					synchronized(mLockStop){
