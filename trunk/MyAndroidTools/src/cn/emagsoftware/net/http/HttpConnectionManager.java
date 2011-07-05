@@ -1,9 +1,12 @@
 package cn.emagsoftware.net.http;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.SecureRandom;
@@ -23,10 +26,13 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.7
+ * @version 2.8
  */
 public final class HttpConnectionManager {
 	
@@ -288,10 +294,49 @@ public final class HttpConnectionManager {
 			}
 			if(isUseCMWap){
 				String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
-				if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){
-					//CMWap有时会出现资费提示页面，过滤之
-					httpConn.disconnect();
-					return openConnection(url,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
+				if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){    //CMWap有时会出现资费提示页面
+					InputStream resultStream = null;
+					try{
+						resultStream = httpConn.getInputStream();
+						BufferedInputStream buffInput = new BufferedInputStream(resultStream);
+						ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
+						byte[] b = new byte[2*1024];
+						int len;
+						while ((len = buffInput.read(b)) > 0) {
+							tempOutput.write(b,0,len);
+						}
+						String wmlStr = new String(tempOutput.toByteArray(),"UTF-8");
+						//解析资费提示页面中的URL
+						XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+						XmlPullParser xmlParser = factory.newPullParser();
+						xmlParser.setInput(new StringReader(wmlStr));
+						String parseUrl = null;
+						boolean onEnterForward = false;
+						int eventType = xmlParser.getEventType();
+						while (eventType != XmlPullParser.END_DOCUMENT) {
+							switch (eventType) {
+							case XmlPullParser.START_TAG:
+								String tagName = xmlParser.getName().toLowerCase();
+								if ("onevent".equals(tagName)) {
+									String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
+									if ("onenterforward".equals(s)) onEnterForward = true;
+								} else if ("go".equals(tagName)){
+									if(onEnterForward) parseUrl = xmlParser.getAttributeValue(null, "href");
+								}
+								break;
+							}
+							if(parseUrl != null) break;
+							eventType = xmlParser.next();
+						}
+						if(parseUrl == null || parseUrl.equals("")) parseUrl = url;
+						return openConnection(parseUrl,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
+					}finally{
+						try{
+							if(resultStream != null) resultStream.close();
+						}finally{
+							httpConn.disconnect();
+						}
+					}
 				}
 			}
 			if(!followRedirects) return httpConn;
