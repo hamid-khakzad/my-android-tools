@@ -30,8 +30,15 @@ public class AsyncDataScheduler {
 	
 	/**是否正在停止*/
 	protected boolean mIsStopping = false;
+	/**是否已经停止*/
+	protected boolean mIsStopped = true;
 	/**当前的执行线程*/
 	protected List<Thread> mCurrExecutiveThreads = Collections.synchronizedList(new ArrayList<Thread>());
+	
+	/**用于同步代码块而创建的锁对象*/
+	protected byte[] mLock1 = new byte[0];
+	/**用于同步代码块而创建的锁对象*/
+	protected byte[] mLock2 = new byte[0];
 	
 	public AsyncDataScheduler(AdapterView<?> adapterView,int threadCount,AsyncDataExecutor executor){
 		if(adapterView == null || executor == null) throw new NullPointerException();
@@ -48,16 +55,36 @@ public class AsyncDataScheduler {
 	}
 	
 	public void start(){
+		synchronized(mLock1){
+			if(mIsStopped){
+				mIsStopped = false;
+			}else{
+				mIsStopping = false;
+				return;
+			}
+		}
 		new Thread(){
 			public void run() {
 				while(true){
-					if(mIsStopping) return;
+					synchronized(mLock1){
+						if(mIsStopping){
+							mIsStopping = false;
+							mIsStopped = true;
+							return;
+						}
+					}
 					try{
 						sleep(SCHEDULER_DORMANCY_TIME);
 					}catch(InterruptedException e){
 						throw new RuntimeException(e);
 					}
-					if(mIsStopping) return;
+					synchronized(mLock1){
+						if(mIsStopping){
+							mIsStopping = false;
+							mIsStopped = true;
+							return;
+						}
+					}
 					//获取当前时间点需要处理的快照
 					final boolean[] isOK = {false};
 					final List<Integer> positions = new LinkedList<Integer>();
@@ -85,11 +112,17 @@ public class AsyncDataScheduler {
 						}
 					});
 					while(!isOK[0]){
-						if(mIsStopping) return;
 						try{
 							sleep(200);
 						}catch(InterruptedException e){
 							throw new RuntimeException(e);
+						}
+					}
+					synchronized(mLock1){
+						if(mIsStopping){
+							mIsStopping = false;
+							mIsStopped = true;
+							return;
 						}
 					}
 					//删除已经加载过的项
@@ -101,9 +134,8 @@ public class AsyncDataScheduler {
 							i--;
 						}
 					}
-					if(mIsStopping) return;
 					//用新队列替换提取队列
-					synchronized(AsyncDataScheduler.this){
+					synchronized(mLock2){
 						if(mExtractedPositions == null || positions.size() == 0){
 							mExtractedIndex = 0;
 							mExtractedPositions = positions;
@@ -126,10 +158,16 @@ public class AsyncDataScheduler {
 					}
 					int size = mExtractedPositions.size();
 					if(size == 0 || mExtractedIndex == size) continue;    //如果当前提取队列没有增加新的项，将不会启动加载线程，以节约资源
+					synchronized(mLock1){
+						if(mIsStopping){
+							mIsStopping = false;
+							mIsStopped = true;
+							return;
+						}
+					}
 					//启动异步数据加载线程
 					int remainCount = mThreadCount - mCurrExecutiveThreads.size();
 					for(int i = 0;i < remainCount;i++){
-						if(mIsStopping) return;
 						Thread thread = new Thread(){
 							public void run() {
 								while(true){
@@ -139,7 +177,7 @@ public class AsyncDataScheduler {
 									}
 									List<Integer> positions = null;
 									List<DataHolder> holders = null;
-									synchronized(AsyncDataScheduler.this){
+									synchronized(mLock2){
 										int currIndex = mExtractedIndex;
 										int endIndex;
 										int eachCount = mExecutor.getEachCount();
