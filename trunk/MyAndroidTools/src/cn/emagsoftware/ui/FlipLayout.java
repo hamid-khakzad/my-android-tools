@@ -6,14 +6,13 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Scroller;
 
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 1.4
+ * @version 1.5
  */
 public class FlipLayout extends ViewGroup {
 
@@ -56,24 +55,23 @@ public class FlipLayout extends ViewGroup {
 			String toScreenIndexStr = attrs.getAttributeValue(null, "toScreen");
 			if(toScreenIndexStr != null) setToScreen(Integer.valueOf(toScreenIndexStr));
 		}
-		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+		mTouchSlop = 50;
 	}
-
+	
 	@Override
 	protected void onLayout(boolean changed, int l, int t, int r, int b) {
 		// TODO Auto-generated method stub
-		if (changed) {
-			int childLeft = 0;
-			final int childCount = getChildCount();
-			
-			for (int i=0; i<childCount; i++) {
-				final View childView = getChildAt(i);
-				if (childView.getVisibility() != View.GONE) {
-					final int childWidth = childView.getMeasuredWidth();
-					childView.layout(childLeft, 0, 
-							childLeft+childWidth, childView.getMeasuredHeight());
-					childLeft += childWidth;
-				}
+		int childLeft = 0;
+		final int childCount = getChildCount();
+		
+		for (int i=0; i<childCount; i++) {
+			final View childView = getChildAt(i);
+			if (childView.getVisibility() != View.GONE) {
+				final int childWidth = childView.getMeasuredWidth();
+				childView.layout(childLeft, 0, 
+						childLeft+childWidth, childView.getMeasuredHeight());
+				childLeft += childWidth;
 			}
 		}
 	}
