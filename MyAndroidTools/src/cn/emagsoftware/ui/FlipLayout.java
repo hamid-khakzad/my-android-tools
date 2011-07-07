@@ -56,7 +56,7 @@ public class FlipLayout extends ViewGroup {
 			if(toScreenIndexStr != null) setToScreen(Integer.valueOf(toScreenIndexStr));
 		}
 		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-		mTouchSlop = 50;
+		mTouchSlop = 60;
 	}
 	
 	@Override
