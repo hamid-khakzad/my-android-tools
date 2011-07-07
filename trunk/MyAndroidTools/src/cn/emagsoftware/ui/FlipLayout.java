@@ -12,9 +12,8 @@ import android.widget.Scroller;
 
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
- * 该类是在Yao.GUET提供的ScrollLayout类的基础上修改完成，Yao.GUET的blog地址为http://blog.csdn.net/Yao_GUET
  * @author Wendell
- * @version 1.3
+ * @version 1.4
  */
 public class FlipLayout extends ViewGroup {
 
@@ -35,6 +34,8 @@ public class FlipLayout extends ViewGroup {
 	private int mTouchSlop;
 	private float mLastMotionX;
 	//private float mLastMotionY;
+	/**子View是否请求了进行水平的触摸移动*/
+	private boolean mRequestHorizontalTouchMove = false;
 	
 	private OnFlingChangedListener listener;
 	
@@ -242,8 +243,7 @@ public class FlipLayout extends ViewGroup {
 		Log.e(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
 		
 		final int action = ev.getAction();
-		if ((action == MotionEvent.ACTION_MOVE) && 
-				(mTouchState != TOUCH_STATE_REST)) {
+		if ((action == MotionEvent.ACTION_MOVE) && (mTouchState != TOUCH_STATE_REST)) {
 			return true;
 		}
 		
@@ -253,25 +253,29 @@ public class FlipLayout extends ViewGroup {
 		switch (action) {
 		case MotionEvent.ACTION_MOVE:
 			final int xDiff = (int)Math.abs(mLastMotionX-x);
-			if (xDiff>mTouchSlop) {
+			if (xDiff>mTouchSlop && !mRequestHorizontalTouchMove) {
 				mTouchState = TOUCH_STATE_SCROLLING;
-				
 			}
 			break;
-			
 		case MotionEvent.ACTION_DOWN:
 			mLastMotionX = x;
 			//mLastMotionY = y;
-			mTouchState = mScroller.isFinished()? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
+			boolean isFinished = mScroller.isFinished();
+			mTouchState = isFinished ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
+			mRequestHorizontalTouchMove = isFinished ? false : mRequestHorizontalTouchMove;
 			break;
-			
 		case MotionEvent.ACTION_CANCEL:
 		case MotionEvent.ACTION_UP:
 			mTouchState = TOUCH_STATE_REST;
+			mRequestHorizontalTouchMove = false;
 			break;
 		}
 		
 		return mTouchState != TOUCH_STATE_REST;
+	}
+	
+	public void requestHorizontalTouchMove(){
+		mRequestHorizontalTouchMove = true;
 	}
 	
 	public void setOnFlingChangedListener(OnFlingChangedListener listener){
