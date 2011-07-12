@@ -33,8 +33,8 @@ public class FlipLayout extends ViewGroup {
 	private int mTouchSlop;
 	private float mLastMotionX;
 	//private float mLastMotionY;
-	/**子View是否请求了进行水平的滑动*/
-	private boolean mRequestHorizontalFlipForChild = false;
+	/**是否请求了进行水平的滑动*/
+	private boolean mRequestHorizontalFlip = false;
 	
 	private OnFlingChangedListener listener;
 	
@@ -251,7 +251,7 @@ public class FlipLayout extends ViewGroup {
 		switch (action) {
 		case MotionEvent.ACTION_MOVE:
 			final int xDiff = (int)Math.abs(mLastMotionX-x);
-			if (xDiff>mTouchSlop && !mRequestHorizontalFlipForChild) {
+			if (xDiff>mTouchSlop && !mRequestHorizontalFlip) {
 				mTouchState = TOUCH_STATE_SCROLLING;
 			}
 			break;
@@ -260,20 +260,20 @@ public class FlipLayout extends ViewGroup {
 			//mLastMotionY = y;
 			boolean isFinished = mScroller.isFinished();
 			mTouchState = isFinished ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
-			mRequestHorizontalFlipForChild = isFinished ? false : mRequestHorizontalFlipForChild;
+			mRequestHorizontalFlip = isFinished ? false : mRequestHorizontalFlip;
 			break;
 		case MotionEvent.ACTION_CANCEL:
 		case MotionEvent.ACTION_UP:
 			mTouchState = TOUCH_STATE_REST;
-			mRequestHorizontalFlipForChild = false;
+			mRequestHorizontalFlip = false;
 			break;
 		}
 		
 		return mTouchState != TOUCH_STATE_REST;
 	}
 	
-	public void requestHorizontalFlipForChild(){
-		mRequestHorizontalFlipForChild = true;
+	public void requestHorizontalFlip(){
+		mRequestHorizontalFlip = true;
 	}
 	
 	public void setOnFlingChangedListener(OnFlingChangedListener listener){
