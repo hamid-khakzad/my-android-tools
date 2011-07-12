@@ -12,7 +12,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 1.5
+ * @version 1.6
  */
 public class FlipLayout extends ViewGroup {
 
@@ -33,8 +33,8 @@ public class FlipLayout extends ViewGroup {
 	private int mTouchSlop;
 	private float mLastMotionX;
 	//private float mLastMotionY;
-	/**子View是否请求了进行水平的触摸移动*/
-	private boolean mRequestHorizontalTouchMove = false;
+	/**是否暂停了滑动*/
+	private boolean mIsPauseFlip = false;
 	
 	private OnFlingChangedListener listener;
 	
@@ -57,6 +57,14 @@ public class FlipLayout extends ViewGroup {
 		}
 		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 		mTouchSlop = 60;
+	}
+	
+	/**
+	 * 设置是否暂停滑动
+	 * @param isPauseFlip
+	 */
+	public void setPauseFlip(boolean isPauseFlip){
+		mIsPauseFlip = isPauseFlip;
 	}
 	
 	@Override
@@ -240,6 +248,8 @@ public class FlipLayout extends ViewGroup {
 		// TODO Auto-generated method stub
 		Log.e(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
 		
+		if(mIsPauseFlip) return false;    //暂停滑动
+		
 		final int action = ev.getAction();
 		if ((action == MotionEvent.ACTION_MOVE) && (mTouchState != TOUCH_STATE_REST)) {
 			return true;
@@ -251,29 +261,22 @@ public class FlipLayout extends ViewGroup {
 		switch (action) {
 		case MotionEvent.ACTION_MOVE:
 			final int xDiff = (int)Math.abs(mLastMotionX-x);
-			if (xDiff>mTouchSlop && !mRequestHorizontalTouchMove) {
+			if (xDiff>mTouchSlop) {
 				mTouchState = TOUCH_STATE_SCROLLING;
 			}
 			break;
 		case MotionEvent.ACTION_DOWN:
 			mLastMotionX = x;
 			//mLastMotionY = y;
-			boolean isFinished = mScroller.isFinished();
-			mTouchState = isFinished ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
-			mRequestHorizontalTouchMove = isFinished ? false : mRequestHorizontalTouchMove;
+			mTouchState = mScroller.isFinished() ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
 			break;
 		case MotionEvent.ACTION_CANCEL:
 		case MotionEvent.ACTION_UP:
 			mTouchState = TOUCH_STATE_REST;
-			mRequestHorizontalTouchMove = false;
 			break;
 		}
 		
 		return mTouchState != TOUCH_STATE_REST;
-	}
-	
-	public void requestHorizontalTouchMove(){
-		mRequestHorizontalTouchMove = true;
 	}
 	
 	public void setOnFlingChangedListener(OnFlingChangedListener listener){
