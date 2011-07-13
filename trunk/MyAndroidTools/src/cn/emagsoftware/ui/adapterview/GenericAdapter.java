@@ -12,6 +12,8 @@ public class GenericAdapter extends BaseAdapter {
 	
 	protected Context mContext = null;
 	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
+	/**是否转换View以提高性能*/
+	protected boolean mIsConvertView = true;
 	
 	public GenericAdapter(Context context){
 		if(context == null) throw new NullPointerException();
@@ -95,6 +97,10 @@ public class GenericAdapter extends BaseAdapter {
 		notifyDataSetChanged();
 	}
 	
+	public void setConvertView(boolean isConvertView){
+		mIsConvertView = isConvertView;
+	}
+	
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
@@ -117,7 +123,7 @@ public class GenericAdapter extends BaseAdapter {
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
 		DataHolder holder = mHolders.get(position);
-		if(convertView == null){
+		if(convertView == null || !mIsConvertView){
 			return holder.onCreateView(mContext, position, holder.getData());
 		}else{
 			holder.onUpdateView(mContext, position, convertView, holder.getData());
