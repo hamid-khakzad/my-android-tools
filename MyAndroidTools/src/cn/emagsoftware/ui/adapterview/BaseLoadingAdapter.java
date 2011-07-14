@@ -11,7 +11,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**是否正在加载*/
 	protected boolean mIsLoading = false;
-	/**是否已经加载完成*/
+	/**是否已经加载过*/
 	protected boolean mIsLoaded = false;
 	
 	public BaseLoadingAdapter(Context context){
@@ -74,7 +74,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	}
 	
 	/**
-	 * <p>是否已经加载完成
+	 * <p>是否已经加载过
 	 * @return
 	 */
 	public boolean isLoaded(){
