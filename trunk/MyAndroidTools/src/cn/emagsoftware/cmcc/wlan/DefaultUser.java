@@ -317,15 +317,17 @@ class DefaultUser extends User {
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
 		//以下获取cookie
 		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE.toLowerCase());
-		String setCookieValue = setCookieValues.get(0);
-		if(setCookieValue != null) {
-			String[] setCookieGroup = setCookieValue.split(";");
-			for(String tmp:setCookieGroup) {
-				if(tmp.trim().startsWith(GD_JSESSIONID) //for Guangdong: "JSESSIONID="
-				   || tmp.trim().startsWith(BJ_PHPSESSID) //for Beijing: "PHPSESSID="
-				){
-					this.sessionCookie = tmp.trim();
-					break;
+		if(setCookieValues != null && setCookieValues.size() > 0){
+			String setCookieValue = setCookieValues.get(0);
+			if(setCookieValue != null) {
+				String[] setCookieGroup = setCookieValue.split(";");
+				for(String tmp:setCookieGroup) {
+					if(tmp.trim().startsWith(GD_JSESSIONID) //for Guangdong: "JSESSIONID="
+					   || tmp.trim().startsWith(BJ_PHPSESSID) //for Beijing: "PHPSESSID="
+					){
+						this.sessionCookie = tmp.trim();
+						break;
+					}
 				}
 			}
 		}
