@@ -47,8 +47,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 					mIsLoaded = true;
 					onAfterLoad(context,null);
 				}else{
-					List<DataHolder> resultList = (List<DataHolder>)result;
-					if(resultList.size() > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
+					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
 					mIsLoaded = true;
 					onAfterLoad(context,null);
