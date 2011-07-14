@@ -337,7 +337,7 @@ class DefaultAutoUser extends AutoUser {
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
 		//以下获取cookie
 		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE.toLowerCase());
-		if(setCookieValues != null){
+		if(setCookieValues != null && setCookieValues.size() > 0){
 			String setCookieValue = setCookieValues.get(0);
 			if(setCookieValue != null) {
 				String[] setCookieGroup = setCookieValue.split(";");
@@ -381,7 +381,7 @@ class DefaultAutoUser extends AutoUser {
 		if(code != HttpURLConnection.HTTP_OK) throw new IOException("requesting url returns code:"+code);
 		//以下获取cookie
 		List<String> setCookieValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_SET_COOKIE.toLowerCase());
-		if(setCookieValues != null){
+		if(setCookieValues != null && setCookieValues.size() > 0){
 			String setCookieValue = setCookieValues.get(0);
 			if(setCookieValue != null) {
 				String[] setCookieGroup = setCookieValue.split(";");
