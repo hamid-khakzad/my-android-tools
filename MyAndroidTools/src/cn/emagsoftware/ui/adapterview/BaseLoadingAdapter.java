@@ -66,17 +66,6 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	}
 	
 	/**
-	 * <p>覆盖了父类的同名方法，以重置克隆对象的一些属性
-	 */
-	@Override
-	public BaseLoadingAdapter cloneDeeply(DataHolderCloneMgr cloneMgr) {
-		// TODO Auto-generated method stub
-		BaseLoadingAdapter loadingAdapter = (BaseLoadingAdapter)super.cloneDeeply(cloneMgr);
-		loadingAdapter.mIsLoading = false;
-		return loadingAdapter;
-	}
-	
-	/**
 	 * <p>是否正在加载
 	 * @return
 	 */
