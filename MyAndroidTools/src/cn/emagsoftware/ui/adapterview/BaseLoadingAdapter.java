@@ -20,10 +20,10 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**
 	 * <p>加载的执行方法
-	 * @return true表示开始加载；false表示已经在加载或加载完成，本次的调用无效
+	 * @return true表示开始加载；false表示已经在加载，本次的调用无效
 	 */
 	public boolean load(){
-		if(mIsLoading || mIsLoaded) return false;
+		if(mIsLoading) return false;
 		mIsLoading = true;
 		new UIThread(mContext,new UIThread.Callback(){
 			@Override
@@ -47,7 +47,8 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 					mIsLoaded = true;
 					onAfterLoad(context,null);
 				}else{
-					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
+					List<DataHolder> resultList = (List<DataHolder>)result;
+					if(resultList.size() > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
 					mIsLoaded = true;
 					onAfterLoad(context,null);
