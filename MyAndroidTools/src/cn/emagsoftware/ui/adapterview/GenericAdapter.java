@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
-public class GenericAdapter extends BaseAdapter {
+public class GenericAdapter extends BaseAdapter implements Cloneable {
 	
 	protected Context mContext = null;
 	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
@@ -101,6 +101,28 @@ public class GenericAdapter extends BaseAdapter {
 		mIsConvertView = isConvertView;
 	}
 	
+	/**
+	 * <p>深度克隆当前对象，以供需要相同数据的其他AdapterView使用
+	 * @param cloneMgr
+	 * @return
+	 */
+	public GenericAdapter cloneDeeply(DataHolderCloneMgr cloneMgr){
+		GenericAdapter cloneOne = null;
+		try{
+			cloneOne = (GenericAdapter)super.clone();
+		}catch(CloneNotSupportedException e){
+			throw new RuntimeException(e);
+		}
+		//以下开始深度克隆
+		List<DataHolder> clone = new ArrayList<DataHolder>();
+		for(int i = 0;i < mHolders.size();i++){
+			DataHolder originalHolder = mHolders.get(i);
+			clone.add(cloneMgr.clone(i, originalHolder));
+		}
+		cloneOne.mHolders = clone;
+		return cloneOne;
+	}
+	
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
@@ -129,6 +151,10 @@ public class GenericAdapter extends BaseAdapter {
 			holder.onUpdateView(mContext, position, convertView, holder.getData());
 			return convertView;
 		}
+	}
+	
+	public abstract static interface DataHolderCloneMgr{
+		public abstract DataHolder clone(int position,DataHolder holder);
 	}
 	
 }
