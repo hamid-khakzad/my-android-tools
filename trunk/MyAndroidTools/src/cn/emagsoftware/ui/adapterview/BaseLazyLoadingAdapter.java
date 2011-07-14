@@ -35,7 +35,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view, int firstVisibleItem,int visibleItemCount, int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll()){
+					if(firstVisibleItem + visibleItemCount == totalItemCount){
 						load();
 					}
 				}
@@ -75,17 +75,19 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				// TODO Auto-generated method stub
 				super.onSuccessUI(context, result);
 				if(result == null){
-					mIsLoadedAll = true;
 					mIsLoading = false;
+					mIsLoaded = true;
+					mIsLoadedAll = true;
 					onAfterLoad(context,null);
 				}else{
 					List<DataHolder> resultList = (List<DataHolder>)result;
-					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
 					int size = resultList.size();
+					if(size > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
+					mIsLoading = false;
+					mIsLoaded = true;
 					mStart = mStart + size;
 					if(size == 0) mIsLoadedAll = true;
 					else mIsLoadedAll = false;
-					mIsLoading = false;
 					onAfterLoad(context,null);
 				}
 			}
