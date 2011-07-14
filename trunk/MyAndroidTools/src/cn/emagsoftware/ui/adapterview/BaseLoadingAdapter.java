@@ -11,6 +11,8 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**是否正在加载*/
 	protected boolean mIsLoading = false;
+	/**是否已经加载完成*/
+	protected boolean mIsLoaded = false;
 	
 	public BaseLoadingAdapter(Context context){
 		super(context);
@@ -18,10 +20,10 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**
 	 * <p>加载的执行方法
-	 * @return true表示开始加载；false表示已经在加载，本次的调用无效
+	 * @return true表示开始加载；false表示已经在加载或加载完成，本次的调用无效
 	 */
 	public boolean load(){
-		if(mIsLoading) return false;
+		if(mIsLoading || mIsLoaded) return false;
 		mIsLoading = true;
 		new UIThread(mContext,new UIThread.Callback(){
 			@Override
@@ -42,10 +44,12 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				super.onSuccessUI(context, result);
 				if(result == null){
 					mIsLoading = false;
+					mIsLoaded = true;
 					onAfterLoad(context,null);
 				}else{
 					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
+					mIsLoaded = true;
 					onAfterLoad(context,null);
 				}
 			}
@@ -62,11 +66,30 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	}
 	
 	/**
+	 * <p>覆盖了父类的同名方法，以重置克隆对象的一些属性
+	 */
+	@Override
+	public BaseLoadingAdapter cloneDeeply(DataHolderCloneMgr cloneMgr) {
+		// TODO Auto-generated method stub
+		BaseLoadingAdapter loadingAdapter = (BaseLoadingAdapter)super.cloneDeeply(cloneMgr);
+		loadingAdapter.mIsLoading = false;
+		return loadingAdapter;
+	}
+	
+	/**
 	 * <p>是否正在加载
 	 * @return
 	 */
 	public boolean isLoading(){
 		return mIsLoading;
+	}
+	
+	/**
+	 * <p>是否已经加载完成
+	 * @return
+	 */
+	public boolean isLoaded(){
+		return mIsLoaded;
 	}
 	
 	/**
