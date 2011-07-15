@@ -17,6 +17,8 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	protected int mLimit = 10;
 	/**是否已经加载了全部数据*/
 	protected boolean mIsLoadedAll = false;
+	/**当前的加载是否发生了异常*/
+	protected boolean mIsException = false;
 	
 	public BaseLazyLoadingAdapter(Context context,int limit){
 		super(context);
@@ -35,7 +37,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view, int firstVisibleItem,int visibleItemCount, int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll()){
+					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll() && !mIsException){
 						load();
 					}
 				}
@@ -78,6 +80,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 					mIsLoading = false;
 					mIsLoaded = true;
 					mIsLoadedAll = true;
+					mIsException = false;
 					onAfterLoad(context,null);
 				}else{
 					List<DataHolder> resultList = (List<DataHolder>)result;
@@ -88,6 +91,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 					mStart = mStart + size;
 					if(size == 0) mIsLoadedAll = true;
 					else mIsLoadedAll = false;
+					mIsException = false;
 					onAfterLoad(context,null);
 				}
 			}
@@ -97,6 +101,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				super.onExceptionUI(context, e);
 				Log.e("BaseLazyLoadingAdapter", "Execute lazy loading failed.", e);
 				mIsLoading = false;
+				mIsException = true;
 				onAfterLoad(context,e);
 			}
 		}).start();
