@@ -83,6 +83,7 @@ public class AsyncDataScheduler {
 	
 	/**
 	 * <p>开始或重新开始当前调度器
+	 * <p>在已经开始的情况下，重复调用当前方法将不起任何作用
 	 */
 	public void start(){
 		synchronized(mLockStop){
