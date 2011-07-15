@@ -58,6 +58,14 @@ public class AsyncDataScheduler {
 	}
 	
 	/**
+	 * <p>获取当前AdapterView的Adapter
+	 * @return
+	 */
+	public GenericAdapter getAdapter(){
+		return mGenericAdapter;
+	}
+	
+	/**
 	 * <p>开始或重新开始当前调度器
 	 */
 	public void start(){
