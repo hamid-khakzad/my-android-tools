@@ -173,7 +173,7 @@ public class AsyncDataScheduler {
 							return;
 						}
 					}
-					//计算需要启动的加载线程的个数
+					//计算加载线程的个数并启动加载线程
 					int needThreadCount;
 					int eachCount = mExecutor.getEachCount();
 					if(eachCount == -1){
@@ -186,7 +186,6 @@ public class AsyncDataScheduler {
 					}
 					int remainCount = mMaxThreadCount - mCurrExecutiveThreads.size();
 					if(needThreadCount > remainCount) needThreadCount = remainCount;
-					//启动异步数据加载线程
 					for(int i = 0;i < needThreadCount;i++){
 						Thread thread = new Thread(){
 							public void run() {
