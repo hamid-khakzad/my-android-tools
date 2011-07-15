@@ -66,6 +66,22 @@ public class AsyncDataScheduler {
 	}
 	
 	/**
+	 * <p>获取设置的最大线程个数
+	 * @return
+	 */
+	public int getMaxThreadCount(){
+		return mMaxThreadCount;
+	}
+	
+	/**
+	 * <p>获取设置的异步数据执行者对象
+	 * @return
+	 */
+	public AsyncDataExecutor getAsyncDataExecutor(){
+		return mExecutor;
+	}
+	
+	/**
 	 * <p>开始或重新开始当前调度器
 	 */
 	public void start(){
