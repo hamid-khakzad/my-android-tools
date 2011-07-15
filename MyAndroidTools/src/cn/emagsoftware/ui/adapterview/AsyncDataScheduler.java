@@ -61,7 +61,7 @@ public class AsyncDataScheduler {
 	 * <p>获取当前AdapterView的Adapter
 	 * @return
 	 */
-	public GenericAdapter getAdapter(){
+	public GenericAdapter getViewAdapter(){
 		return mGenericAdapter;
 	}
 	
