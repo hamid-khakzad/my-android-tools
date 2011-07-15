@@ -35,6 +35,9 @@ public class AsyncDataScheduler {
 	/**当前的执行线程*/
 	protected List<Thread> mCurrExecutiveThreads = Collections.synchronizedList(new ArrayList<Thread>());
 	
+	/**是否需要刷新当前AdapterView的可见区域*/
+	protected boolean mIsRefreshVisibleArea = false;
+	
 	/**用于同步停止调度线程代码块的锁对象*/
 	protected byte[] mLockStop = new byte[0];
 	/**用于同步提取队列代码块的锁对象*/
@@ -103,10 +106,27 @@ public class AsyncDataScheduler {
 							else if(first >= count) first = count - 1;
 							if(last < 0) last = 0;
 							else if(last >= count) last = count - 1;
-							for(int i = first;i < last + 1;i++){
-								positions.add(i);
+							if(mIsRefreshVisibleArea){    //需要刷新AdapterView的可见区域
+								for(int i = first;i < last + 1;i++){
+									DataHolder holder = mGenericAdapter.queryDataHolder(i);
+									if(holder.isAsyncDataCompleted()){
+										int convertPosition = i - first;
+										holder.onUpdateView(mAdapterView.getContext(), i, mAdapterView.getChildAt(convertPosition), holder.getData());
+									}else{
+										positions.add(i);
+										holders.add(holder);
+									}
+								}
+								mIsRefreshVisibleArea = false;
+							}else{
+								for(int i = first;i < last + 1;i++){
+									DataHolder holder = mGenericAdapter.queryDataHolder(i);
+									if(!holder.isAsyncDataCompleted()){
+										positions.add(i);
+										holders.add(holder);
+									}
+								}
 							}
-							holders.addAll(mGenericAdapter.queryDataHolders(first, last + 1));
 							isOK[0] = true;
 						}
 					});
@@ -121,15 +141,6 @@ public class AsyncDataScheduler {
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
-						}
-					}
-					//删除已经加载过的项
-					for(int i = 0;i < positions.size();i++){
-						DataHolder holder = holders.get(i);
-						if(holder.isAsyncDataCompleted()){
-							positions.remove(i);
-							holders.remove(i);
-							i--;
 						}
 					}
 					//用新队列替换提取队列
@@ -257,6 +268,16 @@ public class AsyncDataScheduler {
 	
 	public void stop(){
 		mIsStopping = true;
+	}
+	
+	/**
+	 * <p>设置是否需要刷新当前AdapterView的可见区域
+	 * <p>一般情况下无需调用该方法，但如果当前AdapterView的Adapter也用于其他的AdapterView，则Adapter的数据有可能会被外部修改，
+	 *    所以需要调用该方法来刷新当前AdapterView的可见区域，非可见区域在变得可见时会自动刷新
+	 * @param isRefreshVisibleArea
+	 */
+	public void setRefreshVisibleArea(boolean isRefreshVisibleArea){
+		mIsRefreshVisibleArea = isRefreshVisibleArea;
 	}
 	
 }
