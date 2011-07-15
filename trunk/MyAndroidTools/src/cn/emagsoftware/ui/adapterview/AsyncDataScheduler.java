@@ -57,6 +57,9 @@ public class AsyncDataScheduler {
 		mExecutor = executor;
 	}
 	
+	/**
+	 * <p>开始或重新开始当前调度器
+	 */
 	public void start(){
 		synchronized(mLockStop){
 			if(mIsStopped){
@@ -265,6 +268,9 @@ public class AsyncDataScheduler {
 		}.start();
 	}
 	
+	/**
+	 * <p>停止当前调度器
+	 */
 	public void stop(){
 		mIsStopping = true;
 	}
