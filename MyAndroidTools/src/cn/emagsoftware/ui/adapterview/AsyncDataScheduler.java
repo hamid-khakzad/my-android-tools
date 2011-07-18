@@ -95,7 +95,7 @@ public class AsyncDataScheduler {
 				return;
 			}
 		}
-		ThreadPoolManager.executeThread(new Thread("AsyncDataScheduler Thread"){
+		ThreadPoolManager.executeThread(new Thread(){
 			public void run() {
 				while(true){
 					synchronized(mLockStop){
