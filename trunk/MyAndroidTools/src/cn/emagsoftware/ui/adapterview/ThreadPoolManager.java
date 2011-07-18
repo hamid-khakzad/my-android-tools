@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * <p>用于adapterview相关的线程池，adapterview存在一些异步加载
  * @author Wendell
- * @version 1.0
+ * @version 1.1
  */
 public final class ThreadPoolManager {
 	
@@ -19,13 +19,13 @@ public final class ThreadPoolManager {
 	/**池中允许的最大线程数，得出此结果的计算策略为：异步数据最大执行线程数+调度线程(AsyncDataScheduler)+加载线程(BaseLoadingAdapter)*/
 	private static final int MAX_POOL_SIZE = MAX_ASYNCDATA_EXECUTION_THREAD_COUNT + 1 + 1;
 	/**额外创建的线程被清除的超时时间，以秒为单位*/
-	private static final int EXTRA_KEEP_ALIVE_TIME = 30;
+	private static final int EXTRA_KEEP_ALIVE_TIME = 45;
 	/**
 	 * 创建适用于当前环境的线程池。采用直接提交策略(SynchronousQueue)，如果没有可用的线程时将尝试等待
 	 * 不使用无界队列(LinkedBlockingQueue)等待的原因是：当未达到MAX_POOL_SIZE时，无界队列就开始尝试等待了，
 	 * 而这边想要达到的目的是：在MAX_POOL_SIZE之内均优先创建线程，而不是等待，所以这里采用直接提交策略，并重写了RejectedExecutionHandler
 	 */
-	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, EXTRA_KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new RejectedExecutionHandler() {		
+	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, EXTRA_KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(true), new RejectedExecutionHandler() {		
 		@Override
 		public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
 			// TODO Auto-generated method stub
