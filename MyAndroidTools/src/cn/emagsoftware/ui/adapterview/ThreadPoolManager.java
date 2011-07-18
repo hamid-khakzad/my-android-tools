@@ -21,8 +21,8 @@ public final class ThreadPoolManager {
 	/**额外创建的线程被清除的超时时间，以秒为单位*/
 	private static final int EXTRA_KEEP_ALIVE_TIME = 30;
 	/**
-	 * 创建适用于当前环境的线程池，采用直接提交策略(SynchronousQueue)，如果没有可用的线程时将尝试等待
-	 * 不使用无界队列(LinkedBlockingQueue)的原因是：当未达到MAX_POOL_SIZE时，无界队列就开始尝试等待了，
+	 * 创建适用于当前环境的线程池。采用直接提交策略(SynchronousQueue)，如果没有可用的线程时将尝试等待
+	 * 不使用无界队列(LinkedBlockingQueue)等待的原因是：当未达到MAX_POOL_SIZE时，无界队列就开始尝试等待了，
 	 * 而这边想要达到的目的是：在MAX_POOL_SIZE之内均优先创建线程，而不是等待，所以这里采用直接提交策略，并重写了RejectedExecutionHandler
 	 */
 	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, MAX_POOL_SIZE, EXTRA_KEEP_ALIVE_TIME, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new RejectedExecutionHandler() {		
