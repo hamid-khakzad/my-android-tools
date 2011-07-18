@@ -95,7 +95,7 @@ public class AsyncDataScheduler {
 				return;
 			}
 		}
-		new Thread("AsyncDataScheduler Thread"){
+		ThreadPoolManager.executeThread(new Thread("AsyncDataScheduler Thread"){
 			public void run() {
 				while(true){
 					synchronized(mLockStop){
@@ -286,11 +286,11 @@ public class AsyncDataScheduler {
 							}
 						};
 						mCurrExecutiveThreads.add(thread);
-						thread.start();
+						ThreadPoolManager.executeThread(thread);
 					}
 				}
 			};
-		}.start();
+		});
 	}
 	
 	/**
