@@ -14,7 +14,7 @@ public final class ThreadPoolManager {
 	
 	/**最大的异步数据执行线程的个数，在构建AsyncDataScheduler时需要对传入的maxThreadCount作此大小限制判断*/
 	public static final int MAX_ASYNCDATA_EXECUTION_THREAD_COUNT = 10;
-	/**池中所保存的线程数，得出此结果的计算策略为：异步数据通常执行线程数+调度线程(AsyncDataScheduler)+加载线程(BaseLoadingAdapter)*/
+	/**池中所保存的线程数，得出此结果的计算策略为：异步数据常用执行线程数+调度线程(AsyncDataScheduler)+加载线程(BaseLoadingAdapter)*/
 	private static final int CORE_POOL_SIZE = 5 + 1 + 1;
 	/**池中允许的最大线程数，得出此结果的计算策略为：异步数据最大执行线程数+调度线程(AsyncDataScheduler)+加载线程(BaseLoadingAdapter)*/
 	private static final int MAX_POOL_SIZE = MAX_ASYNCDATA_EXECUTION_THREAD_COUNT + 1 + 1;
