@@ -17,7 +17,7 @@ public final class ThreadPoolManager {
 	private static final int MAX_POOL_SIZE = Integer.MAX_VALUE;
 	/**
 	 * 额外创建的线程被清除的超时时间，以秒为单位
-	 * 因为可能存在一些频繁的却又快速结束的异步操作，所以这里给出的超时时间较长，从而有效地避免了线程创建和销毁带来的资源消耗，这也是adapterview采用线程池的主要原因之一
+	 * 因为adapterview可能存在一些频繁的却又快速结束的异步操作，所以这里给出的超时时间较长，从而有效地避免了线程创建和销毁带来的资源消耗，这也是adapterview采用线程池的主要原因之一
 	 */
 	private static final int EXTRA_KEEP_ALIVE_TIME = 60;
 	/**
