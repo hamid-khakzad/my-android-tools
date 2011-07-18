@@ -59,7 +59,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		// TODO Auto-generated method stub
 		if(mIsLoading) return false;
 		mIsLoading = true;
-		new UIThread(mContext,new UIThread.Callback(){
+		ThreadPoolManager.executeThread(new UIThread(mContext,new UIThread.Callback(){
 			@Override
 			public void onBeginUI(Context context) {
 				// TODO Auto-generated method stub
@@ -104,7 +104,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				mIsException = true;
 				onAfterLoad(context,e);
 			}
-		}).start();
+		}));
 		return true;
 	}
 	
