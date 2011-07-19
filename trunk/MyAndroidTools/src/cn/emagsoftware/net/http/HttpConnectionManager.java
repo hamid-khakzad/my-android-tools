@@ -29,10 +29,12 @@ import javax.net.ssl.X509TrustManager;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import android.util.Log;
+
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.8
+ * @version 2.9
  */
 public final class HttpConnectionManager {
 	
@@ -394,7 +396,9 @@ public final class HttpConnectionManager {
 			if(i != 0) sb.append(";");
 			sb.append(sessionCookies.get(i));
 		}
-		return sb.toString();
+		String sessionCookiesStr = sb.toString();
+		Log.i("HttpConnectionManager", "queried session("+sessionCookiesStr+") for url "+url);
+		return sessionCookiesStr;
 	}
 	
 	/**
@@ -406,6 +410,7 @@ public final class HttpConnectionManager {
 		if(headers != null){
 			List<String> cookies = headers.get(HEADER_RESPONSE_SET_COOKIE);
 			if(cookies != null){
+				URL url = result.getResponseURL();
 				List<String> sessionCookies = new ArrayList<String>();
 				for(String cookie:cookies){
 					if(cookie != null){
@@ -419,10 +424,11 @@ public final class HttpConnectionManager {
 							}
 						}
 						if(sessionCookie == null) sessionCookie = cookieArr[0].trim();
+						Log.i("HttpConnectionManager", "prepare to save session("+sessionCookie+") for url "+url+"...");
 						sessionCookies.add(sessionCookie);
 					}
 				}
-				URL url = result.getResponseURL();
+				if(sessionCookies.size() == 0) return;
 				String host = url.getHost().toLowerCase();
 				if(host.equals("localhost")) host = "127.0.0.1";
 				int port = url.getPort();
