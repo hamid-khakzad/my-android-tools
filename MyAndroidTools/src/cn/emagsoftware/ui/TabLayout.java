@@ -8,11 +8,12 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 1.0
+ * @version 1.1
  */
 public class TabLayout extends ViewGroup {
 	
@@ -90,13 +91,24 @@ public class TabLayout extends ViewGroup {
 		if(view.getClass().equals(tabClass)){
 			tabs.add(view);
 			final int index = tabs.size()-1;
-			view.setOnClickListener(new View.OnClickListener(){
-				@Override
-				public void onClick(View v) {
-					// TODO Auto-generated method stub
-					setSelectedTab(index);
-				}
-			});
+			if(view instanceof CompoundButton){
+				CompoundButton compoundBtn = (CompoundButton)view;
+				compoundBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+						// TODO Auto-generated method stub
+						if(isChecked) setSelectedTab(index);
+					}
+				});
+			}else{
+				view.setOnClickListener(new View.OnClickListener(){
+					@Override
+					public void onClick(View v) {
+						// TODO Auto-generated method stub
+						setSelectedTab(index);
+					}
+				});
+			}
 		}else if(view instanceof ViewGroup){
 			ViewGroup vg = (ViewGroup)view;
 			for(int i = 0;i < vg.getChildCount();i++){
