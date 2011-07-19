@@ -408,7 +408,7 @@ public final class HttpConnectionManager {
 	private static void saveSession(HttpResponseResult result){
 		Map<String, List<String>> headers = result.getResponseHeaders();
 		if(headers != null){
-			List<String> cookies = headers.get(HEADER_RESPONSE_SET_COOKIE);
+			List<String> cookies = headers.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase());    //在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
 			if(cookies != null){
 				URL url = result.getResponseURL();
 				List<String> sessionCookies = new ArrayList<String>();
