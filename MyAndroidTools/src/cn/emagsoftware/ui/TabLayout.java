@@ -13,7 +13,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 1.1
+ * @version 1.2
  */
 public class TabLayout extends ViewGroup {
 	
@@ -137,9 +137,15 @@ public class TabLayout extends ViewGroup {
 		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
-			View view = content.getChildAt(i);
-			if(index == i) view.setVisibility(View.VISIBLE);
-			else view.setVisibility(View.GONE);
+			View headView = head.getChildAt(i);
+			View contentView = content.getChildAt(i);
+			if(index == i) {
+				if(headView instanceof CompoundButton) ((CompoundButton)headView).setChecked(true);
+				contentView.setVisibility(View.VISIBLE);
+			}else {
+				if(headView instanceof CompoundButton) ((CompoundButton)headView).setChecked(false);
+				contentView.setVisibility(View.GONE);
+			}
 		}
 		this.selectedTabIndex = index;
 		if(mOnTabChangedListener != null){
