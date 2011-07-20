@@ -13,7 +13,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 1.2
+ * @version 1.3
  */
 public class TabLayout extends ViewGroup {
 	
@@ -160,15 +160,27 @@ public class TabLayout extends ViewGroup {
 		View child1 = getChildAt(0);
 		View child2 = getChildAt(1);
 		if(headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_BOTTOM)){
-			int child1Width = child1.getMeasuredWidth();
-			int child1Height = child1.getMeasuredHeight();
-			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
-			if(child2.getVisibility() != View.GONE) child2.layout(0, child1Height, child2.getMeasuredWidth(), child1Height + child2.getMeasuredHeight());
+			int top = 0;
+			if(child1.getVisibility() != View.GONE){
+				int child1Width = child1.getMeasuredWidth();
+				int child1Height = child1.getMeasuredHeight();
+				child1.layout(0, 0, child1Width, child1Height);
+				top = child1Height;
+			}
+			if(child2.getVisibility() != View.GONE) {
+				child2.layout(0, top, child2.getMeasuredWidth(), top + child2.getMeasuredHeight());
+			}
 		}else if(headPosition.equals(HEAD_POSITION_LEFT) || headPosition.equals(HEAD_POSITION_RIGHT)){
-			int child1Width = child1.getMeasuredWidth();
-			int child1Height = child1.getMeasuredHeight();
-			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
-			if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
+			int left = 0;
+			if(child1.getVisibility() != View.GONE){
+				int child1Width = child1.getMeasuredWidth();
+				int child1Height = child1.getMeasuredHeight();
+				child1.layout(0, 0, child1Width, child1Height);
+				left = child1Width;
+			}
+			if(child2.getVisibility() != View.GONE) {
+				child2.layout(left, 0, left + child2.getMeasuredWidth(), child2.getMeasuredHeight());
+			}
 		}
 	}
 	
@@ -187,45 +199,65 @@ public class TabLayout extends ViewGroup {
         View child2 = getChildAt(1);
         
 		if(headPosition.equals(HEAD_POSITION_TOP)){
-			LayoutParams lp = child1.getLayoutParams();
-			if(lp.height == LayoutParams.FILL_PARENT || lp.height == LayoutParams.WRAP_CONTENT){
-				child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.AT_MOST));
-			}else{
-				child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
+			int remainHeight = heightSize;
+			if(child1.getVisibility() != View.GONE){
+				LayoutParams lp = child1.getLayoutParams();
+				if(lp.height == LayoutParams.FILL_PARENT || lp.height == LayoutParams.WRAP_CONTENT){
+					child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.AT_MOST));
+				}else{
+					child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
+				}
+				remainHeight = heightSize - child1.getMeasuredHeight();
+				if(remainHeight < 0) remainHeight = 0;
 			}
-			int remainHeight = heightSize - child1.getMeasuredHeight();
-			if(remainHeight < 0) remainHeight = 0;
-			child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(remainHeight, MeasureSpec.EXACTLY));
+			if(child2.getVisibility() != View.GONE){
+				child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(remainHeight, MeasureSpec.EXACTLY));
+			}
 		}else if(headPosition.equals(HEAD_POSITION_BOTTOM)){
-			LayoutParams lp = child2.getLayoutParams();
-			if(lp.height == LayoutParams.FILL_PARENT || lp.height == LayoutParams.WRAP_CONTENT){
-				child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.AT_MOST));
-			}else{
-				child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
+			int remainHeight = heightSize;
+			if(child2.getVisibility() != View.GONE){
+				LayoutParams lp = child2.getLayoutParams();
+				if(lp.height == LayoutParams.FILL_PARENT || lp.height == LayoutParams.WRAP_CONTENT){
+					child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.AT_MOST));
+				}else{
+					child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY));
+				}
+				remainHeight = heightSize - child2.getMeasuredHeight();
+				if(remainHeight < 0) remainHeight = 0;
 			}
-			int remainHeight = heightSize - child2.getMeasuredHeight();
-			if(remainHeight < 0) remainHeight = 0;
-			child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(remainHeight, MeasureSpec.EXACTLY));
+			if(child1.getVisibility() != View.GONE){
+				child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(remainHeight, MeasureSpec.EXACTLY));
+			}
 		}else if(headPosition.equals(HEAD_POSITION_LEFT)){
-			LayoutParams lp = child1.getLayoutParams();
-			if(lp.width == LayoutParams.FILL_PARENT || lp.width == LayoutParams.WRAP_CONTENT){
-				child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
-			}else{
-				child1.measure(MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+			int remainWidth = widthSize;
+			if(child1.getVisibility() != View.GONE){
+				LayoutParams lp = child1.getLayoutParams();
+				if(lp.width == LayoutParams.FILL_PARENT || lp.width == LayoutParams.WRAP_CONTENT){
+					child1.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+				}else{
+					child1.measure(MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+				}
+				remainWidth = widthSize - child1.getMeasuredWidth();
+				if(remainWidth < 0) remainWidth = 0;
 			}
-			int remainWidth = widthSize - child1.getMeasuredWidth();
-			if(remainWidth < 0) remainWidth = 0;
-			child2.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+			if(child2.getVisibility() != View.GONE){
+				child2.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+			}
 		}else if(headPosition.equals(HEAD_POSITION_RIGHT)){
-			LayoutParams lp = child2.getLayoutParams();
-			if(lp.width == LayoutParams.FILL_PARENT || lp.width == LayoutParams.WRAP_CONTENT){
-				child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
-			}else{
-				child2.measure(MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+			int remainWidth = widthSize;
+			if(child2.getVisibility() != View.GONE){
+				LayoutParams lp = child2.getLayoutParams();
+				if(lp.width == LayoutParams.FILL_PARENT || lp.width == LayoutParams.WRAP_CONTENT){
+					child2.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+				}else{
+					child2.measure(MeasureSpec.makeMeasureSpec(lp.width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+				}
+				remainWidth = widthSize - child2.getMeasuredWidth();
+				if(remainWidth < 0) remainWidth = 0;
 			}
-			int remainWidth = widthSize - child2.getMeasuredWidth();
-			if(remainWidth < 0) remainWidth = 0;
-			child1.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+			if(child1.getVisibility() != View.GONE){
+				child1.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
+			}
 		}
 		setMeasuredDimension(widthSize, heightSize);
 		isRendered = true;
