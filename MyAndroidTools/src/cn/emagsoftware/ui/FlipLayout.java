@@ -99,6 +99,7 @@ public class FlipLayout extends ViewGroup {
         }
         
         // Log.e(TAG, "moving to screen "+mCurScreen);
+        isRendered = true;
         if(mTempCurScreen != -1){
         	mTempCurScreen = Math.max(0, Math.min(mTempCurScreen, count-1));
         	scrollTo(mTempCurScreen*width,0);
@@ -112,7 +113,6 @@ public class FlipLayout extends ViewGroup {
         }else{
         	scrollTo(mCurScreen*width,0);
         }
-        isRendered = true;
     }
     
     /**
