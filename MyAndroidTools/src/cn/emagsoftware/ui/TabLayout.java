@@ -91,24 +91,13 @@ public class TabLayout extends ViewGroup {
 		if(view.getClass().equals(tabClass)){
 			tabs.add(view);
 			final int index = tabs.size()-1;
-			if(view instanceof CompoundButton){
-				CompoundButton compoundBtn = (CompoundButton)view;
-				compoundBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-					@Override
-					public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-						// TODO Auto-generated method stub
-						if(isChecked) setSelectedTab(index);
-					}
-				});
-			}else{
-				view.setOnClickListener(new View.OnClickListener(){
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-						setSelectedTab(index);
-					}
-				});
-			}
+			view.setOnClickListener(new View.OnClickListener(){
+				@Override
+				public void onClick(View v) {
+					// TODO Auto-generated method stub
+					setSelectedTab(index);
+				}
+			});
 		}else if(view instanceof ViewGroup){
 			ViewGroup vg = (ViewGroup)view;
 			for(int i = 0;i < vg.getChildCount();i++){
@@ -181,8 +170,6 @@ public class TabLayout extends ViewGroup {
 			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
 			if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
 		}
-		isRendered = true;
-		initUI();
 	}
 	
     @Override  
@@ -241,6 +228,8 @@ public class TabLayout extends ViewGroup {
 			child1.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
 		}
 		setMeasuredDimension(widthSize, heightSize);
+		isRendered = true;
+		initUI();
     }
     
 	public interface OnTabChangedListener{
