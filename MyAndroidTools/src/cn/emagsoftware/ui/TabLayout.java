@@ -137,13 +137,13 @@ public class TabLayout extends ViewGroup {
 		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
-			View headView = head.getChildAt(i);
+			View tabView = tabs.get(i);
 			View contentView = content.getChildAt(i);
 			if(index == i) {
-				if(headView instanceof CompoundButton) ((CompoundButton)headView).setChecked(true);
+				if(tabView instanceof CompoundButton) ((CompoundButton)tabView).setChecked(true);
 				contentView.setVisibility(View.VISIBLE);
 			}else {
-				if(headView instanceof CompoundButton) ((CompoundButton)headView).setChecked(false);
+				if(tabView instanceof CompoundButton) ((CompoundButton)tabView).setChecked(false);
 				contentView.setVisibility(View.GONE);
 			}
 		}
@@ -181,8 +181,8 @@ public class TabLayout extends ViewGroup {
 			if(child1.getVisibility() != View.GONE) child1.layout(0, 0, child1Width, child1Height);
 			if(child2.getVisibility() != View.GONE) child2.layout(child1Width, 0, child1Width + child2.getMeasuredWidth(), child2.getMeasuredHeight());
 		}
-		initUI();
 		isRendered = true;
+		initUI();
 	}
 	
     @Override  
