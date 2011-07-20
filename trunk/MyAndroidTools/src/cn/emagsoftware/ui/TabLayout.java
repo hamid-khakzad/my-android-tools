@@ -13,7 +13,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 1.3
+ * @version 1.4
  */
 public class TabLayout extends ViewGroup {
 	
@@ -26,7 +26,6 @@ public class TabLayout extends ViewGroup {
 	protected Class<?> tabClass = Button.class;
 	protected String headPosition = HEAD_POSITION_TOP;
 	protected int selectedTabIndex = -1;
-	protected int tempSelectedTabIndex = -1;
 	
 	protected ViewGroup head = null;
 	protected ViewGroup content = null;
@@ -74,11 +73,9 @@ public class TabLayout extends ViewGroup {
 		}
 		tabs.clear();
 		initTabs(head);
-		if(tempSelectedTabIndex != -1){
-			int tempSelectedTabIndexCopy = tempSelectedTabIndex;
-			tempSelectedTabIndex = -1;
-			setSelectedTab(tempSelectedTabIndexCopy);
-		}else if(tabs.size() > 0 && selectedTabIndex == -1) {
+		if(selectedTabIndex != -1){
+			setSelectedTab(selectedTabIndex);
+		}else if(tabs.size() > 0) {
 			setSelectedTab(0);
 		}
 	}
@@ -119,11 +116,12 @@ public class TabLayout extends ViewGroup {
 	}
 	
 	public void setSelectedTab(int index){
+		if(index < 0) throw new IllegalArgumentException("index is invalid!");
 		if(!isRendered){
-			this.tempSelectedTabIndex = index;
+			this.selectedTabIndex = index;
 			return;
 		}
-		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
+		if(index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
 			View tabView = tabs.get(i);
