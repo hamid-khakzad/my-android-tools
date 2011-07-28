@@ -33,12 +33,12 @@ public class TestActivity extends Activity {
 		g.addFooterView(tv);
 		BaseLazyLoadingAdapter blla = new BaseLazyLoadingAdapter(this,5) {
 			@Override
-			public void onBeginLoad(Context context) {
+			public void onBeginLoad(Context context, Object condition) {
 				// TODO Auto-generated method stub
 				tv.setText("正在加载...");
 			}
 			@Override
-			public void onAfterLoad(Context context, Exception exception) {
+			public void onAfterLoad(Context context, Object condition, Exception exception) {
 				// TODO Auto-generated method stub
 				if(exception == null){
 					tv.setText("加载成功");
@@ -47,7 +47,7 @@ public class TestActivity extends Activity {
 				}
 			}
 			@Override
-			public List<DataHolder> onLoad(Context context, int start, int limit) throws Exception {
+			public List<DataHolder> onLoad(Context context, Object condition, int start, int limit) throws Exception {
 				// TODO Auto-generated method stub
 				Thread.sleep(3000);
 				List<DataHolder> d = new ArrayList<DataHolder>();
@@ -96,7 +96,7 @@ public class TestActivity extends Activity {
 		};
 		g.setAdapter(blla);
 		blla.bindLazyLoading(g);
-		blla.load();
+		blla.load(null);
 		mAsyncDataScheduler = new AsyncDataScheduler(g, 5, new AsyncDataExecutor(1) {
 			@Override
 			public void onExecute(List<Integer> positions, List<DataHolder> holders) throws Exception {
