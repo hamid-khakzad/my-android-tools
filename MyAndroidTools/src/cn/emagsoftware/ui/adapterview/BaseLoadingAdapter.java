@@ -20,9 +20,10 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
 	/**
 	 * <p>加载的执行方法
+	 * @param condition 加载时需要的条件，没有时可传null
 	 * @return true表示开始加载；false表示已经在加载，本次的调用无效
 	 */
-	public boolean load(){
+	public boolean load(final Object condition){
 		if(mIsLoading) return false;
 		mIsLoading = true;
 		ThreadPoolManager.executeThread(new UIThread(mContext,new UIThread.Callback(){
@@ -30,13 +31,13 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 			public void onBeginUI(Context context) {
 				// TODO Auto-generated method stub
 				super.onBeginUI(context);
-				onBeginLoad(context);
+				onBeginLoad(context,condition);
 			}
 			@Override
 			public Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
 				super.onRunNoUI(context);
-				return onLoad(context);
+				return onLoad(context,condition);
 			}
 			@Override
 			public void onSuccessUI(Context context, Object result) {
@@ -45,12 +46,12 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				if(result == null){
 					mIsLoading = false;
 					mIsLoaded = true;
-					onAfterLoad(context,null);
+					onAfterLoad(context,condition,null);
 				}else{
 					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
 					mIsLoaded = true;
-					onAfterLoad(context,null);
+					onAfterLoad(context,condition,null);
 				}
 			}
 			@Override
@@ -59,7 +60,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				super.onExceptionUI(context, e);
 				Log.e("BaseLoadingAdapter", "Execute loading failed.", e);
 				mIsLoading = false;
-				onAfterLoad(context,e);
+				onAfterLoad(context,condition,e);
 			}
 		}));
 		return true;
@@ -84,22 +85,25 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	/**
 	 * <p>在加载之前的回调方法，可以显示一些loading之类的字样。如对于ListView，可以通过addFooterView方法添加一个正在加载的提示
 	 * @param context
+	 * @param condition
 	 */
-	public abstract void onBeginLoad(Context context);
+	public abstract void onBeginLoad(Context context,Object condition);
 	
 	/**
 	 * <p>加载的具体实现，该方法将在非UI线程中执行，要注意不能执行UI的操作
 	 * @param context
+	 * @param condition
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract List<DataHolder> onLoad(Context context) throws Exception;
+	public abstract List<DataHolder> onLoad(Context context,Object condition) throws Exception;
 	
 	/**
 	 * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
 	 * @param context
+	 * @param condition
 	 * @param exception
 	 */
-	public abstract void onAfterLoad(Context context,Exception exception);
+	public abstract void onAfterLoad(Context context,Object condition,Exception exception);
 	
 }
