@@ -2,6 +2,7 @@ package cn.emagsoftware.ui;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
@@ -14,7 +15,15 @@ public class MenuWindow {
 	private PopupWindow pw = null;
 	
 	public MenuWindow(Context context){
-		pw = new PopupWindow(context);
+		this(context,null,0);
+	}
+	
+	public MenuWindow(Context context, AttributeSet attrs){
+		this(context,attrs,0);
+	}
+	
+	public MenuWindow(Context context, AttributeSet attrs, int defStyle){
+		pw = new PopupWindow(context,attrs,defStyle);
 		pw.setWidth(WindowManager.LayoutParams.FILL_PARENT);
 		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
 		pw.setFocusable(true);
