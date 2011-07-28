@@ -35,4 +35,8 @@ public class MenuWindow {
 		pw.showAtLocation(mainWindow.getDecorView(), Gravity.BOTTOM, 0, distanceToBottom);
 	}
 	
+	public boolean isShowing(){
+		return pw.isShowing();
+	}
+	
 }
