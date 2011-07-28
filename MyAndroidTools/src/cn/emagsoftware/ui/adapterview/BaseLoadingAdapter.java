@@ -40,9 +40,9 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				return onLoad(context,condition);
 			}
 			@Override
-			public void onSuccessUI(Context context, Object result) {
+			public void onSuccessUI(Context context,Object result) {
 				// TODO Auto-generated method stub
-				super.onSuccessUI(context, result);
+				super.onSuccessUI(context,result);
 				if(result == null){
 					mIsLoading = false;
 					mIsLoaded = true;
@@ -55,10 +55,10 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				}
 			}
 			@Override
-			public void onExceptionUI(Context context, Exception e) {
+			public void onExceptionUI(Context context,Exception e) {
 				// TODO Auto-generated method stub
-				super.onExceptionUI(context, e);
-				Log.e("BaseLoadingAdapter", "Execute loading failed.", e);
+				super.onExceptionUI(context,e);
+				Log.e("BaseLoadingAdapter","Execute loading failed.",e);
 				mIsLoading = false;
 				onAfterLoad(context,condition,e);
 			}
