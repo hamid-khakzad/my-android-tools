@@ -39,4 +39,12 @@ public class MenuWindow {
 		return pw.isShowing();
 	}
 	
+	public void dismiss(){
+		pw.dismiss();
+	}
+	
+	public void setOnDismissListener(PopupWindow.OnDismissListener onDismissListener){
+		pw.setOnDismissListener(onDismissListener);
+	}
+	
 }
