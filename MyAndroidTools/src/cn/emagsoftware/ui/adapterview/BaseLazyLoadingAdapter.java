@@ -19,8 +19,6 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	protected boolean mIsLoadedAll = false;
 	/**当前的加载是否发生了异常*/
 	protected boolean mIsException = false;
-	/**当前的加载条件*/
-	protected Object mCurCondition = null;
 	
 	public BaseLazyLoadingAdapter(Context context,int limit){
 		super(context);
