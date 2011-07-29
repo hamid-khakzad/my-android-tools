@@ -13,6 +13,8 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	protected boolean mIsLoading = false;
 	/**是否已经加载过*/
 	protected boolean mIsLoaded = false;
+	/**当前的加载条件*/
+	protected Object mCurCondition = null;
 	
 	public BaseLoadingAdapter(Context context){
 		super(context);
@@ -26,6 +28,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	public boolean load(final Object condition){
 		if(mIsLoading) return false;
 		mIsLoading = true;
+		mCurCondition = condition;
 		ThreadPoolManager.executeThread(new UIThread(mContext,new UIThread.Callback(){
 			@Override
 			public void onBeginUI(Context context) {
@@ -64,6 +67,14 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 			}
 		}));
 		return true;
+	}
+	
+	/**
+	 * <p>获取当前的加载条件
+	 * @return
+	 */
+	public Object getCurCondition(){
+		return mCurCondition;
 	}
 	
 	/**
