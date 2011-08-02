@@ -62,21 +62,21 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		if(mIsLoading) return false;
 		mIsLoading = true;
 		mCurCondition = condition;
-		ThreadPoolManager.executeThread(new UIThread(mContext,new UIThread.Callback(){
+		ThreadPoolManager.executeThread(new UIThread(mContext){
 			@Override
-			public void onBeginUI(Context context) {
+			protected void onBeginUI(Context context) {
 				// TODO Auto-generated method stub
 				super.onBeginUI(context);
 				onBeginLoad(context,condition);
 			}
 			@Override
-			public Object onRunNoUI(Context context) throws Exception {
+			protected Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
 				super.onRunNoUI(context);
 				return onLoad(context,condition,mStart,mLimit);
 			}
 			@Override
-			public void onSuccessUI(Context context,Object result) {
+			protected void onSuccessUI(Context context,Object result) {
 				// TODO Auto-generated method stub
 				super.onSuccessUI(context,result);
 				if(result == null){
@@ -99,7 +99,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				}
 			}
 			@Override
-			public void onExceptionUI(Context context,Exception e) {
+			protected void onExceptionUI(Context context,Exception e) {
 				// TODO Auto-generated method stub
 				super.onExceptionUI(context,e);
 				Log.e("BaseLazyLoadingAdapter","Execute lazy loading failed.",e);
@@ -107,7 +107,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				mIsException = true;
 				onAfterLoad(context,condition,e);
 			}
-		}));
+		});
 		return true;
 	}
 	
