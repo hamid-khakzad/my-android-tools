@@ -8,28 +8,16 @@ import android.os.Looper;
  * <p>该类的功能实现类似于android.os.AsyncTask类，但AsyncTask类内部采用了线程池实现，线程资源不会被立即释放。该类以快速释放的实现，提供给用户一个第二选择
  * <p>该类支持在非UI-Thread中创建并启动
  * @author Wendell
- * @version 1.5
+ * @version 1.6
  */
 public class UIThread extends Thread {
 	
 	protected Context context = null;
 	protected Handler handler = new Handler(Looper.getMainLooper());
-	protected Callback callback = new Callback();
 	
-	public UIThread(Context context,Callback callback){
+	public UIThread(Context context){
 		if(context == null) throw new NullPointerException();
 		this.context = context;
-		if(callback != null) this.callback = callback;
-	}
-	
-	public void postProgress(final Object progress){
-		handler.post(new Runnable() {
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				callback.onProgressUI(progress);
-			}
-		});
 	}
 	
 	public final void run(){
@@ -41,51 +29,57 @@ public class UIThread extends Thread {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					callback.onBeginUI(context);
+					onBeginUI(context);
 					isOK[0] = true;
 				}
 			});
 			while(!isOK[0]){
 				sleep(100);
 			}
-			final Object result = callback.onRunNoUI(context);
+			final Object result = onRunNoUI(context);
 			handler.post(new Runnable(){
 				@Override
 				public void run() {
-					callback.onSuccessUI(context,result);
+					onSuccessUI(context,result);
 				}
 			});
 		}catch(final Exception e){
 			handler.post(new Runnable(){
 				@Override
 				public void run() {
-					callback.onExceptionUI(context,e);
+					onExceptionUI(context,e);
 				}
 			});
 		}finally{
 			handler.post(new Runnable(){
 				@Override
 				public void run() {
-					callback.onFinallyUI(context);
+					onFinallyUI(context);
 				}
 			});
 		}
 	}
 	
-	public static class Callback{
-		
-		public void onBeginUI(Context context){}
-		
-		public Object onRunNoUI(Context context) throws Exception{return null;}
-		
-		public void onProgressUI(Object progress){}
-		
-		public void onSuccessUI(Context context,Object result){}
-		
-		public void onExceptionUI(Context context,Exception e){}
-		
-		public void onFinallyUI(Context context){}
-		
+	public void postProgress(final Object progress){
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				onProgressUI(progress);
+			}
+		});
 	}
+	
+	protected void onBeginUI(Context context){}
+	
+	protected Object onRunNoUI(Context context) throws Exception{return null;}
+	
+	protected void onProgressUI(Object progress){}
+	
+	protected void onSuccessUI(Context context,Object result){}
+	
+	protected void onExceptionUI(Context context,Exception e){}
+	
+	protected void onFinallyUI(Context context){}
 	
 }
