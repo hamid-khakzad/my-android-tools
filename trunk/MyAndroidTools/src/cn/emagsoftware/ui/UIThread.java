@@ -8,7 +8,7 @@ import android.os.Looper;
  * <p>该类的功能实现类似于android.os.AsyncTask类，但AsyncTask类内部采用了线程池实现，线程资源不会被立即释放。该类以快速释放的实现，提供给用户一个第二选择
  * <p>该类支持在非UI-Thread中创建并启动
  * @author Wendell
- * @version 1.6
+ * @version 1.7
  */
 public class UIThread extends Thread {
 	
@@ -65,7 +65,7 @@ public class UIThread extends Thread {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				onProgressUI(progress);
+				onProgressUI(context,progress);
 			}
 		});
 	}
@@ -74,7 +74,7 @@ public class UIThread extends Thread {
 	
 	protected Object onRunNoUI(Context context) throws Exception{return null;}
 	
-	protected void onProgressUI(Object progress){}
+	protected void onProgressUI(Context context,Object progress){}
 	
 	protected void onSuccessUI(Context context,Object result){}
 	
