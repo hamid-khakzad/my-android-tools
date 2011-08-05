@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 /**
  * <p>java自带日志的操作类
  * @author Wendell
- * @version 1.3
+ * @version 1.4
  */
 public final class JLog {
 	
@@ -48,256 +48,256 @@ public final class JLog {
 		}
 	}
 	
-	private static Logger getLogger(String name){
-		return Logger.getLogger(name);
+	private static Logger getLogger(){
+		return Logger.getLogger("cn.emagsoftware.util.jlog.JLog");
 	}
 	
-	public static void severe(String name,String msg){
+	public static void severe(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.SEVERE, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.SEVERE, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void severe(String name,String msg,Object[] params){
+	public static void severe(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.SEVERE, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.SEVERE, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void severe(String name,String msg,Throwable thrown){
+	public static void severe(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.SEVERE, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.SEVERE, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void warning(String name,String msg){
+	public static void warning(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.WARNING, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.WARNING, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void warning(String name,String msg,Object[] params){
+	public static void warning(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.WARNING, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.WARNING, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void warning(String name,String msg,Throwable thrown){
+	public static void warning(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.WARNING, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.WARNING, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void info(String name,String msg){
+	public static void info(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.INFO, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.INFO, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void info(String name,String msg,Object[] params){
+	public static void info(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.INFO, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.INFO, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void info(String name,String msg,Throwable thrown){
+	public static void info(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.INFO, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.INFO, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void config(String name,String msg){
+	public static void config(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.CONFIG, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.CONFIG, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void config(String name,String msg,Object[] params){
+	public static void config(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.CONFIG, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.CONFIG, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void config(String name,String msg,Throwable thrown){
+	public static void config(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.CONFIG, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.CONFIG, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void fine(String name,String msg){
+	public static void fine(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINE, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.FINE, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void fine(String name,String msg,Object[] params){
+	public static void fine(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINE, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.FINE, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void fine(String name,String msg,Throwable thrown){
+	public static void fine(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINE, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.FINE, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void finer(String name,String msg){
+	public static void finer(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINER, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.FINER, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void finer(String name,String msg,Object[] params){
+	public static void finer(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINER, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.FINER, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void finer(String name,String msg,Throwable thrown){
+	public static void finer(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINER, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.FINER, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void finest(String name,String msg){
+	public static void finest(String msg){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINEST, stack.getClassName(), stack.getMethodName(), msg);
+			getLogger().logp(Level.FINEST, stack.getClassName(), stack.getMethodName(), msg);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void finest(String name,String msg,Object[] params){
+	public static void finest(String msg,Object[] params){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINEST, stack.getClassName(), stack.getMethodName(), msg, params);
+			getLogger().logp(Level.FINEST, stack.getClassName(), stack.getMethodName(), msg, params);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
 		}
 	}
 	
-	public static void finest(String name,String msg,Throwable thrown){
+	public static void finest(String msg,Throwable thrown){
 		try{
 			Thread current = Thread.currentThread();
 			StackTraceElement stack = current.getStackTrace()[3];
 			current.setContextClassLoader(JLog.class.getClassLoader());
-			getLogger(name).logp(Level.FINEST, stack.getClassName(), stack.getMethodName(), msg, thrown);
+			getLogger().logp(Level.FINEST, stack.getClassName(), stack.getMethodName(), msg, thrown);
 		}catch(RuntimeException e){
 			System.err.println("Write log failed");
 			e.printStackTrace(System.err);
