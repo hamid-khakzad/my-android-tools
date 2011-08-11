@@ -101,17 +101,6 @@ public class AsyncDataScheduler {
 							return;
 						}
 					}
-					try{
-						sleep(SCHEDULER_DORMANCY_TIME);
-					}catch(InterruptedException e){
-						throw new RuntimeException(e);
-					}
-					synchronized(mLockStop){
-						if(mIsStopping){
-							mIsStopped = true;
-							return;
-						}
-					}
 					//获取当前时间点需要处理的快照
 					final boolean[] isOK = {false};
 					final List<Integer> positions = new LinkedList<Integer>();
@@ -254,6 +243,17 @@ public class AsyncDataScheduler {
 						};
 						mCurrExecutiveThreads.add(thread);
 						ThreadPoolManager.executeThread(thread);
+					}
+					synchronized(mLockStop){
+						if(mIsStopping){
+							mIsStopped = true;
+							return;
+						}
+					}
+					try{
+						sleep(SCHEDULER_DORMANCY_TIME);
+					}catch(InterruptedException e){
+						throw new RuntimeException(e);
 					}
 				}
 			};
