@@ -16,7 +16,7 @@ import android.widget.WrapperListAdapter;
 public class AsyncDataScheduler {
 	
 	/**异步数据调度器的休眠时间，以毫秒为单位*/
-	public static final int SCHEDULER_DORMANCY_TIME = 2000;
+	public static final int SCHEDULER_DORMANCY_TIME = 2500;
 	
 	protected AdapterView<?> mAdapterView = null;
 	protected int mHeaderCount = 0;
@@ -24,6 +24,7 @@ public class AsyncDataScheduler {
 	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
+	protected int mExtractedAsyncDataIndex = 0;
 	protected int mExtractedIndex = 0;
 	protected List<Integer> mExtractedPositions = null;
 	protected List<DataHolder> mExtractedHolders = null;
@@ -122,7 +123,14 @@ public class AsyncDataScheduler {
 							else if(last >= count) last = count - 1;
 							for(int i = first;i < last + 1;i++){
 								DataHolder holder = mGenericAdapter.queryDataHolder(i);
-								if(!holder.isAsyncDataCompleted()){
+								boolean isAllAsyncDataCompleted = true;
+								for(int j = 0;j < holder.getAsyncDataCount();j++){
+									if(!holder.isAsyncDataCompleted(j)){
+										isAllAsyncDataCompleted = false;
+										break;
+									}
+								}
+								if(!isAllAsyncDataCompleted){
 									positions.add(i);
 									holders.add(holder);
 								}
@@ -175,14 +183,28 @@ public class AsyncDataScheduler {
 					}
 					//计算加载线程的个数并启动加载线程
 					int needThreadCount;
-					int eachCount = mExecutor.getEachCount();
-					if(eachCount == -1){
+					int dataHolderCount = mExecutor.getDataHolderCount();
+					int asyncDataCount = mExecutor.getAsyncDataCount();
+					if(dataHolderCount == -1){
 						needThreadCount = 1;
+					}else if(dataHolderCount == 1 && asyncDataCount != -1){    //每次只执行一个DataHolder时，计算加载线程个数需要考虑每个DataHolder的异步数据个数
+						int tempThreadCount = 0;
+						for(int i = mExtractedIndex;i < size;i++){
+							DataHolder holder = mExtractedHolders.get(i);
+							int curAsyncDataCount = holder.getAsyncDataCount();
+							int remainder = curAsyncDataCount%asyncDataCount;
+							int curThreadCount;
+							if(remainder == 0) curThreadCount = curAsyncDataCount/asyncDataCount;
+							else curThreadCount = curAsyncDataCount/asyncDataCount + 1;
+							if(curThreadCount == 0) curThreadCount = 1;    //每个DataHolder至少有一个线程来执行异步数据加载
+							tempThreadCount = tempThreadCount + curThreadCount;
+						}
+						needThreadCount = tempThreadCount;
 					}else{
 						int execSize = size - mExtractedIndex;
-						int remainder = execSize%eachCount;
-						if(remainder == 0) needThreadCount = execSize/eachCount;
-						else needThreadCount = execSize/eachCount + 1;
+						int remainder = execSize%dataHolderCount;
+						if(remainder == 0) needThreadCount = execSize/dataHolderCount;
+						else needThreadCount = execSize/dataHolderCount + 1;
 					}
 					int remainCount = mMaxThreadCount - mCurrExecutiveThreads.size();
 					if(needThreadCount > remainCount) needThreadCount = remainCount;
@@ -194,23 +216,49 @@ public class AsyncDataScheduler {
 										mCurrExecutiveThreads.remove(this);
 										return;
 									}
-									List<Integer> positions = null;
-									List<DataHolder> holders = null;
+									List<Integer> positions = null;    //第一个参数
+									List<DataHolder> dataHolders = null;    //第二个参数
+									List<Integer> asyncDataIndexes = null;    //第三个参数
 									synchronized(mLockExtract){
 										int currIndex = mExtractedIndex;
 										int endIndex;
-										int eachCount = mExecutor.getEachCount();
-										if(eachCount == -1){
+										int dataHolderCount = mExecutor.getDataHolderCount();
+										if(dataHolderCount == -1){
 											endIndex = mExtractedPositions.size();
 										}else{
-											endIndex = currIndex + eachCount;
+											endIndex = currIndex + dataHolderCount;
 											int size = mExtractedPositions.size();
 											if(endIndex > size) endIndex = size;
 										}
 										if(currIndex < endIndex){
 											positions = mExtractedPositions.subList(currIndex, endIndex);
-											holders = mExtractedHolders.subList(currIndex, endIndex);
-											mExtractedIndex = endIndex;
+											dataHolders = mExtractedHolders.subList(currIndex, endIndex);
+											if(dataHolderCount == 1){    //每次只执行一个DataHolder时需要初始化第三个参数
+												int currAsyncDataIndex = mExtractedAsyncDataIndex;
+												int endAsyncDataIndex;
+												int asyncDataCount = mExecutor.getAsyncDataCount();
+												if(asyncDataCount == -1){
+													endAsyncDataIndex = dataHolders.get(0).getAsyncDataCount();
+													mExtractedAsyncDataIndex = 0;
+													mExtractedIndex = endIndex;
+												}else{
+													endAsyncDataIndex = currAsyncDataIndex + asyncDataCount;
+													int size = dataHolders.get(0).getAsyncDataCount();
+													if(endAsyncDataIndex >= size) {
+														endAsyncDataIndex = size;
+														mExtractedAsyncDataIndex = 0;
+														mExtractedIndex = endIndex;
+													}else{
+														mExtractedAsyncDataIndex = endAsyncDataIndex;
+													}
+												}
+												asyncDataIndexes = new ArrayList<Integer>();
+												for(int i = currAsyncDataIndex;i < endAsyncDataIndex;i++){
+													asyncDataIndexes.add(i);
+												}
+											}else{
+												mExtractedIndex = endIndex;
+											}
 										}else{
 											mCurrExecutiveThreads.remove(this);
 											return;
@@ -218,11 +266,20 @@ public class AsyncDataScheduler {
 									}
 									//执行加载逻辑
 									try{
-										mExecutor.onExecute(positions, holders);
+										mExecutor.onExecute(positions, dataHolders, asyncDataIndexes);
 										//置执行成功标志
 										for(int i = 0;i < positions.size();i++){
-											DataHolder dholder = holders.get(i);
-											dholder.setAsyncDataCompleted(true);
+											DataHolder dholder = dataHolders.get(i);
+											if(asyncDataIndexes == null) {
+												for(int j = 0;j < dholder.getAsyncDataCount();j++){
+													dholder.setAsyncDataCompleted(j,true);
+												}
+											}else{
+												for(int j = 0;j < asyncDataIndexes.size();j++){
+													int index = asyncDataIndexes.get(j);
+													dholder.setAsyncDataCompleted(index, true);
+												}
+											}
 										}
 										//更新显示
 										new Handler(Looper.getMainLooper()).post(new Runnable() {
