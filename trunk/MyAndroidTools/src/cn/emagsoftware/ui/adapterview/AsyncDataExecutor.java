@@ -4,11 +4,17 @@ import java.util.List;
 
 public abstract class AsyncDataExecutor {
 	
-	/**每次取得的要处理的DataHolder的个数,-1为取得所有的待处理个数*/
+	/**每次取得的要处理的DataHolder的个数，-1为取得所有的待处理个数*/
 	protected int mDataHolderCount;
-	/**每次取得的要处理的DataHolder中异步数据的个数,-1为取得所有的待处理异步数据个数*/
+	/**每次取得的要处理的DataHolder中异步数据的个数，-1为取得当前DataHolder所有待处理的异步数据个数*/
 	protected int mAsyncDataCount;
 	
+	/**
+	 * <p>构造函数
+	 * @param dataHolderCount 每次取得的要处理的DataHolder的个数，可传入-1来取得所有的待处理个数
+	 * @param asyncDataCount 每次取得的要处理的DataHolder中异步数据的个数，可传入-1来取得当前DataHolder所有待处理的异步数据个数。
+	 *                       <b>只有当dataHolderCount参数为1时，该参数的设置才会有效</b>
+	 */
 	public AsyncDataExecutor(int dataHolderCount,int asyncDataCount){
 		if(dataHolderCount <= 0 && dataHolderCount != -1) throw new IllegalArgumentException("dataHolderCount should be great than zero or equal -1.");
 		if(asyncDataCount <= 0 && asyncDataCount != -1) throw new IllegalArgumentException("asyncDataCount should be great than zero or equal -1.");
