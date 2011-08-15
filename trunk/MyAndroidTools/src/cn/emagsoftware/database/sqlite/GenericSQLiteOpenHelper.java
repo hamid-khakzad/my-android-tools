@@ -13,7 +13,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 /**
  * generic sqlite open helper
  * @author Wendell
- * @version 1.0
+ * @version 1.1
  */
 public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
 	
@@ -32,9 +32,10 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>查询SQL
      * @param sql
      * @param selectionArgs
+     * @param closeDB
      * @return
      */
-    public List<Map<String,String>> rawQuery(String sql,String[] selectionArgs){
+    public List<Map<String,String>> rawQuery(String sql,String[] selectionArgs,boolean closeDB){
     	List<Map<String,String>> returnVal = new LinkedList<Map<String,String>>();
     	SQLiteDatabase db = null;
     	Cursor cursor = null;
@@ -57,7 +58,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
     		try{
     			if(cursor != null) cursor.close();
     		}finally{
-    			if(db != null) db.close();
+    			if(db != null && closeDB) db.close();
     		}
     	}
     }
@@ -66,9 +67,10 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>查询SQL
      * @param sql
      * @param selectionArgs
+     * @param closeDB
      * @return
      */
-    public Map<String,String> rawQueryForFirstRow(String sql,String[] selectionArgs){
+    public Map<String,String> rawQueryForFirstRow(String sql,String[] selectionArgs,boolean closeDB){
     	SQLiteDatabase db = null;
     	Cursor cursor = null;
     	try{
@@ -88,7 +90,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
     		try{
     			if(cursor != null) cursor.close();
     		}finally{
-    			if(db != null) db.close();
+    			if(db != null && closeDB) db.close();
     		}
     	}
     }
@@ -97,9 +99,10 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>查询SQL
      * @param sql
      * @param selectionArgs
+     * @param closeDB
      * @return
      */
-    public List<String> rawQueryForFirstField(String sql,String[] selectionArgs){
+    public List<String> rawQueryForFirstField(String sql,String[] selectionArgs,boolean closeDB){
     	List<String> returnVal = new LinkedList<String>();
     	SQLiteDatabase db = null;
     	Cursor cursor = null;
@@ -116,7 +119,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
     		try{
     			if(cursor != null) cursor.close();
     		}finally{
-    			if(db != null) db.close();
+    			if(db != null && closeDB) db.close();
     		}
     	}
     }
@@ -124,14 +127,15 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
     /**
      * <p>执行SQL
      * @param sql
+     * @param closeDB
      */
-    public void execSQL(String sql){
+    public void execSQL(String sql,boolean closeDB){
         SQLiteDatabase db = null;
         try {
         	db = getWritableDatabase();
         	db.execSQL(sql);
         }finally{
-        	if(db != null) db.close();
+        	if(db != null && closeDB) db.close();
         }
     }
     
@@ -139,14 +143,15 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>执行SQL
      * @param sql
      * @param bindArgs
+     * @param closeDB
      */
-    public void execSQL(String sql,Object[] bindArgs){
+    public void execSQL(String sql,Object[] bindArgs,boolean closeDB){
         SQLiteDatabase db = null;
         try {
         	db = getWritableDatabase();
         	db.execSQL(sql, bindArgs);
         }finally{
-        	if(db != null) db.close();
+        	if(db != null && closeDB) db.close();
         }
     }
     
