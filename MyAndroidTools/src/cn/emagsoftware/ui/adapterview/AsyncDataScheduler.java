@@ -197,7 +197,10 @@ public class AsyncDataScheduler {
 						int tempThreadCount = 0;
 						for(int i = mExtractedIndex;i < size;i++){
 							DataHolder holder = mExtractedHolders.get(i);
-							int curAsyncDataCount = holder.getAsyncDataCount();
+							int curAsyncDataCount = 0;
+							for(int j = 0;j < holder.getAsyncDataCount();j++){
+								if(!holder.isAsyncDataCompleted(j)) curAsyncDataCount = curAsyncDataCount + 1;
+							}
 							int remainder = curAsyncDataCount%asyncDataCount;
 							int curThreadCount;
 							if(remainder == 0) curThreadCount = curAsyncDataCount/asyncDataCount;
@@ -226,41 +229,47 @@ public class AsyncDataScheduler {
 									List<DataHolder> dataHolders = null;    //第二个参数
 									List<Integer> asyncDataIndexes = null;    //第三个参数
 									synchronized(mLockExtract){
-										int currIndex = mExtractedIndex;
+										int curIndex = mExtractedIndex;
 										int endIndex;
 										int dataHolderCount = mExecutor.getDataHolderCount();
 										if(dataHolderCount == -1){
 											endIndex = mExtractedPositions.size();
 										}else{
-											endIndex = currIndex + dataHolderCount;
+											endIndex = curIndex + dataHolderCount;
 											int size = mExtractedPositions.size();
 											if(endIndex > size) endIndex = size;
 										}
-										if(currIndex < endIndex){
-											positions = mExtractedPositions.subList(currIndex, endIndex);
-											dataHolders = mExtractedHolders.subList(currIndex, endIndex);
+										if(curIndex < endIndex){
+											positions = mExtractedPositions.subList(curIndex, endIndex);
+											dataHolders = mExtractedHolders.subList(curIndex, endIndex);
 											if(dataHolderCount == 1){    //每次只执行一个DataHolder时需要初始化第三个参数
-												int currAsyncDataIndex = mExtractedAsyncDataIndex;
-												int endAsyncDataIndex;
+												DataHolder curHolder = dataHolders.get(0);
 												int asyncDataCount = mExecutor.getAsyncDataCount();
-												if(asyncDataCount == -1){
-													endAsyncDataIndex = dataHolders.get(0).getAsyncDataCount();
+												asyncDataIndexes = new ArrayList<Integer>();
+												for(int i = mExtractedAsyncDataIndex;i < curHolder.getAsyncDataCount();i++){
+													if(asyncDataCount != -1){
+														if(asyncDataIndexes.size() >= asyncDataCount) break;
+													}
+													if(!curHolder.isAsyncDataCompleted(i)) asyncDataIndexes.add(i);
+													mExtractedAsyncDataIndex = i;
+												}
+												mExtractedAsyncDataIndex = mExtractedAsyncDataIndex + 1;
+												if(mExtractedAsyncDataIndex >= curHolder.getAsyncDataCount()){
 													mExtractedAsyncDataIndex = 0;
 													mExtractedIndex = endIndex;
 												}else{
-													endAsyncDataIndex = currAsyncDataIndex + asyncDataCount;
-													int size = dataHolders.get(0).getAsyncDataCount();
-													if(endAsyncDataIndex >= size) {
-														endAsyncDataIndex = size;
+													boolean isAllAsyncDataCompleted = true;
+													for(int i = mExtractedAsyncDataIndex;i < curHolder.getAsyncDataCount();i++){
+														if(!curHolder.isAsyncDataCompleted(i)){
+															mExtractedAsyncDataIndex = i;
+															isAllAsyncDataCompleted = false;
+															break;
+														}
+													}
+													if(isAllAsyncDataCompleted){
 														mExtractedAsyncDataIndex = 0;
 														mExtractedIndex = endIndex;
-													}else{
-														mExtractedAsyncDataIndex = endAsyncDataIndex;
 													}
-												}
-												asyncDataIndexes = new ArrayList<Integer>();
-												for(int i = currAsyncDataIndex;i < endAsyncDataIndex;i++){
-													asyncDataIndexes.add(i);
 												}
 											}else{
 												mExtractedIndex = endIndex;
