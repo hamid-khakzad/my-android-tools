@@ -102,7 +102,7 @@ public class AsyncDataScheduler {
 							return;
 						}
 					}
-					//获取当前时间点需要处理的快照
+					//获取当前时间点需要处理的队列
 					final boolean[] isOK = {false};
 					final List<Integer> positions = new LinkedList<Integer>();
 					final List<DataHolder> holders = new LinkedList<DataHolder>();
@@ -122,18 +122,8 @@ public class AsyncDataScheduler {
 							if(last < 0) last = 0;
 							else if(last >= count) last = count - 1;
 							for(int i = first;i < last + 1;i++){
-								DataHolder holder = mGenericAdapter.queryDataHolder(i);
-								boolean isAllAsyncDataCompleted = true;
-								for(int j = 0;j < holder.getAsyncDataCount();j++){
-									if(!holder.isAsyncDataCompleted(j)){
-										isAllAsyncDataCompleted = false;
-										break;
-									}
-								}
-								if(!isAllAsyncDataCompleted){
-									positions.add(i);
-									holders.add(holder);
-								}
+								positions.add(i);
+								holders.add(mGenericAdapter.queryDataHolder(i));
 							}
 							isOK[0] = true;
 						}
@@ -149,6 +139,22 @@ public class AsyncDataScheduler {
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
+						}
+					}
+					//过滤新获取到的队列
+					for(int i = 0;i < positions.size();i++){
+						DataHolder holder = holders.get(i);
+						boolean isAllAsyncDataCompleted = true;
+						for(int j = 0;j < holder.getAsyncDataCount();j++){
+							if(!holder.isAsyncDataCompleted(j)){
+								isAllAsyncDataCompleted = false;
+								break;
+							}
+						}
+						if(isAllAsyncDataCompleted){
+							positions.remove(i);
+							holders.remove(i);
+							i--;
 						}
 					}
 					//用新队列替换提取队列
