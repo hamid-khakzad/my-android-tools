@@ -52,7 +52,7 @@ public class TestActivity extends Activity {
 				Thread.sleep(3000);
 				List<DataHolder> d = new ArrayList<DataHolder>();
 				for(int i = 0;i < 5;i++){
-					d.add(new DataHolder(i) {
+					d.add(new DataHolder(i,1) {
 						@Override
 						public View onCreateView(final Context context, final int position, Object data) {
 							// TODO Auto-generated method stub
@@ -68,7 +68,7 @@ public class TestActivity extends Activity {
 							});
 							ll.addView(b);
 							ll.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT, 60));
-							if(isAsyncDataCompleted()) b.setText("complete");
+							if(isAsyncDataCompleted(0)) b.setText("complete");
 							else b.setText("prepare");
 							ViewHolder vh = new ViewHolder(b);
 							ll.setTag(vh);
@@ -86,7 +86,7 @@ public class TestActivity extends Activity {
 									ToastManager.showShort(context, String.valueOf(position));
 								}
 							});
-							if(isAsyncDataCompleted()) b.setText("complete");
+							if(isAsyncDataCompleted(0)) b.setText("complete");
 							else b.setText("prepare");
 						}
 					});
@@ -97,9 +97,9 @@ public class TestActivity extends Activity {
 		g.setAdapter(blla);
 		blla.bindLazyLoading(g);
 		blla.load(null);
-		mAsyncDataScheduler = new AsyncDataScheduler(g, 5, new AsyncDataExecutor(1) {
+		mAsyncDataScheduler = new AsyncDataScheduler(g, 5, new AsyncDataExecutor(1,1) {
 			@Override
-			public void onExecute(List<Integer> positions, List<DataHolder> holders) throws Exception {
+			public void onExecute(List<Integer> positions, List<DataHolder> dataHolders, List<Integer> asyncDataIndexes) throws Exception {
 				// TODO Auto-generated method stub
 				Thread.sleep(5*1000);
 			}
