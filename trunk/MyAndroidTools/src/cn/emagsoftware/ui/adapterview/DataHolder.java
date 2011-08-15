@@ -53,6 +53,14 @@ public abstract class DataHolder {
 	}
 	
 	/**
+	 * <p>获取异步数据的个数
+	 * @return
+	 */
+	public int getAsyncDataCount(){
+		return mIsAsyncDataCompleted.length;
+	}
+	
+	/**
 	 * <p>获取指定的异步数据是否加载完成
 	 * @param index 异步数据所在的位置
 	 * @return
