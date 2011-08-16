@@ -192,7 +192,7 @@ public final class HttpConnectionManager {
 			if(contentTypes == null) contentTypes = new ArrayList<String>();
 			contentTypes.add("application/octet-stream");
 			requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
-			if(postData == null) postData = new byte[]{};    //貌似Android的底层实现要求这样，否则会抛出FileNotFoundException
+			if(postData == null) postData = new byte[]{};    //貌似针对application/octet-stream的情况必须这样处理，否则会抛出FileNotFoundException，这可能是Android的底层实现有缺陷
 			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, postData);
 			HttpResponseResultStream result = new HttpResponseResultStream();
 			result.setResponseURL(httpConn.getURL());
