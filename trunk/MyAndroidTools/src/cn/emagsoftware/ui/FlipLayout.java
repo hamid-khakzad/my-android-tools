@@ -78,7 +78,7 @@ public class FlipLayout extends ViewGroup {
 
     @Override  
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    	Log.e(TAG, "onMeasure");
+    	//Log.e(TAG, "onMeasure");
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);   
   
         final int width = MeasureSpec.getSize(widthMeasureSpec);   
@@ -238,7 +238,7 @@ public class FlipLayout extends ViewGroup {
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		// TODO Auto-generated method stub
-		Log.e(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
+		//Log.e(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
 		
 		final int action = ev.getAction();
 		if ((action == MotionEvent.ACTION_MOVE) && (mTouchState != TOUCH_STATE_REST)) {
