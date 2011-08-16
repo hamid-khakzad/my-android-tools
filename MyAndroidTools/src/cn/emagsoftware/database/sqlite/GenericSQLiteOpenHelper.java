@@ -32,7 +32,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>查询SQL
      * @param sql
      * @param selectionArgs
-     * @param closeDB
+     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      * @return
      */
     public List<Map<String,String>> rawQuery(String sql,String[] selectionArgs,boolean closeDB){
@@ -67,7 +67,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>查询SQL
      * @param sql
      * @param selectionArgs
-     * @param closeDB
+     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      * @return
      */
     public Map<String,String> rawQueryForFirstRow(String sql,String[] selectionArgs,boolean closeDB){
@@ -99,7 +99,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>查询SQL
      * @param sql
      * @param selectionArgs
-     * @param closeDB
+     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      * @return
      */
     public List<String> rawQueryForFirstField(String sql,String[] selectionArgs,boolean closeDB){
@@ -127,7 +127,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
     /**
      * <p>执行SQL
      * @param sql
-     * @param closeDB
+     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      */
     public void execSQL(String sql,boolean closeDB){
         SQLiteDatabase db = null;
@@ -143,7 +143,7 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper{
      * <p>执行SQL
      * @param sql
      * @param bindArgs
-     * @param closeDB
+     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      */
     public void execSQL(String sql,Object[] bindArgs,boolean closeDB){
         SQLiteDatabase db = null;
