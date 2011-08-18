@@ -7,6 +7,7 @@ public abstract class DataHolder {
 	
 	protected Object mData = null;
 	protected boolean[] mIsAsyncDataCompleted = null;
+	protected Object mTag = null;
 	
 	/**
 	 * <p>构造函数
@@ -76,6 +77,23 @@ public abstract class DataHolder {
 	 */
 	public void setAsyncDataCompleted(int index,boolean isCompleted){
 		mIsAsyncDataCompleted[index] = isCompleted;
+	}
+	
+	/**
+	 * <p>设置标签，通过该操作可以存储一些有用的数据，如异步加载的数据
+	 * <p>需要顺便指出的是，除非异步加载的数据较小且DataHolder实例较少，否则<b>强烈建议</b>将异步加载的数据存入本地SQLite数据库，在需要展示时再实时查询
+	 * @param tag
+	 */
+	public void setTag(Object tag){
+		mTag = tag;
+	}
+	
+	/**
+	 * <p>获取标签
+	 * @return
+	 */
+	public Object getTag(){
+		return mTag;
 	}
 	
 }
