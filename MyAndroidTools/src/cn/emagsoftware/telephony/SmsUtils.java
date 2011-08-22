@@ -34,18 +34,19 @@ public final class SmsUtils {
 		sentIntent.putExtra("SMS_TO", to);
 		sentIntent.putExtra("SMS_TEXT", text);
 		PendingIntent sentPI = PendingIntent.getBroadcast(context,0,sentIntent,PendingIntent.FLAG_ONE_SHOT);
-		Intent deliveredIntent = new Intent(SMS_DELIVERED_ACTION);
+		/*Intent deliveredIntent = new Intent(SMS_DELIVERED_ACTION);
 		deliveredIntent.putExtra("SMS_TOKEN", sendMessageToken);
 		deliveredIntent.putExtra("SMS_TO", to);
 		deliveredIntent.putExtra("SMS_TEXT", text);
-		PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);
+		PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);*/
 		if(ssc != null){
 			ssc.setToken(sendMessageToken);
 			ssc.setAutoUnregisterActions(new int[]{SmsSendCallback.ACTION_SENT});
 			ssc.setTimeout(timeout);
 			ssc.registerMe();
 		}
-		smsManager.sendTextMessage(to, null, text, sentPI, deliveredPI);
+		//暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+		smsManager.sendTextMessage(to, null, text, sentPI, null);
 	}
 	
 	/**
