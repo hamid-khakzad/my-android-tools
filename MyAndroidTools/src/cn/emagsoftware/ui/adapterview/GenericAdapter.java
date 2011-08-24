@@ -110,7 +110,7 @@ public class GenericAdapter extends BaseAdapter {
 	@Override
 	public Object getItem(int position) {
 		// TODO Auto-generated method stub
-		return position;
+		return mHolders.get(position);
 	}
 
 	@Override
