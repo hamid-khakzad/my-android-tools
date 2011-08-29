@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * <p>关于字符串方面的实用类
  * @author Wendell
- * @version 1.9
+ * @version 1.91
  */
 public abstract class StringUtilities {
 	
@@ -213,7 +213,7 @@ public abstract class StringUtilities {
 	}
 	
 	/**
-	 * <p>以CSV方式连接指定的字符串，在网络信息传输方面有一定作用
+	 * <p>以CSV方式连接指定的字符串，在数据保存和传输方面有一定作用
 	 * @param strs
 	 * @return
 	 */
@@ -244,9 +244,19 @@ public abstract class StringUtilities {
 		}
 		return value.toString();
 	}
-
+	
 	/**
-	 * <p>解析以CSV方式连接的字符串，在网络信息传输方面有一定作用
+	 * <p>以CSV方式连接指定的字符串，在数据保存和传输方面有一定作用
+	 * @param strList
+	 * @return
+	 */
+	public static String concatByCSV(List<String> strList) {
+		String[] strArr = new String[strList.size()];
+		return concatByCSV(strList.toArray(strArr));
+	}
+	
+	/**
+	 * <p>解析以CSV方式连接的字符串，在数据保存和传输方面有一定作用
 	 * @param str
 	 * @return
 	 */
@@ -264,12 +274,8 @@ public abstract class StringUtilities {
 			}
 			lk.add(field);
 		}
-		Object[] os = lk.toArray();
-		String[] ss = new String[os.length];
-		for (int i = 0; i < os.length; i++) {
-			ss[i] = (String) os[i];
-		}
-		return ss;
+		String[] strArr = new String[lk.size()];
+		return lk.toArray(strArr);
 	}
 	
 	/**
