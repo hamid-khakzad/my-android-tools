@@ -5,6 +5,7 @@ import android.view.View;
 public class ViewHolder {
 	
 	protected View[] mParams = null;
+	protected Object mTag = null;
 	
 	public ViewHolder(){
 	}
@@ -19,6 +20,14 @@ public class ViewHolder {
 	
 	public View[] getParams(){
 		return mParams;
+	}
+	
+	public void setTag(Object tag){
+		mTag = tag;
+	}
+	
+	public Object getTag(){
+		return mTag;
 	}
 	
 }
