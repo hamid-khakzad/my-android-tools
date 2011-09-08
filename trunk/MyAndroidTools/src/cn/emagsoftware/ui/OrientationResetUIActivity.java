@@ -12,7 +12,7 @@ public abstract class OrientationResetUIActivity extends ThemeActivity {
 	public final void onConfigurationChanged(Configuration newConfig) {
 		// TODO Auto-generated method stub
 		super.onConfigurationChanged(newConfig);
-		View prevContentView = super.currContentView;
+		View prevContentView = super.curContentView;
 		if(resetUI()){
 			if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
 				onInitWhenPortrait(prevContentView);
