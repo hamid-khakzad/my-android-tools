@@ -113,7 +113,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	@Override
 	public View onCreateView(String name, Context context, AttributeSet attrs) {
 		// TODO Auto-generated method stub
-		if(packageName == null) return null;    //返回null时系统会自己调用inflater.createView生成默认样式的View
+		if(packageName == null) return null;    //返回null时系统会自己创建默认样式的View
 		LayoutInflater inflater = LayoutInflater.from(context);
 		View view = null;
 		for(int i = 0;i < ANDROID_VIEW_FULLNAME_PREFIX.length;i++){
