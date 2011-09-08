@@ -7,15 +7,15 @@ import android.view.ViewGroup.LayoutParams;
 
 public abstract class ThemeActivity extends Activity {
 	
-	protected int currContentViewResID = View.NO_ID;
-	protected View currContentView = null;
+	protected int curContentViewResID = View.NO_ID;
+	protected View curContentView = null;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		ThemeEngine.addThemeActivity(this);
-		getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CURR_PACKAGENAME, ThemeEngine.CURR_THEMENAME));
+		getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_THEMENAME));
 	}
 	
 	@Override
@@ -23,9 +23,9 @@ public abstract class ThemeActivity extends Activity {
 		// TODO Auto-generated method stub
 		View newView = getLayoutInflater().inflate(layoutResID, null);
 		super.setContentView(newView);
-		currContentViewResID = layoutResID;
-		View prevContentView = currContentView;
-		currContentView = newView;
+		curContentViewResID = layoutResID;
+		View prevContentView = curContentView;
+		curContentView = newView;
 		onInit(prevContentView);
 	}
 	
@@ -33,9 +33,9 @@ public abstract class ThemeActivity extends Activity {
 	public void setContentView(View view) {
 		// TODO Auto-generated method stub
 		super.setContentView(view);
-		currContentViewResID = View.NO_ID;
-		View prevContentView = currContentView;
-		currContentView = view;
+		curContentViewResID = View.NO_ID;
+		View prevContentView = curContentView;
+		curContentView = view;
 		onInit(prevContentView);
 	}
 	
@@ -43,9 +43,9 @@ public abstract class ThemeActivity extends Activity {
 	public void setContentView(View view, LayoutParams params) {
 		// TODO Auto-generated method stub
 		super.setContentView(view, params);
-		currContentViewResID = View.NO_ID;
-		View prevContentView = currContentView;
-		currContentView = view;
+		curContentViewResID = View.NO_ID;
+		View prevContentView = curContentView;
+		curContentView = view;
 		onInit(prevContentView);
 	}
 	
@@ -57,10 +57,10 @@ public abstract class ThemeActivity extends Activity {
 	}
 	
 	protected boolean resetUI(){
-		if(currContentViewResID != View.NO_ID){
-			View newContentView = getLayoutInflater().inflate(currContentViewResID, null);
+		if(curContentViewResID != View.NO_ID){
+			View newContentView = getLayoutInflater().inflate(curContentViewResID, null);
 			super.setContentView(newContentView);
-			currContentView = newContentView;
+			curContentView = newContentView;
 			return true;
 		}
 		return false;
