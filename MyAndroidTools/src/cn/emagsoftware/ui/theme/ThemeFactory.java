@@ -41,8 +41,8 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	/**
 	 * <p>创建或修改ThemeFactory实例，当前类是单例的
 	 * @param context
-	 * @param packageName 需要应用的主题包名
-	 * @param themeName 主题包styles.xml中主题样式的名字，如果没有通用的主题样式，可传null
+	 * @param packageName 需要应用的主题包名，如果要使用默认主题，可传null
+	 * @param themeName 主题包styles.xml中通用主题样式的名字，如果没有通用主题样式，可传null
 	 * @return
 	 */
 	public static ThemeFactory createOrUpdateInstance(Context context,String packageName,String themeName){
@@ -57,8 +57,11 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	}
 	
 	private void update(String packageName,String themeName){
-		if(packageName == null) throw new NullPointerException();
-		if(this.packageName != null && this.packageName.equals(packageName) && ((this.themeName == null && themeName == null) || this.themeName.equals(themeName))) return;
+		if(this.packageName == null && packageName == null) return;    //相同设置将直接返回
+		if(this.packageName != null && this.packageName.equals(packageName)){
+			if(this.themeName == null && themeName == null) return;    //相同设置将直接返回
+			if(this.themeName != null && this.themeName.equals(themeName)) return;    //相同设置将直接返回
+		}
 		this.packageName = packageName;
 		this.themeName = themeName;
 		this.packageRes = null;
@@ -72,8 +75,10 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	}
 	
 	private void loadStyles() throws NameNotFoundException,XmlPullParserException,IOException{
+		if(packageName == null) return;    //使用默认主题时将不需要加载样式
 		PackageManager pm = context.getPackageManager();
 		packageRes = pm.getResourcesForApplication(packageName);
+		//styles.xml必须存放于xml文件夹下面，放在values文件夹下面将获取不到
 		int stylesId = packageRes.getIdentifier("styles", "xml", packageName);
 		if(stylesId > 0){
 			XmlResourceParser parser = packageRes.getXml(stylesId);
@@ -108,10 +113,12 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	@Override
 	public View onCreateView(String name, Context context, AttributeSet attrs) {
 		// TODO Auto-generated method stub
+		if(packageName == null) return null;    //若要使用默认主题可直接返回null，从而让系统使用默认行为实例化View
 		LayoutInflater inflater = LayoutInflater.from(context);
 		View view = null;
 		for(int i = 0;i < ANDROID_VIEW_FULLNAME_PREFIX.length;i++){
 			try{
+				//将优先直接以name来实例化View，没有时再匹配前缀，故对于自定义View也同样适用
 				view = inflater.createView(name, ANDROID_VIEW_FULLNAME_PREFIX[i], attrs);
 				break;
 			}catch(ClassNotFoundException e){
@@ -119,13 +126,13 @@ public class ThemeFactory implements LayoutInflater.Factory {
 			}
 		}
 		if(view == null) return null;
-		applyTheme(view);
-		applyThemeFromLayout(view, attrs);
+		applyTheme(view);    //应用通用主题样式
+		applyThemeFromLayout(view, attrs);    //应用布局文件中的样式
 		return view;
 	}
 	
 	private void applyTheme(View view){
-		if(themeMap == null) return;
+		if(themeMap == null) return;    //如果未给定通用主题样式的名字或给定的名字无效，将返回
 		Class viewClass = view.getClass();
 		while(true){
 			if(viewClass == null) break;
@@ -162,7 +169,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 			String name = paramAttributeSet.getAttributeName(p);
 		    String value = paramAttributeSet.getAttributeValue(p);
 		    if(value.startsWith("?")){
-		    	if(themeMap == null) continue;
+		    	if(themeMap == null) continue;    //如果未给定通用主题样式的名字或给定的名字无效，将忽略
 	    		String theme = null;
 	    		if(value.startsWith("?attr/")) theme = value.substring("?attr/".length());
 	    		else theme = value.substring(1);
