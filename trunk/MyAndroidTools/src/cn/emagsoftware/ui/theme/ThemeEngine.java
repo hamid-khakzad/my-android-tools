@@ -8,11 +8,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.view.View;
 
 public final class ThemeEngine {
 	
-	public static String CURR_PACKAGENAME = null;
-	public static String CURR_THEMENAME = null;
+	public static String CUR_PACKAGENAME = null;
+	public static String CUR_THEMENAME = null;
 	
 	private static String THEME_INTENT_ACTION = "android.intent.action.MYANDROIDTOOLS_THEME";
 	private static String THEME_INTENT_CATEGORY = "android.intent.category.MYANDROIDTOOLS_THEME";
@@ -40,12 +41,21 @@ public final class ThemeEngine {
 		}
 	}
 	
-	public static void changeTheme(String packageName,String themeName){
+	/**
+	 * <p>改变主题
+	 * @param context
+	 * @param packageName 需要应用的主题包名，如果要使用默认主题，可传null
+	 * @param themeName 主题包styles.xml中通用主题样式的名字，如果没有通用主题样式，可传null
+	 */
+	public static void changeTheme(Context context,String packageName,String themeName){
+		ThemeFactory.createOrUpdateInstance(context, packageName, themeName);
 		for(int i = 0;i < mThemeActivities.size();i++){
-			mThemeActivities.get(i).changeTheme(packageName, themeName);
+			ThemeActivity tActivity = mThemeActivities.get(i);
+			View prevContentView = tActivity.curContentView;
+			if(tActivity.resetUI()) tActivity.onInit(prevContentView);
 		}
-		CURR_PACKAGENAME = packageName;
-		CURR_THEMENAME = themeName;
+		CUR_PACKAGENAME = packageName;
+		CUR_THEMENAME = themeName;
 	}
 	
 	public static boolean addThemeActivity(ThemeActivity mThemeActivity){
