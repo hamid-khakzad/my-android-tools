@@ -15,9 +15,7 @@ public abstract class ThemeActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		ThemeEngine.addThemeActivity(this);
-		if(ThemeEngine.CURR_PACKAGENAME != null){
-			getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CURR_PACKAGENAME, ThemeEngine.CURR_THEMENAME));
-		}
+		getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CURR_PACKAGENAME, ThemeEngine.CURR_THEMENAME));
 	}
 	
 	@Override
@@ -56,20 +54,6 @@ public abstract class ThemeActivity extends Activity {
 		// TODO Auto-generated method stub
 		super.onDestroy();
 		ThemeEngine.removeThemeActivity(this);
-	}
-	
-	/**
-	 * <p>改变主题
-	 * @param packageName 需要应用的主题包名
-	 * @param themeName 主题包styles.xml中主题样式的名字，如果没有通用的主题样式，可传null
-	 */
-	public void changeTheme(String packageName,String themeName){
-		ThemeFactory tf = ThemeFactory.createOrUpdateInstance(this, packageName, themeName);
-		if(getLayoutInflater().getFactory() == null){
-			getLayoutInflater().setFactory(tf);
-		}
-		View prevContentView = currContentView;
-		if(resetUI()) onInit(prevContentView);
 	}
 	
 	protected boolean resetUI(){
