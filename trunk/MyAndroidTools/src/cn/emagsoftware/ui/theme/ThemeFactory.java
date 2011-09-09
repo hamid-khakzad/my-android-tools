@@ -9,6 +9,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.graphics.Color;
@@ -283,10 +284,8 @@ public class ThemeFactory implements LayoutInflater.Factory {
 					}else if(value.startsWith("@color/")){
 				        int k = "@color/".length();
 				        value = value.substring(k);
-				        int colorId = packageRes.getIdentifier(value, "color", packageName);
-				        if (colorId > 0){
-				        	textView.setTextColor(packageRes.getColorStateList(colorId));
-				        }
+				        ColorStateList c = getPackageColor(value);
+				        if(c != null) textView.setTextColor(c);
 					}
 				}
 				value = style.get("android:textSize");
@@ -339,11 +338,21 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	}
 	
 	private Drawable getPackageDrawable(String drawableName){
+		if(packageName == null || packageRes == null) return null;
 		int drawableId = packageRes.getIdentifier(drawableName, "drawable", packageName);
 		if(drawableId > 0){
 			return packageRes.getDrawable(drawableId);
 		}
 		return null;
+	}
+	
+	private ColorStateList getPackageColor(String colorName){
+		if(packageName == null || packageRes == null) return null;
+        int colorId = packageRes.getIdentifier(colorName, "color", packageName);
+        if (colorId > 0){
+        	return packageRes.getColorStateList(colorId);
+        }
+        return null;
 	}
 	
 }
