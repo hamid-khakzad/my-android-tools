@@ -181,7 +181,11 @@ public class ThemeFactory implements LayoutInflater.Factory {
     			String style = value.substring("@style/".length());
     			applyStyle(view, style);
 		    }else if(value.startsWith("@")){
-		    	int resId = Integer.valueOf(value.substring(1)).intValue();
+		    	int resId = 0;
+		    	try{
+		    		resId = Integer.valueOf(value.substring(1)).intValue();
+		    	}catch(NumberFormatException e){
+		    	}
 		    	if(resId > 0){
 			    	if(name.equals("background")){
 	    				Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
