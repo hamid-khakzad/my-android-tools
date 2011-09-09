@@ -338,7 +338,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	}
 	
 	private Drawable getPackageDrawable(String drawableName){
-		if(packageName == null || packageRes == null) return null;
+		if(packageName == null) return null;
 		int drawableId = packageRes.getIdentifier(drawableName, "drawable", packageName);
 		if(drawableId > 0){
 			return packageRes.getDrawable(drawableId);
@@ -347,7 +347,7 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	}
 	
 	private ColorStateList getPackageColor(String colorName){
-		if(packageName == null || packageRes == null) return null;
+		if(packageName == null) return null;
         int colorId = packageRes.getIdentifier(colorName, "color", packageName);
         if (colorId > 0){
         	return packageRes.getColorStateList(colorId);
