@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.PopupWindow;
@@ -21,18 +22,12 @@ public class ToastWindow {
 		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
 		pw.setFocusable(false);
 		text = new TextView(context);
-		pw.setContentView(text);
+		setContentView(text);
 		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
 	}
 	
-	public ToastWindow(Context context,int textResId){
-		this(context);
-		text.setText(textResId);
-	}
-	
-	public ToastWindow(Context context,CharSequence textStr) {
-		this(context);
-		text.setText(textStr);
+	public void setContentView(View contentView){
+		pw.setContentView(contentView);
 	}
 	
 	public void setBackgroundDrawable(Drawable background){
