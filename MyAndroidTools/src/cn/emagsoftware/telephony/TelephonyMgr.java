@@ -13,7 +13,7 @@ public final class TelephonyMgr {
 		return tm.getSimState();
 	}
 	
-	public static boolean checkSimCard(Context context){
+	public static boolean isSimCardValid(Context context){
 		return getSimState(context) == TelephonyManager.SIM_STATE_READY;
 	}
 	
@@ -26,7 +26,7 @@ public final class TelephonyMgr {
 		return Environment.getExternalStorageState();
 	}
 	
-	public static boolean checkSdCard(){
+	public static boolean isSdCardValid(){
 		return getSdCardState().equals(Environment.MEDIA_MOUNTED);
 	}
 	
