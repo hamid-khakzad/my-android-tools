@@ -95,16 +95,21 @@ public final class NetManager {
 	 * @return
 	 */
 	public static boolean isAvailableMultiConnectedNets(Context context){
+		boolean wifiConnected = false;
+		boolean otherConnected = false;
 		NetworkInfo[] infos = getAllNetworkInfo(context);
 		if(infos != null){
-			int count = 0;
 			for(int i = 0;i < infos.length;i++){
 				if(infos[i].getState() == NetworkInfo.State.CONNECTED){
-					if(++count >= 2) return true;
+					if(infos[i].getType() == ConnectivityManager.TYPE_WIFI){
+						wifiConnected = true;
+					}else{
+						otherConnected = true;
+					}
 				}
 			}
 		}
-		return false;
+		return wifiConnected && otherConnected;
 	}
 	
 	/**
