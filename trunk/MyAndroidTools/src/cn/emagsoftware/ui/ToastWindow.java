@@ -23,7 +23,7 @@ public class ToastWindow {
 		pw.setFocusable(false);
 		text = new TextView(context);
 		setContentView(text);
-		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("map_generic_toast_bg", "drawable", context.getPackageName())));
+		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
 	}
 	
 	public void setContentView(View contentView){
