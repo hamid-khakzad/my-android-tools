@@ -20,7 +20,7 @@ public class MenuWindow {
 		pw.setFocusable(true);
 		pw.setAnimationStyle(context.getResources().getIdentifier("MenuWindow", "style", context.getPackageName()));
 		setContentView(new LinearLayout(context));
-		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_menuwindow_bg", "drawable", context.getPackageName())));
+		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("map_menuwindow_bg", "drawable", context.getPackageName())));
 	}
 	
 	public void setContentView(View contentView){
