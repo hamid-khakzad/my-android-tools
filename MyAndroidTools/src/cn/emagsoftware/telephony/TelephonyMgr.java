@@ -1,7 +1,10 @@
 package cn.emagsoftware.telephony;
 
+import java.io.File;
+
 import android.content.Context;
 import android.os.Environment;
+import android.os.StatFs;
 import android.telephony.TelephonyManager;
 
 public final class TelephonyMgr {
@@ -24,6 +27,24 @@ public final class TelephonyMgr {
 	
 	public static String getSdCardState(){
 		return Environment.getExternalStorageState();
+	}
+	
+	public static long getSdCardSize(){
+		String path = Environment.getExternalStorageDirectory().getPath();
+		File file = new File(path);
+		StatFs stat = new StatFs(file.getPath());
+		long blockSize = stat.getBlockSize();
+		long totalBlocks = stat.getBlockCount();
+		return blockSize*totalBlocks;
+	}
+	
+	public static long getSdCardAvailableSize(){
+		String path = Environment.getExternalStorageDirectory().getPath();
+		File file = new File(path);
+		StatFs stat = new StatFs(file.getPath());
+		long blockSize = stat.getBlockSize();
+		long availableBlocks = stat.getAvailableBlocks();
+		return blockSize*(availableBlocks-4);
 	}
 	
 	public static boolean isSdCardValid(){
