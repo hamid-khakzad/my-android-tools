@@ -15,14 +15,15 @@ public final class PackageMgr {
 	private PackageMgr(){}
 	
 	/**
-	 * <p>获取已安装的ApplicationInfo列表，将按照ApplicationInfo.DisplayNameComparator排序
+	 * <p>获取已安装的ApplicationInfo列表
 	 * @param context
+	 * @param isSort 为true时将按照ApplicationInfo.DisplayNameComparator排序
 	 * @return
 	 */
-	public static List<ApplicationInfo> getInstalledApplications(Context context){
+	public static List<ApplicationInfo> getInstalledApplications(Context context,boolean isSort){
 		PackageManager pm = context.getPackageManager();
 		List<ApplicationInfo> applicationInfos = pm.getInstalledApplications(0);
-		Collections.sort(applicationInfos, new ApplicationInfo.DisplayNameComparator(pm));
+		if(isSort) Collections.sort(applicationInfos, new ApplicationInfo.DisplayNameComparator(pm));
 		return applicationInfos;
 	}
 	
@@ -33,7 +34,7 @@ public final class PackageMgr {
 	 * @return
 	 */
 	public static ApplicationInfo getInstalledApplication(Context context,String packageName){
-		List<ApplicationInfo> applications = getInstalledApplications(context);
+		List<ApplicationInfo> applications = getInstalledApplications(context,false);
 		for(ApplicationInfo application:applications){
 			if(application.packageName.equals(packageName)){
 				return application;
@@ -43,34 +44,36 @@ public final class PackageMgr {
 	}
 	
 	/**
-	 * <p>获取指定Intent的ResolveInfo列表，将按照ResolveInfo.DisplayNameComparator排序
+	 * <p>获取指定Intent的ResolveInfo列表
 	 * @param context
 	 * @param intent
+	 * @param isSort 为true时将按照ResolveInfo.DisplayNameComparator排序
 	 * @return
 	 */
-	public static List<ResolveInfo> queryIntentActivities(Context context,Intent intent){
+	public static List<ResolveInfo> queryIntentActivities(Context context,Intent intent,boolean isSort){
 		PackageManager pm = context.getPackageManager();
 		List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, 0);
-		Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(pm));
+		if(isSort) Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(pm));
 		return resolveInfos;
 	}
 	
 	/**
-	 * <p>获取指定Intent和packageName的ResolveInfo列表，将按照ResolveInfo.DisplayNameComparator排序
+	 * <p>获取指定Intent和packageName的ResolveInfo列表
 	 * @param context
 	 * @param intent
 	 * @param packageName
+	 * @param isSort 为true时将按照ResolveInfo.DisplayNameComparator排序
 	 * @return
 	 */
-	public static List<ResolveInfo> queryIntentActivities(Context context,Intent intent,String packageName){
-		List<ResolveInfo> resolveInfos = queryIntentActivities(context,intent);
+	public static List<ResolveInfo> queryIntentActivities(Context context,Intent intent,String packageName,boolean isSort){
+		List<ResolveInfo> resolveInfos = queryIntentActivities(context,intent,false);
 		List<ResolveInfo> filterResolveInfos = new ArrayList<ResolveInfo>();
 		for(ResolveInfo resolveInfo:resolveInfos){
 			if(resolveInfo.activityInfo.packageName.equals(packageName)){
 				filterResolveInfos.add(resolveInfo);
 			}
 		}
-		Collections.sort(filterResolveInfos, new ResolveInfo.DisplayNameComparator(context.getPackageManager()));
+		if(isSort) Collections.sort(filterResolveInfos, new ResolveInfo.DisplayNameComparator(context.getPackageManager()));
 		return filterResolveInfos;
 	}
 	
