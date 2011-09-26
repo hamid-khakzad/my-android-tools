@@ -69,15 +69,23 @@ public final class NetManager {
 	}
 	
 	/**
-	 * <p>以小写形式返回指定网络的详细类型
+	 * <p>以大写形式返回指定网络的详细类型
 	 * @param info
-	 * @return wifi、cmnet、cmwap等
+	 * @return WIFI、CMNET、CMWAP等，返回null表示网络类型未知
 	 */
 	public static String getNetworkInfoType(NetworkInfo info){
-		String type = info.getTypeName().toLowerCase();
-		if (type.equals("wifi")) return type;
-		type = info.getExtraInfo().toLowerCase();
-		return type;
+		String type = info.getTypeName();
+		String extraInfo = info.getExtraInfo();
+		if(type == null) {
+			if(extraInfo == null) return null;
+			else return extraInfo.toUpperCase();
+		}else{
+			if (type.equals("WIFI")) return type;
+			else{
+				if(extraInfo == null) return type;
+				else return extraInfo.toUpperCase();
+			}
+		}
 	}
 	
 	/**
