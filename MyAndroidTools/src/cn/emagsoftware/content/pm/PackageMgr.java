@@ -65,7 +65,7 @@ public final class PackageMgr {
 	 * @param isSort 为true时将按照ResolveInfo.DisplayNameComparator排序
 	 * @return
 	 */
-	public static List<ResolveInfo> queryIntentActivities(Context context,Intent intent,String packageName,boolean isSort){
+	public static List<ResolveInfo> queryIntentPackageActivities(Context context,Intent intent,String packageName,boolean isSort){
 		List<ResolveInfo> resolveInfos = queryIntentActivities(context,intent,false);
 		List<ResolveInfo> filterResolveInfos = new ArrayList<ResolveInfo>();
 		for(ResolveInfo resolveInfo:resolveInfos){
