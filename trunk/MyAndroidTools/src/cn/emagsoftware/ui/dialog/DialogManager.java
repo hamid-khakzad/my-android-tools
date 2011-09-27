@@ -10,18 +10,40 @@ import android.content.DialogInterface.OnClickListener;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.view.ContextThemeWrapper;
 import android.view.View;
 
 /**
- * <p>dialog manager
- * <p>though the 'setView' method for thematic ProgressDialog has existed,but it dose not work.The ThemeAlertDialog class is created by this reson.
+ * <p>对话框管理类
  * @author Wendell
- * @version 1.4
+ * @version 1.5
  * 
  */
 public abstract class DialogManager {
 	
+	private static boolean useSystemDialogTheme = false;
+	
+	/**
+	 * <p>默认情况下，弹出的对话框除了标题和底部按钮，主体部分将会应用传入的Context中的主题。
+	 *    如果要使弹出的对话框使用系统样式，可调用该方法并传入一个true值。
+	 * <p>当前方法的设置只对通过当前类的方法弹出的对话框有效。
+	 * <p>如果是通过传入一个View来显示对话框的话，则当前方法的设置将不起作用。若要显示系统样式，
+	 *    可在创建View之前将Context通过convertToSystemDialogTheme方法进行转化后再传入View的构造函数。
+	 *    事实上，当前类的内部也是通过convertToSystemDialogTheme方法实现的。
+	 * <p>另：由于默认情况下对话框的标题和底部按钮不使用传入的Context中的主题，所以若要使对话框完全应用
+	 *    Context中的主题，可使用ThemeAlertDialog，即当前类中的showThemeAlertDialog方法。
+	 * @param use
+	 */
+	public static void setUseSystemDialogTheme(boolean use){
+		useSystemDialogTheme = use;
+	}
+	
+	public static Context convertToSystemDialogTheme(Context context){
+		return new ContextThemeWrapper(context,android.R.style.Theme_Dialog);
+	}
+	
 	public static AlertDialog.Builder createAlertDialogBuilder(Context context,String title,String[] buttons,OnClickListener onClickListener,boolean cancelable){
+		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		AlertDialog.Builder ab = new AlertDialog.Builder(context);
 		if(title != null) ab.setTitle(title);
 		if(buttons != null){
@@ -108,6 +130,7 @@ public abstract class DialogManager {
 	}
 	
 	public static ProgressDialog showProgressDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
+		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		ProgressDialog pd = null;
 		if(theme == -1) pd = new ProgressDialog(context);
 		else pd = new ProgressDialog(context, theme);
@@ -140,6 +163,7 @@ public abstract class DialogManager {
 	}
 	
 	public static ThemeAlertDialog showThemeAlertDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
+		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		ThemeAlertDialog tad = null;
 		if(theme == -1) tad = new ThemeAlertDialog(context);
 		else tad = new ThemeAlertDialog(context, theme);
@@ -172,6 +196,7 @@ public abstract class DialogManager {
 	}
 	
 	public static ThemeAlertDialog showThemeAlertDialog(Context context,int theme,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
+		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		ThemeAlertDialog tad = null;
 		if(theme == -1) tad = new ThemeAlertDialog(context);
 		else tad = new ThemeAlertDialog(context, theme);
