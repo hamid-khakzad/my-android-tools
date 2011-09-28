@@ -17,7 +17,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /**
- * @deprecated 该类被舍弃的原因在于其界面与系统对话框界面不一致，若要使对话框能够完全应用主题，建议使用ThemeAlertDialog代替
+ * @deprecated 该类被舍弃的原因在于其界面与系统对话框界面不一致，若要使对话框能够应用指定主题，建议使用ThemeAlertDialog代替
  * @author Wendell
  *
  */
