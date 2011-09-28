@@ -2,6 +2,7 @@ package cn.emagsoftware.ui.dialog;
 
 import java.lang.reflect.Field;
 
+import android.R;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -16,34 +17,24 @@ import android.view.View;
 /**
  * <p>对话框管理类
  * @author Wendell
- * @version 1.5
+ * @version 1.6
  * 
  */
 public abstract class DialogManager {
 	
-	private static boolean useSystemDialogTheme = false;
-	
 	/**
-	 * <p>默认情况下，弹出的对话框除了标题和底部按钮，主体部分将会应用传入的Context中的主题。
-	 *    如果要使弹出的对话框使用系统样式，可调用该方法并传入一个true值。
-	 * <p>当前方法的设置只对通过当前类的方法弹出的对话框有效。
-	 * <p>如果是通过传入一个View来显示对话框的话，则当前方法的设置将不起作用。若要显示系统样式，
-	 *    可在创建View之前将Context通过convertToSystemDialogTheme方法进行转化后再传入View的构造函数。
-	 *    事实上，当前类的内部也是通过convertToSystemDialogTheme方法实现的。
-	 * <p>另：由于默认情况下对话框的标题和底部按钮不使用传入的Context中的主题，所以若要使对话框完全应用
-	 *    Context中的主题，可使用ThemeAlertDialog，即当前类中的showThemeAlertDialog方法。
-	 * @param use
+	 * <p>默认情况下，对话框利用了与当前方法相同的原理将程序定义的主题样式替换成自己的R.style.Theme_Dialog，这就是对话框没有显示程序定义样式的原因。
+	 *    但若是外部创建了View（如通过AlertDialog.Builder或手工创建）再添加进对话框，则这些View将使用程序定义的样式，从而与对话框样式不一致。
+	 *    <b>若要使外部创建的View也拥有对话框的默认样式，在构造View时，可调用当前方法转换Context后再传入View的构造函数，便会使View获得与对话框一致的样式。</b>
+	 * <p>引：若要使对话框应用已定义的主题样式而不是使用默认的，可使用对话框带有主题的构造函数构造对话框即可。如Dialog、ProgressDialog、ThemeAlertDialog均提供了这样的构造函数。
+	 * @param context
+	 * @return
 	 */
-	public static void setUseSystemDialogTheme(boolean use){
-		useSystemDialogTheme = use;
-	}
-	
 	public static Context convertToSystemDialogTheme(Context context){
-		return new ContextThemeWrapper(context,android.R.style.Theme_Dialog);
+		return new ContextThemeWrapper(context,R.style.Theme_Dialog);
 	}
 	
 	public static AlertDialog.Builder createAlertDialogBuilder(Context context,String title,String[] buttons,OnClickListener onClickListener,boolean cancelable){
-		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		AlertDialog.Builder ab = new AlertDialog.Builder(context);
 		if(title != null) ab.setTitle(title);
 		if(buttons != null){
@@ -130,7 +121,6 @@ public abstract class DialogManager {
 	}
 	
 	public static ProgressDialog showProgressDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		ProgressDialog pd = null;
 		if(theme == -1) pd = new ProgressDialog(context);
 		else pd = new ProgressDialog(context, theme);
@@ -163,7 +153,6 @@ public abstract class DialogManager {
 	}
 	
 	public static ThemeAlertDialog showThemeAlertDialog(Context context,int theme,String title,String msg,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		ThemeAlertDialog tad = null;
 		if(theme == -1) tad = new ThemeAlertDialog(context);
 		else tad = new ThemeAlertDialog(context, theme);
@@ -196,7 +185,6 @@ public abstract class DialogManager {
 	}
 	
 	public static ThemeAlertDialog showThemeAlertDialog(Context context,int theme,String title,View view,String[] buttons,OnClickListener onClickListener,boolean cancelable,boolean isNotAutoDismiss){
-		if(useSystemDialogTheme) context = convertToSystemDialogTheme(context);
 		ThemeAlertDialog tad = null;
 		if(theme == -1) tad = new ThemeAlertDialog(context);
 		else tad = new ThemeAlertDialog(context, theme);
