@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.view.View;
 
 public final class ThemeEngine {
 	
@@ -51,8 +50,7 @@ public final class ThemeEngine {
 		ThemeFactory.createOrUpdateInstance(context, packageName, themeName);
 		for(int i = 0;i < mThemeActivities.size();i++){
 			ThemeActivity tActivity = mThemeActivities.get(i);
-			View prevContentView = tActivity.curContentView;
-			if(tActivity.resetUI()) tActivity.onInit(prevContentView);
+			tActivity.resetContentView();
 		}
 		CUR_PACKAGENAME = packageName;
 		CUR_THEMENAME = themeName;

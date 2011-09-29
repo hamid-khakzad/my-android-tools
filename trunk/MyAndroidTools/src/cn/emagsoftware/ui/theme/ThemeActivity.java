@@ -26,7 +26,7 @@ public abstract class ThemeActivity extends Activity {
 		curContentViewResID = layoutResID;
 		View prevContentView = curContentView;
 		curContentView = newView;
-		onInit(prevContentView);
+		onSetContentView(prevContentView);
 	}
 	
 	@Override
@@ -36,7 +36,7 @@ public abstract class ThemeActivity extends Activity {
 		curContentViewResID = View.NO_ID;
 		View prevContentView = curContentView;
 		curContentView = view;
-		onInit(prevContentView);
+		onSetContentView(prevContentView);
 	}
 	
 	@Override
@@ -46,7 +46,7 @@ public abstract class ThemeActivity extends Activity {
 		curContentViewResID = View.NO_ID;
 		View prevContentView = curContentView;
 		curContentView = view;
-		onInit(prevContentView);
+		onSetContentView(prevContentView);
 	}
 	
 	@Override
@@ -56,20 +56,22 @@ public abstract class ThemeActivity extends Activity {
 		ThemeEngine.removeThemeActivity(this);
 	}
 	
-	protected boolean resetUI(){
+	protected boolean resetContentView(){
 		if(curContentViewResID != View.NO_ID){
 			View newContentView = getLayoutInflater().inflate(curContentViewResID, null);
 			super.setContentView(newContentView);
+			View prevContentView = curContentView;
 			curContentView = newContentView;
+			onSetContentView(prevContentView);
 			return true;
 		}
 		return false;
 	}
 	
 	/**
-	 * <p>对UI的初始化操作须统一在该方法中进行，因为改变主题将会重构界面，此时会自动回调该方法重新初始化
+	 * <p>setContentView之后的初始化操作须统一在该方法中进行，因为改变主题将重新setContentView，此时会回调该方法重新初始化
 	 * @param prevContentView 上一个ContentView，第一次初始化时将传入null，传入该参数是为了方便状态保存
 	 */
-	protected abstract void onInit(View prevContentView);
+	protected abstract void onSetContentView(View prevContentView);
 	
 }
