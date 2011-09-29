@@ -7,6 +7,7 @@ import java.util.List;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 
@@ -38,6 +39,31 @@ public final class PackageMgr {
 		for(ApplicationInfo application:applications){
 			if(application.packageName.equals(packageName)){
 				return application;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * <p>获取已安装的PackageInfo列表
+	 * @param context
+	 * @return
+	 */
+	public static List<PackageInfo> getInstalledPackages(Context context){
+		return context.getPackageManager().getInstalledPackages(0);
+	}
+	
+	/**
+	 * <p>根据packageName获取PackageInfo。若未找到指定的packageName，将返回null
+	 * @param context
+	 * @param packageName
+	 * @return
+	 */
+	public static PackageInfo getInstalledPackage(Context context,String packageName){
+		List<PackageInfo> packages = getInstalledPackages(context);
+		for(PackageInfo packageInfo:packages){
+			if(packageInfo.packageName.equals(packageName)){
+				return packageInfo;
 			}
 		}
 		return null;
