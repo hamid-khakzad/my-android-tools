@@ -13,6 +13,8 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	protected boolean mIsLoading = false;
 	/**是否已经加载过*/
 	protected boolean mIsLoaded = false;
+	/**当前的加载是否发生了异常*/
+	protected boolean mIsException = false;
 	/**当前的加载条件*/
 	protected Object mCurCondition = null;
 	
@@ -49,11 +51,13 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				if(result == null){
 					mIsLoading = false;
 					mIsLoaded = true;
+					mIsException = false;
 					onAfterLoad(context,condition,null);
 				}else{
 					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
 					mIsLoaded = true;
+					mIsException = false;
 					onAfterLoad(context,condition,null);
 				}
 			}
@@ -63,6 +67,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				super.onExceptionUI(context,e);
 				Log.e("BaseLoadingAdapter","Execute loading failed.",e);
 				mIsLoading = false;
+				mIsException = true;
 				onAfterLoad(context,condition,e);
 			}
 		});
@@ -91,6 +96,14 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 	 */
 	public boolean isLoaded(){
 		return mIsLoaded;
+	}
+	
+	/**
+	 * <p>当前的加载是否发生了异常
+	 * @return
+	 */
+	public boolean isException(){
+		return mIsException;
 	}
 	
 	/**

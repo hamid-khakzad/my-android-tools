@@ -17,8 +17,6 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	protected int mLimit = 10;
 	/**是否已经加载了全部数据*/
 	protected boolean mIsLoadedAll = false;
-	/**当前的加载是否发生了异常*/
-	protected boolean mIsException = false;
 	
 	public BaseLazyLoadingAdapter(Context context,int limit){
 		super(context);
@@ -39,7 +37,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll() && !mIsException){
+					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll() && !isException()){
 						load(mCurCondition);
 					}
 				}
