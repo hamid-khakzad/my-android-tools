@@ -12,29 +12,22 @@ public abstract class OrientationResetUIActivity extends ThemeActivity {
 	public final void onConfigurationChanged(Configuration newConfig) {
 		// TODO Auto-generated method stub
 		super.onConfigurationChanged(newConfig);
-		View prevContentView = super.curContentView;
-		if(resetUI()){
-			if(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-				onInitWhenPortrait(prevContentView);
-			}else if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
-				onInitWhenLandscape(prevContentView);
-			}
-		}
+		resetContentView();
 	}
 	
 	@Override
-	protected void onInit(View prevContentView) {
+	protected final void onSetContentView(View prevContentView) {
 		// TODO Auto-generated method stub
 		int orientation = getRequestedOrientation();
-		if(orientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
-			onInitWhenLandscape(prevContentView);
-		}else if(orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
-			onInitWhenPortrait(prevContentView);
+		if(orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
+			onSetContentViewWhenPortrait(prevContentView);
+		}else if(orientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
+			onSetContentViewWhenLandscape(prevContentView);
 		}
 	}
 	
-	protected abstract void onInitWhenPortrait(View prevContentView);
+	protected abstract void onSetContentViewWhenPortrait(View prevContentView);
 	
-	protected abstract void onInitWhenLandscape(View prevContentView);
+	protected abstract void onSetContentViewWhenLandscape(View prevContentView);
 	
 }
