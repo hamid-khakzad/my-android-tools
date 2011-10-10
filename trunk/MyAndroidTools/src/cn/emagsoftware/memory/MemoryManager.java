@@ -32,8 +32,4 @@ public final class MemoryManager {
 		}
 	}
 	
-	public static void recycleBitmaps(View view,boolean recursive){
-		recycleBitmaps(view,new ViewAllBitmapSelector(),recursive);
-	}
-	
 }
