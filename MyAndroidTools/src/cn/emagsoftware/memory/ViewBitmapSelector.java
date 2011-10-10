@@ -27,8 +27,10 @@ public abstract class ViewBitmapSelector {
 	public List<Bitmap> select(View view,boolean includeRecycled){
 		List<Bitmap> bitmaps = new LinkedList<Bitmap>();
 		List<Drawable> drawables = onSelect(view);
-		for(Drawable d : drawables){
-			bitmaps.addAll(drawableToBitmaps(d,includeRecycled));
+		if(drawables != null){
+			for(Drawable d : drawables){
+				bitmaps.addAll(drawableToBitmaps(d,includeRecycled));
+			}
 		}
 		return bitmaps;
 	}
