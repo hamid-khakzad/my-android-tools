@@ -16,16 +16,16 @@ public abstract class ViewBitmapSelector {
 	 * 出于节约资源的考虑，View.setBackgroundResource等方法内部若涉及到Bitmap，将使用同一个。
 	 * 通过传入该参数可在选择Bitmap时排除这类Bitmap，因为可能会对选择的Bitmap执行recycle，
 	 * 若recycle了这类Bitmap，将使这类Bitmap永远不能再通过View.setBackgroundResource等方法
-	 * 再次使用（会抛出异常）。
+	 * 再次使用，已经使用了这类Bitmap的View在重绘时也将抛出异常。
 	 */
-	protected int[] resIdsToExclude = null;
+	protected int[] drawableIdsToExclude = null;
 	
 	public ViewBitmapSelector(){}
 	
-	public ViewBitmapSelector(Resources res,int[] resIdsToExclude){
-		if(res == null || resIdsToExclude == null) throw new NullPointerException();
+	public ViewBitmapSelector(Resources res,int[] drawableIdsToExclude){
+		if(res == null || drawableIdsToExclude == null) throw new NullPointerException();
 		this.res = res;
-		this.resIdsToExclude = resIdsToExclude;
+		this.drawableIdsToExclude = drawableIdsToExclude;
 	}
 	
 	public static List<Bitmap> drawableToBitmaps(Drawable drawable,boolean includeRecycled){
@@ -46,8 +46,29 @@ public abstract class ViewBitmapSelector {
 		List<Bitmap> bitmaps = new LinkedList<Bitmap>();
 		List<Drawable> drawables = onSelect(view);
 		if(drawables != null){
-			for(Drawable d : drawables){
-				bitmaps.addAll(drawableToBitmaps(d,includeRecycled));
+			for(Drawable drawable : drawables){
+				List<Bitmap> curBitmaps = drawableToBitmaps(drawable,includeRecycled);
+				if(drawableIdsToExclude == null || drawableIdsToExclude.length == 0){
+					bitmaps.addAll(curBitmaps);
+				}else{
+					for(Bitmap curBitmap : curBitmaps){
+						boolean shouldExclude = false;
+						for(int drawableId:drawableIdsToExclude){
+							Drawable drawableToExclude = res.getDrawable(drawableId);
+							if(drawableToExclude != null){
+								List<Bitmap> curBitmapsToExclude = drawableToBitmaps(drawableToExclude,includeRecycled);
+								for(Bitmap curBitmapToExclude : curBitmapsToExclude){
+									if(curBitmap == curBitmapToExclude){
+										shouldExclude = true;
+										break;
+									}
+								}
+								if(shouldExclude) break;
+							}
+						}
+						if(!shouldExclude) bitmaps.add(curBitmap);
+					}
+				}
 			}
 		}
 		return bitmaps;
