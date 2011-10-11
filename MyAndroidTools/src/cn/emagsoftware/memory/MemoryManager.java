@@ -2,12 +2,11 @@ package cn.emagsoftware.memory;
 
 import java.util.List;
 
-import cn.emagsoftware.util.LogManager;
-
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -40,9 +39,9 @@ public final class MemoryManager {
         ActivityManager actMgr = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         actMgr.getMemoryInfo(memoryInfo);
-        LogManager.logI(MemoryManager.class, "Avail Mem=" + (memoryInfo.availMem >> 20) + "M");
-        LogManager.logI(MemoryManager.class, "Threshold=" + (memoryInfo.threshold >> 20) + "M");
-        LogManager.logI(MemoryManager.class, "Is Low Mem=" + memoryInfo.lowMemory);
+        Log.i("MemoryManager", "Avail Mem=" + (memoryInfo.availMem >> 20) + "M");
+        Log.i("MemoryManager", "Threshold=" + (memoryInfo.threshold >> 20) + "M");
+        Log.i("MemoryManager", "Is Low Mem=" + memoryInfo.lowMemory);
         return memoryInfo.lowMemory;
 	}
 	
