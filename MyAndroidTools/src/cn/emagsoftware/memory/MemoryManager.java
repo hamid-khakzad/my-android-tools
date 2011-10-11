@@ -2,6 +2,10 @@ package cn.emagsoftware.memory;
 
 import java.util.List;
 
+import cn.emagsoftware.util.LogManager;
+
+import android.app.ActivityManager;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.view.View;
@@ -30,6 +34,16 @@ public final class MemoryManager {
 				recycleBitmaps(child,selector,recursive);
 			}
 		}
+	}
+	
+	public static boolean isLowMemory(Context context){
+        ActivityManager actMgr = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+        actMgr.getMemoryInfo(memoryInfo);
+        LogManager.logI(MemoryManager.class, "Avail Mem=" + (memoryInfo.availMem >> 20) + "M");
+        LogManager.logI(MemoryManager.class, "Threshold=" + (memoryInfo.threshold >> 20) + "M");
+        LogManager.logI(MemoryManager.class, "Is Low Mem=" + memoryInfo.lowMemory);
+        return memoryInfo.lowMemory;
 	}
 	
 }
