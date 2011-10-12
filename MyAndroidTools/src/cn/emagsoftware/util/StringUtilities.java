@@ -1,6 +1,6 @@
 package cn.emagsoftware.util;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * <p>关于字符串方面的实用类
  * @author Wendell
- * @version 1.91
+ * @version 1.92
  */
 public abstract class StringUtilities {
 	
@@ -261,21 +261,24 @@ public abstract class StringUtilities {
 	 * @return
 	 */
 	public static String[] parseFromCSV(String str) {
-		List<String> lk = new LinkedList<String>();
-		String regex = "\\G(?:^|,)(?:\"([^\"]*+(?:\"\"[^\"]*+)*+)\"|([^\",]*+))";
-		Matcher main = Pattern.compile(regex).matcher(str);
-		Matcher mquote = Pattern.compile("\"\"").matcher("");
-		while (main.find()) {
-			String field;
-			if (main.start(2) >= 0) {
-				field = main.group(2);
-			} else {
-				field = mquote.reset(main.group(1)).replaceAll("\"");
-			}
-			lk.add(field);
-		}
-		String[] strArr = new String[lk.size()];
-		return lk.toArray(strArr);
+		Pattern csvPattern = Pattern.compile("\"([^\"]*)\"|(?<=,|^)([^,]*)(?:,|$)");
+		Matcher matcher = csvPattern.matcher(str);
+		List<String> allMatches = new ArrayList<String>();
+        String match;
+        while (matcher.find()) {
+            match = matcher.group(1);
+            if (match != null) {
+            	allMatches.add(match);
+            }else {
+            	allMatches.add(matcher.group(2));
+            }
+        }
+        int size = allMatches.size();               
+        if (size > 0) {
+        	return allMatches.toArray(new String[size]);
+        }else {
+        	return new String[0];
+        }
 	}
 	
 	/**
