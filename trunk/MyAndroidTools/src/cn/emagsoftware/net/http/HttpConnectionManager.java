@@ -34,7 +34,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.9
+ * @version 2.91
  */
 public final class HttpConnectionManager {
 	
@@ -295,62 +295,68 @@ public final class HttpConnectionManager {
 				buffOutput.flush();
 				output.close();
 			}
-			if(isUseCMWap){
-				String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
-				if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){    //CMWap有时会出现资费提示页面
-					InputStream resultStream = null;
-					try{
-						resultStream = httpConn.getInputStream();
-						BufferedInputStream buffInput = new BufferedInputStream(resultStream);
-						ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
-						byte[] b = new byte[2*1024];
-						int len;
-						while ((len = buffInput.read(b)) > 0) {
-							tempOutput.write(b,0,len);
-						}
-						String wmlStr = new String(tempOutput.toByteArray(),"UTF-8");
-						//解析资费提示页面中的URL
-						XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-						XmlPullParser xmlParser = factory.newPullParser();
-						xmlParser.setInput(new StringReader(wmlStr));
-						String parseUrl = null;
-						boolean onEnterForward = false;
-						int eventType = xmlParser.getEventType();
-						while (eventType != XmlPullParser.END_DOCUMENT) {
-							switch (eventType) {
-							case XmlPullParser.START_TAG:
-								String tagName = xmlParser.getName().toLowerCase();
-								if ("onevent".equals(tagName)) {
-									String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
-									if ("onenterforward".equals(s)) onEnterForward = true;
-								} else if ("go".equals(tagName)){
-									if(onEnterForward) parseUrl = xmlParser.getAttributeValue(null, "href");
-								}
-								break;
-							}
-							if(parseUrl != null) break;
-							eventType = xmlParser.next();
-						}
-						if(parseUrl == null || parseUrl.equals("")) parseUrl = url;
-						return openConnection(parseUrl,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
-					}finally{
+			int rspCode = httpConn.getResponseCode();
+			Log.i("HttpConnectionManager", "requesting url " + packUrl + " returns http code:" + rspCode);
+			if(rspCode == HttpURLConnection.HTTP_OK){
+				if(isUseCMWap){
+					String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
+					if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){    //CMWap有时会出现资费提示页面
+						InputStream input = null;
 						try{
-							if(resultStream != null) resultStream.close();
+							input = httpConn.getInputStream();
+							BufferedInputStream buffInput = new BufferedInputStream(input);
+							ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
+							byte[] b = new byte[2*1024];
+							int len;
+							while ((len = buffInput.read(b)) > 0) {
+								tempOutput.write(b,0,len);
+							}
+							String wmlStr = new String(tempOutput.toByteArray(),"UTF-8");
+							//解析资费提示页面中的URL
+							XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+							XmlPullParser xmlParser = factory.newPullParser();
+							xmlParser.setInput(new StringReader(wmlStr));
+							String parseUrl = null;
+							boolean onEnterForward = false;
+							int eventType = xmlParser.getEventType();
+							while (eventType != XmlPullParser.END_DOCUMENT) {
+								switch (eventType) {
+								case XmlPullParser.START_TAG:
+									String tagName = xmlParser.getName().toLowerCase();
+									if ("onevent".equals(tagName)) {
+										String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
+										if ("onenterforward".equals(s)) onEnterForward = true;
+									} else if ("go".equals(tagName)){
+										if(onEnterForward) parseUrl = xmlParser.getAttributeValue(null, "href");
+									}
+									break;
+								}
+								if(parseUrl != null) break;
+								eventType = xmlParser.next();
+							}
+							if(parseUrl == null || parseUrl.equals("")) parseUrl = url;
+							return openConnection(parseUrl,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
 						}finally{
-							httpConn.disconnect();
+							try{
+								if(input != null) input.close();
+							}finally{
+								httpConn.disconnect();
+							}
 						}
 					}
 				}
+				return httpConn;
+			}else if(rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER){
+				if(!followRedirects) return httpConn;
+				//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
+				String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
+				if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
+				if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
+				httpConn.disconnect();
+				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
+			}else{
+				throw new IOException("http response code("+rspCode+") is invalid");
 			}
-			if(!followRedirects) return httpConn;
-			//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
-			int rspCode = httpConn.getResponseCode();
-			if(rspCode != HttpURLConnection.HTTP_MOVED_PERM && rspCode != HttpURLConnection.HTTP_MOVED_TEMP && rspCode != HttpURLConnection.HTTP_SEE_OTHER) return httpConn;
-			String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
-			if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
-			if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
-			httpConn.disconnect();
-			return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 		}catch(IOException e){
 			try{
 				if(output != null) output.close();
