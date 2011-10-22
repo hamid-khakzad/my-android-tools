@@ -296,7 +296,6 @@ public final class HttpConnectionManager {
 				output.close();
 			}
 			int rspCode = httpConn.getResponseCode();
-			Log.i("HttpConnectionManager", "requesting url " + packUrl + " returns http code:" + rspCode);
 			if(rspCode == HttpURLConnection.HTTP_OK){
 				if(isUseCMWap){
 					String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
@@ -355,7 +354,7 @@ public final class HttpConnectionManager {
 				httpConn.disconnect();
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 			}else{
-				throw new IOException("http response code("+rspCode+") is invalid");
+				throw new IOException("the http response code is:" + rspCode);
 			}
 		}catch(IOException e){
 			try{
