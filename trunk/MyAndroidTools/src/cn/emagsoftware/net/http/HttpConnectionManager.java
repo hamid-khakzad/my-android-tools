@@ -29,12 +29,14 @@ import javax.net.ssl.X509TrustManager;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import cn.emagsoftware.util.Base64;
+
 import android.util.Log;
 
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.91
+ * @version 2.92
  */
 public final class HttpConnectionManager {
 	
@@ -310,7 +312,9 @@ public final class HttpConnectionManager {
 							while ((len = buffInput.read(b)) > 0) {
 								tempOutput.write(b,0,len);
 							}
-							String wmlStr = new String(tempOutput.toByteArray(),"UTF-8");
+							byte[] wmlData = tempOutput.toByteArray();
+							String wmlStr = new String(wmlData,"UTF-8");
+							Log.i("HttpConnectionManager", "would parse the CMWap charge page...(base64 content:" + Base64.encode(wmlData) + ")");
 							//解析资费提示页面中的URL
 							XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 							XmlPullParser xmlParser = factory.newPullParser();
@@ -333,7 +337,10 @@ public final class HttpConnectionManager {
 								if(parseUrl != null) break;
 								eventType = xmlParser.next();
 							}
-							if(parseUrl == null || parseUrl.equals("")) parseUrl = url;
+							if(parseUrl == null || parseUrl.equals("")) {
+								Log.w("HttpConnectionManager", "could not parse url from CMWap charge page");
+								parseUrl = url;
+							}
 							return openConnection(parseUrl,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
 						}finally{
 							try{
