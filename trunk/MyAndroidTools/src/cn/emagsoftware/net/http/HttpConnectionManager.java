@@ -361,7 +361,7 @@ public final class HttpConnectionManager {
 				httpConn.disconnect();
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 			}else{
-				throw new IOException("the url named '" + packUrl + "' returns code:" + rspCode);
+				throw new IOException("the url named '".concat(packUrl).concat("' returns code:").concat(String.valueOf(rspCode)));
 			}
 		}catch(IOException e){
 			try{
