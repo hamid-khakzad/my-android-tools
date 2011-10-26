@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.93
+ * @version 2.94
  */
 public final class HttpConnectionManager {
 	
@@ -298,7 +298,7 @@ public final class HttpConnectionManager {
 				output.close();
 			}
 			int rspCode = httpConn.getResponseCode();
-			if(rspCode == HttpURLConnection.HTTP_OK){
+			if(rspCode == HttpURLConnection.HTTP_OK || rspCode == HttpURLConnection.HTTP_PARTIAL){
 				if(isUseCMWap){
 					String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
 					if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){    //CMWap有时会出现资费提示页面
