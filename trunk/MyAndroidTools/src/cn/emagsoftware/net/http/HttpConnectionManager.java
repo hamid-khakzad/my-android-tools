@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.92
+ * @version 2.93
  */
 public final class HttpConnectionManager {
 	
@@ -361,7 +361,7 @@ public final class HttpConnectionManager {
 				httpConn.disconnect();
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 			}else{
-				throw new IOException("the http response code is:" + rspCode);
+				throw new IOException("the url named '" + packUrl + "' returns code:" + rspCode);
 			}
 		}catch(IOException e){
 			try{
