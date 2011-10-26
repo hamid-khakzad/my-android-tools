@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 2.94
+ * @version 3.0
  */
 public final class HttpConnectionManager {
 	
@@ -83,7 +83,7 @@ public final class HttpConnectionManager {
 	/**
 	 * 进行http get请求
 	 * @param url 请求的url
-	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
+	 * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
@@ -124,15 +124,16 @@ public final class HttpConnectionManager {
 	/**
 	 * 进行http post请求，将以值为application/x-www-form-urlencoded的Content-Type来提交键值对参数
 	 * @param url 请求的url
-	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
+	 * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
 	 * @param postParams 提交的POST参数，不需要时可传null
+	 * @param postParamsEnc 对提交的POST参数进行URL编码的字符集，不需要URL编码时可传null
 	 * @return HttpResponseResultStream实例
 	 * @throws IOException
 	 */
-	public static HttpResponseResultStream doPostForStream(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
+	public static HttpResponseResultStream doPostForStream(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams,String postParamsEnc) throws IOException{
 		HttpURLConnection httpConn = null;
 		InputStream input = null;
 		try{
@@ -144,8 +145,8 @@ public final class HttpConnectionManager {
 			byte[] paramsData = null;
 			if(postParams != null){
 				String postParamsStr = HttpManager.concatParams(postParams);
-				postParamsStr = HttpManager.encodeParams(postParamsStr, urlEnc);    //post参数时，需对参数进行url编码
-				paramsData = postParamsStr.getBytes();    //经过url编码之后的参数只含有英文字符，可用任意字符集对其编码
+				if(postParamsEnc != null) postParamsStr = HttpManager.encodeParams(postParamsStr, postParamsEnc);    //post参数时，需对参数进行URL编码
+				paramsData = postParamsStr.getBytes();    //经过外部或内部URL编码之后的参数只含英文，可用任意字符集进行编码
 			}
 			httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, paramsData);
 			HttpResponseResultStream result = new HttpResponseResultStream();
@@ -168,8 +169,8 @@ public final class HttpConnectionManager {
 		}
 	}
 	
-	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams) throws IOException{
-		HttpResponseResultStream result = doPostForStream(url,urlEnc,followRedirects,connOrReadTimeout,requestHeaders,postParams);
+	public static HttpResponseResult doPost(String url,String urlEnc,boolean followRedirects,int connOrReadTimeout,Map<String,List<String>> requestHeaders,Map<String,String> postParams,String postParamsEnc) throws IOException{
+		HttpResponseResultStream result = doPostForStream(url,urlEnc,followRedirects,connOrReadTimeout,requestHeaders,postParams,postParamsEnc);
 		result.generateData();
 		return result;
 	}
@@ -177,7 +178,7 @@ public final class HttpConnectionManager {
 	/**
 	 * 进行http post请求，将以值为application/octet-stream的Content-Type来提交数据
 	 * @param url 请求的url
-	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
+	 * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
 	 * @param requestHeaders 请求头，不需要时可传null
@@ -225,7 +226,7 @@ public final class HttpConnectionManager {
 	/**
 	 * 返回HttpURLConnection实例
 	 * @param url 请求的url
-	 * @param urlEnc URL编码的字符集，将会以此字符集自动进行URL编码
+	 * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
 	 * @param method 请求的方式，如GET,POST
 	 * @param followRedirects 是否自动重定向
 	 * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
@@ -241,7 +242,9 @@ public final class HttpConnectionManager {
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
 		if(currentCMWapChargePageCount < 0) throw new IllegalArgumentException("current CMWap charge page count can not set to below zero.");
 		if(currentCMWapChargePageCount > CMWAP_CHARGEPAGE_MAX_COUNT) throw new IOException("too many showing CMWap charge page times.");
-		String packUrl = HttpManager.encodeURL(url, urlEnc);
+		String packUrl = null;
+		if(urlEnc == null) packUrl = url;
+		else packUrl = HttpManager.encodeURL(url, urlEnc);
 		URL myUrl = new URL(packUrl);
 		String prefix = null;
 		if(isUseCMWap){

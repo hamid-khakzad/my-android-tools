@@ -370,7 +370,7 @@ class DefaultAutoUser extends AutoUser {
 			values.add(sessionCookie);
 			requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE, values);			
 		}
-		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", false, 15000, requestHeaders, params);
+		HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", false, 15000, requestHeaders, params, "gb2312");
 		int code = result.getResponseCode();
 		while(code != HttpURLConnection.HTTP_OK && code == HttpURLConnection.HTTP_MOVED_TEMP){
 			List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
