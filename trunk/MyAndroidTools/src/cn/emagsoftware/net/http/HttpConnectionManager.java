@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.01
+ * @version 3.1
  */
 public final class HttpConnectionManager {
 	
@@ -318,7 +318,7 @@ public final class HttpConnectionManager {
 							}
 							byte[] wmlData = tempOutput.toByteArray();
 							String wmlStr = new String(wmlData,"UTF-8");
-							Log.i("HttpConnectionManager", "would parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
+							Log.i("HttpConnectionManager", "parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
 							//解析资费提示页面中的URL
 							XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 							XmlPullParser xmlParser = factory.newPullParser();
@@ -342,7 +342,7 @@ public final class HttpConnectionManager {
 								eventType = xmlParser.next();
 							}
 							if(parseUrl == null || parseUrl.equals("")) {
-								Log.w("HttpConnectionManager", "could not parse url from CMWap charge page");
+								Log.w("HttpConnectionManager", "could not parse url from CMWap charge page,would use the original url to try again...");
 								parseUrl = url;
 							}
 							return openConnection(parseUrl,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
@@ -363,6 +363,7 @@ public final class HttpConnectionManager {
 				if(location == null) throw new IOException("redirects failed:could not find the location header");
 				if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 				httpConn.disconnect();
+				Log.i("HttpConnectionManager", "follow redirects...");
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 			}else{
 				throw new IOException("requesting returns http code:" + rspCode);
