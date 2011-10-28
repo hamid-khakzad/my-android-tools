@@ -238,6 +238,7 @@ public final class HttpConnectionManager {
 	 * @throws IOException
 	 */
 	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,int currentCMWapChargePageCount,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
+		Log.i("HttpConnectionManager", "the original url is:".concat(url));
 		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
 		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
 		if(currentCMWapChargePageCount < 0) throw new IllegalArgumentException("current CMWap charge page count can not set to below zero.");
