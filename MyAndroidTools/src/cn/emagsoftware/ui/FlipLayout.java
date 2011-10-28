@@ -12,7 +12,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 1.6
+ * @version 2.0
  */
 public class FlipLayout extends ViewGroup {
 
@@ -20,9 +20,7 @@ public class FlipLayout extends ViewGroup {
 	private Scroller mScroller;
 	private VelocityTracker mVelocityTracker;
 	
-	private boolean isRendered = false;
 	private int mCurScreen = -1;
-	private int mTempCurScreen = -1;
 	
 	private static final int TOUCH_STATE_REST = 0;
 	private static final int TOUCH_STATE_SCROLLING = 1;
@@ -50,11 +48,6 @@ public class FlipLayout extends ViewGroup {
 		super(context, attrs, defStyle);
 		// TODO Auto-generated constructor stub
 		mScroller = new Scroller(context);
-		if(attrs != null){
-			//FlipLayout支持以下定义属性
-			String toScreenIndexStr = attrs.getAttributeValue(null, "toScreen");
-			if(toScreenIndexStr != null) setToScreen(Integer.valueOf(toScreenIndexStr));
-		}
 		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 		mTouchSlop = 60;
 	}
@@ -78,40 +71,27 @@ public class FlipLayout extends ViewGroup {
 
     @Override  
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    	//Log.e(TAG, "onMeasure");
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);   
-  
-        final int width = MeasureSpec.getSize(widthMeasureSpec);   
+    	//Log.i(TAG, "onMeasure");
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        
         final int widthMode = MeasureSpec.getMode(widthMeasureSpec);   
-        if (widthMode != MeasureSpec.EXACTLY) {   
+        if (widthMode != MeasureSpec.EXACTLY) {
             throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!"); 
         }
-  
         final int heightMode = MeasureSpec.getMode(heightMeasureSpec);   
-        if (heightMode != MeasureSpec.EXACTLY) {   
+        if (heightMode != MeasureSpec.EXACTLY) {
             throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!");
-        }   
-  
+        }
+        
         // The children are given the same width and height as the flipLayout   
         final int count = getChildCount();   
         for (int i = 0; i < count; i++) {   
             getChildAt(i).measure(widthMeasureSpec, heightMeasureSpec);   
         }
         
-        // Log.e(TAG, "moving to screen "+mCurScreen);
-        isRendered = true;
-        if(mTempCurScreen != -1){
-        	mTempCurScreen = Math.max(0, Math.min(mTempCurScreen, count-1));
-        	scrollTo(mTempCurScreen*width,0);
-        	mCurScreen = mTempCurScreen;
-        	mTempCurScreen = -1;
-        	if(listener != null) listener.onFlingChanged(getChildAt(mCurScreen),mCurScreen);
-        }else if(mCurScreen == -1){
-        	scrollTo(0,0);
-        	mCurScreen = 0;
-        	if(listener != null) listener.onFlingChanged(getChildAt(mCurScreen),mCurScreen);
-        }else{
-        	scrollTo(mCurScreen*width,0);
+        //渲染时的执行逻辑
+        if(mCurScreen == -1 && getChildCount() > 0){    //在没有选择Screen的情况下，将默认选择第一个
+        	setToScreen(0);
         }
     }
     
@@ -127,16 +107,12 @@ public class FlipLayout extends ViewGroup {
     
     public void snapToScreen(int whichScreen) {
     	// get the valid layout page
-    	if(!isRendered){
-    		this.mTempCurScreen = whichScreen;
-    		return;
-    	}
-    	whichScreen = Math.max(0, Math.min(whichScreen, getChildCount()-1));
+    	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
     	if (getScrollX() != (whichScreen*getWidth())) {
     		final int delta = whichScreen*getWidth()-getScrollX();
     		mScroller.startScroll(getScrollX(), 0, delta, 0, Math.abs(delta)*2);
     		invalidate();		// Redraw the layout
-    		if(mCurScreen != whichScreen){
+    		if(whichScreen != mCurScreen){
     			mCurScreen = whichScreen;
     			if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
     		}
@@ -144,13 +120,9 @@ public class FlipLayout extends ViewGroup {
     }
     
     public void setToScreen(int whichScreen) {
-    	if(!isRendered){
-    		this.mTempCurScreen = whichScreen;
-    		return;
-    	}
-    	whichScreen = Math.max(0, Math.min(whichScreen, getChildCount()-1));
+    	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
     	scrollTo(whichScreen*getWidth(), 0);
-    	if(mCurScreen != whichScreen){
+    	if(whichScreen != mCurScreen){
     		mCurScreen = whichScreen;
     		if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
     	}
@@ -184,7 +156,7 @@ public class FlipLayout extends ViewGroup {
 		
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
-			Log.e(TAG, "event down!");
+			Log.i(TAG, "event down!");
 			if (!mScroller.isFinished()){
 				mScroller.abortAnimation();
 			}
@@ -199,22 +171,22 @@ public class FlipLayout extends ViewGroup {
 			break;
 			
 		case MotionEvent.ACTION_UP:
-			Log.e(TAG, "event : up");   
+			Log.i(TAG, "event : up");   
             // if (mTouchState == TOUCH_STATE_SCROLLING) {   
             final VelocityTracker velocityTracker = mVelocityTracker;   
             velocityTracker.computeCurrentVelocity(1000);   
             int velocityX = (int) velocityTracker.getXVelocity();   
 
-            Log.e(TAG, "velocityX:"+velocityX); 
+            Log.i(TAG, "velocityX:"+velocityX); 
             
             if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {   
                 // Fling enough to move left   
-            	Log.e(TAG, "snap left");
+            	Log.i(TAG, "snap left");
                 snapToScreen(mCurScreen - 1);
             } else if (velocityX < -SNAP_VELOCITY   
                     && mCurScreen < getChildCount() - 1) {   
                 // Fling enough to move right   
-            	Log.e(TAG, "snap right");
+            	Log.i(TAG, "snap right");
                 snapToScreen(mCurScreen + 1);
             } else {   
                 snapToDestination();
@@ -238,7 +210,7 @@ public class FlipLayout extends ViewGroup {
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		// TODO Auto-generated method stub
-		//Log.e(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
+		//Log.i(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
 		
 		final int action = ev.getAction();
 		if ((action == MotionEvent.ACTION_MOVE) && (mTouchState != TOUCH_STATE_REST)) {
