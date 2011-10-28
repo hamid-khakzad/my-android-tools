@@ -239,10 +239,10 @@ public final class HttpConnectionManager {
 	 */
 	private static HttpURLConnection openConnection(String url,String urlEnc,String method,boolean followRedirects,int connOrReadTimeout,int currentRedirectCount,int currentCMWapChargePageCount,Map<String,List<String>> requestHeaders,byte[] postData) throws IOException{
 		Log.i("HttpConnectionManager", "the original url is:".concat(url));
-		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero.");
-		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times.");
-		if(currentCMWapChargePageCount < 0) throw new IllegalArgumentException("current CMWap charge page count can not set to below zero.");
-		if(currentCMWapChargePageCount > CMWAP_CHARGEPAGE_MAX_COUNT) throw new IOException("too many showing CMWap charge page times.");
+		if(currentRedirectCount < 0) throw new IllegalArgumentException("current redirect count can not set to below zero");
+		if(currentRedirectCount > REDIRECT_MAX_COUNT) throw new IOException("too many redirect times");
+		if(currentCMWapChargePageCount < 0) throw new IllegalArgumentException("current CMWap charge page count can not set to below zero");
+		if(currentCMWapChargePageCount > CMWAP_CHARGEPAGE_MAX_COUNT) throw new IOException("too many showing CMWap charge page times");
 		String packUrl = null;
 		if(urlEnc == null) packUrl = url;
 		else packUrl = HttpManager.encodeURL(url, urlEnc);
@@ -319,7 +319,7 @@ public final class HttpConnectionManager {
 							}
 							byte[] wmlData = tempOutput.toByteArray();
 							String wmlStr = new String(wmlData,"UTF-8");
-							Log.i("HttpConnectionManager", "would parse the CMWap charge page...(base64 content:" + Base64.encode(wmlData) + ")");
+							Log.i("HttpConnectionManager", "would parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
 							//解析资费提示页面中的URL
 							XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 							XmlPullParser xmlParser = factory.newPullParser();
@@ -361,12 +361,12 @@ public final class HttpConnectionManager {
 				if(!followRedirects) return httpConn;
 				//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
 				String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
-				if(location == null) throw new IOException("Redirects failed.Could not find the location header.");
+				if(location == null) throw new IOException("redirects failed:could not find the location header");
 				if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 				httpConn.disconnect();
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 			}else{
-				throw new IOException("the url named '".concat(packUrl).concat("' returns code:").concat(String.valueOf(rspCode)));
+				throw new IOException("requesting returns http code:" + rspCode);
 			}
 		}catch(IOException e){
 			try{
