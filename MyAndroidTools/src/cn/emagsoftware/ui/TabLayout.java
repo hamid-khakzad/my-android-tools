@@ -55,7 +55,11 @@ public class TabLayout extends ViewGroup {
 		}
 	}
 	
-	protected void initWhenRender(){
+	/**
+	 * <p>刷新所有内容
+	 */
+	protected void refresh(){
+		if(getChildCount() != 2) throw new IllegalStateException("TabLayout can only contains two children!");
 		View child1 = getChildAt(0);
 		View child2 = getChildAt(1);
 		if(!(child1 instanceof ViewGroup) || !(child2 instanceof ViewGroup)) throw new IllegalStateException("TabLayout children should be ViewGroup but not View!");
@@ -69,17 +73,14 @@ public class TabLayout extends ViewGroup {
 			content = childGroup1;
 		}
 		tabs.clear();
-		initTabs(head);
-		if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
-			setSelectedTab(0);
-		}
+		refreshTabs(head);
 	}
 	
 	/**
-	 * <p>使用递归方法初始化所有Tab
+	 * <p>刷新所有Tab，需要在外部先清除原来tabs中的所有内容
 	 * @param view
 	 */
-	protected void initTabs(View view){
+	protected void refreshTabs(View view){
 		if(view.getClass().equals(tabClass)){
 			tabs.add(view);
 			final int index = tabs.size()-1;
@@ -93,7 +94,7 @@ public class TabLayout extends ViewGroup {
 		}else if(view instanceof ViewGroup){
 			ViewGroup vg = (ViewGroup)view;
 			for(int i = 0;i < vg.getChildCount();i++){
-				initTabs(vg.getChildAt(i));
+				refreshTabs(vg.getChildAt(i));
 			}
 		}
 	}
@@ -111,6 +112,7 @@ public class TabLayout extends ViewGroup {
 	}
 	
 	public void setSelectedTab(int index){
+		refresh();
 		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is out of range!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
@@ -181,8 +183,7 @@ public class TabLayout extends ViewGroup {
         //非EXACTLY模式需要根据子容器来计算父容器的大小，对TabLayout而言比较复杂且实际应用中完全可以避免，故暂不支持
         if(widthMode != MeasureSpec.EXACTLY || heightMode != MeasureSpec.EXACTLY) throw new IllegalStateException("TabLayout only can run at EXACTLY mode!");
         
-        int count = getChildCount();
-        if(count != 2) throw new IllegalStateException("TabLayout can only contains two children!");
+        if(getChildCount() != 2) throw new IllegalStateException("TabLayout can only contains two children!");
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
         
@@ -248,7 +249,11 @@ public class TabLayout extends ViewGroup {
 			}
 		}
 		setMeasuredDimension(widthSize, heightSize);
-		initWhenRender();
+		//渲染时的执行逻辑
+		refresh();
+		if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
+			setSelectedTab(0);
+		}
     }
     
 	public interface OnTabChangedListener{
