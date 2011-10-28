@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.0
+ * @version 3.01
  */
 public final class HttpConnectionManager {
 	
@@ -258,6 +258,7 @@ public final class HttpConnectionManager {
 		HttpURLConnection httpConn = null;
 		OutputStream output = null;
 		try{
+			Log.i("HttpConnectionManager", "request url '".concat(packUrl).concat("'..."));
 			if(isSSL) {
 				SSLContext sslCont = SSLContext.getInstance("TLS");
 				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
