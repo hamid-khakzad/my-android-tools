@@ -249,6 +249,7 @@ public class TabLayout extends ViewGroup {
 			}
 		}
 		setMeasuredDimension(widthSize, heightSize);
+		
 		//渲染时的执行逻辑
 		refresh();
 		if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
