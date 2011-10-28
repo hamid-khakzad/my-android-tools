@@ -13,7 +13,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 1.3
+ * @version 2.0
  */
 public class TabLayout extends ViewGroup {
 	
@@ -22,11 +22,9 @@ public class TabLayout extends ViewGroup {
 	public static final String HEAD_POSITION_LEFT = "left";
 	public static final String HEAD_POSITION_RIGHT = "right";
 	
-	protected boolean isRendered = false;
 	protected Class<?> tabClass = Button.class;
 	protected String headPosition = HEAD_POSITION_TOP;
 	protected int selectedTabIndex = -1;
-	protected int tempSelectedTabIndex = -1;
 	
 	protected ViewGroup head = null;
 	protected ViewGroup content = null;
@@ -48,18 +46,16 @@ public class TabLayout extends ViewGroup {
 			//TabLayout支持以下定义属性
 			String tabClassName = attrs.getAttributeValue(null, "tabClass");
 			String headPosition = attrs.getAttributeValue(null, "headPosition");
-			String selectedTabIndexStr = attrs.getAttributeValue(null, "selectedTab");
 			try{
 				if(tabClassName != null) setTabClass(Class.forName(tabClassName));
 			}catch(ClassNotFoundException e){
 				throw new RuntimeException(e);
 			}
 			if(headPosition != null) setHeadPosition(headPosition);
-			if(selectedTabIndexStr != null) setSelectedTab(Integer.valueOf(selectedTabIndexStr));			
 		}
 	}
 	
-	protected void initUI(){
+	protected void initWhenRender(){
 		View child1 = getChildAt(0);
 		View child2 = getChildAt(1);
 		if(!(child1 instanceof ViewGroup) || !(child2 instanceof ViewGroup)) throw new IllegalStateException("TabLayout children should be ViewGroup but not View!");
@@ -74,11 +70,7 @@ public class TabLayout extends ViewGroup {
 		}
 		tabs.clear();
 		initTabs(head);
-		if(tempSelectedTabIndex != -1){
-			int tempSelectedTabIndexCopy = tempSelectedTabIndex;
-			tempSelectedTabIndex = -1;
-			setSelectedTab(tempSelectedTabIndexCopy);
-		}else if(tabs.size() > 0 && selectedTabIndex == -1) {
+		if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
 			setSelectedTab(0);
 		}
 	}
@@ -119,11 +111,7 @@ public class TabLayout extends ViewGroup {
 	}
 	
 	public void setSelectedTab(int index){
-		if(!isRendered){
-			this.tempSelectedTabIndex = index;
-			return;
-		}
-		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is invalid!");
+		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is out of range!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < content.getChildCount();i++){
 			View tabView = tabs.get(i);
@@ -194,7 +182,7 @@ public class TabLayout extends ViewGroup {
         if(widthMode != MeasureSpec.EXACTLY || heightMode != MeasureSpec.EXACTLY) throw new IllegalStateException("TabLayout only can run at EXACTLY mode!");
         
         int count = getChildCount();
-        if(count != 2) throw new IllegalStateException("TabLayout only can contains two children!");
+        if(count != 2) throw new IllegalStateException("TabLayout can only contains two children!");
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
         
@@ -260,8 +248,7 @@ public class TabLayout extends ViewGroup {
 			}
 		}
 		setMeasuredDimension(widthSize, heightSize);
-		isRendered = true;
-		initUI();
+		initWhenRender();
     }
     
 	public interface OnTabChangedListener{
