@@ -20,6 +20,7 @@ public class FlipLayout extends ViewGroup {
 	private Scroller mScroller;
 	private VelocityTracker mVelocityTracker;
 	
+	private boolean isRendered = false;
 	private int mCurScreen = -1;
 	
 	private static final int TOUCH_STATE_REST = 0;
@@ -90,8 +91,13 @@ public class FlipLayout extends ViewGroup {
         }
         
         //渲染时的执行逻辑
+        isRendered = true;
         if(mCurScreen == -1 && getChildCount() > 0){    //在没有选择Screen的情况下，将默认选择第一个
         	setToScreen(0);
+        }else if(mCurScreen != -1){
+        	if(mCurScreen < 0 || mCurScreen >= getChildCount()) throw new IllegalArgumentException("mCurScreen is out of range!");
+        	int width = MeasureSpec.getSize(widthMeasureSpec);
+        	scrollTo(mCurScreen*width,0);
         }
     }
     
@@ -108,20 +114,22 @@ public class FlipLayout extends ViewGroup {
     public void snapToScreen(int whichScreen) {
     	// get the valid layout page
     	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
-    	if (getScrollX() != (whichScreen*getWidth())) {
-    		final int delta = whichScreen*getWidth()-getScrollX();
-    		mScroller.startScroll(getScrollX(), 0, delta, 0, Math.abs(delta)*2);
-    		invalidate();		// Redraw the layout
-    		if(whichScreen != mCurScreen){
-    			mCurScreen = whichScreen;
-    			if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
-    		}
+    	if(isRendered){
+        	if (getScrollX() != (whichScreen*getWidth())) {
+        		final int delta = whichScreen*getWidth()-getScrollX();
+        		mScroller.startScroll(getScrollX(), 0, delta, 0, Math.abs(delta)*2);
+        		invalidate();		// Redraw the layout
+        	}
     	}
+		if(whichScreen != mCurScreen){
+			mCurScreen = whichScreen;
+			if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
+		}
     }
     
     public void setToScreen(int whichScreen) {
     	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
-    	scrollTo(whichScreen*getWidth(), 0);
+    	if(isRendered) scrollTo(whichScreen*getWidth(), 0);
     	if(whichScreen != mCurScreen){
     		mCurScreen = whichScreen;
     		if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
