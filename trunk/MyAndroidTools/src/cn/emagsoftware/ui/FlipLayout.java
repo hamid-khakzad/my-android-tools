@@ -12,7 +12,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 2.0
+ * @version 2.1
  */
 public class FlipLayout extends ViewGroup {
 
@@ -107,7 +107,9 @@ public class FlipLayout extends ViewGroup {
      */
     public void snapToDestination() {
     	final int screenWidth = getWidth();
-    	final int destScreen = (getScrollX()+ screenWidth/2)/screenWidth;
+    	int destScreen = (getScrollX()+ screenWidth/2)/screenWidth;
+    	if(destScreen < 0) destScreen = 0;
+    	else if(destScreen >= getChildCount()) destScreen = getChildCount() - 1;
     	snapToScreen(destScreen);
     }
     
