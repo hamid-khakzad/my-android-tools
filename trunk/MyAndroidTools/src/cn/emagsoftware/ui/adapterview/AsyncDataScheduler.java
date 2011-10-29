@@ -253,20 +253,13 @@ public class AsyncDataScheduler {
 													if(!curHolder.isAsyncDataCompleted(i)) asyncDataIndexes.add(i);
 													mExtractedAsyncDataIndex = i;
 												}
-												mExtractedAsyncDataIndex = mExtractedAsyncDataIndex + 1;
-												if(mExtractedAsyncDataIndex >= curHolder.getAsyncDataCount()){
+												if(asyncDataIndexes.size() == 0){
 													mExtractedAsyncDataIndex = 0;
 													mExtractedIndex = endIndex;
+													continue;
 												}else{
-													boolean isAllAsyncDataCompleted = true;
-													for(int i = mExtractedAsyncDataIndex;i < curHolder.getAsyncDataCount();i++){
-														if(!curHolder.isAsyncDataCompleted(i)){
-															mExtractedAsyncDataIndex = i;
-															isAllAsyncDataCompleted = false;
-															break;
-														}
-													}
-													if(isAllAsyncDataCompleted){
+													mExtractedAsyncDataIndex = mExtractedAsyncDataIndex + 1;
+													if(mExtractedAsyncDataIndex >= curHolder.getAsyncDataCount()){
 														mExtractedAsyncDataIndex = 0;
 														mExtractedIndex = endIndex;
 													}
