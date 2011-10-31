@@ -1,6 +1,10 @@
 package cn.emagsoftware.ui;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import android.content.Context;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -12,7 +16,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 2.1
+ * @version 2.2
  */
 public class FlipLayout extends ViewGroup {
 
@@ -113,7 +117,7 @@ public class FlipLayout extends ViewGroup {
     	snapToScreen(destScreen);
     }
     
-    public void snapToScreen(int whichScreen) {
+    public void snapToScreen(final int whichScreen) {
     	// get the valid layout page
     	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
     	if(isRendered){
@@ -121,6 +125,27 @@ public class FlipLayout extends ViewGroup {
         		final int delta = whichScreen*getWidth()-getScrollX();
         		mScroller.startScroll(getScrollX(), 0, delta, 0, Math.abs(delta)*2);
         		invalidate();		// Redraw the layout
+        		if(whichScreen != mCurScreen){
+        			final Handler handler = new Handler();
+        			new Timer().schedule(new TimerTask() {
+						@Override
+						public void run() {
+							// TODO Auto-generated method stub
+							if(mScroller.isFinished()){
+								this.cancel();
+								handler.post(new Runnable() {
+									@Override
+									public void run() {
+										// TODO Auto-generated method stub
+										mCurScreen = whichScreen;
+										if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
+									}
+								});
+							}
+						}
+					}, 0, 100);
+        		}
+        		return;
         	}
     	}
 		if(whichScreen != mCurScreen){
