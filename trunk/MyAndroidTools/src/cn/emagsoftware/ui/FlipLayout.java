@@ -16,12 +16,16 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 2.2
+ * @version 2.3
  */
 public class FlipLayout extends ViewGroup {
 
 	private static final String TAG = "FlipLayout";
 	private Scroller mScroller;
+	/**监控mScroller是否停止滚动的定时器*/
+	private Timer mScrollerTimer = new Timer();
+	/**监控mScroller是否停止滚动的任务*/
+	private TimerTask mScrollerTask = null;
 	private VelocityTracker mVelocityTracker;
 	
 	private boolean isRendered = false;
@@ -121,18 +125,28 @@ public class FlipLayout extends ViewGroup {
     	// get the valid layout page
     	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
     	if(isRendered){
-        	if (getScrollX() != (whichScreen*getWidth())) {
-        		final int delta = whichScreen*getWidth()-getScrollX();
-        		mScroller.startScroll(getScrollX(), 0, delta, 0, Math.abs(delta)*2);
+			if(mScrollerTask != null) mScrollerTask.cancel();
+			mScroller.forceFinished(true);
+			int scrollX = getScrollX();
+			final int toWidth = whichScreen*getWidth();
+			
+			
+			
+			
+			
+        	if (scrollX != toWidth) {
+        		final int delta = toWidth-scrollX;
+        		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
         		invalidate();		// Redraw the layout
         		if(whichScreen != mCurScreen){
         			final Handler handler = new Handler();
-        			new Timer().schedule(new TimerTask() {
+        			mScrollerTask = new TimerTask() {
 						@Override
 						public void run() {
 							// TODO Auto-generated method stub
 							if(mScroller.isFinished()){
 								this.cancel();
+								if(getScrollX() != toWidth) return;    //被中断将不回调
 								handler.post(new Runnable() {
 									@Override
 									public void run() {
@@ -143,7 +157,9 @@ public class FlipLayout extends ViewGroup {
 								});
 							}
 						}
-					}, 0, 100);
+					};
+					mScrollerTimer.purge();
+					mScrollerTimer.schedule(mScrollerTask,0,100);
         		}
         		return;
         	}
