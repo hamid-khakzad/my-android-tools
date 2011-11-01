@@ -16,7 +16,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 2.4
+ * @version 3.0
  */
 public class FlipLayout extends ViewGroup {
 
@@ -30,16 +30,15 @@ public class FlipLayout extends ViewGroup {
 	
 	private boolean isRendered = false;
 	private int mCurScreen = -1;
-	
-	private static final int TOUCH_STATE_REST = 0;
-	private static final int TOUCH_STATE_SCROLLING = 1;
+	/**在onTouchEvent事件中使用到的临时当前Screen序号*/
+	private int mTempCurScreen = -1;
 	
 	private static final int SNAP_VELOCITY = 600;
 	
-	private int mTouchState = TOUCH_STATE_REST;
 	private int mTouchSlop;
 	private float mLastMotionX;
-	//private float mLastMotionY;
+	/**一连串ACTION_MOVE事件中的第一个是否已经过去*/
+	private boolean isFirstMoveActionPassed = false;
 	/**是否请求了进行水平的滑动*/
 	private boolean mRequestHorizontalFlip = false;
 	
@@ -100,12 +99,17 @@ public class FlipLayout extends ViewGroup {
         
         //渲染时的执行逻辑
         isRendered = true;
-        if(mCurScreen == -1 && getChildCount() > 0){    //在没有选择Screen的情况下，将默认选择第一个
-        	setToScreen(0);
-        }else if(mCurScreen != -1){
-        	if(mCurScreen < 0 || mCurScreen >= getChildCount()) throw new IllegalArgumentException("mCurScreen is out of range!");
-        	int width = MeasureSpec.getSize(widthMeasureSpec);
-        	scrollTo(mCurScreen*width,0);
+        int childCount = getChildCount();
+        if(childCount == 0){
+        	throw new IllegalArgumentException("FlipLayout must have one child at least!");
+        }else{
+        	if(mCurScreen == -1){    //在没有选择Screen的情况下，将默认选择第一个
+        		setToScreen(0);
+        	}else{
+            	if(mCurScreen < 0 || mCurScreen >= childCount) throw new IllegalArgumentException("mCurScreen is out of range:"+mCurScreen+"!");
+            	int width = MeasureSpec.getSize(widthMeasureSpec);
+            	scrollTo(mCurScreen*width,0);
+        	}
         }
     }
     
@@ -123,7 +127,7 @@ public class FlipLayout extends ViewGroup {
     
     public void snapToScreen(final int whichScreen) {
     	// get the valid layout page
-    	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
+    	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range:"+whichScreen+"!");
     	if(isRendered){
     		if(mScrollerTask != null) mScrollerTask.cancel();
     		final int toWidth = whichScreen*getWidth();
@@ -132,7 +136,6 @@ public class FlipLayout extends ViewGroup {
     		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
     		invalidate();		// Redraw the layout
     		if(whichScreen != mCurScreen){
-    			mCurScreen = whichScreen;
     			final Handler handler = new Handler();
     			mScrollerTask = new TimerTask() {
 					@Override
@@ -145,6 +148,7 @@ public class FlipLayout extends ViewGroup {
 								@Override
 								public void run() {
 									// TODO Auto-generated method stub
+									mCurScreen = whichScreen;
 									if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
 								}
 							});
@@ -161,7 +165,7 @@ public class FlipLayout extends ViewGroup {
     }
     
     public void setToScreen(int whichScreen) {
-    	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
+    	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range:"+whichScreen+"!");
     	if(isRendered) scrollTo(whichScreen*getWidth(), 0);
     	if(whichScreen != mCurScreen){
     		mCurScreen = whichScreen;
@@ -173,7 +177,7 @@ public class FlipLayout extends ViewGroup {
     	return mCurScreen;
     }
     
-	@Override
+    @Override
 	public void computeScroll() {
 		// TODO Auto-generated method stub
 		if (mScroller.computeScrollOffset()) {
@@ -181,108 +185,92 @@ public class FlipLayout extends ViewGroup {
 			postInvalidate();
 		}
 	}
-
+    
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		// TODO Auto-generated method stub
-		
-		if (mVelocityTracker == null) {
-			mVelocityTracker = VelocityTracker.obtain();
-		}
+		if (mVelocityTracker == null) mVelocityTracker = VelocityTracker.obtain();
 		mVelocityTracker.addMovement(event);
 		
 		final int action = event.getAction();
 		final float x = event.getX();
-		//final float y = event.getY();
 		
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
 			Log.i(TAG, "event down!");
 			if (!mScroller.isFinished()){
-				mScroller.abortAnimation();
+				mScroller.forceFinished(true);
 			}
 			mLastMotionX = x;
-			break;
-			
+			return true;
 		case MotionEvent.ACTION_MOVE:
+			if(!isFirstMoveActionPassed){
+		    	final int screenWidth = getWidth();
+		    	mTempCurScreen = (getScrollX()+ screenWidth/2)/screenWidth;
+		    	if(mTempCurScreen < 0) mTempCurScreen = 0;
+		    	else if(mTempCurScreen >= getChildCount()) mTempCurScreen = getChildCount() - 1;
+				isFirstMoveActionPassed = true;
+			}
+			
 			int deltaX = (int)(mLastMotionX - x);
 			mLastMotionX = x;
-			
             scrollBy(deltaX, 0);
-			break;
-			
-		case MotionEvent.ACTION_UP:
-			Log.i(TAG, "event : up");   
-            // if (mTouchState == TOUCH_STATE_SCROLLING) {   
-            final VelocityTracker velocityTracker = mVelocityTracker;   
-            velocityTracker.computeCurrentVelocity(1000);   
-            int velocityX = (int) velocityTracker.getXVelocity();   
-
-            Log.i(TAG, "velocityX:"+velocityX); 
             
-            if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {   
+			return true;
+		case MotionEvent.ACTION_UP:
+			Log.i(TAG, "event up!");
+			isFirstMoveActionPassed = false;
+			mVelocityTracker.computeCurrentVelocity(1000);
+            int velocityX = (int) mVelocityTracker.getXVelocity();
+            mVelocityTracker.recycle();
+            mVelocityTracker = null;
+            Log.i(TAG, "velocityX:"+velocityX);
+            
+            if (velocityX > SNAP_VELOCITY && mTempCurScreen > 0) {
                 // Fling enough to move left   
             	Log.i(TAG, "snap left");
-                snapToScreen(mCurScreen - 1);
-            } else if (velocityX < -SNAP_VELOCITY   
-                    && mCurScreen < getChildCount() - 1) {   
+                snapToScreen(mTempCurScreen - 1);
+            } else if (velocityX < -SNAP_VELOCITY && mTempCurScreen < getChildCount() - 1) {
                 // Fling enough to move right   
             	Log.i(TAG, "snap right");
-                snapToScreen(mCurScreen + 1);
-            } else {   
+                snapToScreen(mTempCurScreen + 1);
+            } else {
                 snapToDestination();
-            }   
-
-            if (mVelocityTracker != null) {   
-                mVelocityTracker.recycle();   
-                mVelocityTracker = null;   
-            }   
-            // }   
-            mTouchState = TOUCH_STATE_REST;   
-			break;
+            }
+            
+            return true;
 		case MotionEvent.ACTION_CANCEL:
-			mTouchState = TOUCH_STATE_REST;
-			break;
+			return true;
+		default:
+			return true;
 		}
-		
-		return true;
 	}
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		// TODO Auto-generated method stub
-		//Log.i(TAG, "onInterceptTouchEvent-slop:"+mTouchSlop);
-		
 		final int action = ev.getAction();
-		if ((action == MotionEvent.ACTION_MOVE) && (mTouchState != TOUCH_STATE_REST)) {
-			return true;
-		}
-		
 		final float x = ev.getX();
-		//final float y = ev.getY();
 		
 		switch (action) {
-		case MotionEvent.ACTION_MOVE:
-			final int xDiff = (int)Math.abs(mLastMotionX-x);
-			if (xDiff>mTouchSlop && !mRequestHorizontalFlip) {
-				mTouchState = TOUCH_STATE_SCROLLING;
-			}
-			break;
 		case MotionEvent.ACTION_DOWN:
 			mLastMotionX = x;
-			//mLastMotionY = y;
 			boolean isFinished = mScroller.isFinished();
-			mTouchState = isFinished ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
-			mRequestHorizontalFlip = isFinished ? false : mRequestHorizontalFlip;
-			break;
-		case MotionEvent.ACTION_CANCEL:
-		case MotionEvent.ACTION_UP:
-			mTouchState = TOUCH_STATE_REST;
 			mRequestHorizontalFlip = false;
-			break;
+			return isFinished ? false : true;    //正在滚动时发生的事件将被拦截，并且后续事件也将被拦截
+		case MotionEvent.ACTION_MOVE:
+			if(mRequestHorizontalFlip) return false;
+			else{
+				final int xDistence = (int)Math.abs(x-mLastMotionX);
+				if(xDistence > mTouchSlop) return true;    //超过指定距离将被拦截，并且后续事件也将被拦截
+				else return false;
+			}
+		case MotionEvent.ACTION_UP:
+		case MotionEvent.ACTION_CANCEL:
+			return false;
+		default:
+			return false;
 		}
-		
-		return mTouchState != TOUCH_STATE_REST;
 	}
 	
 	public void requestHorizontalFlip(){
