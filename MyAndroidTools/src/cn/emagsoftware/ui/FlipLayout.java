@@ -16,7 +16,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 2.3
+ * @version 2.4
  */
 public class FlipLayout extends ViewGroup {
 
@@ -126,8 +126,9 @@ public class FlipLayout extends ViewGroup {
     	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
     	if(isRendered){
     		if(mScrollerTask != null) mScrollerTask.cancel();
+    		final int toWidth = whichScreen*getWidth();
 			final int scrollX = getScrollX();
-			final int delta = whichScreen*getWidth()-scrollX;
+			final int delta = toWidth-scrollX;
     		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
     		invalidate();		// Redraw the layout
     		if(whichScreen != mCurScreen){
@@ -139,11 +140,11 @@ public class FlipLayout extends ViewGroup {
 						// TODO Auto-generated method stub
 						if(mScroller.isFinished()){
 							this.cancel();
+							if(getScrollX() != toWidth) return;    //被中断将不回调
 							handler.post(new Runnable() {
 								@Override
 								public void run() {
 									// TODO Auto-generated method stub
-									if(mCurScreen != whichScreen) return;    //被中断将不回调
 									if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
 								}
 							});
