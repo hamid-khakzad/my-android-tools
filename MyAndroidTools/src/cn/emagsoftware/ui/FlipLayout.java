@@ -125,46 +125,35 @@ public class FlipLayout extends ViewGroup {
     	// get the valid layout page
     	if(whichScreen < 0 || whichScreen >= getChildCount()) throw new IllegalArgumentException("whichScreen is out of range!");
     	if(isRendered){
-			if(mScrollerTask != null) mScrollerTask.cancel();
-			mScroller.forceFinished(true);
-			int scrollX = getScrollX();
-			final int toWidth = whichScreen*getWidth();
-			
-			
-			
-			
-			
-        	if (scrollX != toWidth) {
-        		final int delta = toWidth-scrollX;
-        		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
-        		invalidate();		// Redraw the layout
-        		if(whichScreen != mCurScreen){
-        			final Handler handler = new Handler();
-        			mScrollerTask = new TimerTask() {
-						@Override
-						public void run() {
-							// TODO Auto-generated method stub
-							if(mScroller.isFinished()){
-								this.cancel();
-								if(getScrollX() != toWidth) return;    //被中断将不回调
-								handler.post(new Runnable() {
-									@Override
-									public void run() {
-										// TODO Auto-generated method stub
-										mCurScreen = whichScreen;
-										if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
-									}
-								});
-							}
+    		if(mScrollerTask != null) mScrollerTask.cancel();
+			final int scrollX = getScrollX();
+			final int delta = whichScreen*getWidth()-scrollX;
+    		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
+    		invalidate();		// Redraw the layout
+    		if(whichScreen != mCurScreen){
+    			mCurScreen = whichScreen;
+    			final Handler handler = new Handler();
+    			mScrollerTask = new TimerTask() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						if(mScroller.isFinished()){
+							this.cancel();
+							handler.post(new Runnable() {
+								@Override
+								public void run() {
+									// TODO Auto-generated method stub
+									if(mCurScreen != whichScreen) return;    //被中断将不回调
+									if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
+								}
+							});
 						}
-					};
-					mScrollerTimer.purge();
-					mScrollerTimer.schedule(mScrollerTask,0,100);
-        		}
-        		return;
-        	}
-    	}
-		if(whichScreen != mCurScreen){
+					}
+				};
+				mScrollerTimer.purge();
+				mScrollerTimer.schedule(mScrollerTask,0,100);
+    		}
+    	}else if(whichScreen != mCurScreen){
 			mCurScreen = whichScreen;
 			if(listener != null) listener.onFlingChanged(getChildAt(whichScreen),whichScreen);
 		}
