@@ -239,6 +239,13 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	    						((AbsListView)view).setSelector(d);
 	    					}
 	    				}
+	    			}else if(name.equals("cacheColorHint")){
+	    				if(view instanceof AbsListView){
+	    					ColorStateList c = getPackageColor(context.getResources().getResourceEntryName(resId));
+	    					if(c != null){
+	    						((AbsListView)view).setCacheColorHint(c.getDefaultColor());
+	    					}
+	    				}
 	    			}else if(name.equals("drawableRight")){
 	    				if(view instanceof TextView){
 	    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
@@ -335,6 +342,14 @@ public class ThemeFactory implements LayoutInflater.Factory {
 						value = value.substring("@drawable/".length());
 						Drawable d = getPackageDrawable(value);
 						if(d != null) lv.setSelector(d);
+					}
+				}
+				value = style.get("android:cacheColorHint");
+				if(value != null){
+					if(value.startsWith("@color/")){
+						value = value.substring("@color/".length());
+						ColorStateList c = getPackageColor(value);
+						if(c != null) lv.setCacheColorHint(c.getDefaultColor());
 					}
 				}
 			}
