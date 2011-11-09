@@ -75,15 +75,15 @@ public final class NetManager {
 	 */
 	public static String getNetworkInfoType(NetworkInfo info){
 		String type = info.getTypeName();
-		String extraInfo = info.getExtraInfo();
-		if(type == null) {
-			if(extraInfo == null) return null;
-			else return extraInfo.toUpperCase();
-		}else{
-			if (type.equals("WIFI")) return type;
+		if(type.equals("WIFI")) return "WIFI";
+		else{
+			String extraInfo = info.getExtraInfo();
+			if(extraInfo == null) return type;
 			else{
-				if(extraInfo == null) return type;
-				else return extraInfo.toUpperCase();
+				extraInfo = extraInfo.toUpperCase();
+				if(extraInfo.indexOf("CMNET") != -1) return "CMNET";    //有些机型返回的是不精确的类型，如CMNET:GSM
+				else if(extraInfo.indexOf("CMWAP") != -1) return "CMWAP";    //有些机型返回的是不精确的类型，如CMWAP:GSM
+				else return extraInfo;
 			}
 		}
 	}
