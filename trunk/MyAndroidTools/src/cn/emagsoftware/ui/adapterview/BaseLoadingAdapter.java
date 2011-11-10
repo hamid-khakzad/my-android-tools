@@ -44,6 +44,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 				super.onRunNoUI(context);
 				return onLoad(context,condition);
 			}
+			@SuppressWarnings("unchecked")
 			@Override
 			protected void onSuccessUI(Context context,Object result) {
 				// TODO Auto-generated method stub
