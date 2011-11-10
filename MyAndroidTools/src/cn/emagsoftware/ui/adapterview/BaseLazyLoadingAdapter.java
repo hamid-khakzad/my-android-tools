@@ -73,6 +73,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				super.onRunNoUI(context);
 				return onLoad(context,condition,mStart,mLimit);
 			}
+			@SuppressWarnings("unchecked")
 			@Override
 			protected void onSuccessUI(Context context,Object result) {
 				// TODO Auto-generated method stub

@@ -146,7 +146,7 @@ public class AsyncDataScheduler {
 						DataHolder holder = holders.get(i);
 						boolean isAllAsyncDataCompleted = true;
 						for(int j = 0;j < holder.getAsyncDataCount();j++){
-							if(!holder.isAsyncDataCompleted(j)){
+							if(holder.getAsyncData(j) == null){
 								isAllAsyncDataCompleted = false;
 								break;
 							}
@@ -199,7 +199,7 @@ public class AsyncDataScheduler {
 							DataHolder holder = mExtractedHolders.get(i);
 							int curAsyncDataCount = 0;
 							for(int j = 0;j < holder.getAsyncDataCount();j++){
-								if(!holder.isAsyncDataCompleted(j)) curAsyncDataCount = curAsyncDataCount + 1;
+								if(holder.getAsyncData(j) == null) curAsyncDataCount = curAsyncDataCount + 1;
 							}
 							int remainder = curAsyncDataCount%asyncDataCount;
 							int curThreadCount;
@@ -250,7 +250,7 @@ public class AsyncDataScheduler {
 													if(asyncDataCount != -1){
 														if(asyncDataIndexes.size() >= asyncDataCount) break;
 													}
-													if(!curHolder.isAsyncDataCompleted(i)) asyncDataIndexes.add(i);
+													if(curHolder.getAsyncData(i) == null) asyncDataIndexes.add(i);
 													mExtractedAsyncDataIndex = i;
 												}
 												if(asyncDataIndexes.size() == 0){
@@ -275,20 +275,6 @@ public class AsyncDataScheduler {
 									//执行加载逻辑
 									try{
 										mExecutor.onExecute(positions, dataHolders, asyncDataIndexes);
-										//置执行成功标志
-										for(int i = 0;i < positions.size();i++){
-											DataHolder dholder = dataHolders.get(i);
-											if(asyncDataIndexes == null) {
-												for(int j = 0;j < dholder.getAsyncDataCount();j++){
-													dholder.setAsyncDataCompleted(j,true);
-												}
-											}else{
-												for(int j = 0;j < asyncDataIndexes.size();j++){
-													int index = asyncDataIndexes.get(j);
-													dholder.setAsyncDataCompleted(index, true);
-												}
-											}
-										}
 										//更新显示
 										new Handler(Looper.getMainLooper()).post(new Runnable() {
 											@Override
