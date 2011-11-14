@@ -2,8 +2,10 @@ package cn.emagsoftware.ui.adapterview;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -23,6 +25,8 @@ public class AsyncDataScheduler {
 	protected GenericAdapter mGenericAdapter = null;
 	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
+	
+	protected Map<Integer,DataHolder> mResolvedHolders = Collections.synchronizedMap(new HashMap<Integer,DataHolder>());
 	
 	protected int mExtractedAsyncDataIndex = 0;
 	protected int mExtractedIndex = 0;
@@ -143,12 +147,16 @@ public class AsyncDataScheduler {
 					}
 					//过滤新获取到的队列
 					for(int i = 0;i < positions.size();i++){
+						int position = positions.get(i);
 						DataHolder holder = holders.get(i);
 						boolean isAllAsyncDataCompleted = true;
 						for(int j = 0;j < holder.getAsyncDataCount();j++){
-							if(holder.getAsyncData(j) == null){
+							Object asyncData = holder.getAsyncData(j);
+							if(asyncData == null) {
 								isAllAsyncDataCompleted = false;
-								break;
+							}else {
+								holder.setAsyncData(j, asyncData);    //可能是弱引用，将其升级为强引用
+								mResolvedHolders.put(position, holder);
 							}
 						}
 						if(isAllAsyncDataCompleted){
@@ -275,7 +283,38 @@ public class AsyncDataScheduler {
 									//执行加载逻辑
 									try{
 										mExecutor.onExecute(positions, dataHolders, asyncDataIndexes);
-										//更新显示
+									}catch(Exception e){
+										int from = positions.get(0);
+										int to = positions.get(positions.size() - 1);
+										Log.e("AsyncDataScheduler", "execute async data failed from position "+from+" to "+to+".", e);
+									}
+									//添加加载过的DataHolder到mResolvedHolders
+									boolean hasExecuteOneAtLeast = false;
+									if(asyncDataIndexes == null){
+										for(int i = 0;i < positions.size();i++){
+											int position = positions.get(i);
+											DataHolder holder = dataHolders.get(i);
+											for(int j = 0;j < holder.getAsyncDataCount();j++){
+												if(holder.getAsyncData(j) != null){
+													hasExecuteOneAtLeast = true;
+													mResolvedHolders.put(position, holder);
+													break;
+												}
+											}
+										}
+									}else{
+										int position = positions.get(0);
+										DataHolder holder = dataHolders.get(0);
+										for(int i = 0;i < asyncDataIndexes.size();i++){
+											if(holder.getAsyncData(asyncDataIndexes.get(i)) != null){
+												hasExecuteOneAtLeast = true;
+												mResolvedHolders.put(position, holder);
+												break;
+											}
+										}
+									}
+									//更新界面
+									if(hasExecuteOneAtLeast){
 										new Handler(Looper.getMainLooper()).post(new Runnable() {
 											@Override
 											public void run() {
@@ -284,10 +323,6 @@ public class AsyncDataScheduler {
 												mGenericAdapter.notifyDataSetChanged();
 											}
 										});
-									}catch(Exception e){
-										int from = positions.get(0);
-										int to = positions.get(positions.size() - 1);
-										Log.e("AsyncDataScheduler", "execute async data failed from position "+from+" to "+to+".", e);
 									}
 								}
 							}
