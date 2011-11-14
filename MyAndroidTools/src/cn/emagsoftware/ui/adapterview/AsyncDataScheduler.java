@@ -27,6 +27,9 @@ public class AsyncDataScheduler {
 	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
+	/**额外的(可见范围之外的)保持异步数据不被清理的个数*/
+	protected int mExtraCountForKeepingData = 0;
+	
 	protected Map<Integer,DataHolder> mResolvedHolders = Collections.synchronizedMap(new HashMap<Integer,DataHolder>());
 	
 	protected int mExtractedAsyncDataIndex = 0;
@@ -82,6 +85,15 @@ public class AsyncDataScheduler {
 	 */
 	public AsyncDataExecutor getAsyncDataExecutor(){
 		return mExecutor;
+	}
+	
+	/**
+	 * <p>设置额外的(可见范围之外的)保持异步数据不被清理的个数
+	 * @param extraCount
+	 */
+	public void setExtraCountForKeepingData(int extraCount){
+		if(extraCount < 0) throw new IllegalArgumentException("extraCount should be great than zero or equals zero");
+		mExtraCountForKeepingData = extraCount;
 	}
 	
 	/**
@@ -141,11 +153,11 @@ public class AsyncDataScheduler {
 							throw new RuntimeException(e);
 						}
 					}
-					//将不可见DataHolder的异步数据修改为弱引用，方便GC回收
+					//将范围外DataHolder的异步数据修改为弱引用，方便GC回收
 					Iterator<Integer> resolvedPositions = mResolvedHolders.keySet().iterator();
 					while(resolvedPositions.hasNext()){
 						int position = resolvedPositions.next();
-						if(position < firstAndLastIndex[0] || position > firstAndLastIndex[1]){
+						if(position < firstAndLastIndex[0]-mExtraCountForKeepingData || position > firstAndLastIndex[1]+mExtraCountForKeepingData){
 							DataHolder holder = mResolvedHolders.get(position);
 							for(int i = 0;i < holder.getAsyncDataCount();i++){
 								holder.changeAsyncDataToSoftReference(i);
