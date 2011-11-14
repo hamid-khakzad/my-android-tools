@@ -56,11 +56,14 @@ public abstract class DataHolder {
 	 * @param index 异步数据的位置
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public Object getAsyncData(int index){
-		SoftReference<Object> asyncDataRef = (SoftReference<Object>)mAsyncData[index];
-		if(asyncDataRef == null) return null;
-		return asyncDataRef.get();
+		Object asyncData = mAsyncData[index];
+		if(asyncData instanceof SoftReference<?>){
+			SoftReference<?> asyncDataRef = (SoftReference<?>)asyncData;
+			return asyncDataRef.get();
+		}else{
+			return asyncData;
+		}
 	}
 	
 	/**
@@ -69,6 +72,17 @@ public abstract class DataHolder {
 	 * @param asyncData
 	 */
 	public void setAsyncData(int index,Object asyncData){
+		if(asyncData instanceof SoftReference<?>) throw new IllegalArgumentException("asyncData can not be a type of SoftReference which is used by itself");
+		mAsyncData[index] = asyncData;
+	}
+	
+	/**
+	 * <p>把指定位置的异步数据调整为弱引用，方便GC进行回收
+	 * @param index
+	 */
+	public void changeAsyncDataToSoftReference(int index){
+		Object asyncData = mAsyncData[index];
+		if(asyncData instanceof SoftReference<?>) return;
 		mAsyncData[index] = new SoftReference<Object>(asyncData);
 	}
 	
