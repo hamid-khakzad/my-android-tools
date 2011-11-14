@@ -27,7 +27,7 @@ public class AsyncDataScheduler {
 	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
-	/**额外的(可见范围之外的)保持异步数据不被清理的个数*/
+	/**额外的(可见范围之外的)保持异步数据不被回收的个数*/
 	protected int mExtraCountForKeepingData = 0;
 	
 	protected Map<Integer,DataHolder> mResolvedHolders = Collections.synchronizedMap(new HashMap<Integer,DataHolder>());
@@ -88,7 +88,7 @@ public class AsyncDataScheduler {
 	}
 	
 	/**
-	 * <p>设置额外的(可见范围之外的)保持异步数据不被清理的个数
+	 * <p>设置额外的(可见范围之外的)保持异步数据不被回收的个数
 	 * @param extraCount
 	 */
 	public void setExtraCountForKeepingData(int extraCount){
