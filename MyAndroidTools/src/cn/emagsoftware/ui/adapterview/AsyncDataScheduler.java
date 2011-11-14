@@ -3,6 +3,7 @@ package cn.emagsoftware.ui.adapterview;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +109,7 @@ public class AsyncDataScheduler {
 					}
 					//获取当前时间点需要处理的队列
 					final boolean[] isOK = {false};
+					final int[] firstAndLastIndex = {0,0};
 					final List<Integer> positions = new LinkedList<Integer>();
 					final List<DataHolder> holders = new LinkedList<DataHolder>();
 					new Handler(Looper.getMainLooper()).post(new Runnable() {
@@ -119,13 +121,13 @@ public class AsyncDataScheduler {
 								isOK[0] = true;
 								return;
 							}
-							int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
-							int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
-							if(first < 0) first = 0;
-							else if(first >= count) first = count - 1;
-							if(last < 0) last = 0;
-							else if(last >= count) last = count - 1;
-							for(int i = first;i < last + 1;i++){
+							firstAndLastIndex[0] = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+							firstAndLastIndex[1] = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+							if(firstAndLastIndex[0] < 0) firstAndLastIndex[0] = 0;
+							else if(firstAndLastIndex[0] >= count) firstAndLastIndex[0] = count - 1;
+							if(firstAndLastIndex[1] < 0) firstAndLastIndex[1] = 0;
+							else if(firstAndLastIndex[1] >= count) firstAndLastIndex[1] = count - 1;
+							for(int i = firstAndLastIndex[0];i < firstAndLastIndex[1] + 1;i++){
 								positions.add(i);
 								holders.add(mGenericAdapter.queryDataHolder(i));
 							}
@@ -137,6 +139,18 @@ public class AsyncDataScheduler {
 							sleep(200);
 						}catch(InterruptedException e){
 							throw new RuntimeException(e);
+						}
+					}
+					//将不可见DataHolder的异步数据修改为弱引用，方便GC回收
+					Iterator<Integer> resolvedPositions = mResolvedHolders.keySet().iterator();
+					while(resolvedPositions.hasNext()){
+						int position = resolvedPositions.next();
+						if(position < firstAndLastIndex[0] || position > firstAndLastIndex[1]){
+							DataHolder holder = mResolvedHolders.get(position);
+							for(int i = 0;i < holder.getAsyncDataCount();i++){
+								holder.changeAsyncDataToSoftReference(i);
+							}
+							mResolvedHolders.remove(position);
 						}
 					}
 					synchronized(mLockStop){
