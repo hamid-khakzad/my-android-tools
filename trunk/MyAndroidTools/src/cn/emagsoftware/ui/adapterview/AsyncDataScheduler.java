@@ -150,7 +150,7 @@ public class AsyncDataScheduler {
 							for(int i = 0;i < holder.getAsyncDataCount();i++){
 								holder.changeAsyncDataToSoftReference(i);
 							}
-							mResolvedHolders.remove(position);
+							resolvedPositions.remove();
 						}
 					}
 					synchronized(mLockStop){
