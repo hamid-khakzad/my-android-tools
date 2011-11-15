@@ -27,8 +27,10 @@ public class AsyncDataScheduler {
 	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
 	
+	/**额外的(可见范围之外的)需加载异步数据的个数*/
+	protected int mExtraCountForExecutingData = 0;
 	/**额外的(可见范围之外的)保持异步数据不被回收的个数*/
-	protected int mExtraCountForKeepingData = 0;
+	protected int mExtraCountForKeepingData = 5;
 	
 	protected Map<Integer,DataHolder> mResolvedHolders = Collections.synchronizedMap(new HashMap<Integer,DataHolder>());
 	
@@ -88,6 +90,15 @@ public class AsyncDataScheduler {
 	}
 	
 	/**
+	 * <p>设置额外的(可见范围之外的)需加载异步数据的个数
+	 * @param extraCount
+	 */
+	public void setExtraCountForExecutingData(int extraCount){
+		if(extraCount < 0) throw new IllegalArgumentException("extraCount should be great than zero or equals zero");
+		mExtraCountForExecutingData = extraCount;
+	}
+	
+	/**
 	 * <p>设置额外的(可见范围之外的)保持异步数据不被回收的个数
 	 * @param extraCount
 	 */
@@ -139,7 +150,11 @@ public class AsyncDataScheduler {
 							else if(firstAndLastIndex[0] >= count) firstAndLastIndex[0] = count - 1;
 							if(firstAndLastIndex[1] < 0) firstAndLastIndex[1] = 0;
 							else if(firstAndLastIndex[1] >= count) firstAndLastIndex[1] = count - 1;
-							for(int i = firstAndLastIndex[0];i < firstAndLastIndex[1] + 1;i++){
+							int first = firstAndLastIndex[0] - mExtraCountForExecutingData;
+							if(first < 0) first = 0;
+							int last = firstAndLastIndex[1] + mExtraCountForExecutingData;
+							if(last < 0 || last >= count) last = count - 1;
+							for(int i = first;i < last + 1;i++){
 								positions.add(i);
 								holders.add(mGenericAdapter.queryDataHolder(i));
 							}
@@ -155,9 +170,12 @@ public class AsyncDataScheduler {
 					}
 					//将范围外DataHolder的异步数据修改为弱引用，方便GC回收
 					Iterator<Integer> resolvedPositions = mResolvedHolders.keySet().iterator();
+					int first = firstAndLastIndex[0]-mExtraCountForKeepingData;
+					int last = firstAndLastIndex[1]+mExtraCountForKeepingData;
+					if(last < 0) last = Integer.MAX_VALUE;
 					while(resolvedPositions.hasNext()){
 						int position = resolvedPositions.next();
-						if(position < firstAndLastIndex[0]-mExtraCountForKeepingData || position > firstAndLastIndex[1]+mExtraCountForKeepingData){
+						if(position < first || position > last){
 							DataHolder holder = mResolvedHolders.get(position);
 							for(int i = 0;i < holder.getAsyncDataCount();i++){
 								holder.changeAsyncDataToSoftReference(i);
