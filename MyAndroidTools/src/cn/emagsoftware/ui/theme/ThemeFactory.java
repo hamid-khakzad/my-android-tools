@@ -197,6 +197,13 @@ public class ThemeFactory implements LayoutInflater.Factory {
 	    				    view.setBackgroundDrawable(d);
 	    				    view.setPadding(i, j, k, m);
 	    				}
+	    			}else if(name.equals("textColor")){
+	    				if(view instanceof TextView){
+	    					ColorStateList c = getPackageColor(context.getResources().getResourceEntryName(resId));
+	    					if(c != null){
+	    						((TextView)view).setTextColor(c);
+	    					}
+	    				}
 	    			}else if(name.equals("divider")){
 	    				if(view instanceof ListView){
 	    					Drawable d = getPackageDrawable(context.getResources().getResourceEntryName(resId));
