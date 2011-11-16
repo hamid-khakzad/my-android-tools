@@ -2,7 +2,6 @@ package cn.emagsoftware.ui;
 
 import cn.emagsoftware.ui.theme.ThemeActivity;
 
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.view.View;
 
@@ -18,10 +17,10 @@ public abstract class OrientationActivity extends ThemeActivity {
 	@Override
 	protected final void onSetContentView(View prevContentView) {
 		// TODO Auto-generated method stub
-		int orientation = getRequestedOrientation();
-		if(orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT){
+		int orientation = getResources().getConfiguration().orientation;
+		if(orientation == Configuration.ORIENTATION_PORTRAIT){
 			onSetContentViewWhenPortrait(prevContentView);
-		}else if(orientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
+		}else if(orientation == Configuration.ORIENTATION_LANDSCAPE){
 			onSetContentViewWhenLandscape(prevContentView);
 		}
 	}
