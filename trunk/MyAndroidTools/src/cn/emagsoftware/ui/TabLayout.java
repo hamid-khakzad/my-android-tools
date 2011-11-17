@@ -87,6 +87,12 @@ public class TabLayout extends ViewGroup {
 		}
 		tabs.clear();
 		refreshTabs(head);
+		int tabSize = tabs.size();
+		int contentSize = content.getChildCount();
+		while(tabSize > contentSize){
+			tabs.remove(tabSize-1);
+			tabSize = tabs.size();
+		}
 	}
 	
 	/**
@@ -114,7 +120,7 @@ public class TabLayout extends ViewGroup {
 	
 	public void setSelectedTab(int index){
 		if(!mIsLayout) refreshLayout();
-		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is out of range!");
+		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is out of range:"+index+"!");
 		if(index == selectedTabIndex) return;
 		for(int i = 0;i < tabs.size();i++){
 			View tabView = tabs.get(i);
@@ -170,10 +176,24 @@ public class TabLayout extends ViewGroup {
 			}
 		}
 		
-		if(!mIsLayout){
-			mIsLayout = true;
-			if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
+		int tabSize = tabs.size();
+		if(mIsLayout){
+			if(selectedTabIndex == -1 && tabSize > 0){
 				setSelectedTab(0);
+			}else if(selectedTabIndex >= tabSize){
+				if(tabSize == 0){
+					selectedTabIndex = -1;
+					if(mOnTabChangedListener != null) mOnTabChangedListener.onTabChanged(null, null, -1);
+				}else{
+					setSelectedTab(0);
+				}
+			}
+		}else{
+			mIsLayout = true;
+			if(selectedTabIndex == -1 && tabSize > 0){
+				setSelectedTab(0);
+			}else if(selectedTabIndex >= tabSize){
+				throw new IllegalStateException("selectedTabIndex is out of range:"+selectedTabIndex+"!");
 			}
 		}
 	}

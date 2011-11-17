@@ -87,7 +87,7 @@ public class FlipLayout extends ViewGroup {
 			if(mCurScreen == -1){    //在没有选择Screen的情况下，将默认选择第一个
         		setToScreen(0);
         	}else{
-            	if(mCurScreen < 0 || mCurScreen >= noGoneChildCount) throw new IllegalArgumentException("mCurScreen is out of range:"+mCurScreen+"!");
+            	if(mCurScreen < 0 || mCurScreen >= noGoneChildCount) throw new IllegalStateException("mCurScreen is out of range:"+mCurScreen+"!");
             	scrollTo(mCurScreen*childWidth,0);
         	}
         }
