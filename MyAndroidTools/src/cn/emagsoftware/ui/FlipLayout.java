@@ -83,6 +83,7 @@ public class FlipLayout extends ViewGroup {
 				setToScreen(noGoneChildCount-1);
 			}
 		}else{    //如果是第一次布局
+			mIsLayout = true;
 			if(mCurScreen == -1){    //在没有选择Screen的情况下，将默认选择第一个
         		setToScreen(0);
         	}else{
@@ -90,8 +91,6 @@ public class FlipLayout extends ViewGroup {
             	scrollTo(mCurScreen*childWidth,0);
         	}
         }
-		
-		mIsLayout = true;
 	}
 
     @Override  
