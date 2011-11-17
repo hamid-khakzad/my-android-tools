@@ -139,6 +139,7 @@ public class FlipLayout extends ViewGroup {
             		}
             	}
             }
+            if(noGoneChildIndex == -1) throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
             if(whichView == null) throw new IllegalArgumentException("whichScreen is out of range:"+whichScreen+"!");
             if(whichScreen != mCurScreen){
         		mCurScreen = whichScreen;
@@ -167,6 +168,7 @@ public class FlipLayout extends ViewGroup {
             		}
             	}
             }
+            if(noGoneChildIndex == -1) throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
             if(whichView == null) throw new IllegalArgumentException("whichScreen is out of range:"+whichScreen+"!");
             if(whichScreen != mCurScreen){
             	mCurScreen = whichScreen;
