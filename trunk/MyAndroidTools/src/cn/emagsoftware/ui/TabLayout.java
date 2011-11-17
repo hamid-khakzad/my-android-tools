@@ -13,7 +13,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 2.0
+ * @version 3.0
  */
 public class TabLayout extends ViewGroup {
 	
@@ -25,6 +25,7 @@ public class TabLayout extends ViewGroup {
 	protected Class<?> tabClass = Button.class;
 	protected String headPosition = HEAD_POSITION_TOP;
 	protected int selectedTabIndex = -1;
+	protected boolean mIsLayout = false;
 	
 	protected ViewGroup head = null;
 	protected ViewGroup content = null;
@@ -55,10 +56,22 @@ public class TabLayout extends ViewGroup {
 		}
 	}
 	
+	public void setTabClass(Class<?> tabClass){
+		if(tabClass == null) throw new NullPointerException();
+		this.tabClass = tabClass;
+	}
+	
+	public void setHeadPosition(String headPosition){
+		if(headPosition == null) throw new NullPointerException();
+		if(!headPosition.equals(HEAD_POSITION_TOP) && !headPosition.equals(HEAD_POSITION_BOTTOM) && !headPosition.equals(HEAD_POSITION_LEFT) && !headPosition.equals(HEAD_POSITION_RIGHT))
+			throw new IllegalArgumentException("headPosition is invalid!");
+		this.headPosition = headPosition;
+	}
+	
 	/**
-	 * <p>刷新所有内容
+	 * <p>刷新布局
 	 */
-	protected void refresh(){
+	protected void refreshLayout(){
 		if(getChildCount() != 2) throw new IllegalStateException("TabLayout can only contains two children!");
 		View child1 = getChildAt(0);
 		View child2 = getChildAt(1);
@@ -77,7 +90,7 @@ public class TabLayout extends ViewGroup {
 	}
 	
 	/**
-	 * <p>刷新所有Tab，需要在外部先清除原来tabs中的所有内容
+	 * <p>采用递归方式刷新布局中包含的所有Tab，需要在外部先清除原来tabs中的所有内容
 	 * @param view
 	 */
 	protected void refreshTabs(View view){
@@ -99,23 +112,11 @@ public class TabLayout extends ViewGroup {
 		}
 	}
 	
-	public void setTabClass(Class<?> tabClass){
-		if(tabClass == null) throw new NullPointerException();
-		this.tabClass = tabClass;
-	}
-	
-	public void setHeadPosition(String headPosition){
-		if(headPosition == null) throw new NullPointerException();
-		if(!headPosition.equals(HEAD_POSITION_TOP) && !headPosition.equals(HEAD_POSITION_BOTTOM) && !headPosition.equals(HEAD_POSITION_LEFT) && !headPosition.equals(HEAD_POSITION_RIGHT))
-			throw new IllegalArgumentException("headPosition is invalid!");
-		this.headPosition = headPosition;
-	}
-	
 	public void setSelectedTab(int index){
-		refresh();
+		if(!mIsLayout) refreshLayout();
 		if(index < 0 || index >= tabs.size()) throw new IllegalArgumentException("index is out of range!");
 		if(index == selectedTabIndex) return;
-		for(int i = 0;i < content.getChildCount();i++){
+		for(int i = 0;i < tabs.size();i++){
 			View tabView = tabs.get(i);
 			View contentView = content.getChildAt(i);
 			if(index == i) {
@@ -138,10 +139,6 @@ public class TabLayout extends ViewGroup {
 	
 	public int getTabCount(){
 		return tabs.size();
-	}
-	
-	public void setOnTabChangedListener(OnTabChangedListener mOnTabChangedListener){
-		this.mOnTabChangedListener = mOnTabChangedListener;
 	}
 	
 	@Override
@@ -172,18 +169,26 @@ public class TabLayout extends ViewGroup {
 				child2.layout(left, 0, left + child2.getMeasuredWidth(), child2.getMeasuredHeight());
 			}
 		}
+		
+		if(!mIsLayout){
+			mIsLayout = true;
+			if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
+				setSelectedTab(0);
+			}
+		}
 	}
 	
     @Override  
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
         //非EXACTLY模式需要根据子容器来计算父容器的大小，对TabLayout而言比较复杂且实际应用中完全可以避免，故暂不支持
         if(widthMode != MeasureSpec.EXACTLY || heightMode != MeasureSpec.EXACTLY) throw new IllegalStateException("TabLayout only can run at EXACTLY mode!");
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
         
-        if(getChildCount() != 2) throw new IllegalStateException("TabLayout can only contains two children!");
+        //刷新布局
+        refreshLayout();
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
         
@@ -249,14 +254,12 @@ public class TabLayout extends ViewGroup {
 			}
 		}
 		setMeasuredDimension(widthSize, heightSize);
-		
-		//渲染时的执行逻辑
-		refresh();
-		if(selectedTabIndex == -1 && tabs.size() > 0){    //在没有选择Tab的情况下，将默认选择第一个
-			setSelectedTab(0);
-		}
     }
     
+	public void setOnTabChangedListener(OnTabChangedListener mOnTabChangedListener){
+		this.mOnTabChangedListener = mOnTabChangedListener;
+	}
+	
 	public interface OnTabChangedListener{
 		public void onTabChanged(View tab,View contentItem,int index);
 	}
