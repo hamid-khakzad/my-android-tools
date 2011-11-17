@@ -67,22 +67,15 @@ public class FlipLayout extends ViewGroup {
 	protected void onLayout(boolean changed, int l, int t, int r, int b) {
 		// TODO Auto-generated method stub
 		//不考虑changed参数，因为FlipLayout大小是固定的，但其可见子View的个数可能发生了变化，所以每次都要重新layout
-		mNoGoneChildren.clear();
 		int childLeft = 0;
 		int childWidth = r - l;
 		int childHeight = b - t;
-		int childCount = getChildCount();
-		for (int i = 0;i < childCount;i++) {
-			View childView = getChildAt(i);
-			if (childView.getVisibility() != View.GONE) {
-				mNoGoneChildren.add(childView);
-				childView.layout(childLeft, 0, childLeft+childWidth, childHeight);
-				childLeft += childWidth;
-			}
-		}
-		
 		int noGoneChildCount = mNoGoneChildren.size();
-		if(noGoneChildCount == 0) throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
+		for (int i = 0;i < noGoneChildCount;i++) {
+			View noGonechildView = mNoGoneChildren.get(i);
+			noGonechildView.layout(childLeft, 0, childLeft+childWidth, childHeight);
+			childLeft += childWidth;
+		}
 		
 		if(mIsLayout){
 			if(mCurScreen >= noGoneChildCount) {
@@ -104,16 +97,22 @@ public class FlipLayout extends ViewGroup {
     @Override  
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     	//大小只支持精确模式
-    	int widthMode = MeasureSpec.getMode(widthMeasureSpec);   
+    	int widthMode = MeasureSpec.getMode(widthMeasureSpec);
         if (widthMode != MeasureSpec.EXACTLY) throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!");
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);   
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         if (heightMode != MeasureSpec.EXACTLY) throw new IllegalStateException("FlipLayout only can run at EXACTLY mode!");
         
         //计算子View大小
+        mNoGoneChildren.clear();
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
-            getChildAt(i).measure(widthMeasureSpec, heightMeasureSpec);   
+        	View childView = getChildAt(i);
+			if (childView.getVisibility() != View.GONE) {
+				childView.measure(widthMeasureSpec, heightMeasureSpec);
+				mNoGoneChildren.add(childView);
+			}
         }
+        if(mNoGoneChildren.size() == 0) throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
         
         //计算自身大小
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
