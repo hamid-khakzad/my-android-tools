@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -70,7 +71,7 @@ public class FlipLayout extends ViewGroup {
 		int childLeft = 0;
 		int childWidth = r - l;
 		int childHeight = b - t;
-		int noGoneChildCount = mNoGoneChildren.size();
+		final int noGoneChildCount = mNoGoneChildren.size();
 		for (int i = 0;i < noGoneChildCount;i++) {
 			View noGonechildView = mNoGoneChildren.get(i);
 			noGonechildView.layout(childLeft, 0, childLeft+childWidth, childHeight);
@@ -79,8 +80,15 @@ public class FlipLayout extends ViewGroup {
 		
 		if(mIsLayout){
 			if(mCurScreen >= noGoneChildCount) {
-				mScroller.forceFinished(true);
-				setToScreen(noGoneChildCount-1);
+				//setToScreen包含的事件，在非第一次布局的情况下可能会影响当前的递归布局，使状态不一致，故POST处理
+				new Handler().post(new Runnable() {
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						mScroller.forceFinished(true);
+						setToScreen(noGoneChildCount-1);
+					}
+				});
 			}
 		}else{    //如果是第一次布局
 			mIsLayout = true;
