@@ -150,6 +150,29 @@ public class TabLayout extends ViewGroup {
 	@Override
 	protected void onLayout(boolean changed, int l, int t, int r, int b) {
 		// TODO Auto-generated method stub
+		//setSelectedTab设置可能会导致重复layout，GOOGLE出于死循环的考虑避免了重复回调onLayout，故这里的setSelectedTab必须写在当前布局之前才会有效
+		int tabSize = tabs.size();
+		if(mIsLayout){
+			if(selectedTabIndex == -1 && tabSize > 0){
+				setSelectedTab(0);
+			}else if(selectedTabIndex >= tabSize){
+				if(tabSize == 0){
+					selectedTabIndex = -1;
+					if(mOnTabChangedListener != null) mOnTabChangedListener.onTabChanged(null, null, -1);
+				}else{
+					setSelectedTab(0);
+				}
+			}
+		}else{
+			mIsLayout = true;
+			if(selectedTabIndex == -1 && tabSize > 0){
+				setSelectedTab(0);
+			}else if(selectedTabIndex >= tabSize){
+				throw new IllegalStateException("selectedTabIndex is out of range:"+selectedTabIndex+"!");
+			}
+		}
+		
+		//开始布局
 		View child1 = getChildAt(0);
 		View child2 = getChildAt(1);
 		if(headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_BOTTOM)){
@@ -173,27 +196,6 @@ public class TabLayout extends ViewGroup {
 			}
 			if(child2.getVisibility() != View.GONE) {
 				child2.layout(left, 0, left + child2.getMeasuredWidth(), child2.getMeasuredHeight());
-			}
-		}
-		
-		int tabSize = tabs.size();
-		if(mIsLayout){
-			if(selectedTabIndex == -1 && tabSize > 0){
-				setSelectedTab(0);
-			}else if(selectedTabIndex >= tabSize){
-				if(tabSize == 0){
-					selectedTabIndex = -1;
-					if(mOnTabChangedListener != null) mOnTabChangedListener.onTabChanged(null, null, -1);
-				}else{
-					setSelectedTab(0);
-				}
-			}
-		}else{
-			mIsLayout = true;
-			if(selectedTabIndex == -1 && tabSize > 0){
-				setSelectedTab(0);
-			}else if(selectedTabIndex >= tabSize){
-				throw new IllegalStateException("selectedTabIndex is out of range:"+selectedTabIndex+"!");
 			}
 		}
 	}
