@@ -90,7 +90,7 @@ public class TabLayout extends ViewGroup {
 		int tabSize = tabs.size();
 		int contentSize = content.getChildCount();
 		while(tabSize > contentSize){
-			tabs.remove(tabSize-1);
+			tabs.remove(tabSize-1).setOnClickListener(null);
 			tabSize = tabs.size();
 		}
 	}
