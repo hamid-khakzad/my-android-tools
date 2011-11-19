@@ -34,6 +34,8 @@ public class FlipLayout extends ViewGroup {
 	private boolean mIsLayout = false;
 	/**当前NO-GONE子View的列表*/
 	private List<View> mNoGoneChildren = new ArrayList<View>();
+	/**手指是否按在FlipLayout上面*/
+	private boolean mIsPressed = false;
 	/**是否请求了进行水平的滑动*/
 	private boolean mRequestHorizontalFlip = false;
 	
@@ -89,6 +91,17 @@ public class FlipLayout extends ViewGroup {
 						setToScreen(noGoneChildCount-1);
 					}
 				});
+			}else if(!mIsPressed){
+				if(mScroller.isFinished()){
+					//理论上不会回调事件，不会影响当前的递归布局，故不需要POST处理
+					setToScreen(mCurScreen);
+				}else{
+					//不会影响当前的递归布局，故不需要POST处理
+					int scrollX = getScrollX();
+		    		int delta = mCurScreen*getWidth() - scrollX;
+		    		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
+		    		invalidate();    //重绘
+				}
 			}
 		}else{    //如果是第一次布局
 			mIsLayout = true;
@@ -227,6 +240,7 @@ public class FlipLayout extends ViewGroup {
 			mLastMotionX = x;
 			return true;
 		case MotionEvent.ACTION_MOVE:
+			if(!mIsPressed) mIsPressed = true;
 			int deltaX = (int)(mLastMotionX - x);
 			mLastMotionX = x;
             scrollBy(deltaX, 0);
@@ -234,6 +248,7 @@ public class FlipLayout extends ViewGroup {
 			return true;
 		case MotionEvent.ACTION_UP:
 			Log.i(TAG, "event up!");
+			mIsPressed = false;
 			mVelocityTracker.computeCurrentVelocity(1000);
             int velocityX = (int) mVelocityTracker.getXVelocity();
             mVelocityTracker.recycle();
