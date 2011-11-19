@@ -92,6 +92,7 @@ public class FlipLayout extends ViewGroup {
 					}
 				});
 			}else if(!mIsPressed){
+				//横竖屏切换时需要重置位置，防止错位。但手按在上面时不能重置，会影响滑动体验，手移开时会自动重新定位
 				if(mScroller.isFinished()){
 					//理论上不会回调事件，不会影响当前的递归布局，故不需要POST处理
 					setToScreen(mCurScreen);
