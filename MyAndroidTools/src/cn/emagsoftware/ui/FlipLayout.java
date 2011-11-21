@@ -96,12 +96,6 @@ public class FlipLayout extends ViewGroup {
 				if(mScroller.isFinished()){
 					//理论上不会回调事件，不会影响当前的递归布局，故不需要POST处理
 					setToScreen(mCurScreen);
-				}else{
-					//不会影响当前的递归布局，故不需要POST处理
-					int scrollX = getScrollX();
-		    		int delta = mCurScreen*getWidth() - scrollX;
-		    		mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta)*2);
-		    		invalidate();    //重绘
 				}
 			}
 		}else{    //如果是第一次布局
@@ -218,7 +212,7 @@ public class FlipLayout extends ViewGroup {
 		// TODO Auto-generated method stub
 		if (mScroller.computeScrollOffset()) {
 			scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
-			invalidate();
+			postInvalidate();
 			checkFlingChangedWhenScroll();
 		}
 	}
