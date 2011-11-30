@@ -14,7 +14,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  * @author Wendell
- * @version 3.0
+ * @version 3.1
  */
 public class TabLayout extends ViewGroup {
 	
@@ -144,8 +144,20 @@ public class TabLayout extends ViewGroup {
 		return selectedTabIndex;
 	}
 	
+	public ViewGroup getHead(){
+		return head;
+	}
+	
+	public ViewGroup getContent(){
+		return content;
+	}
+	
+	public List<View> getTabs(){
+		return tabs;
+	}
+	
 	public int getTabCount(){
-		return tabs.size();
+		return getTabs().size();
 	}
 	
 	@Override
