@@ -9,7 +9,6 @@ public abstract class DataHolder {
 	
 	protected Object mData = null;
 	protected Object[] mAsyncData = null;
-	protected Object mTag = null;
 	
 	/**
 	 * <p>构造函数
@@ -93,22 +92,6 @@ public abstract class DataHolder {
 	 */
 	public int getAsyncDataCount(){
 		return mAsyncData.length;
-	}
-	
-	/**
-	 * <p>设置标签
-	 * @param tag
-	 */
-	public void setTag(Object tag){
-		mTag = tag;
-	}
-	
-	/**
-	 * <p>获取标签
-	 * @return
-	 */
-	public Object getTag(){
-		return mTag;
 	}
 	
 }
