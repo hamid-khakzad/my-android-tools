@@ -243,7 +243,7 @@ public class FlipLayout extends ViewGroup {
 			int deltaX = (int)(mLastMotionX - x);
 			mLastMotionX = x;
             scrollBy(deltaX, 0);
-            if(!mIsFlingChangedWhenPressed && checkFlingChangedWhenScroll()) mIsFlingChangedWhenPressed = true;
+            if(checkFlingChangedWhenScroll()) mIsFlingChangedWhenPressed = true;
 			return true;
 		case MotionEvent.ACTION_UP:
 			Log.i(TAG, "event up!");
