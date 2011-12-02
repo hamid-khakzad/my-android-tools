@@ -248,34 +248,29 @@ public class FlipLayout extends ViewGroup {
 		case MotionEvent.ACTION_UP:
 			Log.i(TAG, "event up!");
 			mIsPressed = false;
-			if(mIsFlingChangedWhenPressed){    //如果手指按在上面时已经发生了屏幕改变，则将不会继续触发
+			if(mIsFlingChangedWhenPressed){    //如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
 				mIsFlingChangedWhenPressed = false;
 				mVelocityTracker.recycle();
 	            mVelocityTracker = null;
-	            return true;
+	            scrollToScreen(mCurScreen);
+			}else{
+				mVelocityTracker.computeCurrentVelocity(1000);
+	            int velocityX = (int)mVelocityTracker.getXVelocity();
+	            mVelocityTracker.recycle();
+	            mVelocityTracker = null;
+	            Log.i(TAG, "velocityX:"+velocityX);
+	            if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {
+	                //达到了向左移动的速度
+	            	Log.i(TAG, "snap left");
+	            	scrollToScreen(mCurScreen - 1);
+	            } else if (velocityX < -SNAP_VELOCITY && mCurScreen < mNoGoneChildren.size() - 1) {
+	                //达到了向右移动的速度
+	            	Log.i(TAG, "snap right");
+	            	scrollToScreen(mCurScreen + 1);
+	            } else {
+	            	scrollToScreen(mCurScreen);
+	            }
 			}
-			
-			mVelocityTracker.computeCurrentVelocity(1000);
-            int velocityX = (int)mVelocityTracker.getXVelocity();
-            mVelocityTracker.recycle();
-            mVelocityTracker = null;
-            Log.i(TAG, "velocityX:"+velocityX);
-            if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {
-                //达到了向左移动的速度
-            	Log.i(TAG, "snap left");
-            	scrollToScreen(mCurScreen - 1);
-            } else if (velocityX < -SNAP_VELOCITY && mCurScreen < mNoGoneChildren.size() - 1) {
-                //达到了向右移动的速度
-            	Log.i(TAG, "snap right");
-            	scrollToScreen(mCurScreen + 1);
-            } else {
-            	int screenWidth = getWidth();
-            	int destScreen = (getScrollX()+ screenWidth/2)/screenWidth;
-            	int noGoneChildCount = mNoGoneChildren.size();
-            	if(destScreen >= noGoneChildCount) destScreen = noGoneChildCount - 1;
-            	scrollToScreen(destScreen);
-            }
-            
             return true;
 		case MotionEvent.ACTION_CANCEL:
 			return true;
