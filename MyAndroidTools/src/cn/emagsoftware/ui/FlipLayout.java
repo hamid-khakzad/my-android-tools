@@ -16,7 +16,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 4.0
+ * @version 4.1
  */
 public class FlipLayout extends ViewGroup {
 	
@@ -34,8 +34,10 @@ public class FlipLayout extends ViewGroup {
 	private boolean mIsLayout = false;
 	/**当前NO-GONE子View的列表*/
 	private List<View> mNoGoneChildren = new ArrayList<View>();
-	/**手指是否按在FlipLayout上面*/
+	/**手指是否按在上面*/
 	private boolean mIsPressed = false;
+	/**是否在手指按在上面时发生了屏幕改变*/
+	private boolean mIsFlingChangedWhenPressed = false;
 	/**是否请求了进行水平的滑动*/
 	private boolean mRequestHorizontalFlip = false;
 	
@@ -196,7 +198,7 @@ public class FlipLayout extends ViewGroup {
     	return mCurScreen;
     }
     
-    protected void checkFlingChangedWhenScroll(){
+    protected boolean checkFlingChangedWhenScroll(){
     	int screenWidth = getWidth();
     	int destScreen = (getScrollX()+ screenWidth/2)/screenWidth;
     	int noGoneChildCount = mNoGoneChildren.size();
@@ -204,7 +206,9 @@ public class FlipLayout extends ViewGroup {
     	if(destScreen != mCurScreen){
     		mCurScreen = destScreen;
     		if(listener != null) listener.onFlingChanged(mNoGoneChildren.get(destScreen),destScreen);
+    		return true;
     	}
+    	return false;
     }
     
     @Override
@@ -239,17 +243,23 @@ public class FlipLayout extends ViewGroup {
 			int deltaX = (int)(mLastMotionX - x);
 			mLastMotionX = x;
             scrollBy(deltaX, 0);
-            checkFlingChangedWhenScroll();
+            if(checkFlingChangedWhenScroll()) mIsFlingChangedWhenPressed = true;
 			return true;
 		case MotionEvent.ACTION_UP:
 			Log.i(TAG, "event up!");
 			mIsPressed = false;
+			if(mIsFlingChangedWhenPressed){    //如果手指按在上面时已经发生了屏幕改变，则将不会继续触发
+				mIsFlingChangedWhenPressed = false;
+				mVelocityTracker.recycle();
+	            mVelocityTracker = null;
+	            return true;
+			}
+			
 			mVelocityTracker.computeCurrentVelocity(1000);
-            int velocityX = (int) mVelocityTracker.getXVelocity();
+            int velocityX = (int)mVelocityTracker.getXVelocity();
             mVelocityTracker.recycle();
             mVelocityTracker = null;
             Log.i(TAG, "velocityX:"+velocityX);
-            
             if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {
                 //达到了向左移动的速度
             	Log.i(TAG, "snap left");
