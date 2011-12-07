@@ -10,6 +10,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 
 public final class PackageMgr {
 	
@@ -35,13 +36,11 @@ public final class PackageMgr {
 	 * @return
 	 */
 	public static ApplicationInfo getInstalledApplication(Context context,String packageName){
-		List<ApplicationInfo> applications = getInstalledApplications(context,false);
-		for(ApplicationInfo application:applications){
-			if(application.packageName.equals(packageName)){
-				return application;
-			}
+		try{
+			return context.getPackageManager().getApplicationInfo(packageName, 0);
+		}catch(NameNotFoundException e){
+			return null;
 		}
-		return null;
 	}
 	
 	/**
@@ -60,13 +59,11 @@ public final class PackageMgr {
 	 * @return
 	 */
 	public static PackageInfo getInstalledPackage(Context context,String packageName){
-		List<PackageInfo> packages = getInstalledPackages(context);
-		for(PackageInfo packageInfo:packages){
-			if(packageInfo.packageName.equals(packageName)){
-				return packageInfo;
-			}
+		try{
+			return context.getPackageManager().getPackageInfo(packageName, 0);
+		}catch(NameNotFoundException e){
+			return null;
 		}
-		return null;
 	}
 	
 	/**
