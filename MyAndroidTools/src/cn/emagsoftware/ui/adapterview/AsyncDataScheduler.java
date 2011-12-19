@@ -3,10 +3,10 @@ package cn.emagsoftware.ui.adapterview;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -169,18 +169,19 @@ public class AsyncDataScheduler {
 						}
 					}
 					//将范围外DataHolder的异步数据修改为弱引用，方便GC回收
-					Iterator<Integer> resolvedPositions = mResolvedHolders.keySet().iterator();
+					Set<Integer> resolvedPositionSet = mResolvedHolders.keySet();
+					Integer[] resolvedPositions = resolvedPositionSet.toArray(new Integer[resolvedPositionSet.size()]);
 					int first = firstAndLastIndex[0]-mExtraCountForKeepingData;
 					int last = firstAndLastIndex[1]+mExtraCountForKeepingData;
 					if(last < 0) last = Integer.MAX_VALUE;
-					while(resolvedPositions.hasNext()){
-						int position = resolvedPositions.next();
+					for(int i = 0;i < resolvedPositions.length;i++){
+						int position = resolvedPositions[i];
 						if(position < first || position > last){
 							DataHolder holder = mResolvedHolders.get(position);
-							for(int i = 0;i < holder.getAsyncDataCount();i++){
-								holder.changeAsyncDataToSoftReference(i);
+							for(int j = 0;j < holder.getAsyncDataCount();j++){
+								holder.changeAsyncDataToSoftReference(j);
 							}
-							resolvedPositions.remove();
+							mResolvedHolders.remove(position);
 						}
 					}
 					synchronized(mLockStop){
