@@ -11,7 +11,7 @@ public abstract class ConfigChangeHandlingActivity extends ThemeActivity {
 	public final void onConfigurationChanged(Configuration newConfig) {
 		// TODO Auto-generated method stub
 		super.onConfigurationChanged(newConfig);
-		resetContentView();
+		if(configurationChangedCallback(newConfig)) resetContentView();
 	}
 	
 	@Override
@@ -24,6 +24,8 @@ public abstract class ConfigChangeHandlingActivity extends ThemeActivity {
 			onSetContentViewWhenLandscape(prevContentView);
 		}
 	}
+	
+	protected abstract boolean configurationChangedCallback(Configuration newConfig);
 	
 	protected abstract void onSetContentViewWhenPortrait(View prevContentView);
 	
