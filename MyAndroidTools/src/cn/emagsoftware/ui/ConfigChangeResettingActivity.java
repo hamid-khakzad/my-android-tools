@@ -5,7 +5,7 @@ import cn.emagsoftware.ui.theme.ThemeActivity;
 import android.content.res.Configuration;
 import android.view.View;
 
-public abstract class ConfigChangeHandlingActivity extends ThemeActivity {
+public abstract class ConfigChangeResettingActivity extends ThemeActivity {
 	
 	@Override
 	public final void onConfigurationChanged(Configuration newConfig) {
