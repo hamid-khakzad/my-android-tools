@@ -14,6 +14,8 @@ public class GenericAdapter extends BaseAdapter {
 	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
 	/**是否转换View以提高性能*/
 	protected boolean mIsConvertView = true;
+	/**是否循环显示View*/
+	protected boolean mIsLoopView = false;
 	
 	public GenericAdapter(Context context){
 		if(context == null) throw new NullPointerException();
@@ -31,6 +33,7 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public void addDataHolder(int location,DataHolder holder){
+		if(mIsLoopView) location = location%getRealCount();
 		mHolders.add(location, holder);
 		notifyDataSetChanged();
 	}
@@ -41,11 +44,13 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public void addDataHolders(int location,List<DataHolder> holders){
+		if(mIsLoopView) location = location%getRealCount();
 		mHolders.addAll(location, holders);
 		notifyDataSetChanged();
 	}
 	
 	public void removeDataHolder(int location){
+		if(mIsLoopView) location = location%getRealCount();
 		mHolders.remove(location);
 		notifyDataSetChanged();
 	}
@@ -61,12 +66,14 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public void updateDataHolder(int location,DataHolder holder){
+		if(mIsLoopView) location = location%getRealCount();
 		mHolders.remove(location);
 		mHolders.add(location, holder);
 		notifyDataSetChanged();
 	}
 	
 	public void updateDataHolders(int location,List<DataHolder> holders){
+		if(mIsLoopView) location = location%getRealCount();
 		int oldSize = mHolders.size();
 		int tempSize = location + holders.size();
 		if(tempSize > oldSize) tempSize = oldSize;
@@ -77,6 +84,7 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public DataHolder queryDataHolder(int location){
+		if(mIsLoopView) location = location%getRealCount();
 		return mHolders.get(location);
 	}
 	
@@ -85,6 +93,11 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public List<DataHolder> queryDataHolders(int location,int end){
+		if(mIsLoopView) {
+			int realCount = getRealCount();
+			location = location%realCount;
+			end = (end-1)%realCount + 1;
+		}
 		return mHolders.subList(location, end);
 	}
 	
@@ -99,18 +112,31 @@ public class GenericAdapter extends BaseAdapter {
 	
 	public void setConvertView(boolean isConvertView){
 		mIsConvertView = isConvertView;
+		notifyDataSetChanged();
+	}
+	
+	public void setLoopView(boolean isLoopView){
+		mIsLoopView = isLoopView;
+		notifyDataSetChanged();
 	}
 	
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
+		int size = mHolders.size();
+		if(size == 0) return size;
+		if(mIsLoopView) return Integer.MAX_VALUE;
+		else return size;
+	}
+	
+	public int getRealCount(){
 		return mHolders.size();
 	}
-
+	
 	@Override
 	public Object getItem(int position) {
 		// TODO Auto-generated method stub
-		return mHolders.get(position);
+		return queryDataHolder(position);
 	}
 
 	@Override
@@ -122,7 +148,7 @@ public class GenericAdapter extends BaseAdapter {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
-		DataHolder holder = mHolders.get(position);
+		DataHolder holder = queryDataHolder(position);
 		if(convertView == null || !mIsConvertView){
 			return holder.onCreateView(mContext, position, holder.getData());
 		}else{
