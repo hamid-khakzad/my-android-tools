@@ -140,7 +140,7 @@ public class GenericAdapter extends BaseAdapter {
 		int realCount = getRealCount();
 		if(realCount == 0) throw new UnsupportedOperationException("the count for adapter should not be zero");
 		int middlePosition = Integer.MAX_VALUE/2;
-		while((middlePosition+1)%realCount != 0){
+		while(middlePosition%realCount != 0){
 			middlePosition--;
 		}
 		return middlePosition;
