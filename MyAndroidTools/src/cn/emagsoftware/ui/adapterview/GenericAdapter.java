@@ -33,7 +33,7 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public void addDataHolder(int location,DataHolder holder){
-		if(mIsLoopView) location = location%getRealCount();
+		if(mIsLoopView) location = getRealPosition(location);
 		mHolders.add(location, holder);
 		notifyDataSetChanged();
 	}
@@ -44,13 +44,13 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public void addDataHolders(int location,List<DataHolder> holders){
-		if(mIsLoopView) location = location%getRealCount();
+		if(mIsLoopView) location = getRealPosition(location);
 		mHolders.addAll(location, holders);
 		notifyDataSetChanged();
 	}
 	
 	public void removeDataHolder(int location){
-		if(mIsLoopView) location = location%getRealCount();
+		if(mIsLoopView) location = getRealPosition(location);
 		mHolders.remove(location);
 		notifyDataSetChanged();
 	}
@@ -66,14 +66,14 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public void updateDataHolder(int location,DataHolder holder){
-		if(mIsLoopView) location = location%getRealCount();
+		if(mIsLoopView) location = getRealPosition(location);
 		mHolders.remove(location);
 		mHolders.add(location, holder);
 		notifyDataSetChanged();
 	}
 	
 	public void updateDataHolders(int location,List<DataHolder> holders){
-		if(mIsLoopView) location = location%getRealCount();
+		if(mIsLoopView) location = getRealPosition(location);
 		int oldSize = mHolders.size();
 		int tempSize = location + holders.size();
 		if(tempSize > oldSize) tempSize = oldSize;
@@ -84,7 +84,7 @@ public class GenericAdapter extends BaseAdapter {
 	}
 	
 	public DataHolder queryDataHolder(int location){
-		if(mIsLoopView) location = location%getRealCount();
+		if(mIsLoopView) location = getRealPosition(location);
 		return mHolders.get(location);
 	}
 	
@@ -94,9 +94,8 @@ public class GenericAdapter extends BaseAdapter {
 	
 	public List<DataHolder> queryDataHolders(int location,int end){
 		if(mIsLoopView) {
-			int realCount = getRealCount();
-			location = location%realCount;
-			end = (end-1)%realCount + 1;
+			location = getRealPosition(location);
+			end = (end-1)%getRealCount() + 1;
 		}
 		return mHolders.subList(location, end);
 	}
@@ -131,6 +130,10 @@ public class GenericAdapter extends BaseAdapter {
 	
 	public int getRealCount(){
 		return mHolders.size();
+	}
+	
+	public int getRealPosition(int position){
+		return position%getRealCount();
 	}
 	
 	@Override
