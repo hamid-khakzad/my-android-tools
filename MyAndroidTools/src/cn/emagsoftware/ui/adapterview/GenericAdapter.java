@@ -136,6 +136,16 @@ public class GenericAdapter extends BaseAdapter {
 		return position%getRealCount();
 	}
 	
+	public int getMiddleFirstPosition(){
+		int realCount = getRealCount();
+		if(realCount == 0) throw new UnsupportedOperationException("the count for adapter should not be zero");
+		int middlePosition = Integer.MAX_VALUE/2;
+		while((middlePosition+1)%realCount != 0){
+			middlePosition--;
+		}
+		return middlePosition;
+	}
+	
 	@Override
 	public Object getItem(int position) {
 		// TODO Auto-generated method stub
