@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.2
+ * @version 3.3
  */
 public final class HttpConnectionManager {
 	
@@ -272,7 +272,8 @@ public final class HttpConnectionManager {
 			HttpURLConnection.setFollowRedirects(false);
 			httpConn.setInstanceFollowRedirects(false);
 			httpConn.setDoInput(true);
-			if(method.equalsIgnoreCase("POST")) httpConn.setDoOutput(true);    //经测试，在Android 4.0且某些特殊的服务器实现下，如果总是setDoOutput(true)可能收到405的http状态码，故这里作有条件设置
+			if(method.equalsIgnoreCase("POST")) httpConn.setDoOutput(true);    //经测试，在Android 4.0且某些特殊的服务器实现下，如果总是setDoOutput(true)可能收到405的http状态码
+			else httpConn.setDoOutput(false);    //经测试，在Android 4.0且某些特殊的服务器实现下，如果不设置setDoOutput(false)可能收到405的http状态码
 			httpConn.setReadTimeout(connOrReadTimeout);
 			httpConn.setConnectTimeout(connOrReadTimeout);
 			if(isKeepSession){
