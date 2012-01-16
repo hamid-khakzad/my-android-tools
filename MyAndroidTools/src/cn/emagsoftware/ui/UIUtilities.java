@@ -11,7 +11,7 @@ public final class UIUtilities {
 	private UIUtilities(){}
 	
 	/**
-	 * <p>使用深度反射机制，在Gallery上动态滚动指定的距离
+	 * <p>使用深度反射机制，在Gallery上动态滚动指定的距离，类似于手指触碰滚动的效果
 	 * @param gallery
 	 * @param distance
 	 */
