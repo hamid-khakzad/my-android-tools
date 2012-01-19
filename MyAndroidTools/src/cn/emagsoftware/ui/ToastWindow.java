@@ -20,7 +20,7 @@ public class ToastWindow {
 		pw = new PopupWindow(context);
 		pw.setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
 		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
-		pw.setFocusable(false);
+		setFocusable(false);
 		text = new TextView(context);
 		setContentView(text);
 		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
