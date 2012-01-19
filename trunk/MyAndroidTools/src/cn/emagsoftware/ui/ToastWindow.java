@@ -72,6 +72,10 @@ public class ToastWindow {
 		}, millis);
 	}
 	
+	public void setFocusable(boolean focusable){
+		pw.setFocusable(focusable);
+	}
+	
 	public void setOnDismissListener(PopupWindow.OnDismissListener listener){
 		pw.setOnDismissListener(listener);
 	}
