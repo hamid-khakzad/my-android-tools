@@ -72,6 +72,10 @@ public class ToastWindow {
 		}, millis);
 	}
 	
+	public void setOnDismissListener(PopupWindow.OnDismissListener listener){
+		pw.setOnDismissListener(listener);
+	}
+	
 	public void dismiss(){
 		try{
 			pw.dismiss();
