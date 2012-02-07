@@ -16,7 +16,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 4.1
+ * @version 4.2
  */
 public class FlipLayout extends ViewGroup {
 	
@@ -41,7 +41,7 @@ public class FlipLayout extends ViewGroup {
 	/**是否请求了进行水平的滑动*/
 	private boolean mRequestHorizontalFlip = false;
 	
-	private OnFlingChangedListener listener;
+	private OnFlingListener listener;
 	
 	public FlipLayout(Context context){
 		this(context,null,0);
@@ -198,17 +198,28 @@ public class FlipLayout extends ViewGroup {
     	return mCurScreen;
     }
     
-    protected boolean checkFlingChangedWhenScroll(){
-    	int screenWidth = getWidth();
-    	int destScreen = (getScrollX()+ screenWidth/2)/screenWidth;
-    	int noGoneChildCount = mNoGoneChildren.size();
-    	if(destScreen >= noGoneChildCount) destScreen = noGoneChildCount - 1;
-    	if(destScreen != mCurScreen){
-    		mCurScreen = destScreen;
-    		if(listener != null) listener.onFlingChanged(mNoGoneChildren.get(destScreen),destScreen);
-    		return true;
+    protected boolean checkFlingWhenScroll(){
+    	int scrollX = getScrollX();
+    	if(scrollX < 0) {
+    		if(listener != null) listener.onFlingOutOfRange(false,-scrollX);
+    		return false;
+    	}else {
+    		int noGoneChildCount = mNoGoneChildren.size();
+        	int screenWidth = getWidth();
+        	int maxScrollX = (noGoneChildCount-1)*screenWidth;
+        	if(scrollX > maxScrollX) {
+        		if(listener != null) listener.onFlingOutOfRange(true,scrollX-maxScrollX);
+        		return false;
+        	}else{
+        		int destScreen = (scrollX + screenWidth/2)/screenWidth;
+            	if(destScreen != mCurScreen){
+            		mCurScreen = destScreen;
+            		if(listener != null) listener.onFlingChanged(mNoGoneChildren.get(destScreen),destScreen);
+            		return true;
+            	}
+            	return false;
+        	}
     	}
-    	return false;
     }
     
     @Override
@@ -217,7 +228,7 @@ public class FlipLayout extends ViewGroup {
 		if (mScroller.computeScrollOffset()) {
 			scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
 			postInvalidate();
-			checkFlingChangedWhenScroll();
+			checkFlingWhenScroll();
 		}
 	}
     
@@ -243,7 +254,7 @@ public class FlipLayout extends ViewGroup {
 			int deltaX = (int)(mLastMotionX - x);
 			mLastMotionX = x;
             scrollBy(deltaX, 0);
-            if(checkFlingChangedWhenScroll()) mIsFlingChangedWhenPressed = true;
+            if(checkFlingWhenScroll()) mIsFlingChangedWhenPressed = true;
 			return true;
 		case MotionEvent.ACTION_UP:
 			Log.i(TAG, "event up!");
@@ -310,12 +321,13 @@ public class FlipLayout extends ViewGroup {
 		mRequestHorizontalFlip = true;
 	}
 	
-	public void setOnFlingChangedListener(OnFlingChangedListener listener){
+	public void setOnFlingListener(OnFlingListener listener){
 		this.listener = listener;
 	}
 	
-	public abstract static interface OnFlingChangedListener{
+	public abstract static interface OnFlingListener{
 		public abstract void onFlingChanged(View whichView,int whichScreen);
+		public abstract void onFlingOutOfRange(boolean toRight,int distance);
 	}
 	
 }
