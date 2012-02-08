@@ -72,6 +72,10 @@ public class ToastWindow {
 		}, millis);
 	}
 	
+	public void showAsDropDown(View anchor, int xoff, int yoff){
+		pw.showAsDropDown(anchor, xoff, yoff);
+	}
+	
 	public void setFocusable(boolean focusable){
 		pw.setFocusable(focusable);
 	}
