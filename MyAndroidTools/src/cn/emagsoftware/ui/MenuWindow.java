@@ -17,8 +17,8 @@ public class MenuWindow {
 		pw = new PopupWindow(context);
 		pw.setWidth(WindowManager.LayoutParams.FILL_PARENT);
 		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
-		pw.setFocusable(true);
-		pw.setAnimationStyle(context.getResources().getIdentifier("MenuWindow", "style", context.getPackageName()));
+		setFocusable(true);
+		setAnimationStyle(context.getResources().getIdentifier("MenuWindow", "style", context.getPackageName()));
 		setContentView(new LinearLayout(context));
 		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_menuwindow_bg", "drawable", context.getPackageName())));
 	}
@@ -37,6 +37,14 @@ public class MenuWindow {
 	
 	public void showAsDropDown(View anchor, int xoff, int yoff){
 		pw.showAsDropDown(anchor, xoff, yoff);
+	}
+	
+	public void setFocusable(boolean focusable){
+		pw.setFocusable(focusable);
+	}
+	
+	public void setAnimationStyle(int animationStyle){
+		pw.setAnimationStyle(animationStyle);
 	}
 	
 	public boolean isShowing(){
