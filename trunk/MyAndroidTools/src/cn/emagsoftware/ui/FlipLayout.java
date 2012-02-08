@@ -16,7 +16,7 @@ import android.widget.Scroller;
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 4.2
+ * @version 4.3
  */
 public class FlipLayout extends ViewGroup {
 	
@@ -36,6 +36,10 @@ public class FlipLayout extends ViewGroup {
 	private List<View> mNoGoneChildren = new ArrayList<View>();
 	/**手指是否按在上面*/
 	private boolean mIsPressed = false;
+	/**是否当次的OnFlingListener.onFlingOutOfRange事件回调已中断*/
+	private boolean mIsFlingOutOfRangeBreak = false;
+	/**是否需要重置mIsFlingOutOfRangeBreak的值*/
+	private boolean mShouldResetIsFlingOutOfRangeBreak = false;
 	/**是否在手指按在上面时发生了屏幕改变*/
 	private boolean mIsFlingChangedWhenPressed = false;
 	/**是否请求了进行水平的滑动*/
@@ -201,14 +205,14 @@ public class FlipLayout extends ViewGroup {
     protected boolean checkFlingWhenScroll(){
     	int scrollX = getScrollX();
     	if(scrollX < 0) {
-    		if(listener != null) listener.onFlingOutOfRange(false,-scrollX);
+    		if(listener != null && !mIsFlingOutOfRangeBreak) mIsFlingOutOfRangeBreak = listener.onFlingOutOfRange(false,-scrollX);
     		return false;
     	}else {
     		int noGoneChildCount = mNoGoneChildren.size();
         	int screenWidth = getWidth();
         	int maxScrollX = (noGoneChildCount-1)*screenWidth;
         	if(scrollX > maxScrollX) {
-        		if(listener != null) listener.onFlingOutOfRange(true,scrollX-maxScrollX);
+        		if(listener != null && !mIsFlingOutOfRangeBreak) mIsFlingOutOfRangeBreak = listener.onFlingOutOfRange(true,scrollX-maxScrollX);
         		return false;
         	}else{
         		int destScreen = (scrollX + screenWidth/2)/screenWidth;
@@ -251,6 +255,10 @@ public class FlipLayout extends ViewGroup {
 			return true;
 		case MotionEvent.ACTION_MOVE:
 			if(!mIsPressed) mIsPressed = true;
+			if(mShouldResetIsFlingOutOfRangeBreak){
+				mIsFlingOutOfRangeBreak = false;
+				mShouldResetIsFlingOutOfRangeBreak = false;
+			}
 			int deltaX = (int)(mLastMotionX - x);
 			mLastMotionX = x;
             scrollBy(deltaX, 0);
@@ -259,6 +267,7 @@ public class FlipLayout extends ViewGroup {
 		case MotionEvent.ACTION_UP:
 			Log.i(TAG, "event up!");
 			mIsPressed = false;
+			mShouldResetIsFlingOutOfRangeBreak = true;
 			if(mIsFlingChangedWhenPressed){    //如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
 				mIsFlingChangedWhenPressed = false;
 				mVelocityTracker.recycle();
@@ -327,7 +336,7 @@ public class FlipLayout extends ViewGroup {
 	
 	public abstract static interface OnFlingListener{
 		public abstract void onFlingChanged(View whichView,int whichScreen);
-		public abstract void onFlingOutOfRange(boolean toRight,int distance);
+		public abstract boolean onFlingOutOfRange(boolean toRight,int distance);
 	}
 	
 }
