@@ -80,6 +80,10 @@ public class ToastWindow {
 		pw.setFocusable(focusable);
 	}
 	
+	public void setAnimationStyle(int animationStyle){
+		pw.setAnimationStyle(animationStyle);
+	}
+	
 	public void setOnDismissListener(PopupWindow.OnDismissListener listener){
 		pw.setOnDismissListener(listener);
 	}
