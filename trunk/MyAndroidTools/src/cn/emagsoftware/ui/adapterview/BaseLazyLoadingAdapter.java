@@ -6,7 +6,6 @@ import cn.emagsoftware.ui.UIThread;
 
 import android.content.Context;
 import android.util.Log;
-import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
@@ -39,7 +38,8 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(view.getVisibility() != View.VISIBLE) return;    //执行setOnScrollListener时即使AbsListView不可见，仍会触发onScroll事件，需要排除这种情况
+					//执行setOnScrollListener时就会触发onScroll，此时要排除AbsListView不可见或可见Item个数为0的情况
+					if(visibleItemCount == 0) return;
 					if(firstVisibleItem + visibleItemCount + remainingCount >= totalItemCount && !isLoadedAll() && !isException()){
 						load(mCurCondition);
 					}
