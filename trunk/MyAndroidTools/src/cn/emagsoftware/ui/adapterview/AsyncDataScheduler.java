@@ -19,7 +19,7 @@ import android.widget.WrapperListAdapter;
 public class AsyncDataScheduler {
 	
 	/**异步数据调度器的休眠时间，以毫秒为单位*/
-	public static final int SCHEDULER_DORMANCY_TIME = 2000;
+	public static final int SCHEDULER_DORMANCY_TIME = 1500;
 	
 	protected AdapterView<?> mAdapterView = null;
 	protected int mHeaderCount = 0;
