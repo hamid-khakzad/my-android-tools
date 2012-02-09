@@ -39,7 +39,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(view.getVisibility() != View.VISIBLE) return;
+					if(view.getVisibility() != View.VISIBLE) return;    //执行setOnScrollListener时即使AbsListView不可见，仍会触发onScroll事件，需要排除这种情况
 					if(firstVisibleItem + visibleItemCount + remainingCount >= totalItemCount && !isLoadedAll() && !isException()){
 						load(mCurCondition);
 					}
