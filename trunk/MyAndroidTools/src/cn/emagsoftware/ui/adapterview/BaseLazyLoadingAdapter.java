@@ -29,15 +29,16 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	 * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载
 	 *    当调用AbsListView的setAdapter、addFooterView等方法时也会自动触发加载，若要避免此类情形的自动加载，可将这些方法的调用放在当前方法之前
 	 * @param adapterView
+	 * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
 	 */
-	public void bindLazyLoading(AdapterView<?> adapterView){
+	public void bindLazyLoading(AdapterView<?> adapterView,final int remainingCount){
 		if(adapterView instanceof AbsListView){
 			AbsListView absList = (AbsListView)adapterView;
 			absList.setOnScrollListener(new AbsListView.OnScrollListener(){
 				@Override
 				public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
 					// TODO Auto-generated method stub
-					if(firstVisibleItem + visibleItemCount == totalItemCount && !isLoadedAll() && !isException()){
+					if(firstVisibleItem + visibleItemCount + remainingCount >= totalItemCount && !isLoadedAll() && !isException()){
 						load(mCurCondition);
 					}
 				}
