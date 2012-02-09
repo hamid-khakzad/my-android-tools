@@ -6,6 +6,7 @@ import cn.emagsoftware.ui.UIThread;
 
 import android.content.Context;
 import android.util.Log;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
@@ -38,6 +39,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				@Override
 				public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
 					// TODO Auto-generated method stub
+					if(view.getVisibility() != View.VISIBLE) return;
 					if(firstVisibleItem + visibleItemCount + remainingCount >= totalItemCount && !isLoadedAll() && !isException()){
 						load(mCurCondition);
 					}
