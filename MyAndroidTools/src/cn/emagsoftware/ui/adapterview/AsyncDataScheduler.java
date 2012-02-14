@@ -384,7 +384,9 @@ public class AsyncDataScheduler {
 						}
 					}
 					try{
-						mWaitObj.wait(SCHEDULER_DORMANCY_TIME);
+						synchronized(mWaitObj){
+							mWaitObj.wait(SCHEDULER_DORMANCY_TIME);
+						}
 					}catch(InterruptedException e){
 						throw new RuntimeException(e);
 					}
