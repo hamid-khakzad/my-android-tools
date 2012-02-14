@@ -19,7 +19,7 @@ import android.widget.WrapperListAdapter;
 public class AsyncDataScheduler {
 	
 	/**异步数据调度器的休眠时间，以毫秒为单位*/
-	public static final int SCHEDULER_DORMANCY_TIME = 1500;
+	public static final int SCHEDULER_DORMANCY_TIME = 2000;
 	
 	protected AdapterView<?> mAdapterView = null;
 	protected int mHeaderCount = 0;
@@ -43,7 +43,9 @@ public class AsyncDataScheduler {
 	protected boolean mIsStopping = false;
 	/**是否已经停止*/
 	protected boolean mIsStopped = true;
-	/**当前的执行线程*/
+	/**当前的调度线程*/
+	protected Thread mCurrThread = null;
+	/**当前的执行线程列表*/
 	protected List<Thread> mCurrExecutiveThreads = Collections.synchronizedList(new ArrayList<Thread>());
 	
 	/**用于同步停止调度线程代码块的锁对象*/
@@ -121,7 +123,7 @@ public class AsyncDataScheduler {
 				return;
 			}
 		}
-		ThreadPoolManager.executeThread(new Thread(){
+		ThreadPoolManager.executeThread(mCurrThread = new Thread(){
 			public void run() {
 				while(true){
 					synchronized(mLockStop){
@@ -384,11 +386,19 @@ public class AsyncDataScheduler {
 					try{
 						sleep(SCHEDULER_DORMANCY_TIME);
 					}catch(InterruptedException e){
-						throw new RuntimeException(e);
+						Log.i("AsyncDataScheduler", "speed up scheduling...");
 					}
 				}
 			};
 		});
+	}
+	
+	/**
+	 * <p>加快一次调度器的调度速度，调度器在两次调度之间会有一定的休眠
+	 * <p>一般情况下无需调用此方法，除非对调度器调度的及时性要求较高
+	 */
+	public void speedup(){
+		if(mCurrThread != null) mCurrThread.interrupt();
 	}
 	
 	/**
