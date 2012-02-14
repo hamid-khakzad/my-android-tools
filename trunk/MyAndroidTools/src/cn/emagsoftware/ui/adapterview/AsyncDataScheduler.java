@@ -400,7 +400,9 @@ public class AsyncDataScheduler {
 	 * <p>一般情况下无需调用此方法，除非对调度器调度的及时性要求较高
 	 */
 	public void speedup(){
-		mWaitObj.notifyAll();
+		synchronized(mWaitObj){
+			mWaitObj.notifyAll();
+		}
 	}
 	
 	/**
