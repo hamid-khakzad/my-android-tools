@@ -28,7 +28,9 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	/**
 	 * <p>绑定AdapterView，使其自动懒加载
 	 * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载
-	 *    当调用AbsListView的setAdapter、addFooterView等方法时也会自动触发加载，若要避免此类情形的自动加载，可将这些方法的调用放在当前方法之前
+	 * <p>AbsListView的bindLazyLoading实现实际上执行了OnScrollListener事件；
+	 *    用户若包含自己的OnScrollListener逻辑，请在bindLazyLoading之前调用setOnScrollListener，bindLazyLoading方法会将用户的逻辑包含进来；
+	 *    若在bindLazyLoading之后调用setOnScrollListener，将取消bindLazyLoading的作用
 	 * @param adapterView
 	 * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
 	 */
