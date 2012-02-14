@@ -1,5 +1,6 @@
 package cn.emagsoftware.ui.adapterview;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import cn.emagsoftware.ui.UIThread;
@@ -31,25 +32,23 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	 * @param adapterView
 	 * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
 	 */
-	public void bindLazyLoading(AdapterView<?> adapterView,final int remainingCount){
+	public void bindLazyLoading(AdapterView<?> adapterView,int remainingCount){
 		if(adapterView instanceof AbsListView){
-			AbsListView absList = (AbsListView)adapterView;
-			absList.setOnScrollListener(new AbsListView.OnScrollListener(){
-				@Override
-				public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
-					// TODO Auto-generated method stub
-					//执行setOnScrollListener时就会触发onScroll，此时要排除AbsListView不可见或可见Item个数为0的情况
-					//修改AbsListView的Item个数时会触发onScroll，此时要排除AbsListView不可见的情况
-					if(visibleItemCount == 0) return;
-					if(firstVisibleItem + visibleItemCount + remainingCount >= totalItemCount && !isLoadedAll() && !isException()){
-						load(mCurCondition);
-					}
+			try{
+				AbsListView absList = (AbsListView)adapterView;
+				Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
+				field.setAccessible(true);
+				AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener)field.get(absList);
+				if(onScrollListener != null && onScrollListener instanceof LazyLoadingListener){
+					absList.setOnScrollListener(new LazyLoadingListener(((LazyLoadingListener)onScrollListener).getOriginalListener(), remainingCount));
+				}else{
+					absList.setOnScrollListener(new LazyLoadingListener(onScrollListener, remainingCount));
 				}
-				@Override
-				public void onScrollStateChanged(AbsListView view,int scrollState) {
-					// TODO Auto-generated method stub
-				}
-			});
+			}catch(NoSuchFieldException e){
+				throw new RuntimeException(e);
+			}catch(IllegalAccessException e){
+				throw new RuntimeException(e);
+			}
 		}else{
 			throw new UnsupportedOperationException("Only supports lazy loading for the AdapterView which is AbsListView.");
 		}
@@ -151,5 +150,36 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	 * @throws Exception
 	 */
 	public abstract List<DataHolder> onLoad(Context context,Object condition,int start,int limit) throws Exception;
+	
+	private class LazyLoadingListener implements AbsListView.OnScrollListener{
+		private AbsListView.OnScrollListener mOriginalListener = null;
+		private int mRemainingCount = 0;
+		public LazyLoadingListener(AbsListView.OnScrollListener originalListener,int remainingCount){
+			if(originalListener != null && originalListener instanceof LazyLoadingListener) throw new IllegalArgumentException("the OnScrollListener could not be LazyLoadingListener");
+			this.mOriginalListener = originalListener;
+			this.mRemainingCount = remainingCount;
+		}
+		@Override
+		public void onScroll(AbsListView view,int firstVisibleItem,int visibleItemCount,int totalItemCount) {
+			// TODO Auto-generated method stub
+			//执行原始监听器的逻辑
+			if(mOriginalListener != null) mOriginalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
+			//执行setOnScrollListener时就会触发onScroll，此时要排除AbsListView不可见或可见Item个数为0的情况
+			//修改AbsListView的Item个数时会触发onScroll，此时要排除AbsListView不可见的情况
+			if(visibleItemCount == 0) return;
+			if(firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount && !isLoadedAll() && !isException()){
+				load(mCurCondition);
+			}
+		}
+		@Override
+		public void onScrollStateChanged(AbsListView view,int scrollState) {
+			// TODO Auto-generated method stub
+			//执行原始监听器的逻辑
+			if(mOriginalListener != null) mOriginalListener.onScrollStateChanged(view, scrollState);
+		}
+		public AbsListView.OnScrollListener getOriginalListener(){
+			return mOriginalListener;
+		}
+	}
 	
 }
