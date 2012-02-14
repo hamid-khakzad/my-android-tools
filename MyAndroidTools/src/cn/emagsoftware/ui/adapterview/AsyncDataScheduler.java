@@ -43,8 +43,6 @@ public class AsyncDataScheduler {
 	protected boolean mIsStopping = false;
 	/**是否已经停止*/
 	protected boolean mIsStopped = true;
-	/**当前的调度线程*/
-	protected Thread mCurrThread = null;
 	/**当前的执行线程列表*/
 	protected List<Thread> mCurrExecutiveThreads = Collections.synchronizedList(new ArrayList<Thread>());
 	
@@ -52,6 +50,8 @@ public class AsyncDataScheduler {
 	protected byte[] mLockStop = new byte[0];
 	/**用于同步提取队列代码块的锁对象*/
 	protected byte[] mLockExtract = new byte[0];
+	/**执行wait休眠的对象*/
+	private Object mWaitObj = new Object();
 	
 	public AsyncDataScheduler(AdapterView<?> adapterView,int maxThreadCount,AsyncDataExecutor executor){
 		if(adapterView == null || executor == null) throw new NullPointerException();
@@ -123,7 +123,7 @@ public class AsyncDataScheduler {
 				return;
 			}
 		}
-		ThreadPoolManager.executeThread(mCurrThread = new Thread(){
+		ThreadPoolManager.executeThread(new Thread(){
 			public void run() {
 				while(true){
 					synchronized(mLockStop){
@@ -384,9 +384,9 @@ public class AsyncDataScheduler {
 						}
 					}
 					try{
-						sleep(SCHEDULER_DORMANCY_TIME);
+						mWaitObj.wait(SCHEDULER_DORMANCY_TIME);
 					}catch(InterruptedException e){
-						Log.i("AsyncDataScheduler", "speed up scheduling...");
+						throw new RuntimeException(e);
 					}
 				}
 			};
@@ -398,7 +398,7 @@ public class AsyncDataScheduler {
 	 * <p>一般情况下无需调用此方法，除非对调度器调度的及时性要求较高
 	 */
 	public void speedup(){
-		if(mCurrThread != null) mCurrThread.interrupt();
+		mWaitObj.notifyAll();
 	}
 	
 	/**
