@@ -26,6 +26,8 @@ public class AsyncDataScheduler {
 	protected GenericAdapter mGenericAdapter = null;
 	protected int mMaxThreadCount = 0;
 	protected AsyncDataExecutor mExecutor = null;
+	/**UI线程的Handler*/
+	protected Handler mHandler = new Handler(Looper.getMainLooper());
 	
 	/**额外的(可见范围之外的)需加载异步数据的个数*/
 	protected int mExtraCountForExecutingData = 0;
@@ -139,7 +141,7 @@ public class AsyncDataScheduler {
 					final int[] firstAndLastIndex = {0,0};
 					final List<Integer> positions = new LinkedList<Integer>();
 					final List<DataHolder> holders = new LinkedList<DataHolder>();
-					new Handler(Looper.getMainLooper()).post(new Runnable() {
+					mHandler.post(new Runnable() {
 						@Override
 						public void run() {
 							// TODO Auto-generated method stub
@@ -364,7 +366,7 @@ public class AsyncDataScheduler {
 									}
 									//更新界面
 									if(hasExecuteOneAtLeast){
-										new Handler(Looper.getMainLooper()).post(new Runnable() {
+										mHandler.post(new Runnable() {
 											@Override
 											public void run() {
 												// TODO Auto-generated method stub
