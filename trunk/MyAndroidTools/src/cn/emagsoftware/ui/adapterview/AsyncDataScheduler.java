@@ -52,6 +52,8 @@ public class AsyncDataScheduler {
 	protected byte[] mLockExtract = new byte[0];
 	/**执行wait休眠的对象*/
 	private Object mWaitObj = new Object();
+	/**是否需要wait休眠*/
+	protected boolean mShouldWait = true;
 	
 	public AsyncDataScheduler(AdapterView<?> adapterView,int maxThreadCount,AsyncDataExecutor executor){
 		if(adapterView == null || executor == null) throw new NullPointerException();
@@ -385,6 +387,10 @@ public class AsyncDataScheduler {
 					}
 					try{
 						synchronized(mWaitObj){
+							if(!mShouldWait) {
+								mShouldWait = true;
+								continue;
+							}
 							mWaitObj.wait(SCHEDULER_DORMANCY_TIME);
 						}
 					}catch(InterruptedException e){
@@ -401,6 +407,7 @@ public class AsyncDataScheduler {
 	 */
 	public void speedup(){
 		synchronized(mWaitObj){
+			mShouldWait = false;
 			mWaitObj.notifyAll();
 		}
 	}
