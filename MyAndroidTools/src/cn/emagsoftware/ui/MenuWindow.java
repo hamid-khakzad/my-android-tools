@@ -15,12 +15,20 @@ public class MenuWindow {
 	
 	public MenuWindow(Context context){
 		pw = new PopupWindow(context);
-		pw.setWidth(WindowManager.LayoutParams.FILL_PARENT);
-		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
+		setWidth(WindowManager.LayoutParams.FILL_PARENT);
+		setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
 		setFocusable(true);
 		setAnimationStyle(context.getResources().getIdentifier("MenuWindow", "style", context.getPackageName()));
 		setContentView(new LinearLayout(context));
 		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_menuwindow_bg", "drawable", context.getPackageName())));
+	}
+	
+	public void setWidth(int width){
+		pw.setWidth(width);
+	}
+	
+	public void setHeight(int height){
+		pw.setHeight(height);
 	}
 	
 	public void setContentView(View contentView){

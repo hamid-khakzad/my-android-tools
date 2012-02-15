@@ -18,12 +18,20 @@ public class ToastWindow {
 	
 	public ToastWindow(Context context){
 		pw = new PopupWindow(context);
-		pw.setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
-		pw.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
+		setWidth(WindowManager.LayoutParams.WRAP_CONTENT);
+		setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
 		setFocusable(false);
 		text = new TextView(context);
 		setContentView(text);
 		setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
+	}
+	
+	public void setWidth(int width){
+		pw.setWidth(width);
+	}
+	
+	public void setHeight(int height){
+		pw.setHeight(height);
 	}
 	
 	public void setContentView(View contentView){
