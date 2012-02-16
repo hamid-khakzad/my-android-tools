@@ -8,7 +8,7 @@ import android.os.Looper;
  * <p>该类的功能实现类似于android.os.AsyncTask类，但AsyncTask类内部采用了线程池实现，线程资源不会被立即释放。该类以快速释放的实现，提供给用户一个第二选择
  * <p>该类支持在非UI-Thread中创建并启动
  * @author Wendell
- * @version 2.5
+ * @version 2.0
  */
 public class UIThread extends Thread {
 	
@@ -21,28 +21,27 @@ public class UIThread extends Thread {
 		this.context = context;
 	}
 	
-	@Override
-	public void start() {
-		// TODO Auto-generated method stub
-		if(isCancelled) return;
-		handler.post(new Runnable() {    //在start中推送onBeginUI，而不是在当前线程真正开始后推送，可以保证UI线程的衔接一致，避免出现不同步的情况
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				if(isCancelled) return;
-				onBeginUI(context);
-				execSuperStart();    //必须在onBeginUI执行完成后再启动线程
-			}
-		});
-	}
-	
-	private void execSuperStart(){
-		super.start();
-	}
-	
 	public final void run(){
 		super.run();
 		try{
+			if(isCancelled) return;
+			final boolean[] isOK = new boolean[1];
+			isOK[0] = false;
+			handler.post(new Runnable() {    //onBeginUI只能在run中回调，start在线程池中不被调用，所以不能通过重写start来回调
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					if(isCancelled){
+						isOK[0] = true;
+						return;
+					}
+					onBeginUI(context);
+					isOK[0] = true;
+				}
+			});
+			while(!isOK[0]){
+				sleep(100);
+			}
 			if(isCancelled) return;
 			final Object result = onRunNoUI(context);
 			handler.post(new Runnable(){
