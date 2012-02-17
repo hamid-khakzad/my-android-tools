@@ -31,13 +31,8 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 		if(mIsLoading) return false;
 		mIsLoading = true;
 		mCurCondition = condition;
+		onBeginLoad(mContext,condition);    //在load中调用而不是在UIThread中，可使UI线程衔接一致，避免带来不同步的情况
 		ThreadPoolManager.executeThread(new UIThread(mContext){
-			@Override
-			protected void onBeginUI(Context context) {
-				// TODO Auto-generated method stub
-				super.onBeginUI(context);
-				onBeginLoad(context,condition);
-			}
 			@Override
 			protected Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
