@@ -65,7 +65,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		if(mIsLoading) return false;
 		mIsLoading = true;
 		mCurCondition = condition;
-		onBeginLoad(mContext,condition);    //在load中调用而不是在UIThread中，可使UI线程衔接一致，避免带来不同步的情况
+		onBeginLoad(mContext,condition);    //在load中调用而不是在UIThread的onBeginUI中，可使UI线程衔接一致，避免带来外部的不同步情况
 		ThreadPoolManager.executeThread(new UIThread(mContext){
 			@Override
 			protected Object onRunNoUI(Context context) throws Exception {
