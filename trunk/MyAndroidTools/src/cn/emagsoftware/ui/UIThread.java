@@ -76,6 +76,11 @@ public class UIThread extends Thread {
 		});
 	}
 	
+	/**
+	 * <p>onBeginUI是在当前线程真正运行之后才会调用，会使UI线程产生空隙
+	 *    若要使UI线程衔接一致，避免出现外部的不同步，可在启动当前线程之前执行相关UI操作
+	 * @param context
+	 */
 	protected void onBeginUI(Context context){}
 	
 	protected Object onRunNoUI(Context context) throws Exception{return null;}
