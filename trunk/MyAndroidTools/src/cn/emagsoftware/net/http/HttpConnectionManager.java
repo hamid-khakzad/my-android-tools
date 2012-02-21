@@ -36,7 +36,7 @@ import android.util.Log;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.3
+ * @version 3.5
  */
 public final class HttpConnectionManager {
 	
@@ -279,6 +279,7 @@ public final class HttpConnectionManager {
 			if(isKeepSession){
 				String session = querySession(myUrl);
 				if(session != null){
+					Log.i("HttpConnectionManager", "queried session("+session+") for url "+myUrl);
 					httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
 				}
 			}
@@ -387,11 +388,11 @@ public final class HttpConnectionManager {
 	}
 	
 	/**
-	 * <p>根据url从缓存中查找能够维持session的cookie值，若未找到将返回null
+	 * <p>根据url从缓存中查找能够维持session的cookie值，多个值之间用分号分隔。若未找到将返回null
 	 * @param url
 	 * @return
 	 */
-	private static String querySession(URL url){
+	public static String querySession(URL url){
 		String host = url.getHost().toLowerCase();
 		if(host.equals("localhost")) host = "127.0.0.1";
 		int port = url.getPort();
@@ -410,14 +411,26 @@ public final class HttpConnectionManager {
 			}
 		}
 		if(sessionCookies == null) return null;
-		StringBuffer sb = new StringBuffer();
+		StringBuffer sessionCookiesBuffer = new StringBuffer();
 		for(int i = 0;i < sessionCookies.size();i++){
-			if(i != 0) sb.append(";");
-			sb.append(sessionCookies.get(i));
+			if(i != 0) sessionCookiesBuffer.append(";");
+			sessionCookiesBuffer.append(sessionCookies.get(i));
 		}
-		String sessionCookiesStr = sb.toString();
-		Log.i("HttpConnectionManager", "queried session("+sessionCookiesStr+") for url "+url);
-		return sessionCookiesStr;
+		return sessionCookiesBuffer.toString();
+	}
+	
+	/**
+	 * <p>保存用于维持session的cookie值，多个值之间用分号分隔
+	 * @param url
+	 * @param sessionCookiesStr
+	 */
+	public static void saveSession(URL url,String sessionCookiesStr){
+		List<String> sessionCookies = new ArrayList<String>();
+		String[] sessionCookiesArr = sessionCookiesStr.split(";");
+		for(String sessionCookie:sessionCookiesArr){
+			sessionCookies.add(sessionCookie);
+		}
+		saveSession(url,sessionCookies);
 	}
 	
 	/**
@@ -447,21 +460,30 @@ public final class HttpConnectionManager {
 						sessionCookies.add(sessionCookie);
 					}
 				}
-				if(sessionCookies.size() == 0) return;
-				String host = url.getHost().toLowerCase();
-				if(host.equals("localhost")) host = "127.0.0.1";
-				int port = url.getPort();
-				if(port == -1) port = url.getDefaultPort();
-				String authority = host.concat(":").concat(String.valueOf(port));
-				String path = url.getPath();
-				if(path.equals("") || path.equals("/")){
-					sessions.put(authority, sessionCookies);
-				}else{
-					int index = path.indexOf("/", 1);
-					if(index != -1) path = path.substring(0, index);
-					sessions.put(authority.concat(path), sessionCookies);
-				}
+				saveSession(url,sessionCookies);
 			}
+		}
+	}
+	
+	/**
+	 * <p>保存用于维持session的cookie值
+	 * @param url
+	 * @param sessionCookies
+	 */
+	private static void saveSession(URL url,List<String> sessionCookies){
+		if(sessionCookies.size() == 0) return;
+		String host = url.getHost().toLowerCase();
+		if(host.equals("localhost")) host = "127.0.0.1";
+		int port = url.getPort();
+		if(port == -1) port = url.getDefaultPort();
+		String authority = host.concat(":").concat(String.valueOf(port));
+		String path = url.getPath();
+		if(path.equals("") || path.equals("/")){
+			sessions.put(authority, sessionCookies);
+		}else{
+			int index = path.indexOf("/", 1);
+			if(index != -1) path = path.substring(0, index);
+			sessions.put(authority.concat(path), sessionCookies);
 		}
 	}
 	
