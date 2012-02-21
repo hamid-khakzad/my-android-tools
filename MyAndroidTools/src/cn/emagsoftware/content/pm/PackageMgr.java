@@ -17,7 +17,7 @@ public final class PackageMgr {
 	private PackageMgr(){}
 	
 	/**
-	 * <p>获取已安装的ApplicationInfo列表
+	 * <p>获取已安装Package的AndroidManifest.xml中application节点的信息
 	 * @param context
 	 * @param isSort 为true时将按照ApplicationInfo.DisplayNameComparator排序
 	 * @return
@@ -30,7 +30,7 @@ public final class PackageMgr {
 	}
 	
 	/**
-	 * <p>根据packageName获取ApplicationInfo。若未找到指定的packageName，将返回null
+	 * <p>获取指定packageName的AndroidManifest.xml中application节点的信息。若指定的packageName未找到，将返回null
 	 * @param context
 	 * @param packageName
 	 * @return
@@ -44,7 +44,7 @@ public final class PackageMgr {
 	}
 	
 	/**
-	 * <p>获取已安装的PackageInfo列表
+	 * <p>获取已安装的Package列表。Package列表并不等同于可点击运行的程序列表
 	 * @param context
 	 * @return
 	 */
@@ -53,7 +53,7 @@ public final class PackageMgr {
 	}
 	
 	/**
-	 * <p>根据packageName获取PackageInfo。若未找到指定的packageName，将返回null
+	 * <p>根据packageName获取Package。若指定的packageName未找到，将返回null
 	 * @param context
 	 * @param packageName
 	 * @return
