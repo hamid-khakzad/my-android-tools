@@ -97,6 +97,19 @@ public final class WifiUtils {
 		Wifi.setupSecurity(wc, security, password);
 	}
 	
+	/**
+	 * <p>获取Wifi信号的等级，共1,2,3,4,5五个等级，1表示信号最强
+	 * @param dbmLevel
+	 * @return
+	 */
+	public int getLevelGrade(int dbmLevel){
+		if(dbmLevel > -30) return 1;
+		else if(dbmLevel > -45) return 2;
+		else if(dbmLevel > -60) return 3;
+		else if(dbmLevel > -75) return 4;
+		else return 5;
+	}
+	
 	public boolean disconnect(){
 		return wifiManager.disconnect();
 	}
