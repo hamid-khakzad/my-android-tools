@@ -99,14 +99,14 @@ public final class WifiUtils {
 	
 	/**
 	 * <p>获取Wifi信号的等级，共1,2,3,4,5五个等级，1表示信号最强
-	 * @param dbmLevel
+	 * @param dbmLevel 一般在-95至-35之间
 	 * @return
 	 */
 	public int getLevelGrade(int dbmLevel){
-		if(dbmLevel > -30) return 1;
-		else if(dbmLevel > -45) return 2;
-		else if(dbmLevel > -60) return 3;
-		else if(dbmLevel > -75) return 4;
+		if(dbmLevel >= -47) return 1;
+		else if(dbmLevel >= -59) return 2;
+		else if(dbmLevel >= -71) return 3;
+		else if(dbmLevel >= -83) return 4;
 		else return 5;
 	}
 	
