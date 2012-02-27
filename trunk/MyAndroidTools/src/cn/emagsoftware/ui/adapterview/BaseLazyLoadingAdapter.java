@@ -12,8 +12,6 @@ import android.widget.AdapterView;
 
 public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	
-	/**当前加载到的序号*/
-	protected int mStart = 0;
 	/**每次加载的长度*/
 	protected int mLimit = 10;
 	/**是否已经加载了全部数据*/
@@ -66,12 +64,13 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		mIsLoading = true;
 		mCurCondition = condition;
 		onBeginLoad(mContext,condition);    //在load中调用而不是在UIThread的onBeginUI中，可使UI线程衔接一致，避免带来外部的不同步情况
+		final int start = getRealCount();
 		ThreadPoolManager.executeThread(new UIThread(mContext){
 			@Override
 			protected Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
 				super.onRunNoUI(context);
-				return onLoad(context,condition,mStart,mLimit);
+				return onLoad(context,condition,start,mLimit);
 			}
 			@SuppressWarnings("unchecked")
 			@Override
@@ -89,9 +88,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
 					mIsLoading = false;
 					mIsLoaded = true;
-					int size = resultList.size();
-					mStart = mStart + size;
-					if(size == 0) mIsLoadedAll = true;
+					if(resultList.size() == 0) mIsLoadedAll = true;
 					else mIsLoadedAll = false;
 					mIsException = false;
 					onAfterLoad(context,condition,null);
@@ -108,16 +105,6 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 			}
 		});
 		return true;
-	}
-	
-	/**
-	 * <p>覆盖了父类的同名方法，以重置当前类的一些属性
-	 */
-	@Override
-	public void clearDataHolders() {
-		// TODO Auto-generated method stub
-		super.clearDataHolders();
-		mStart = 0;
 	}
 	
 	/**
