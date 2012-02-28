@@ -92,6 +92,10 @@ public class ToastWindow {
 		pw.setAnimationStyle(animationStyle);
 	}
 	
+	public void setClippingEnabled(boolean enabled){
+		pw.setClippingEnabled(enabled);
+	}
+	
 	public void setOnDismissListener(PopupWindow.OnDismissListener listener){
 		pw.setOnDismissListener(listener);
 	}

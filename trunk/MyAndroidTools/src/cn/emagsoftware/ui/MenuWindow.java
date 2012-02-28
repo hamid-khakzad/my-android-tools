@@ -55,6 +55,10 @@ public class MenuWindow {
 		pw.setAnimationStyle(animationStyle);
 	}
 	
+	public void setClippingEnabled(boolean enabled){
+		pw.setClippingEnabled(enabled);
+	}
+	
 	public boolean isShowing(){
 		return pw.isShowing();
 	}
