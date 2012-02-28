@@ -52,10 +52,6 @@ public class AsyncDataScheduler {
 	protected byte[] mLockStop = new byte[0];
 	/**用于同步提取队列代码块的锁对象*/
 	protected byte[] mLockExtract = new byte[0];
-	/**执行wait休眠的对象*/
-	private Object mWaitObj = new Object();
-	/**是否需要wait休眠*/
-	protected boolean mShouldWait = true;
 	
 	public AsyncDataScheduler(AdapterView<?> adapterView,int maxThreadCount,AsyncDataExecutor executor){
 		if(adapterView == null || executor == null) throw new NullPointerException();
@@ -388,30 +384,13 @@ public class AsyncDataScheduler {
 						}
 					}
 					try{
-						synchronized(mWaitObj){
-							if(!mShouldWait) {
-								mShouldWait = true;
-								continue;
-							}
-							mWaitObj.wait(SCHEDULER_DORMANCY_TIME);
-						}
+						sleep(SCHEDULER_DORMANCY_TIME);
 					}catch(InterruptedException e){
 						throw new RuntimeException(e);
 					}
 				}
 			};
 		});
-	}
-	
-	/**
-	 * <p>加快一次调度器的调度速度，调度器在两次调度之间会有一定的休眠
-	 * <p>一般情况下无需调用此方法，除非对调度器调度的及时性要求较高
-	 */
-	public void speedup(){
-		synchronized(mWaitObj){
-			mShouldWait = false;
-			mWaitObj.notifyAll();
-		}
 	}
 	
 	/**
