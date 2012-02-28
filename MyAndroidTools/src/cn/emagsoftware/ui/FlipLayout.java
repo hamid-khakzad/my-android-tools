@@ -10,13 +10,14 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Scroller;
 
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 4.3
+ * @version 4.4
  */
 public class FlipLayout extends ViewGroup {
 	
@@ -59,8 +60,7 @@ public class FlipLayout extends ViewGroup {
 		super(context, attrs, defStyle);
 		// TODO Auto-generated constructor stub
 		mScroller = new Scroller(context);
-		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-		mTouchSlop = 60;
+		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
 	
 	/**
