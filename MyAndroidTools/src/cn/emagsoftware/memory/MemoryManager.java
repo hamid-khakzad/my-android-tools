@@ -22,8 +22,8 @@ public final class MemoryManager {
 	}
 	
 	public static void recycleBitmaps(View view,AbstractBitmapSelector[] selectors,boolean recursive){
-		for(int i = 0;i < selectors.length;i++){
-			List<Bitmap> bitmaps = selectors[i].select(view, false);
+		for(AbstractBitmapSelector selector : selectors){
+			List<Bitmap> bitmaps = selector.select(view, false);
 			for(Bitmap b : bitmaps){
 				b.recycle();
 			}
