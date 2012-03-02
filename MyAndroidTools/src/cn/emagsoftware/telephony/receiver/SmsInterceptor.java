@@ -4,6 +4,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import cn.emagsoftware.telephony.SmsFilter;
+import cn.emagsoftware.util.LogManager;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,7 +14,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SmsMessage;
-import android.util.Log;
 
 public abstract class SmsInterceptor extends BroadcastReceiver {
 	
@@ -66,14 +66,14 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 	
 	protected final void dealInterceptDelay(Intent smsIntent,SmsMessage[] smsMessages){
 		if(isUnregistered){
-			Log.i("SmsInterceptor", "current interceptor has been invalid,resend sms broadcast what has been intercepted already.");
+			LogManager.logI(SmsInterceptor.class, "current interceptor has been invalid,resend sms broadcast what has been intercepted already.");
 			context.sendBroadcast(smsIntent);    //重新发送短信，防止短信丢失
 			return;
 		}
 		if(autoUnregisterWhenIntercept){
 			isDoneForAutoUnregisterWhenIntercept = true;
 			if(!unregisterMe()) {
-				Log.i("SmsInterceptor", "current interceptor has been invalid,resend sms broadcast what has been intercepted already.");
+				LogManager.logI(SmsInterceptor.class, "current interceptor has been invalid,resend sms broadcast what has been intercepted already.");
 				context.sendBroadcast(smsIntent);    //重新发送短信，防止短信丢失
 				return;
 			}
@@ -126,7 +126,7 @@ public abstract class SmsInterceptor extends BroadcastReceiver {
 			return true;
 		}catch(IllegalArgumentException e){
 			//重复反注册会抛出该异常，如通过代码注册的receiver在当前activity销毁时会自动反注册，若再反注册，即会抛出该异常
-			Log.e("SmsInterceptor", "unregister receiver failed.", e);
+			LogManager.logE(SmsInterceptor.class, "unregister receiver failed.", e);
 			return false;
 		}
 	}

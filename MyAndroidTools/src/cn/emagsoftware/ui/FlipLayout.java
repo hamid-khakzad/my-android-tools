@@ -3,10 +3,11 @@ package cn.emagsoftware.ui;
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.emagsoftware.util.LogManager;
+
 import android.content.Context;
 import android.os.Handler;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -21,7 +22,6 @@ import android.widget.Scroller;
  */
 public class FlipLayout extends ViewGroup {
 	
-	private static final String TAG = "FlipLayout";
 	private static final int SNAP_VELOCITY = 600;
 	
 	private Scroller mScroller;
@@ -247,7 +247,7 @@ public class FlipLayout extends ViewGroup {
 		
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
-			Log.i(TAG, "event down!");
+			LogManager.logI(FlipLayout.class, "event down!");
 			if (!mScroller.isFinished()){
 				mScroller.forceFinished(true);
 			}
@@ -265,7 +265,7 @@ public class FlipLayout extends ViewGroup {
             if(checkFlingWhenScroll()) mIsFlingChangedWhenPressed = true;
 			return true;
 		case MotionEvent.ACTION_UP:
-			Log.i(TAG, "event up!");
+			LogManager.logI(FlipLayout.class, "event up!");
 			mIsPressed = false;
 			mShouldResetIsFlingOutOfRangeBreak = true;
 			if(mIsFlingChangedWhenPressed){    //如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
@@ -278,14 +278,14 @@ public class FlipLayout extends ViewGroup {
 	            int velocityX = (int)mVelocityTracker.getXVelocity();
 	            mVelocityTracker.recycle();
 	            mVelocityTracker = null;
-	            Log.i(TAG, "velocityX:"+velocityX);
+	            LogManager.logI(FlipLayout.class, "velocityX:"+velocityX);
 	            if (velocityX > SNAP_VELOCITY && mCurScreen > 0) {
 	                //达到了向左移动的速度
-	            	Log.i(TAG, "snap left");
+	            	LogManager.logI(FlipLayout.class, "snap left");
 	            	scrollToScreen(mCurScreen - 1);
 	            } else if (velocityX < -SNAP_VELOCITY && mCurScreen < mNoGoneChildren.size() - 1) {
 	                //达到了向右移动的速度
-	            	Log.i(TAG, "snap right");
+	            	LogManager.logI(FlipLayout.class, "snap right");
 	            	scrollToScreen(mCurScreen + 1);
 	            } else {
 	            	scrollToScreen(mCurScreen);

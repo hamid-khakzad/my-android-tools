@@ -8,10 +8,10 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.provider.Settings;
-import android.util.Log;
 
 import cn.emagsoftware.net.http.HttpConnectionManager;
 import cn.emagsoftware.net.http.HttpResponseResult;
+import cn.emagsoftware.util.LogManager;
 
 public final class NetManager {
 	
@@ -40,11 +40,11 @@ public final class NetManager {
 					}
 				}
 			}catch(IOException e){
-				Log.e("NetManager", "the "+th+" time to check net for method of isNetUseful failed.", e);
+				LogManager.logE(NetManager.class, "the "+th+" time to check net for method of isNetUseful failed.", e);
 			}
 			th++;
 		}
-		Log.e("NetManager", "checking net for method of isNetUseful has all failed,will return false.");
+		LogManager.logE(NetManager.class, "checking net for method of isNetUseful has all failed,will return false.");
 		return false;
 	}
 	

@@ -28,6 +28,8 @@ package cn.emagsoftware.net.wifi.support;
 import java.util.Comparator;
 import java.util.List;
 
+import cn.emagsoftware.util.LogManager;
+
 import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
@@ -38,7 +40,6 @@ import android.net.wifi.WifiConfiguration.KeyMgmt;
 import android.net.wifi.WifiConfiguration.PairwiseCipher;
 import android.net.wifi.WifiConfiguration.Protocol;
 import android.text.TextUtils;
-import android.util.Log;
 
 public class Wifi {
 	
@@ -57,8 +58,6 @@ public class Wifi {
     public static final int WEP_PASSWORD_ASCII = 1;
     public static final int WEP_PASSWORD_HEX = 2;
     
-	private static final String TAG = "Wifi Connecter";
-	
 	/**
 	 * Change the password of an existing configured network and connect to it
 	 * @param wifiMgr
@@ -340,7 +339,7 @@ public class Wifi {
         } else if (wifiConfig.allowedProtocols.get(Protocol.WPA)) {
             return WPA;
         } else {
-            Log.w(TAG, "Unknown security type from WifiConfiguration, falling back on open.");
+            LogManager.logW(Wifi.class, "Unknown security type from WifiConfiguration, falling back on open.");
             return OPEN;
         }
     }
@@ -361,7 +360,7 @@ public class Wifi {
         
         if (TextUtils.isEmpty(security)) {
             security = OPEN;
-            Log.w(TAG, "Empty security, assuming open");
+            LogManager.logW(Wifi.class, "Empty security, assuming open");
         }
         
         if (security.equals(WEP)) {

@@ -19,10 +19,10 @@ import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
 import android.content.Context;
-import android.util.Log;
 
 import cn.emagsoftware.net.http.HttpConnectionManager;
 import cn.emagsoftware.net.http.HttpResponseResult;
+import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.MathUtilities;
 import cn.emagsoftware.util.StringUtilities;
 
@@ -127,10 +127,10 @@ class DefaultAutoUser extends AutoUser {
 			if("rtn_0000".equalsIgnoreCase(responseArr[0])) return null;    //请求成功
 			else return responseArr[1];
 		}catch(IOException e){
-			Log.e("DefaultAutoUser", "requestPassword failed.", e);
+			LogManager.logE(DefaultAutoUser.class, "requestPassword failed.", e);
 			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
 		}catch(ParserException e){
-			Log.e("DefaultAutoUser", "requestPassword failed.", e);
+			LogManager.logE(DefaultAutoUser.class, "requestPassword failed.", e);
 			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
 		}
 	}
@@ -180,10 +180,10 @@ class DefaultAutoUser extends AutoUser {
 			String loginResult = doHttpPostContainsRedirect(submitUrl,params).getDataString("gb2312");
 			return parseLoginResult(loginResult);
 		}catch(IOException e){
-			Log.e("DefaultAutoUser", "logining failed.", e);
+			LogManager.logE(DefaultAutoUser.class, "logining failed.", e);
 			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
 		}catch(ParserException e){
-			Log.e("DefaultAutoUser", "logining failed.", e);
+			LogManager.logE(DefaultAutoUser.class, "logining failed.", e);
 			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
 		}
 	}
@@ -250,11 +250,11 @@ class DefaultAutoUser extends AutoUser {
 				//暂时直接写死该项的值，以后将作修改
 				cmccLogoutPageFields.put("logouttype", "TYPESUBMIT");
 			}catch(ParserException e){
-				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+				LogManager.logE(DefaultAutoUser.class, "deal logining result page failed.", e);
 			}catch(IOException e){
-				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+			    LogManager.logE(DefaultAutoUser.class, "deal logining result page failed.", e);
 			}catch(RuntimeException e){
-				Log.e("DefaultAutoUser", "deal logining result page failed.", e);
+			    LogManager.logE(DefaultAutoUser.class, "deal logining result page failed.", e);
 			}*/
 			return null;
 		}else if(confirmIndex != -1){    //当前登录的用户已在线
@@ -408,11 +408,11 @@ class DefaultAutoUser extends AutoUser {
 			HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLogoutPageFields);
 			String html = result.getDataString("gb2312");
 			
-			Log.i("DefaultAutoUser",html);
+			LogManager.logI(DefaultAutoUser.class, html);
 			
 			return null;
 		}catch(IOException e){
-			Log.e("DefaultAutoUser", "logouting failed.", e);
+		    LogManager.logE(DefaultAutoUser.class, "logouting failed.", e);
 			return context.getString(context.getResources().getIdentifier("DefaultAutoUser_net_error", "string", context.getPackageName()));
 		}*/
 	}

@@ -8,9 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cn.emagsoftware.util.LogManager;
+
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -333,7 +334,7 @@ public class AsyncDataScheduler {
 									}catch(Exception e){
 										int from = positions.get(0);
 										int to = positions.get(positions.size() - 1);
-										Log.e("AsyncDataScheduler", "execute async data failed from position "+from+" to "+to+".", e);
+										LogManager.logE(AsyncDataScheduler.class, "execute async data failed from position "+from+" to "+to+".", e);
 									}
 									//添加加载过的DataHolder到mResolvedHolders
 									boolean hasExecuteOneAtLeast = false;

@@ -3,7 +3,8 @@ package cn.emagsoftware.cmcc.wlan;
 import java.util.List;
 
 import android.content.Context;
-import android.util.Log;
+
+import cn.emagsoftware.util.LogManager;
 
 import com.chinamobile.g3wlan.export.G3WlanStatus;
 import com.chinamobile.g3wlan.export.ServiceCore;
@@ -11,7 +12,6 @@ import com.chinamobile.g3wlan.export.ServiceInterface;
 
 public class CMCCImplUser {
 	
-	private static final String TAG = CMCCImplUser.class.getSimpleName();
 	protected Context context = null;
 	protected ServiceInterface serviceCore = null;
 	
@@ -89,14 +89,14 @@ public class CMCCImplUser {
 	}
 	
 	int checkLoginStatus() {
-		Log.d(TAG, "wait status");
+		LogManager.logD(CMCCImplUser.class, "wait status");
 		int status = waitStatus(serviceCore, new Integer[] {
 				G3WlanStatus.LOGGED_IN, G3WlanStatus.AUTH_DATA_REQUIRED,
 				G3WlanStatus.LOGIN_FAIL, G3WlanStatus.SERVICE_UPGRADING,
 				G3WlanStatus.READY //in case cancelled
 				}, 15000);
-
-		Log.d(TAG, "now status " + status);
+		
+		LogManager.logD(CMCCImplUser.class, "now status " + status);
 
 		if (G3WlanStatus.LOGGING_IN == status
 				|| G3WlanStatus.LOGIN_FAIL == status) {
@@ -184,7 +184,7 @@ public class CMCCImplUser {
         		},
         		5000);
         
-        Log.d(TAG, "logout status "+status);
+        LogManager.logD(CMCCImplUser.class, "logout status "+status);
         
         switch(status){
         case G3WlanStatus.INIT:

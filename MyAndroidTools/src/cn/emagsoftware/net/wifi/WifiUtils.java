@@ -4,7 +4,7 @@ import java.util.List;
 
 import cn.emagsoftware.net.NetManager;
 import cn.emagsoftware.net.wifi.support.Wifi;
-
+import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
 import android.net.NetworkInfo;
@@ -15,7 +15,6 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 public final class WifiUtils {
 	
@@ -139,24 +138,24 @@ public final class WifiUtils {
 			@Override
 			public void onWifiEnabled() {
 				// TODO Auto-generated method stub
-				Log.d("WifiUtils", "revert to previous wifi state...");
+				LogManager.logD(WifiUtils.class, "revert to previous wifi state...");
 				setWifiEnabled(false, new WifiCallback(context) {
 					@Override
 					public void onWifiDisabled() {
 						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state successfully.");
+						LogManager.logD(WifiUtils.class, "revert to previous wifi state successfully.");
 						callback.onWifiExist();
 					}
 					@Override
 					public void onError() {
 						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state unsuccessfully.");
+						LogManager.logD(WifiUtils.class, "revert to previous wifi state unsuccessfully.");
 						callback.onWifiExist();
 					}
 					@Override
 					public void onTimeout() {
 						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state time out.");
+						LogManager.logD(WifiUtils.class, "revert to previous wifi state time out.");
 						callback.onWifiExist();
 					}
 				}, timeout);
@@ -169,24 +168,24 @@ public final class WifiUtils {
 			@Override
 			public void onTimeout() {
 				// TODO Auto-generated method stub
-				Log.d("WifiUtils", "revert to previous wifi state...");
+				LogManager.logD(WifiUtils.class, "revert to previous wifi state...");
 				setWifiEnabled(false, new WifiCallback(context) {
 					@Override
 					public void onWifiDisabled() {
 						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state successfully.");
+						LogManager.logD(WifiUtils.class, "revert to previous wifi state successfully.");
 						callback.onTimeout();
 					}
 					@Override
 					public void onError() {
 						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state unsuccessfully.");
+						LogManager.logD(WifiUtils.class, "revert to previous wifi state unsuccessfully.");
 						callback.onTimeout();
 					}
 					@Override
 					public void onTimeout() {
 						// TODO Auto-generated method stub
-						Log.d("WifiUtils", "revert to previous wifi state time out.");
+						LogManager.logD(WifiUtils.class, "revert to previous wifi state time out.");
 						callback.onTimeout();
 					}
 				}, timeout);

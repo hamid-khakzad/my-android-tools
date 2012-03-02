@@ -1,9 +1,9 @@
 package cn.emagsoftware.ui;
 
+import cn.emagsoftware.util.LogManager;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
@@ -100,7 +100,7 @@ public class ToastWindow {
 		try{
 			pw.dismiss();
 		}catch(RuntimeException e){   //如果依附的window已关闭，则调用dismiss会导致异常，这里原则上不应该向外抛出
-			Log.e("ToastWindow", "dismiss ToastWindow failed.", e);
+			LogManager.logE(ToastWindow.class, "dismiss ToastWindow failed.", e);
 		}
 	}
 	
