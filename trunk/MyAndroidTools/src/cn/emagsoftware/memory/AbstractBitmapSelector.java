@@ -9,7 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
-public abstract class ViewBitmapSelector {
+public abstract class AbstractBitmapSelector {
 	
 	protected Resources res = null;
 	/**
@@ -20,9 +20,9 @@ public abstract class ViewBitmapSelector {
 	 */
 	protected int[] drawableIdsToExclude = null;
 	
-	public ViewBitmapSelector(){}
+	public AbstractBitmapSelector(){}
 	
-	public ViewBitmapSelector(Resources res,int[] drawableIdsToExclude){
+	public AbstractBitmapSelector(Resources res,int[] drawableIdsToExclude){
 		if(res == null || drawableIdsToExclude == null) throw new NullPointerException();
 		this.res = res;
 		this.drawableIdsToExclude = drawableIdsToExclude;
