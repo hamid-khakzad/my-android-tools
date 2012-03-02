@@ -8,7 +8,7 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.ImageView;
 
-public class ImageViewFgBitmapSelector extends ViewBitmapSelector {
+public class ImageViewFgBitmapSelector extends AbstractBitmapSelector {
 	
 	public ImageViewFgBitmapSelector(){
 		super();

@@ -15,22 +15,24 @@ public final class MemoryManager {
 	private MemoryManager(){}
 	
 	public static void recycleBitmaps(Drawable drawable){
-		List<Bitmap> bitmaps = ViewBitmapSelector.drawableToBitmaps(drawable, false);
+		List<Bitmap> bitmaps = AbstractBitmapSelector.drawableToBitmaps(drawable, false);
 		for(Bitmap b : bitmaps){
 			b.recycle();
 		}
 	}
 	
-	public static void recycleBitmaps(View view,ViewBitmapSelector selector,boolean recursive){
-		List<Bitmap> bitmaps = selector.select(view, false);
-		for(Bitmap b : bitmaps){
-			b.recycle();
+	public static void recycleBitmaps(View view,AbstractBitmapSelector[] selectors,boolean recursive){
+		for(int i = 0;i < selectors.length;i++){
+			List<Bitmap> bitmaps = selectors[i].select(view, false);
+			for(Bitmap b : bitmaps){
+				b.recycle();
+			}
 		}
 		if(recursive && view instanceof ViewGroup){
 			ViewGroup viewGroup = (ViewGroup)view;
 			for(int i = 0;i < viewGroup.getChildCount();i++){
 				View child = viewGroup.getChildAt(i);
-				recycleBitmaps(child,selector,recursive);
+				recycleBitmaps(child,selectors,recursive);
 			}
 		}
 	}
