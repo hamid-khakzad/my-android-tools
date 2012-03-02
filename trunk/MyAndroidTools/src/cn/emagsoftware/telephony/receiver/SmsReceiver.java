@@ -4,6 +4,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import cn.emagsoftware.telephony.SmsFilter;
+import cn.emagsoftware.util.LogManager;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,7 +14,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.telephony.SmsMessage;
-import android.util.Log;
 
 public abstract class SmsReceiver extends BroadcastReceiver {
 	
@@ -109,7 +109,7 @@ public abstract class SmsReceiver extends BroadcastReceiver {
 			return true;
 		}catch(IllegalArgumentException e){
 			//重复反注册会抛出该异常，如通过代码注册的receiver在当前activity销毁时会自动反注册，若再反注册，即会抛出该异常
-			Log.e("SmsReceiver", "unregister receiver failed.", e);
+			LogManager.logE(SmsReceiver.class, "unregister receiver failed.", e);
 			return false;
 		}
 	}

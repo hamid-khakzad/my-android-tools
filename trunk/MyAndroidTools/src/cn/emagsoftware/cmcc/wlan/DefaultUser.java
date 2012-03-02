@@ -15,11 +15,10 @@ import org.htmlparser.tags.InputTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
-import android.util.Log;
-
 import cn.emagsoftware.net.http.HtmlManager;
 import cn.emagsoftware.net.http.HttpConnectionManager;
 import cn.emagsoftware.net.http.HttpResponseResult;
+import cn.emagsoftware.util.LogManager;
 
 class DefaultUser extends User {
 	
@@ -73,7 +72,7 @@ class DefaultUser extends User {
 				doParseLoginPage(pageHtml);
 				return User.RETURN_TRUE;
 			}catch(ParserException e){
-				Log.e("DefaultUser", "parsing cmcc logining page failed.", e);
+				LogManager.logE(DefaultUser.class, "parsing cmcc logining page failed.", e);
 				return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
 			}
 		}else{
@@ -92,7 +91,7 @@ class DefaultUser extends User {
 				HttpResponseResult result = doHttpGetContainsRedirect(location);
 				return parseLoginPage(result.getDataString("gb2312"));
 			}catch(IOException e){
-				Log.e("DefaultUser", "requesting "+location+" failed.", e);
+				LogManager.logE(DefaultUser.class, "requesting "+location+" failed.", e);
 				return User.RETURN_FALSE_NET_ERROR;
 			}
 		}
@@ -248,10 +247,10 @@ class DefaultUser extends User {
 			try {
 				code = Integer.valueOf(temp);
 			} catch (NumberFormatException e){
-				Log.e("DefaultUser", "parsing code from logining result page failed.", e);
+				LogManager.logE(DefaultUser.class, "parsing code from logining result page failed.", e);
 				return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
 			}
-			Log.d("DefaultUser", "logging returns code:"+code);
+			LogManager.logD(DefaultUser.class, "logging returns code:"+code);
 			if(code == 1 || code == 3) return User.RETURN_FALSE_NAME_OR_PWD_WRONG;   //用户名或密码有误
 			else if(code == 26 || code == 55) return User.RETURN_FALSE_ALREADY_LOGIN;    //当前帐户已登录
 			else if(code != 0) return User.RETURN_FALSE_GENERIC;    //其他登录失败情况
@@ -259,13 +258,13 @@ class DefaultUser extends User {
 				//when it is login response html, extract the parameters
 				doParseLoginPage(html);
 			}catch(ParserException e){
-				Log.e("DefaultUser", "deal logining result page failed.", e);
+				LogManager.logE(DefaultUser.class, "deal logining result page failed.", e);
 			}catch(RuntimeException e){
-				Log.e("DefaultUser", "deal logining result page failed.", e);
+				LogManager.logE(DefaultUser.class, "deal logining result page failed.", e);
 			}
 			return User.RETURN_TRUE;
 		}catch(IOException e){
-			Log.e("DefaultUser", "logining failed.", e);
+			LogManager.logE(DefaultUser.class, "logining failed.", e);
 			return User.RETURN_FALSE_NET_ERROR;
 		}
 	}
@@ -290,7 +289,7 @@ class DefaultUser extends User {
 			this.cmccPageHtml = html;
 			return User.RETURN_FALSE_GENERIC;
 		}catch(IOException e){
-			Log.e("DefaultUser", "requesting "+GUIDE_URL+" failed.", e);
+			LogManager.logE(DefaultUser.class, "requesting "+GUIDE_URL+" failed.", e);
 			return User.RETURN_FALSE_NET_ERROR;
 		}
 	}
@@ -381,14 +380,14 @@ class DefaultUser extends User {
 			try {
 				code = Integer.valueOf(temp);
 			} catch (NumberFormatException e){
-				Log.e("DefaultUser", "parsing code from logouting result page failed.", e);
+				LogManager.logE(DefaultUser.class, "parsing code from logouting result page failed.", e);
 				return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
 			}
-			Log.d("DefaultUser", "logouting returns code:"+code);
+			LogManager.logD(DefaultUser.class, "logouting returns code:"+code);
 			if (code != 0) return User.RETURN_FALSE_GENERIC;
 			return User.RETURN_TRUE;
 		}catch(IOException e){
-			Log.e("DefaultUser", "logouting failed.", e);
+			LogManager.logE(DefaultUser.class, "logouting failed.", e);
 			return User.RETURN_FALSE_NET_ERROR;
 		}
 	}

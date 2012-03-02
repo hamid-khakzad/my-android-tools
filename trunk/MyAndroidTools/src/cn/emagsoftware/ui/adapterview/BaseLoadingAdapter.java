@@ -3,9 +3,9 @@ package cn.emagsoftware.ui.adapterview;
 import java.util.List;
 
 import cn.emagsoftware.ui.UIThread;
+import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
-import android.util.Log;
 
 public abstract class BaseLoadingAdapter extends GenericAdapter{
 	
@@ -61,7 +61,7 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 			protected void onExceptionUI(Context context,Exception e) {
 				// TODO Auto-generated method stub
 				super.onExceptionUI(context,e);
-				Log.e("BaseLoadingAdapter","Execute loading failed.",e);
+				LogManager.logE(BaseLoadingAdapter.class, "Execute loading failed.", e);
 				mIsLoading = false;
 				mIsException = true;
 				onAfterLoad(context,condition,e);

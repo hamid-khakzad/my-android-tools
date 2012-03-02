@@ -4,9 +4,9 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import cn.emagsoftware.ui.UIThread;
+import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
-import android.util.Log;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
@@ -98,7 +98,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 			protected void onExceptionUI(Context context,Exception e) {
 				// TODO Auto-generated method stub
 				super.onExceptionUI(context,e);
-				Log.e("BaseLazyLoadingAdapter","Execute lazy loading failed.",e);
+				LogManager.logE(BaseLazyLoadingAdapter.class, "Execute lazy loading failed.", e);
 				mIsLoading = false;
 				mIsException = true;
 				onAfterLoad(context,condition,e);

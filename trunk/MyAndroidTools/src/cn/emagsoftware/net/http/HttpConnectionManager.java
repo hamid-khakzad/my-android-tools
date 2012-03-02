@@ -30,8 +30,7 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import cn.emagsoftware.util.Base64;
-
-import android.util.Log;
+import cn.emagsoftware.util.LogManager;
 
 /**
  * Http Connection Manager
@@ -258,7 +257,7 @@ public final class HttpConnectionManager {
 		HttpURLConnection httpConn = null;
 		OutputStream output = null;
 		try{
-			Log.i("HttpConnectionManager", "request url '".concat(packUrl).concat("'..."));
+			LogManager.logI(HttpConnectionManager.class, "request url '".concat(packUrl).concat("'..."));
 			if(isSSL) {
 				SSLContext sslCont = SSLContext.getInstance("TLS");
 				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
@@ -279,7 +278,7 @@ public final class HttpConnectionManager {
 			if(isKeepSession){
 				String session = querySession(myUrl);
 				if(session != null){
-					Log.i("HttpConnectionManager", "queried session("+session+") for url "+myUrl);
+					LogManager.logI(HttpConnectionManager.class, "queried session("+session+") for url "+myUrl);
 					httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
 				}
 			}
@@ -320,7 +319,7 @@ public final class HttpConnectionManager {
 							}
 							byte[] wmlData = tempOutput.toByteArray();
 							String wmlStr = new String(wmlData,"UTF-8");
-							Log.i("HttpConnectionManager", "parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
+							LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
 							//解析资费提示页面中的URL
 							XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
 							XmlPullParser xmlParser = factory.newPullParser();
@@ -344,7 +343,7 @@ public final class HttpConnectionManager {
 								eventType = xmlParser.next();
 							}
 							if(parseUrl == null || parseUrl.equals("")) {
-								Log.w("HttpConnectionManager", "could not parse url from CMWap charge page,would use the original url to try again...");
+								LogManager.logW(HttpConnectionManager.class, "could not parse url from CMWap charge page,would use the original url to try again...");
 								parseUrl = url;
 							}
 							return openConnection(parseUrl,urlEnc,method,followRedirects,connOrReadTimeout,currentRedirectCount,++currentCMWapChargePageCount,requestHeaders,postData);
@@ -365,7 +364,7 @@ public final class HttpConnectionManager {
 				if(location == null) throw new IOException("redirects failed:could not find the location header");
 				if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
 				httpConn.disconnect();
-				Log.i("HttpConnectionManager", "follow redirects...");
+				LogManager.logI(HttpConnectionManager.class, "follow redirects...");
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
 			}else{
 				throw new IOException("requesting returns http code:" + rspCode);
@@ -456,7 +455,7 @@ public final class HttpConnectionManager {
 							}
 						}
 						if(sessionCookie == null) sessionCookie = cookieArr[0].trim();
-						Log.i("HttpConnectionManager", "prepare to save session("+sessionCookie+") for url "+url+"...");
+						LogManager.logI(HttpConnectionManager.class, "prepare to save session("+sessionCookie+") for url "+url+"...");
 						sessionCookies.add(sessionCookie);
 					}
 				}
