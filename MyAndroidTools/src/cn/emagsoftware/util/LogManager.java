@@ -6,12 +6,15 @@ import android.util.Log;
  * <p>日志管理类，主要对日志做了以下几点功能补充：<br>
  *    1.强制执行TAG参数使用类名的规范<br>
  *    2.避免了直接输出变量可能导致的空指针异常<br>
- *    3.增加了显示开关，可根据等级控制日志显示与否
+ *    3.增加了输出开关，可根据等级控制日志输出与否
  * @author Wendell
  *
  */
 public final class LogManager {
 	
+	/**
+	 * <p>通过设置此变量来控制日志的输出，只有等级大于等于设置的等级时日志才会被输出，设置此变量为Log.ASSERT可禁止所有等级的日志输出
+	 */
 	public static int LOGGING_LEVEL = Log.VERBOSE;
 	
 	private LogManager(){}
