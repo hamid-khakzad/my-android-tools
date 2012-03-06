@@ -35,7 +35,7 @@ import cn.emagsoftware.util.LogManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.5
+ * @version 3.6
  */
 public final class HttpConnectionManager {
 	
@@ -321,26 +321,30 @@ public final class HttpConnectionManager {
 							String wmlStr = new String(wmlData,"UTF-8");
 							LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
 							//解析资费提示页面中的URL
-							XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-							XmlPullParser xmlParser = factory.newPullParser();
-							xmlParser.setInput(new StringReader(wmlStr));
 							String parseUrl = null;
-							boolean onEnterForward = false;
-							int eventType = xmlParser.getEventType();
-							while (eventType != XmlPullParser.END_DOCUMENT) {
-								switch (eventType) {
-								case XmlPullParser.START_TAG:
-									String tagName = xmlParser.getName().toLowerCase();
-									if ("onevent".equals(tagName)) {
-										String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
-										if ("onenterforward".equals(s)) onEnterForward = true;
-									} else if ("go".equals(tagName)){
-										if(onEnterForward) parseUrl = xmlParser.getAttributeValue(null, "href");
+							try{
+								XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+								XmlPullParser xmlParser = factory.newPullParser();
+								xmlParser.setInput(new StringReader(wmlStr));
+								boolean onEnterForward = false;
+								int eventType = xmlParser.getEventType();
+								while (eventType != XmlPullParser.END_DOCUMENT) {
+									switch (eventType) {
+									case XmlPullParser.START_TAG:
+										String tagName = xmlParser.getName().toLowerCase();
+										if ("onevent".equals(tagName)) {
+											String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
+											if ("onenterforward".equals(s)) onEnterForward = true;
+										} else if ("go".equals(tagName)){
+											if(onEnterForward) parseUrl = xmlParser.getAttributeValue(null, "href");
+										}
+										break;
 									}
-									break;
+									if(parseUrl != null) break;
+									eventType = xmlParser.next();
 								}
-								if(parseUrl != null) break;
-								eventType = xmlParser.next();
+							}catch(Exception e){
+								LogManager.logW(HttpConnectionManager.class, "parse CMWap charge page failed", e);
 							}
 							if(parseUrl == null || parseUrl.equals("")) {
 								LogManager.logW(HttpConnectionManager.class, "could not parse url from CMWap charge page,would use the original url to try again...");
