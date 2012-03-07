@@ -115,6 +115,7 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	
 	/**
 	 * <p>设置总页数
+	 * <p>如果使用页码参数来实现分步加载，可通过调用该方法来限制页码范围，从而避免不必要的额外加载
 	 * @param pages
 	 */
 	public void setPages(int pages){
@@ -159,7 +160,6 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	
 	/**
 	 * <p>加载的具体实现，通过传入的参数可以实现分步加载。该方法由非UI线程回调，所以可以执行耗时操作
-	 * <p>如果使用页码的方式来实现分步加载，可在该方法的最后调用setPages来设置总页数，从而使isLoadedAll方法能够尽可能快的得到确认
 	 * @param context
 	 * @param condition
 	 * @param start 要加载的开始序号，最小值为0
