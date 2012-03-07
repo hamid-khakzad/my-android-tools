@@ -44,18 +44,12 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 			protected void onSuccessUI(Context context,Object result) {
 				// TODO Auto-generated method stub
 				super.onSuccessUI(context,result);
-				if(result == null){
-					mIsLoading = false;
-					mIsLoaded = true;
-					mIsException = false;
-					onAfterLoad(context,condition,null);
-				}else{
-					addDataHolders((List<DataHolder>)result);    //该方法需在UI线程中执行且是非线程安全的
-					mIsLoading = false;
-					mIsLoaded = true;
-					mIsException = false;
-					onAfterLoad(context,condition,null);
-				}
+				List<DataHolder> resultList = (List<DataHolder>)result;
+				if(resultList != null && resultList.size() > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
+				mIsLoading = false;
+				mIsLoaded = true;
+				mIsException = false;
+				onAfterLoad(context,condition,null);
 			}
 			@Override
 			protected void onExceptionUI(Context context,Exception e) {
