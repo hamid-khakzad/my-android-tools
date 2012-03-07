@@ -10,43 +10,39 @@ import android.content.Context;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
-/**
- * @deprecated 该类已舍弃，请使用BaseStepLoadingAdapter代替
- * @author Wendell
- */
-public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
+public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	
-	/**每次加载的长度*/
-	protected int mLimit = 10;
+	/**当前的页码*/
+	protected int mPage = 0;
+	/**总页数*/
+	protected int mPages = -1;
 	/**是否已经加载了全部数据*/
 	protected boolean mIsLoadedAll = false;
 	
-	public BaseLazyLoadingAdapter(Context context,int limit){
+	public BaseStepLoadingAdapter(Context context) {
 		super(context);
-		if(limit <= 0) throw new IllegalArgumentException("limit should be great than zero.");
-		mLimit = limit;
 	}
 	
 	/**
-	 * <p>绑定AdapterView，使其自动懒加载
+	 * <p>绑定AdapterView，使其自动分步加载
 	 * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载
-	 * <p>AbsListView的bindLazyLoading实现实际上执行了OnScrollListener事件；
-	 *    用户若包含自己的OnScrollListener逻辑，请在bindLazyLoading之前调用setOnScrollListener，bindLazyLoading方法会将用户的逻辑包含进来；
-	 *    若在bindLazyLoading之后调用setOnScrollListener，将取消bindLazyLoading的作用
+	 * <p>AbsListView的bindStepLoading实现实际上执行了OnScrollListener事件；
+	 *    用户若包含自己的OnScrollListener逻辑，请在bindStepLoading之前调用setOnScrollListener，bindStepLoading方法会将用户的逻辑包含进来；
+	 *    若在bindStepLoading之后调用setOnScrollListener，将取消bindStepLoading的作用
 	 * @param adapterView
 	 * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
 	 */
-	public void bindLazyLoading(AdapterView<?> adapterView,int remainingCount){
+	public void bindStepLoading(AdapterView<?> adapterView,int remainingCount){
 		if(adapterView instanceof AbsListView){
 			try{
 				AbsListView absList = (AbsListView)adapterView;
 				Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
 				field.setAccessible(true);
 				AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener)field.get(absList);
-				if(onScrollListener != null && onScrollListener instanceof LazyLoadingListener){
-					absList.setOnScrollListener(new LazyLoadingListener(((LazyLoadingListener)onScrollListener).getOriginalListener(), remainingCount));
+				if(onScrollListener != null && onScrollListener instanceof StepLoadingListener){
+					absList.setOnScrollListener(new StepLoadingListener(((StepLoadingListener)onScrollListener).getOriginalListener(), remainingCount));
 				}else{
-					absList.setOnScrollListener(new LazyLoadingListener(onScrollListener, remainingCount));
+					absList.setOnScrollListener(new StepLoadingListener(onScrollListener, remainingCount));
 				}
 			}catch(NoSuchFieldException e){
 				throw new RuntimeException(e);
@@ -54,12 +50,12 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 				throw new RuntimeException(e);
 			}
 		}else{
-			throw new UnsupportedOperationException("Only supports lazy loading for the AdapterView which is AbsListView.");
+			throw new UnsupportedOperationException("Only supports step loading for the AdapterView which is AbsListView.");
 		}
 	}
 	
 	/**
-	 * <p>覆盖了父类的同名方法，用来执行懒加载
+	 * <p>覆盖了父类的同名方法，用来执行分步加载
 	 */
 	@Override
 	public boolean load(final Object condition) {
@@ -74,41 +70,64 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 			protected Object onRunNoUI(Context context) throws Exception {
 				// TODO Auto-generated method stub
 				super.onRunNoUI(context);
-				return onLoad(context,condition,start,mLimit);
+				return onLoad(context,condition,start,mPage + 1);
 			}
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void onSuccessUI(Context context,Object result) {
 				// TODO Auto-generated method stub
 				super.onSuccessUI(context,result);
-				if(result == null){
-					mIsLoading = false;
-					mIsLoaded = true;
-					mIsLoadedAll = true;
-					mIsException = false;
-					onAfterLoad(context,condition,null);
-				}else{
-					List<DataHolder> resultList = (List<DataHolder>)result;
-					addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
-					mIsLoading = false;
-					mIsLoaded = true;
-					if(resultList.size() == 0) mIsLoadedAll = true;
+				mPage++;
+				List<DataHolder> resultList = (List<DataHolder>)result;
+				if(resultList != null && resultList.size() > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
+				mIsLoading = false;
+				mIsLoaded = true;
+				if(mPages == -1){
+					if(resultList == null || resultList.size() == 0) mIsLoadedAll = true;
 					else mIsLoadedAll = false;
-					mIsException = false;
-					onAfterLoad(context,condition,null);
+				}else{
+					if(mPage >= mPages) mIsLoadedAll = true;
+					else mIsLoadedAll = false;
 				}
+				mIsException = false;
+				onAfterLoad(context,condition,null);
 			}
 			@Override
 			protected void onExceptionUI(Context context,Exception e) {
 				// TODO Auto-generated method stub
 				super.onExceptionUI(context,e);
-				LogManager.logE(BaseLazyLoadingAdapter.class, "Execute lazy loading failed.", e);
+				LogManager.logE(BaseStepLoadingAdapter.class, "Execute step loading failed.", e);
 				mIsLoading = false;
 				mIsException = true;
 				onAfterLoad(context,condition,e);
 			}
 		});
 		return true;
+	}
+	
+	/**
+	 * <p>获取当前的页码
+	 * @return
+	 */
+	public int getPage(){
+		return mPage;
+	}
+	
+	/**
+	 * <p>设置总页数
+	 * @param pages
+	 */
+	public void setPages(int pages){
+		if(pages < 0) throw new IllegalArgumentException("pages could not be less than zero.");
+		this.mPages = pages;
+	}
+	
+	/**
+	 * <p>获取总页数
+	 * @return
+	 */
+	public int getPages(){
+		return mPages;
 	}
 	
 	/**
@@ -120,7 +139,17 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>对于当前类而言，已使用onLoad(Context context,Object condition,int start,int limit)替换了当前方法的作用，故将其简单实现以防止子类被强制要求实现
+	 * <p>覆盖父类的方法，以重置当前类的一些属性
+	 */
+	@Override
+	public void clearDataHolders() {
+		// TODO Auto-generated method stub
+		super.clearDataHolders();
+		mPage = 0;
+	}
+	
+	/**
+	 * <p>对于当前类而言，已使用onLoad(Context context,Object condition,int start,int page)替换了当前方法的作用，故将其简单实现以防止子类被强制要求实现
 	 */
 	@Override
 	public List<DataHolder> onLoad(Context context,Object condition) throws Exception {
@@ -129,21 +158,22 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>加载的具体实现，通过传入的参数可以实现分段的懒加载。该方法由非UI线程回调，所以可以执行耗时操作
+	 * <p>加载的具体实现，通过传入的参数可以实现分步加载。该方法由非UI线程回调，所以可以执行耗时操作
+	 * <p>如果使用页码的方式来实现分步加载，可在该方法的最后调用setPages来设置总页数，从而使isLoadedAll方法能够尽可能快的得到确认
 	 * @param context
 	 * @param condition
-	 * @param start 本次加载的开始序号
-	 * @param limit 本次加载的长度
+	 * @param start 要加载的开始序号，最小值为0
+	 * @param page 要加载的页码，最小值为1
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract List<DataHolder> onLoad(Context context,Object condition,int start,int limit) throws Exception;
+	public abstract List<DataHolder> onLoad(Context context,Object condition,int start,int page) throws Exception;
 	
-	private class LazyLoadingListener implements AbsListView.OnScrollListener{
+	private class StepLoadingListener implements AbsListView.OnScrollListener{
 		private AbsListView.OnScrollListener mOriginalListener = null;
 		private int mRemainingCount = 0;
-		public LazyLoadingListener(AbsListView.OnScrollListener originalListener,int remainingCount){
-			if(originalListener != null && originalListener instanceof LazyLoadingListener) throw new IllegalArgumentException("the OnScrollListener could not be LazyLoadingListener");
+		public StepLoadingListener(AbsListView.OnScrollListener originalListener,int remainingCount){
+			if(originalListener != null && originalListener instanceof StepLoadingListener) throw new IllegalArgumentException("the OnScrollListener could not be StepLoadingListener");
 			this.mOriginalListener = originalListener;
 			this.mRemainingCount = remainingCount;
 		}
