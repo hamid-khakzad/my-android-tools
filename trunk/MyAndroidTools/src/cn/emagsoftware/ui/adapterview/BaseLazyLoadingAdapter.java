@@ -112,7 +112,7 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>是否已经加载了全部数据
+	 * <p>是否已全部加载
 	 * @return
 	 */
 	public boolean isLoadedAll(){
