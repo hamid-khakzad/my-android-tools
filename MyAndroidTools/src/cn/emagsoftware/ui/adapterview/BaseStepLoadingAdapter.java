@@ -115,7 +115,7 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	
 	/**
 	 * <p>设置总页数
-	 * <p>如果使用页码参数来实现分步加载，可通过调用该方法来限制页码范围，从而避免不必要的额外加载
+	 * <p>通过调用该方法可限制页码范围，从而避免不必要的额外加载，否则只有在分步加载的数据为空时才认为已全部加载
 	 * @param pages
 	 */
 	public void setPages(int pages){
@@ -132,7 +132,7 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>是否已经加载了全部数据
+	 * <p>是否已全部加载
 	 * @return
 	 */
 	public boolean isLoadedAll(){
