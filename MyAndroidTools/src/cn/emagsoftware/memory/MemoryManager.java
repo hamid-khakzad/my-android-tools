@@ -19,8 +19,10 @@ public final class MemoryManager {
 	 * <p>获取指定了尺寸限制的BitmapFactory.Options
 	 * @param options 能获得outWidth和outHeight的BitmapFactory.Options，
 	 *                通常的做法是decode参数inJustDecodeBounds为true的BitmapFactory.Options来获得此参数，此时只包含了Bitmap的尺寸信息，可节约内存
-	 * @param minSideLength 最小的宽度或高度，忽略此项限制可传-1
-	 * @param maxNumOfPixels 最大的宽度*高度，忽略此项限制可传-1
+	 * @param minSideLength 最小的宽度或高度，不使用此限制可传-1，将只使用maxNumOfPixels来限制，
+	 *                      若两参数都为-1，将使用原始尺寸；若两参数都指定，将使用较小的尺寸限制
+	 * @param maxNumOfPixels 最大的宽度*高度，不使用此限制可传-1，将只使用minSideLength来限制，
+	 *                       若两参数都为-1，将使用原始尺寸；若两参数都指定，将使用较小的尺寸限制
 	 * @return
 	 */
 	public static BitmapFactory.Options getBitmapFactoryOptions(BitmapFactory.Options options, int minSideLength, int maxNumOfPixels){
@@ -34,8 +36,10 @@ public final class MemoryManager {
 	/**
 	 * <p>获取BitmapFactory.Options使用到的inSampleSize值
 	 * @param options
-	 * @param minSideLength 最小的宽度或高度，忽略此项限制可传-1
-	 * @param maxNumOfPixels 最大的宽度*高度，忽略此项限制可传-1
+	 * @param minSideLength 最小的宽度或高度，不使用此限制可传-1，将只使用maxNumOfPixels来限制，
+	 *                      若两参数都为-1，将使用原始尺寸；若两参数都指定，将使用较小的尺寸限制
+	 * @param maxNumOfPixels 最大的宽度*高度，不使用此限制可传-1，将只使用minSideLength来限制，
+	 *                       若两参数都为-1，将使用原始尺寸；若两参数都指定，将使用较小的尺寸限制
 	 * @return
 	 */
 	public static int computeSampleSize(BitmapFactory.Options options, int minSideLength, int maxNumOfPixels) {
