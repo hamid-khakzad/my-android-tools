@@ -168,7 +168,7 @@ public class GenericAdapter extends BaseAdapter {
 		if(convertView == null || !mIsConvertView){
 			return holder.onCreateView(mContext, position, holder.getData());
 		}else{
-			holder.onUpdateView(mContext, position, convertView, holder.getData());
+			holder.onUpdateView(mContext, position, convertView, holder.getData(), false);
 			return convertView;
 		}
 	}

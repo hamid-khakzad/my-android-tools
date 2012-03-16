@@ -34,14 +34,15 @@ public abstract class DataHolder {
 	/**
 	 * <p>使用当前data更新View时触发，出于节约资源的考虑，View默认会被复用，此时只需要更新View即可
 	 * <p>如果存在异步数据的加载，在更新View时需通过getAsyncData(int index)是否为null来判断所有异步数据是否加载完成，若加载完成，也要更新到View上
-	 * <p>若通过GenericAdapter的setConvertView方法设置了View不复用，可以保持该方法的实现为空
+	 * <p>若通过GenericAdapter的构造函数设置了View不复用，也需实现当前方法，因为异步数据执行成功后也会回调此方法，此时updateAsyncDataOnly参数为true
 	 * <p>更新View可以通过ViewHolder来提高效率
 	 * @param context
 	 * @param position
 	 * @param view
 	 * @param data
+	 * @param updateAsyncDataOnly
 	 */
-	public abstract void onUpdateView(Context context,int position,View view,Object data);
+	public abstract void onUpdateView(Context context,int position,View view,Object data,boolean updateAsyncDataOnly);
 	
 	/**
 	 * <p>获取构造函数中传入的数据对象
