@@ -382,6 +382,7 @@ public class AsyncDataScheduler {
 									//添加加载过的DataHolder到mResolvedHolders并更新界面
 									if(curResolvedHolders.size() > 0){
 										mResolvedHolders.putAll(curResolvedHolders);
+										//判断完再执行UI操作可提高UI操作的效率
 										if(mGenericAdapter.isConvertView()){
 											mHandler.post(new Runnable() {
 												@Override
