@@ -382,34 +382,57 @@ public class AsyncDataScheduler {
 									//添加加载过的DataHolder到mResolvedHolders并更新界面
 									if(curResolvedHolders.size() > 0){
 										mResolvedHolders.putAll(curResolvedHolders);
-										mHandler.post(new Runnable() {
-											@Override
-											public void run() {
-												// TODO Auto-generated method stub
-												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-												int count = mAdapterView.getChildCount();    //不包含header和footer的个数
-												if(count <= 0) return;
-												int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
-												int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
-												int end;
-												if(mGenericAdapter.isConvertView()) end = count - 1 + first;
-												else end = count - 1;
-												if(first > end) return;
-												if(last > end) last = end;
-												Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
-												while(curPositions.hasNext()){
-													int position = curPositions.next();
-													if(position >= first && position <= last){
-														DataHolder dholder = curResolvedHolders.get(position);
-														int convertPosition;
-														if(mGenericAdapter.isConvertView()) convertPosition = position - first;
-														else convertPosition = position;
-														//getChildAt不包含header和footer的索引
-														dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+										if(mGenericAdapter.isConvertView()){
+											mHandler.post(new Runnable() {
+												@Override
+												public void run() {
+													// TODO Auto-generated method stub
+													//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+													int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+													if(count <= 0) return;
+													int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+													int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+													int end = count - 1 + first;
+													if(first > end) return;
+													if(last > end) last = end;
+													Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
+													while(curPositions.hasNext()){
+														int position = curPositions.next();
+														if(position >= first && position <= last){
+															DataHolder dholder = curResolvedHolders.get(position);
+															int convertPosition = position - first;
+															//getChildAt不包含header和footer的索引
+															dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+														}
 													}
 												}
-											}
-										});
+											});
+										}else{
+											mHandler.post(new Runnable() {
+												@Override
+												public void run() {
+													// TODO Auto-generated method stub
+													//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+													int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+													if(count <= 0) return;
+													int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+													int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+													int end = count - 1;
+													if(first > end) return;
+													if(last > end) last = end;
+													Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
+													while(curPositions.hasNext()){
+														int position = curPositions.next();
+														if(position >= first && position <= last){
+															DataHolder dholder = curResolvedHolders.get(position);
+															int convertPosition = position;
+															//getChildAt不包含header和footer的索引
+															dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+														}
+													}
+												}
+											});
+										}
 									}
 								}
 							}
