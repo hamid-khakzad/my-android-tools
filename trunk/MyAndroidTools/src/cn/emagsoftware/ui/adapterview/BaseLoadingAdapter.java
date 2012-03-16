@@ -22,6 +22,10 @@ public abstract class BaseLoadingAdapter extends GenericAdapter{
 		super(context);
 	}
 	
+	public BaseLoadingAdapter(Context context,boolean isConvertView){
+		super(context,isConvertView);
+	}
+	
 	/**
 	 * <p>加载的执行方法
 	 * @param condition 加载时需要的条件，没有时可传null
