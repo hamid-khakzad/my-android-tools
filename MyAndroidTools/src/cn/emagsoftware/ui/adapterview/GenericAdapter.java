@@ -11,20 +11,20 @@ import android.widget.BaseAdapter;
 public class GenericAdapter extends BaseAdapter {
 	
 	protected Context mContext = null;
-	protected List<DataHolder> mHolders = new ArrayList<DataHolder>();
+	private List<DataHolder> mHolders = new ArrayList<DataHolder>();
 	/**是否转换View以提高性能*/
-	protected boolean mIsConvertView = true;
+	private boolean mIsConvertView = true;
 	/**是否循环显示View*/
-	protected boolean mIsLoopView = false;
+	private boolean mIsLoopView = false;
 	
 	public GenericAdapter(Context context){
 		if(context == null) throw new NullPointerException();
 		mContext = context;
 	}
 	
-	public GenericAdapter(Context context,List<DataHolder> holders){
+	public GenericAdapter(Context context,boolean isConvertView){
 		this(context);
-		addDataHolders(holders);
+		mIsConvertView = isConvertView;
 	}
 	
 	public void addDataHolder(DataHolder holder){
@@ -109,14 +109,17 @@ public class GenericAdapter extends BaseAdapter {
 		notifyDataSetChanged();
 	}
 	
-	public void setConvertView(boolean isConvertView){
-		mIsConvertView = isConvertView;
-		notifyDataSetChanged();
+	public boolean isConvertView(){
+		return mIsConvertView;
 	}
 	
 	public void setLoopView(boolean isLoopView){
 		mIsLoopView = isLoopView;
 		notifyDataSetChanged();
+	}
+	
+	public boolean isLoopView(){
+		return mIsLoopView;
 	}
 	
 	@Override

@@ -13,14 +13,18 @@ import android.widget.AdapterView;
 public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	
 	/**当前的页码*/
-	protected int mPage = 0;
+	private int mPage = 0;
 	/**总页数*/
-	protected int mPages = -1;
+	private int mPages = -1;
 	/**是否已经加载了全部数据*/
-	protected boolean mIsLoadedAll = false;
+	private boolean mIsLoadedAll = false;
 	
 	public BaseStepLoadingAdapter(Context context) {
 		super(context);
+	}
+	
+	public BaseStepLoadingAdapter(Context context,boolean isConvertView){
+		super(context,isConvertView);
 	}
 	
 	/**

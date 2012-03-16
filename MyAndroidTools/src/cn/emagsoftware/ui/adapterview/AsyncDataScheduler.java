@@ -3,12 +3,11 @@ package cn.emagsoftware.ui.adapterview;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import cn.emagsoftware.util.LogManager;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -16,6 +15,7 @@ import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.WrapperListAdapter;
+import cn.emagsoftware.util.LogManager;
 
 public class AsyncDataScheduler {
 	
@@ -135,29 +135,38 @@ public class AsyncDataScheduler {
 					}
 					//获取当前时间点需要处理的队列
 					final boolean[] isOK = {false};
-					final int[] firstAndLastIndex = {0,0};
+					final int[] allFirstAndLast = {0,-1,-1};
 					final List<Integer> positions = new LinkedList<Integer>();
 					final List<DataHolder> holders = new LinkedList<DataHolder>();
 					mHandler.post(new Runnable() {
 						@Override
 						public void run() {
 							// TODO Auto-generated method stub
-							int count = mGenericAdapter.getCount();
+							int adapterCount = mGenericAdapter.getCount();
+							if(adapterCount <= 0){
+								isOK[0] = true;
+								return;
+							}
+							allFirstAndLast[0] = adapterCount;
+							int count = mAdapterView.getChildCount();    //不包含header和footer的个数
 							if(count <= 0) {
 								isOK[0] = true;
 								return;
 							}
-							firstAndLastIndex[0] = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
-							firstAndLastIndex[1] = mAdapterView.getLastVisiblePosition() - mHeaderCount;
-							if(firstAndLastIndex[0] < 0) firstAndLastIndex[0] = 0;
-							else if(firstAndLastIndex[0] >= count) firstAndLastIndex[0] = count - 1;
-							if(firstAndLastIndex[1] < 0) firstAndLastIndex[1] = 0;
-							else if(firstAndLastIndex[1] >= count) firstAndLastIndex[1] = count - 1;
-							int first = firstAndLastIndex[0] - mExtraCountForExecutingData;
+							int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+							int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+							if(first >= adapterCount){
+								isOK[0] = true;
+								return;
+							}
+							if(last >= adapterCount) last = adapterCount - 1;
+							allFirstAndLast[1] = first;
+							allFirstAndLast[2] = last;
+							first = first - mExtraCountForExecutingData;
 							if(first < 0) first = 0;
-							int last = firstAndLastIndex[1] + mExtraCountForExecutingData;
-							if(last < 0 || last >= count) last = count - 1;
-							for(int i = first;i < last + 1;i++){
+							last = last + mExtraCountForExecutingData;
+							if(last < 0 || last >= adapterCount) last = adapterCount - 1;
+							for(int i = first;i <= last;i++){
 								positions.add(i);
 								holders.add(mGenericAdapter.queryDataHolder(i));
 							}
@@ -174,17 +183,28 @@ public class AsyncDataScheduler {
 					//将范围外DataHolder的异步数据修改为弱引用，方便GC回收
 					Set<Integer> resolvedPositionSet = mResolvedHolders.keySet();
 					Integer[] resolvedPositions = resolvedPositionSet.toArray(new Integer[resolvedPositionSet.size()]);
-					int first = firstAndLastIndex[0]-mExtraCountForKeepingData;
-					int last = firstAndLastIndex[1]+mExtraCountForKeepingData;
-					if(last < 0) last = Integer.MAX_VALUE;
-					for(int i = 0;i < resolvedPositions.length;i++){
-						int position = resolvedPositions[i];
-						if(position < first || position > last){
+					if(allFirstAndLast[1] == -1 || allFirstAndLast[2] == -1){
+						for(int i = 0;i < resolvedPositions.length;i++){
+							int position = resolvedPositions[i];
 							DataHolder holder = mResolvedHolders.get(position);
 							for(int j = 0;j < holder.getAsyncDataCount();j++){
 								holder.changeAsyncDataToSoftReference(j);
 							}
 							mResolvedHolders.remove(position);
+						}
+					}else{
+						int first = allFirstAndLast[1]-mExtraCountForKeepingData;
+						int last = allFirstAndLast[2]+mExtraCountForKeepingData;
+						if(last < 0 || last >= allFirstAndLast[0]) last = allFirstAndLast[0] - 1;
+						for(int i = 0;i < resolvedPositions.length;i++){
+							int position = resolvedPositions[i];
+							if(position < first || position > last){
+								DataHolder holder = mResolvedHolders.get(position);
+								for(int j = 0;j < holder.getAsyncDataCount();j++){
+									holder.changeAsyncDataToSoftReference(j);
+								}
+								mResolvedHolders.remove(position);
+							}
 						}
 					}
 					synchronized(mLockStop){
@@ -336,16 +356,15 @@ public class AsyncDataScheduler {
 										int to = positions.get(positions.size() - 1);
 										LogManager.logE(AsyncDataScheduler.class, "execute async data failed from position "+from+" to "+to+".", e);
 									}
-									//添加加载过的DataHolder到mResolvedHolders
-									boolean hasExecuteOneAtLeast = false;
+									//筛选出加载过的DataHolder
+									final Map<Integer, DataHolder> curResolvedHolders = new HashMap<Integer, DataHolder>();
 									if(asyncDataIndexes == null){
 										for(int i = 0;i < positions.size();i++){
 											int position = positions.get(i);
 											DataHolder holder = dataHolders.get(i);
 											for(int j = 0;j < holder.getAsyncDataCount();j++){
 												if(holder.getAsyncData(j) != null){
-													hasExecuteOneAtLeast = true;
-													mResolvedHolders.put(position, holder);
+													curResolvedHolders.put(position, holder);
 													break;
 												}
 											}
@@ -355,20 +374,40 @@ public class AsyncDataScheduler {
 										DataHolder holder = dataHolders.get(0);
 										for(int i = 0;i < asyncDataIndexes.size();i++){
 											if(holder.getAsyncData(asyncDataIndexes.get(i)) != null){
-												hasExecuteOneAtLeast = true;
-												mResolvedHolders.put(position, holder);
+												curResolvedHolders.put(position, holder);
 												break;
 											}
 										}
 									}
-									//更新界面
-									if(hasExecuteOneAtLeast){
+									//添加加载过的DataHolder到mResolvedHolders并更新界面
+									if(curResolvedHolders.size() > 0){
+										mResolvedHolders.putAll(curResolvedHolders);
 										mHandler.post(new Runnable() {
 											@Override
 											public void run() {
 												// TODO Auto-generated method stub
-												//通过Adapter的notifyDataSetChanged方法更新显示，可以使绑定到该Adapter的所有AdapterView都能得到更新
-												mGenericAdapter.notifyDataSetChanged();
+												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+												int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+												if(count <= 0) return;
+												int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+												int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+												int end;
+												if(mGenericAdapter.isConvertView()) end = count - 1 + first;
+												else end = count - 1;
+												if(first > end) return;
+												if(last > end) last = end;
+												Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
+												while(curPositions.hasNext()){
+													int position = curPositions.next();
+													if(position >= first && position <= last){
+														DataHolder dholder = curResolvedHolders.get(position);
+														int convertPosition;
+														if(mGenericAdapter.isConvertView()) convertPosition = position - first;
+														else convertPosition = position;
+														//getChildAt不包含header和footer的索引
+														dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData());
+													}
+												}
 											}
 										});
 									}

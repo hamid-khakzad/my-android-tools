@@ -17,12 +17,18 @@ import android.widget.AdapterView;
 public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 	
 	/**每次加载的长度*/
-	protected int mLimit = 10;
+	private int mLimit = 10;
 	/**是否已经加载了全部数据*/
-	protected boolean mIsLoadedAll = false;
+	private boolean mIsLoadedAll = false;
 	
 	public BaseLazyLoadingAdapter(Context context,int limit){
 		super(context);
+		if(limit <= 0) throw new IllegalArgumentException("limit should be great than zero.");
+		mLimit = limit;
+	}
+	
+	public BaseLazyLoadingAdapter(Context context,boolean isConvertView,int limit){
+		super(context,isConvertView);
 		if(limit <= 0) throw new IllegalArgumentException("limit should be great than zero.");
 		mLimit = limit;
 	}
