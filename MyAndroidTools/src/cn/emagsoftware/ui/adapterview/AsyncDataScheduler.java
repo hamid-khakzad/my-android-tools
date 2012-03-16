@@ -405,7 +405,7 @@ public class AsyncDataScheduler {
 														if(mGenericAdapter.isConvertView()) convertPosition = position - first;
 														else convertPosition = position;
 														//getChildAt不包含header和footer的索引
-														dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData());
+														dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
 													}
 												}
 											}
