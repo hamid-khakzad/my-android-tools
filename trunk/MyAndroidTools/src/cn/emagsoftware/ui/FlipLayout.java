@@ -11,14 +11,13 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Scroller;
 
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 4.4
+ * @version 4.5
  */
 public class FlipLayout extends ViewGroup {
 	
@@ -26,8 +25,9 @@ public class FlipLayout extends ViewGroup {
 	
 	private Scroller mScroller;
 	private VelocityTracker mVelocityTracker;
-	private int mTouchSlop;
+	//private int mTouchSlop;
 	private float mLastMotionX;
+	private float mLastMotionY;
 	
 	/**当前Screen的位置*/
 	private int mCurScreen = -1;
@@ -60,7 +60,7 @@ public class FlipLayout extends ViewGroup {
 		super(context, attrs, defStyle);
 		// TODO Auto-generated constructor stub
 		mScroller = new Scroller(context);
-		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
 	
 	/**
@@ -304,19 +304,25 @@ public class FlipLayout extends ViewGroup {
 		// TODO Auto-generated method stub
 		int action = ev.getAction();
 		float x = ev.getX();
+		float y = ev.getY();
 		
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
 			mLastMotionX = x;
+			mLastMotionY = y;
 			boolean isFinished = mScroller.isFinished();
 			mRequestHorizontalFlip = false;
 			return isFinished ? false : true;    //正在滚动时发生的事件将被拦截，并且后续事件也将被拦截
 		case MotionEvent.ACTION_MOVE:
 			if(mRequestHorizontalFlip) return false;
 			else{
-				final int xDistence = (int)Math.abs(x-mLastMotionX);
-				if(xDistence > mTouchSlop) return true;    //超过指定距离将被拦截，并且后续事件也将被拦截
-				else return false;
+				final float xDistence = Math.abs(x-mLastMotionX);
+				final float yDistence = Math.abs(y-mLastMotionY);
+				if(xDistence != 0){
+					double angle = Math.toDegrees(Math.atan(yDistence/xDistence));
+					if(angle <= 45) return true;    //小于指定角度将被拦截，并且后续事件也将被拦截
+				}
+				return false;
 			}
 		case MotionEvent.ACTION_UP:
 		case MotionEvent.ACTION_CANCEL:
