@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -35,7 +36,7 @@ import cn.emagsoftware.util.LogManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.6
+ * @version 3.7
  */
 public final class HttpConnectionManager {
 	
@@ -77,6 +78,14 @@ public final class HttpConnectionManager {
 	 */
 	public static void setUseCMWap(boolean isUseCMWap){
 		HttpConnectionManager.isUseCMWap = isUseCMWap;
+	}
+	
+	/**
+	 * <p>获取是否使用了中国移动CMWap接入
+	 * @return
+	 */
+	public static boolean isUseCMWap(){
+		return isUseCMWap;
 	}
 	
 	/**
@@ -246,12 +255,10 @@ public final class HttpConnectionManager {
 		else packUrl = HttpManager.encodeURL(url, urlEnc);
 		URL myUrl = new URL(packUrl);
 		String prefix = null;
-		if(isUseCMWap){
+		if(isUseCMWap()){
 			prefix = myUrl.getAuthority();
-			packUrl = "http://10.0.0.172".concat(myUrl.getPath());
-			String query = myUrl.getQuery();
-			if(query != null) packUrl = packUrl.concat("?").concat(query);
-			myUrl = new URL(packUrl);
+			myUrl = convertToCMWap(myUrl);
+			packUrl = myUrl.toString();
 		}
 		boolean isSSL = packUrl.toLowerCase().startsWith(HTTPS_PREFIX);
 		HttpURLConnection httpConn = null;
@@ -282,7 +289,7 @@ public final class HttpConnectionManager {
 					httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
 				}
 			}
-			if(isUseCMWap){
+			if(isUseCMWap()){
 				httpConn.addRequestProperty("X-Online-Host", prefix);
 			}
 			if(requestHeaders != null){
@@ -304,7 +311,7 @@ public final class HttpConnectionManager {
 			}
 			int rspCode = httpConn.getResponseCode();
 			if(rspCode == HttpURLConnection.HTTP_OK || rspCode == HttpURLConnection.HTTP_PARTIAL){
-				if(isUseCMWap){
+				if(isUseCMWap()){
 					String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
 					if(contentType != null && contentType.indexOf("vnd.wap.wml") != -1){    //CMWap有时会出现资费提示页面
 						InputStream input = null;
@@ -386,6 +393,22 @@ public final class HttpConnectionManager {
 			}finally{
 				if(httpConn != null) httpConn.disconnect();
 			}
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * <p>把url转化为中国移动CMWap接入点下的代理url
+	 * @param url
+	 * @return
+	 */
+	public static URL convertToCMWap(URL url){
+		String packUrl = "http://10.0.0.172".concat(url.getPath());
+		String query = url.getQuery();
+		if(query != null) packUrl = packUrl.concat("?").concat(query);
+		try{
+			return new URL(packUrl);
+		}catch(MalformedURLException e){
 			throw new RuntimeException(e);
 		}
 	}
