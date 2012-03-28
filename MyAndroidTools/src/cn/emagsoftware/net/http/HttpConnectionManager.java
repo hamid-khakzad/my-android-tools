@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -36,7 +35,7 @@ import cn.emagsoftware.util.LogManager;
 /**
  * Http Connection Manager
  * @author Wendell
- * @version 3.7
+ * @version 3.8
  */
 public final class HttpConnectionManager {
 	
@@ -108,7 +107,6 @@ public final class HttpConnectionManager {
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
-			if(isKeepSession) saveSession(result);
 			input = httpConn.getInputStream();
 			result.setResultStream(input);
 			result.setHttpURLConn(httpConn);
@@ -162,7 +160,6 @@ public final class HttpConnectionManager {
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
-			if(isKeepSession) saveSession(result);
 			input = httpConn.getInputStream();
 			result.setResultStream(input);
 			result.setHttpURLConn(httpConn);
@@ -210,7 +207,6 @@ public final class HttpConnectionManager {
 			int rspCode = httpConn.getResponseCode();
 			result.setResponseCode(rspCode);
 			result.setResponseHeaders(httpConn.getHeaderFields());
-			if(isKeepSession) saveSession(result);
 			input = httpConn.getInputStream();
 			result.setResultStream(input);
 			result.setHttpURLConn(httpConn);
@@ -253,18 +249,21 @@ public final class HttpConnectionManager {
 		String packUrl = null;
 		if(urlEnc == null) packUrl = url;
 		else packUrl = HttpManager.encodeURL(url, urlEnc);
-		URL myUrl = new URL(packUrl);
+		URL originalUrl = new URL(packUrl);
+		URL myUrl = originalUrl;
 		String prefix = null;
 		if(isUseCMWap()){
 			prefix = myUrl.getAuthority();
-			myUrl = convertToCMWap(myUrl);
-			packUrl = myUrl.toString();
+			String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
+			String query = myUrl.getQuery();
+			if(query != null) myUrlStr = myUrlStr.concat("?").concat(query);
+			myUrl = new URL(myUrlStr);
 		}
-		boolean isSSL = packUrl.toLowerCase().startsWith(HTTPS_PREFIX);
+		boolean isSSL = myUrl.toString().toLowerCase().startsWith(HTTPS_PREFIX);
 		HttpURLConnection httpConn = null;
 		OutputStream output = null;
 		try{
-			LogManager.logI(HttpConnectionManager.class, "request url '".concat(packUrl).concat("'..."));
+			LogManager.logI(HttpConnectionManager.class, "request url '".concat(myUrl.toString()).concat("'..."));
 			if(isSSL) {
 				SSLContext sslCont = SSLContext.getInstance("TLS");
 				sslCont.init(null, new TrustManager[]{new MyX509TrustManager()}, new SecureRandom());
@@ -283,7 +282,7 @@ public final class HttpConnectionManager {
 			httpConn.setReadTimeout(connOrReadTimeout);
 			httpConn.setConnectTimeout(connOrReadTimeout);
 			if(isKeepSession){
-				String session = querySession(myUrl);
+				String session = querySession(originalUrl);    //需要使用原始URL查询session
 				if(session != null){
 					LogManager.logI(HttpConnectionManager.class, "queried session("+session+") for url "+myUrl);
 					httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
@@ -367,13 +366,14 @@ public final class HttpConnectionManager {
 						}
 					}
 				}
+				if(isKeepSession) saveSession(originalUrl,httpConn.getHeaderFields());    //需要使用原始URL保存session
 				return httpConn;
 			}else if(rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER){
 				if(!followRedirects) return httpConn;
 				//implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
 				String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
 				if(location == null) throw new IOException("redirects failed:could not find the location header");
-				if(location.toLowerCase().indexOf(myUrl.getProtocol() + "://") < 0) location = myUrl.getProtocol() + "://" + myUrl.getHost() + location;
+				if(location.toLowerCase().indexOf(originalUrl.getProtocol() + "://") < 0) location = originalUrl.getProtocol() + "://" + originalUrl.getHost() + location;
 				httpConn.disconnect();
 				LogManager.logI(HttpConnectionManager.class, "follow redirects...");
 				return openConnection(location,urlEnc,"GET",followRedirects,connOrReadTimeout,++currentRedirectCount,currentCMWapChargePageCount,requestHeaders,null);
@@ -393,22 +393,6 @@ public final class HttpConnectionManager {
 			}finally{
 				if(httpConn != null) httpConn.disconnect();
 			}
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * <p>把url转化为中国移动CMWap接入点下的代理url
-	 * @param url
-	 * @return
-	 */
-	public static URL convertToCMWap(URL url){
-		String packUrl = "http://10.0.0.172".concat(url.getPath());
-		String query = url.getQuery();
-		if(query != null) packUrl = packUrl.concat("?").concat(query);
-		try{
-			return new URL(packUrl);
-		}catch(MalformedURLException e){
 			throw new RuntimeException(e);
 		}
 	}
@@ -460,15 +444,14 @@ public final class HttpConnectionManager {
 	}
 	
 	/**
-	 * <p>保存当前响应结果中用于维持session的cookie值
-	 * @param result
+	 * <p>保存当前响应头中用于维持session的cookie值
+	 * @param url
+	 * @param responseHeaders
 	 */
-	private static void saveSession(HttpResponseResult result){
-		Map<String, List<String>> headers = result.getResponseHeaders();
-		if(headers != null){
-			List<String> cookies = headers.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase());    //在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
+	private static void saveSession(URL url,Map<String, List<String>> responseHeaders){
+		if(responseHeaders != null){
+			List<String> cookies = responseHeaders.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase());    //在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
 			if(cookies != null){
-				URL url = result.getResponseURL();
 				List<String> sessionCookies = new ArrayList<String>();
 				for(String cookie:cookies){
 					if(cookie != null){
