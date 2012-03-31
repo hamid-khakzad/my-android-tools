@@ -3,21 +3,21 @@ package cn.emagsoftware.ui;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.emagsoftware.util.LogManager;
-
 import android.content.Context;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Scroller;
+import cn.emagsoftware.util.LogManager;
 
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * @author Wendell
- * @version 4.5
+ * @version 4.6
  */
 public class FlipLayout extends ViewGroup {
 	
@@ -25,7 +25,7 @@ public class FlipLayout extends ViewGroup {
 	
 	private Scroller mScroller;
 	private VelocityTracker mVelocityTracker;
-	//private int mTouchSlop;
+	private int mTouchSlop;
 	private float mLastMotionX;
 	private float mLastMotionY;
 	
@@ -60,7 +60,7 @@ public class FlipLayout extends ViewGroup {
 		super(context, attrs, defStyle);
 		// TODO Auto-generated constructor stub
 		mScroller = new Scroller(context);
-		//mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+		mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
 	}
 	
 	/**
@@ -318,7 +318,7 @@ public class FlipLayout extends ViewGroup {
 			else{
 				final float xDistence = Math.abs(x-mLastMotionX);
 				final float yDistence = Math.abs(y-mLastMotionY);
-				if(xDistence != 0){
+				if(xDistence > mTouchSlop){
 					double angle = Math.toDegrees(Math.atan(yDistence/xDistence));
 					if(angle <= 45) return true;    //小于指定角度将被拦截，并且后续事件也将被拦截
 				}
