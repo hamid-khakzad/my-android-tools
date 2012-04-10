@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -32,10 +31,11 @@ public class AsyncDataScheduler {
 	
 	/**额外的(可见范围之外的)需加载异步数据的个数*/
 	protected int mExtraCountForExecutingData = 0;
-	/**额外的(可见范围之外的)保持异步数据不被回收的个数*/
-	protected int mExtraCountForKeepingData = 5;
 	
-	protected Map<Integer,DataHolder> mResolvedHolders = Collections.synchronizedMap(new HashMap<Integer,DataHolder>());
+	/**上一次的可见范围*/
+	protected int[] preFirstAndLast = {-1,-1};
+	/**本次的可见范围*/
+	protected int[] firstAndLast = {-1,-1};
 	
 	protected int mExtractedAsyncDataIndex = 0;
 	protected int mExtractedIndex = 0;
@@ -102,15 +102,6 @@ public class AsyncDataScheduler {
 	}
 	
 	/**
-	 * <p>设置额外的(可见范围之外的)保持异步数据不被回收的个数
-	 * @param extraCount
-	 */
-	public void setExtraCountForKeepingData(int extraCount){
-		if(extraCount < 0) throw new IllegalArgumentException("extraCount should be great than zero or equals zero");
-		mExtraCountForKeepingData = extraCount;
-	}
-	
-	/**
 	 * <p>开始或重新开始当前调度器
 	 * <p>在已经开始的情况下，重复调用当前方法将不起任何作用
 	 */
@@ -135,7 +126,10 @@ public class AsyncDataScheduler {
 					}
 					//获取当前时间点需要处理的队列
 					final boolean[] isOK = {false};
-					final int[] allFirstAndLast = {0,-1,-1};
+					preFirstAndLast[0] = firstAndLast[0];
+					preFirstAndLast[1] = firstAndLast[1];
+					firstAndLast[0] = -1;
+					firstAndLast[1] = -1;
 					final List<Integer> positions = new LinkedList<Integer>();
 					final List<DataHolder> holders = new LinkedList<DataHolder>();
 					mHandler.post(new Runnable() {
@@ -147,7 +141,6 @@ public class AsyncDataScheduler {
 								isOK[0] = true;
 								return;
 							}
-							allFirstAndLast[0] = adapterCount;
 							int count = mAdapterView.getChildCount();    //不包含header和footer的个数
 							if(count <= 0) {
 								isOK[0] = true;
@@ -160,8 +153,8 @@ public class AsyncDataScheduler {
 								return;
 							}
 							if(last >= adapterCount) last = adapterCount - 1;
-							allFirstAndLast[1] = first;
-							allFirstAndLast[2] = last;
+							firstAndLast[0] = first;
+							firstAndLast[1] = last;
 							first = first - mExtraCountForExecutingData;
 							if(first < 0) first = 0;
 							last = last + mExtraCountForExecutingData;
@@ -180,79 +173,80 @@ public class AsyncDataScheduler {
 							throw new RuntimeException(e);
 						}
 					}
-					//将范围外DataHolder的异步数据修改为弱引用，方便GC回收
-					Set<Integer> resolvedPositionSet = mResolvedHolders.keySet();
-					Integer[] resolvedPositions = resolvedPositionSet.toArray(new Integer[resolvedPositionSet.size()]);
-					if(allFirstAndLast[1] == -1 || allFirstAndLast[2] == -1){
-						for(int i = 0;i < resolvedPositions.length;i++){
-							int position = resolvedPositions[i];
-							DataHolder holder = mResolvedHolders.get(position);
-							for(int j = 0;j < holder.getAsyncDataCount();j++){
-								holder.changeAsyncDataToSoftReference(j);
-							}
-							mResolvedHolders.remove(position);
-						}
-					}else{
-						int first = allFirstAndLast[1]-mExtraCountForKeepingData;
-						int last = allFirstAndLast[2]+mExtraCountForKeepingData;
-						if(last < 0 || last >= allFirstAndLast[0]) last = allFirstAndLast[0] - 1;
-						for(int i = 0;i < resolvedPositions.length;i++){
-							int position = resolvedPositions[i];
-							if(position < first || position > last){
-								DataHolder holder = mResolvedHolders.get(position);
-								for(int j = 0;j < holder.getAsyncDataCount();j++){
-									holder.changeAsyncDataToSoftReference(j);
-								}
-								mResolvedHolders.remove(position);
-							}
-						}
-					}
 					synchronized(mLockStop){
 						if(mIsStopping){
 							mIsStopped = true;
 							return;
 						}
 					}
-					//过滤新获取到的队列
-					for(int i = 0;i < positions.size();i++){
-						int position = positions.get(i);
-						DataHolder holder = holders.get(i);
-						boolean isAllAsyncDataCompleted = true;
-						for(int j = 0;j < holder.getAsyncDataCount();j++){
-							Object asyncData = holder.getAsyncData(j);
-							if(asyncData == null) {
-								isAllAsyncDataCompleted = false;
-							}else {
-								holder.setAsyncData(j, asyncData);    //可能是弱引用，将其升级为强引用
-								mResolvedHolders.put(position, holder);
-							}
-						}
-						if(isAllAsyncDataCompleted){
-							positions.remove(i);
-							holders.remove(i);
-							i--;
-						}
-					}
 					//用新队列替换提取队列
 					synchronized(mLockExtract){
-						if(mExtractedPositions == null || positions.size() == 0){
+						if(preFirstAndLast[0] == -1 || preFirstAndLast[1] == -1){    //上一次可见范围为空，该情况包括了第一次快照的情况
 							mExtractedIndex = 0;
 							mExtractedPositions = positions;
 							mExtractedHolders = holders;
 						}else{
-							int tempIndex = 0;
-							for(int i = 0;i < mExtractedIndex;i++){
-								DataHolder extractedHolder = mExtractedHolders.get(i);
-								int index = holders.indexOf(extractedHolder);
-								if(index != -1){
-									positions.add(0, positions.remove(index));
-									holders.add(0,holders.remove(index));
-									tempIndex++;
+							if(firstAndLast[0] == -1 || firstAndLast[1] == -1){    //本次可见范围为空
+								for(int i = 0;i < mExtractedIndex;i++){
+									DataHolder extractedHolder = mExtractedHolders.get(i);
+									for(int j = 0;j < extractedHolder.getAsyncDataCount();j++){
+										extractedHolder.changeAsyncDataToSoftReference(j);
+									}
+								}
+								mExtractedIndex = 0;
+								mExtractedPositions = positions;
+								mExtractedHolders = holders;
+							}else{
+								int tempIndex = 0;
+								for(int i = 0;i < mExtractedIndex;i++){
+									DataHolder extractedHolder = mExtractedHolders.get(i);
+									int index = holders.indexOf(extractedHolder);
+									if(index == -1){
+										for(int j = 0;j < extractedHolder.getAsyncDataCount();j++){
+											extractedHolder.changeAsyncDataToSoftReference(j);
+										}
+									}else{
+										boolean shouldExecuteAgain = false;
+										int curPos = positions.get(index);
+										if(curPos < firstAndLast[0] || curPos > firstAndLast[1]){
+											for(int j = 0;j < extractedHolder.getAsyncDataCount();j++){
+												extractedHolder.changeAsyncDataToSoftReference(j);
+											}
+										}else{
+											int extractedPos = mExtractedPositions.get(i);
+											if(extractedPos < preFirstAndLast[0] || extractedPos > preFirstAndLast[1]){    //当前在可见范围之内，上一次在可见范围之外的
+												shouldExecuteAgain = true;
+											}
+										}
+										if(!shouldExecuteAgain){
+											positions.add(0, positions.remove(index));
+											holders.add(0,holders.remove(index));
+											tempIndex++;
+										}
+									}
+								}
+								mExtractedIndex = tempIndex;
+								mExtractedPositions = positions;
+								mExtractedHolders = holders;
+							}
+						}
+						//过滤掉已加载好的
+						if(firstAndLast[0] != -1 && firstAndLast[1] != -1){
+							for(int i = mExtractedIndex;i < mExtractedPositions.size();i++){
+								int position = mExtractedPositions.get(i);
+								DataHolder holder = mExtractedHolders.get(i);
+								boolean isAllAsyncDataCompleted = true;
+								for(int j = 0;j < holder.getAsyncDataCount();j++){
+									Object asyncData = holder.getAsyncData(j);
+									if(asyncData == null) isAllAsyncDataCompleted = false;
+									else if(position >= firstAndLast[0] && position <= firstAndLast[1]) holder.setAsyncData(j, asyncData);    //可见范围内的要升级为强引用
+								}
+								if(isAllAsyncDataCompleted){
+									mExtractedPositions.add(0, mExtractedPositions.remove(i));
+									mExtractedHolders.add(0,mExtractedHolders.remove(i));
+									mExtractedIndex++;
 								}
 							}
-							mExtractedIndex = tempIndex;
-							mExtractedPositions = positions;
-							mExtractedHolders = holders;
 						}
 					}
 					int size = mExtractedPositions.size();
@@ -379,9 +373,8 @@ public class AsyncDataScheduler {
 											}
 										}
 									}
-									//添加加载过的DataHolder到mResolvedHolders并更新界面
+									//更新界面
 									if(curResolvedHolders.size() > 0){
-										mResolvedHolders.putAll(curResolvedHolders);
 										//判断完再执行UI操作可提高UI操作的效率
 										if(mGenericAdapter.isConvertView()){
 											mHandler.post(new Runnable() {
