@@ -16,7 +16,7 @@ public final class MemoryManager {
 	private MemoryManager(){}
 	
 	/**
-	 * <p>获取指定了尺寸限制的BitmapFactory.Options
+	 * <p>获取指定了缩放尺寸限制的BitmapFactory.Options
 	 * @param options 能获得outWidth和outHeight的BitmapFactory.Options，
 	 *                通常的做法是decode参数inJustDecodeBounds为true的BitmapFactory.Options来获得此参数，此时只包含了Bitmap的尺寸信息，可节约内存
 	 * @param minSideLength 最小的宽度或高度，不使用此限制可传-1，将只使用maxNumOfPixels来限制，
@@ -25,11 +25,36 @@ public final class MemoryManager {
 	 *                       若两参数都为-1，将使用原始尺寸；若两参数都指定，将使用较小的尺寸限制
 	 * @return
 	 */
-	public static BitmapFactory.Options getBitmapFactoryOptions(BitmapFactory.Options options, int minSideLength, int maxNumOfPixels){
+	public static BitmapFactory.Options createSampleSizeOptions(BitmapFactory.Options options, int minSideLength, int maxNumOfPixels){
 		BitmapFactory.Options returnOptions = new BitmapFactory.Options();
 		returnOptions.inDither = false;
 		returnOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
 		returnOptions.inSampleSize = computeSampleSize(options,minSideLength,maxNumOfPixels);
+		return returnOptions;
+	}
+	
+	/**
+	 * <p>获取指定了具体缩放值的BitmapFactory.Options
+	 * @param inSampleSize 缩放成1/inSampleSize
+	 * @return
+	 */
+	public static BitmapFactory.Options createSampleSizeOptions(int inSampleSize){
+		BitmapFactory.Options returnOptions = new BitmapFactory.Options();
+		returnOptions.inDither = false;
+		returnOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
+		returnOptions.inSampleSize = inSampleSize;
+		return returnOptions;
+	}
+	
+	/**
+	 * <p>获取使用系统托管的BitmapFactory.Options，系统会在内存不足时回收Bitmap并在再次需要时重新decode
+	 * @return
+	 */
+	public static BitmapFactory.Options createPurgeableOptions(){
+		BitmapFactory.Options returnOptions = new BitmapFactory.Options();
+		returnOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+		returnOptions.inPurgeable = true;
+		returnOptions.inInputShareable = true;
 		return returnOptions;
 	}
 	
