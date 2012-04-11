@@ -208,12 +208,6 @@ public class AsyncDataScheduler {
 							}
 						}
 					}
-					synchronized(mLockStop){
-						if(mIsStopping){
-							mIsStopped = true;
-							return;
-						}
-					}
 					//过滤新获取到的队列
 					for(int i = 0;i < positions.size();i++){
 						int position = positions.get(i);
@@ -258,12 +252,6 @@ public class AsyncDataScheduler {
 					}
 					int size = mExtractedPositions.size();
 					if(size == 0 || mExtractedIndex == size) continue;    //如果当前提取队列没有增加新的项，将不会启动加载线程，以节约资源
-					synchronized(mLockStop){
-						if(mIsStopping){
-							mIsStopped = true;
-							return;
-						}
-					}
 					//计算加载线程的个数并启动加载线程
 					int needThreadCount;
 					int dataHolderCount = mExecutor.getDataHolderCount();
@@ -442,12 +430,6 @@ public class AsyncDataScheduler {
 						mCurrExecutiveThreads.add(thread);
 						ThreadPoolManager.executeThread(thread);
 					}
-					synchronized(mLockStop){
-						if(mIsStopping){
-							mIsStopped = true;
-							return;
-						}
-					}
 					try{
 						sleep(SCHEDULER_DORMANCY_TIME);
 					}catch(InterruptedException e){
@@ -456,6 +438,285 @@ public class AsyncDataScheduler {
 				}
 			};
 		});
+	}
+	
+	/**
+	 * <p>执行一次调度，该方法避免了start方法带来的对线程的操作，且区别于start方法的定时调度，该方法能够做到快速调度，但该方法也失去了start方法的通用性和灵活性
+	 * <p>该方法不能与start方法同时使用，否则会带来意想不到的并发问题，需要根据具体情况选择使用start或startOnce
+	 * <p>该方法需在UI线程执行，其内部实现要求如此，且也是确保连续调用同步性的前提
+	 */
+	public void startOnce(){
+		//获取当前时间点需要处理的队列
+		int[] allFirstAndLast = {0,-1,-1};
+		List<Integer> positions = new LinkedList<Integer>();
+		List<DataHolder> holders = new LinkedList<DataHolder>();
+		int adapterCount = mGenericAdapter.getCount();
+		if(adapterCount > 0){
+			allFirstAndLast[0] = adapterCount;
+			int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+			if(count > 0){
+				int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+				int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+				if(first < adapterCount){
+					if(last >= adapterCount) last = adapterCount - 1;
+					allFirstAndLast[1] = first;
+					allFirstAndLast[2] = last;
+					first = first - mExtraCountForExecutingData;
+					if(first < 0) first = 0;
+					last = last + mExtraCountForExecutingData;
+					if(last < 0 || last >= adapterCount) last = adapterCount - 1;
+					for(int i = first;i <= last;i++){
+						positions.add(i);
+						holders.add(mGenericAdapter.queryDataHolder(i));
+					}
+				}
+			}
+		}
+		//将范围外DataHolder的异步数据修改为弱引用，方便GC回收
+		Set<Integer> resolvedPositionSet = mResolvedHolders.keySet();
+		Integer[] resolvedPositions = resolvedPositionSet.toArray(new Integer[resolvedPositionSet.size()]);
+		if(allFirstAndLast[1] == -1 || allFirstAndLast[2] == -1){
+			for(int i = 0;i < resolvedPositions.length;i++){
+				int position = resolvedPositions[i];
+				DataHolder holder = mResolvedHolders.get(position);
+				for(int j = 0;j < holder.getAsyncDataCount();j++){
+					holder.changeAsyncDataToSoftReference(j);
+				}
+				mResolvedHolders.remove(position);
+			}
+		}else{
+			int first = allFirstAndLast[1]-mExtraCountForKeepingData;
+			int last = allFirstAndLast[2]+mExtraCountForKeepingData;
+			if(last < 0 || last >= allFirstAndLast[0]) last = allFirstAndLast[0] - 1;
+			for(int i = 0;i < resolvedPositions.length;i++){
+				int position = resolvedPositions[i];
+				if(position < first || position > last){
+					DataHolder holder = mResolvedHolders.get(position);
+					for(int j = 0;j < holder.getAsyncDataCount();j++){
+						holder.changeAsyncDataToSoftReference(j);
+					}
+					mResolvedHolders.remove(position);
+				}
+			}
+		}
+		//过滤新获取到的队列
+		for(int i = 0;i < positions.size();i++){
+			int position = positions.get(i);
+			DataHolder holder = holders.get(i);
+			boolean isAllAsyncDataCompleted = true;
+			for(int j = 0;j < holder.getAsyncDataCount();j++){
+				Object asyncData = holder.getAsyncData(j);
+				if(asyncData == null) {
+					isAllAsyncDataCompleted = false;
+				}else {
+					holder.setAsyncData(j, asyncData);    //可能是弱引用，将其升级为强引用
+					mResolvedHolders.put(position, holder);
+				}
+			}
+			if(isAllAsyncDataCompleted){
+				positions.remove(i);
+				holders.remove(i);
+				i--;
+			}
+		}
+		//用新队列替换提取队列
+		synchronized(mLockExtract){
+			if(mExtractedPositions == null || positions.size() == 0){
+				mExtractedIndex = 0;
+				mExtractedPositions = positions;
+				mExtractedHolders = holders;
+			}else{
+				int tempIndex = 0;
+				for(int i = 0;i < mExtractedIndex;i++){
+					DataHolder extractedHolder = mExtractedHolders.get(i);
+					int index = holders.indexOf(extractedHolder);
+					if(index != -1){
+						positions.add(0, positions.remove(index));
+						holders.add(0,holders.remove(index));
+						tempIndex++;
+					}
+				}
+				mExtractedIndex = tempIndex;
+				mExtractedPositions = positions;
+				mExtractedHolders = holders;
+			}
+		}
+		int size = mExtractedPositions.size();
+		if(size == 0 || mExtractedIndex == size) return;    //如果当前提取队列没有增加新的项，将不会启动加载线程，以节约资源
+		//计算加载线程的个数并启动加载线程
+		int needThreadCount;
+		int dataHolderCount = mExecutor.getDataHolderCount();
+		int asyncDataCount = mExecutor.getAsyncDataCount();
+		if(dataHolderCount == -1){
+			needThreadCount = 1;
+		}else if(dataHolderCount == 1 && asyncDataCount != -1){    //每次只执行一个DataHolder时，计算加载线程个数需要考虑每个DataHolder的异步数据个数
+			int tempThreadCount = 0;
+			for(int i = mExtractedIndex;i < size;i++){
+				DataHolder holder = mExtractedHolders.get(i);
+				int curAsyncDataCount = 0;
+				for(int j = 0;j < holder.getAsyncDataCount();j++){
+					if(holder.getAsyncData(j) == null) curAsyncDataCount = curAsyncDataCount + 1;
+				}
+				int remainder = curAsyncDataCount%asyncDataCount;
+				int curThreadCount;
+				if(remainder == 0) curThreadCount = curAsyncDataCount/asyncDataCount;
+				else curThreadCount = curAsyncDataCount/asyncDataCount + 1;
+				if(curThreadCount == 0) curThreadCount = 1;    //每个DataHolder至少有一个线程来执行异步数据加载
+				tempThreadCount = tempThreadCount + curThreadCount;
+			}
+			needThreadCount = tempThreadCount;
+		}else{
+			int execSize = size - mExtractedIndex;
+			int remainder = execSize%dataHolderCount;
+			if(remainder == 0) needThreadCount = execSize/dataHolderCount;
+			else needThreadCount = execSize/dataHolderCount + 1;
+		}
+		int remainCount = mMaxThreadCount - mCurrExecutiveThreads.size();
+		if(needThreadCount > remainCount) needThreadCount = remainCount;
+		for(int i = 0;i < needThreadCount;i++){
+			Thread thread = new Thread(){
+				public void run() {
+					while(true){
+						List<Integer> positions = null;    //第一个参数
+						List<DataHolder> dataHolders = null;    //第二个参数
+						List<Integer> asyncDataIndexes = null;    //第三个参数
+						synchronized(mLockExtract){
+							int curIndex = mExtractedIndex;
+							int endIndex;
+							int dataHolderCount = mExecutor.getDataHolderCount();
+							if(dataHolderCount == -1){
+								endIndex = mExtractedPositions.size();
+							}else{
+								endIndex = curIndex + dataHolderCount;
+								int size = mExtractedPositions.size();
+								if(endIndex > size) endIndex = size;
+							}
+							if(curIndex < endIndex){
+								positions = mExtractedPositions.subList(curIndex, endIndex);
+								dataHolders = mExtractedHolders.subList(curIndex, endIndex);
+								if(dataHolderCount == 1){    //每次只执行一个DataHolder时需要初始化第三个参数
+									DataHolder curHolder = dataHolders.get(0);
+									int asyncDataCount = mExecutor.getAsyncDataCount();
+									asyncDataIndexes = new ArrayList<Integer>();
+									for(int i = mExtractedAsyncDataIndex;i < curHolder.getAsyncDataCount();i++){
+										if(asyncDataCount != -1){
+											if(asyncDataIndexes.size() >= asyncDataCount) break;
+										}
+										if(curHolder.getAsyncData(i) == null) asyncDataIndexes.add(i);
+										mExtractedAsyncDataIndex = i;
+									}
+									if(asyncDataIndexes.size() == 0){
+										mExtractedAsyncDataIndex = 0;
+										mExtractedIndex = endIndex;
+										continue;
+									}else{
+										mExtractedAsyncDataIndex = mExtractedAsyncDataIndex + 1;
+										if(mExtractedAsyncDataIndex >= curHolder.getAsyncDataCount()){
+											mExtractedAsyncDataIndex = 0;
+											mExtractedIndex = endIndex;
+										}
+									}
+								}else{
+									mExtractedIndex = endIndex;
+								}
+							}else{
+								mCurrExecutiveThreads.remove(this);
+								return;
+							}
+						}
+						//执行加载逻辑
+						try{
+							mExecutor.onExecute(positions, dataHolders, asyncDataIndexes);
+						}catch(Exception e){
+							int from = positions.get(0);
+							int to = positions.get(positions.size() - 1);
+							LogManager.logE(AsyncDataScheduler.class, "execute async data failed from position "+from+" to "+to+".", e);
+						}
+						//筛选出加载过的DataHolder
+						final Map<Integer, DataHolder> curResolvedHolders = new HashMap<Integer, DataHolder>();
+						if(asyncDataIndexes == null){
+							for(int i = 0;i < positions.size();i++){
+								int position = positions.get(i);
+								DataHolder holder = dataHolders.get(i);
+								for(int j = 0;j < holder.getAsyncDataCount();j++){
+									if(holder.getAsyncData(j) != null){
+										curResolvedHolders.put(position, holder);
+										break;
+									}
+								}
+							}
+						}else{
+							int position = positions.get(0);
+							DataHolder holder = dataHolders.get(0);
+							for(int i = 0;i < asyncDataIndexes.size();i++){
+								if(holder.getAsyncData(asyncDataIndexes.get(i)) != null){
+									curResolvedHolders.put(position, holder);
+									break;
+								}
+							}
+						}
+						//添加加载过的DataHolder到mResolvedHolders并更新界面
+						if(curResolvedHolders.size() > 0){
+							mResolvedHolders.putAll(curResolvedHolders);
+							//判断完再执行UI操作可提高UI操作的效率
+							if(mGenericAdapter.isConvertView()){
+								mHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										// TODO Auto-generated method stub
+										//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+										int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+										if(count <= 0) return;
+										int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+										int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+										int end = count - 1 + first;
+										if(first > end) return;
+										if(last > end) last = end;
+										Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
+										while(curPositions.hasNext()){
+											int position = curPositions.next();
+											if(position >= first && position <= last){
+												DataHolder dholder = curResolvedHolders.get(position);
+												int convertPosition = position - first;
+												//getChildAt不包含header和footer的索引
+												dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+											}
+										}
+									}
+								});
+							}else{
+								mHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										// TODO Auto-generated method stub
+										//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+										int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+										if(count <= 0) return;
+										int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
+										int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+										int end = count - 1;
+										if(first > end) return;
+										if(last > end) last = end;
+										Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
+										while(curPositions.hasNext()){
+											int position = curPositions.next();
+											if(position >= first && position <= last){
+												DataHolder dholder = curResolvedHolders.get(position);
+												int convertPosition = position;
+												//getChildAt不包含header和footer的索引
+												dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+											}
+										}
+									}
+								});
+							}
+						}
+					}
+				}
+			};
+			mCurrExecutiveThreads.add(thread);
+			ThreadPoolManager.executeThread(thread);
+		}
 	}
 	
 	/**
