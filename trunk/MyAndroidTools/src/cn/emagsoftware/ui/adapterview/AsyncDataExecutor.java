@@ -12,6 +12,7 @@ import cn.emagsoftware.util.LogManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.AdapterView;
+import android.widget.ListView;
 
 public abstract class AsyncDataExecutor {
 	
@@ -98,20 +99,24 @@ public abstract class AsyncDataExecutor {
 	
 	private Thread createExecuteThread(final int firstPosition,final DataHolder firstDataHolder){
 		return new Thread(){
-			boolean isFirst = true;
+			private int curPosition;
+			private DataHolder curHolder;
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
 				super.run();
 				while(true){
-					int curPosition;
-					DataHolder curHolder;
-					if(isFirst){
+					if(curHolder == null){
 						curPosition = firstPosition;
 						curHolder = firstDataHolder;
-						isFirst = false;
 					}else{
 						synchronized(mLockExecute){
+							mPushedPositions.remove((Integer)curPosition);
+							mPushedHolders.remove(curHolder);
+							if(mCurExecuteIndex > 0) mCurExecuteIndex--;
+							for(int i = 0;i < curHolder.getAsyncDataCount();i++){
+								curHolder.changeAsyncDataToSoftReference(i);
+							}
 							if(mCurExecuteIndex >= mPushedPositions.size()){
 								mCurExecuteThreads.remove(this);
 								return;
@@ -138,8 +143,10 @@ public abstract class AsyncDataExecutor {
 												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
 												int count = mAdapterView.getChildCount();    //不包含header和footer的个数
 												if(count <= 0) return;
-												int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
-												int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
+												int headerCount = 0;
+												if(mAdapterView instanceof ListView) headerCount = ((ListView)mAdapterView).getHeaderViewsCount();
+												int first = mAdapterView.getFirstVisiblePosition() - headerCount;
+												int last = mAdapterView.getLastVisiblePosition() - headerCount;
 												int end = count - 1 + first;
 												if(first > end) return;
 												if(last > end) last = end;
@@ -147,15 +154,12 @@ public abstract class AsyncDataExecutor {
 												
 												
 												
-												Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
-												while(curPositions.hasNext()){
-													int position = curPositions.next();
-													if(position >= first && position <= last){
-														DataHolder dholder = curResolvedHolders.get(position);
-														int convertPosition = position - first;
-														//getChildAt不包含header和footer的索引
-														dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
-													}
+												int position = curPositions.next();
+												if(position >= first && position <= last){
+													DataHolder dholder = curResolvedHolders.get(position);
+													int convertPosition = position - first;
+													//getChildAt不包含header和footer的索引
+													dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
 												}
 											}
 										});
@@ -172,15 +176,13 @@ public abstract class AsyncDataExecutor {
 												int end = count - 1;
 												if(first > end) return;
 												if(last > end) last = end;
-												Iterator<Integer> curPositions = curResolvedHolders.keySet().iterator();
-												while(curPositions.hasNext()){
-													int position = curPositions.next();
-													if(position >= first && position <= last){
-														DataHolder dholder = curResolvedHolders.get(position);
-														int convertPosition = position;
-														//getChildAt不包含header和footer的索引
-														dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
-													}
+												
+												int position = curPositions.next();
+												if(position >= first && position <= last){
+													DataHolder dholder = curResolvedHolders.get(position);
+													int convertPosition = position;
+													//getChildAt不包含header和footer的索引
+													dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
 												}
 											}
 										});
@@ -191,24 +193,6 @@ public abstract class AsyncDataExecutor {
 							}
 						}
 					}
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
-					
 				}
 			}
 		};
