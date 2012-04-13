@@ -6,6 +6,7 @@ import java.util.List;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 
 public class GenericAdapter extends BaseAdapter {
@@ -16,6 +17,8 @@ public class GenericAdapter extends BaseAdapter {
 	private boolean mIsConvertView = true;
 	/**是否循环显示View*/
 	private boolean mIsLoopView = false;
+	/**异步数据的执行对象*/
+	private AsyncDataExecutor mExecutor = null;
 	
 	public GenericAdapter(Context context){
 		if(context == null) throw new NullPointerException();
@@ -25,6 +28,10 @@ public class GenericAdapter extends BaseAdapter {
 	public GenericAdapter(Context context,boolean isConvertView){
 		this(context);
 		mIsConvertView = isConvertView;
+	}
+	
+	public void bindAsyncDataExecutor(AsyncDataExecutor executor){
+		mExecutor = executor;
 	}
 	
 	public void addDataHolder(DataHolder holder){
@@ -165,12 +172,19 @@ public class GenericAdapter extends BaseAdapter {
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
 		DataHolder holder = queryDataHolder(position);
+		View returnVal;
+		holder.clearShouldExecute();
 		if(convertView == null || !mIsConvertView){
-			return holder.onCreateView(mContext, position, holder.getData());
+			returnVal = holder.onCreateView(mContext, position, holder.getData());
 		}else{
-			holder.onUpdateView(mContext, position, convertView, holder.getData(), false);
-			return convertView;
+			returnVal = convertView;
+			holder.onUpdateView(mContext, position, convertView, holder.getData());
 		}
+		if(mExecutor != null){
+			mExecutor.bindForRefresh((AdapterView<?>)parent, this);
+			mExecutor.pushAsync(position, holder, holder.getShouldExecute());
+		}
+		return returnVal;
 	}
 	
 }

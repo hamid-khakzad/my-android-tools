@@ -1,8 +1,6 @@
 package cn.emagsoftware.ui.adapterview;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -42,26 +40,15 @@ public abstract class AsyncDataExecutor {
 	}
 	
 	public void bindForRefresh(AdapterView<?> adapterView,GenericAdapter genericAdapter){
-		if(adapterView == null || genericAdapter == null) throw new NullPointerException();
 		this.mAdapterView = adapterView;
 		this.mGenericAdapter = genericAdapter;
 	}
 	
-	public void pushAsync(int position,DataHolder dataHolder){
-		if(!PUSH_THREAD.execPushingAsync(this, position, dataHolder)) push(position,dataHolder);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
+	public void pushAsync(int position,DataHolder dataHolder,boolean shouldExecute){
+		if(!PUSH_THREAD.execPushingAsync(this,position,dataHolder,shouldExecute)) push(position,dataHolder,shouldExecute);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
 	}
 	
-	private void push(int position,DataHolder dataHolder){
-		int asyncDataCount = dataHolder.getAsyncDataCount();
-		List<Integer> asyncDataIndexes = new ArrayList<Integer>(asyncDataCount);
-		for(int i = 0;i < asyncDataCount;i++){
-			if(dataHolder.getAsyncData(i) == null) asyncDataIndexes.add(i);
-		}
-		
-		
-		
-		
-		
+	private void push(int position,DataHolder dataHolder,boolean shouldExecute){
 		Thread executeThread = null;
 		synchronized(mLockExecute){
 			int index = mPushedHolders.indexOf(dataHolder);
@@ -73,7 +60,7 @@ public abstract class AsyncDataExecutor {
 					mPushedPositions.remove(size - 1);
 					mPushedHolders.remove(size - 1);
 				}
-				if(asyncDataIndexes.size() == 0) mCurExecuteIndex++;
+				if(!shouldExecute) mCurExecuteIndex++;
 				else if(mCurExecuteThreads.size() < mMaxThreadCount){
 					executeThread = createExecuteThread(position,dataHolder);
 					mCurExecuteThreads.add(executeThread);
@@ -86,7 +73,7 @@ public abstract class AsyncDataExecutor {
 					mPushedHolders.remove(index);
 					mPushedHolders.add(mCurExecuteIndex, dataHolder);
 				}
-				if(asyncDataIndexes.size() == 0) mCurExecuteIndex++;
+				if(!shouldExecute) mCurExecuteIndex++;
 				else if(mCurExecuteThreads.size() < mMaxThreadCount){
 					executeThread = createExecuteThread(position,dataHolder);
 					mCurExecuteThreads.add(executeThread);
@@ -127,39 +114,47 @@ public abstract class AsyncDataExecutor {
 							}
 						}
 					}
+					//界面重绘可能会重复使用到异步数据，但DataHolder在执行过程中却不允许重复执行，所以执行时要遍历检查所有的异步项，并且先前已执行完的要升级为强引用
+					//当前线程会在DataHolder全部执行完且移出队列后统一将异步数据置为软引用
 					for(int i = 0;i < curHolder.getAsyncDataCount();i++){
-						if(curHolder.getAsyncData(i) == null){
+						Object curAsyncData = curHolder.getAsyncData(i);
+						if(curAsyncData == null){
 							try{
-								Object asyncData = onExecute(curPosition,curHolder,i);
+								final Object asyncData = onExecute(curPosition,curHolder,i);
+								if(asyncData == null) throw new NullPointerException("the method 'onExecute' returns null");
 								curHolder.setAsyncData(i, asyncData);
 								//更新界面
-								if(mAdapterView != null && mGenericAdapter != null){
+								final AdapterView<?> adapterViewPoint = mAdapterView;
+								final GenericAdapter genericAdapterPoint = mGenericAdapter;
+								if(adapterViewPoint != null && genericAdapterPoint != null){
+									final int iCopy = i;
+									final DataHolder curHolderPoint = curHolder;
 									//判断完再执行UI操作可提高UI操作的效率
-									if(mGenericAdapter.isConvertView()){
+									if(genericAdapterPoint.isConvertView()){
 										mHandler.post(new Runnable() {
 											@Override
 											public void run() {
 												// TODO Auto-generated method stub
 												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-												int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+												int count = adapterViewPoint.getChildCount();    //不包含header和footer的个数
 												if(count <= 0) return;
 												int headerCount = 0;
-												if(mAdapterView instanceof ListView) headerCount = ((ListView)mAdapterView).getHeaderViewsCount();
-												int first = mAdapterView.getFirstVisiblePosition() - headerCount;
-												int last = mAdapterView.getLastVisiblePosition() - headerCount;
-												int end = count - 1 + first;
-												if(first > end) return;
-												if(last > end) last = end;
-												
-												
-												
-												
-												int position = curPositions.next();
-												if(position >= first && position <= last){
-													DataHolder dholder = curResolvedHolders.get(position);
-													int convertPosition = position - first;
+												if(adapterViewPoint instanceof ListView) headerCount = ((ListView)adapterViewPoint).getHeaderViewsCount();
+												int first = adapterViewPoint.getFirstVisiblePosition() - headerCount;
+												int last = adapterViewPoint.getLastVisiblePosition() - headerCount;
+												int nowPosition = -1;
+												int size = genericAdapterPoint.getCount();
+												for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
+													if(i >= size) break;
+													if(genericAdapterPoint.queryDataHolder(i) == curHolderPoint){
+														nowPosition = i;
+														break;
+													}
+												}
+												if(nowPosition != -1){    //当前DataHolder的最新位置仍在可见范围内
+													int convertPosition = nowPosition - first;
 													//getChildAt不包含header和footer的索引
-													dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+													curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), nowPosition, adapterViewPoint.getChildAt(convertPosition), asyncData, iCopy);
 												}
 											}
 										});
@@ -169,20 +164,24 @@ public abstract class AsyncDataExecutor {
 											public void run() {
 												// TODO Auto-generated method stub
 												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-												int count = mAdapterView.getChildCount();    //不包含header和footer的个数
+												int count = adapterViewPoint.getChildCount();    //不包含header和footer的个数
 												if(count <= 0) return;
-												int first = mAdapterView.getFirstVisiblePosition() - mHeaderCount;
-												int last = mAdapterView.getLastVisiblePosition() - mHeaderCount;
-												int end = count - 1;
-												if(first > end) return;
-												if(last > end) last = end;
-												
-												int position = curPositions.next();
-												if(position >= first && position <= last){
-													DataHolder dholder = curResolvedHolders.get(position);
-													int convertPosition = position;
+												int headerCount = 0;
+												if(adapterViewPoint instanceof ListView) headerCount = ((ListView)adapterViewPoint).getHeaderViewsCount();
+												int first = adapterViewPoint.getFirstVisiblePosition() - headerCount;
+												int last = adapterViewPoint.getLastVisiblePosition() - headerCount;
+												int nowPosition = -1;
+												int size = genericAdapterPoint.getCount();
+												for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
+													if(i >= size) break;
+													if(genericAdapterPoint.queryDataHolder(i) == curHolderPoint){
+														nowPosition = i;
+														break;
+													}
+												}
+												if(nowPosition != -1){    //当前DataHolder的最新位置仍在可见范围内
 													//getChildAt不包含header和footer的索引
-													dholder.onUpdateView(mAdapterView.getContext(), position, mAdapterView.getChildAt(convertPosition), dholder.getData(), true);
+													curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), nowPosition, adapterViewPoint.getChildAt(nowPosition), asyncData, iCopy);
 												}
 											}
 										});
@@ -191,6 +190,8 @@ public abstract class AsyncDataExecutor {
 							}catch(Exception e){
 								LogManager.logE(AsyncDataExecutor.class, "execute async data failed(position:"+curPosition+",index:"+i+")", e);
 							}
+						}else{
+							curHolder.setAsyncData(i, curAsyncData);
 						}
 					}
 				}
@@ -219,13 +220,13 @@ public abstract class AsyncDataExecutor {
 			handler = new Handler();
 			Looper.loop();
 		}
-		public boolean execPushingAsync(final AsyncDataExecutor executor,final int position,final DataHolder dataHolder){
+		public boolean execPushingAsync(final AsyncDataExecutor executor,final int position,final DataHolder dataHolder,final boolean shouldExecute){
 			if(handler == null) return false;
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					executor.push(position, dataHolder);
+					executor.push(position,dataHolder,shouldExecute);
 				}
 			});
 			return true;
