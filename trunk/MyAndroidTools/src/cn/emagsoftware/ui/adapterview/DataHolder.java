@@ -9,6 +9,7 @@ public abstract class DataHolder {
 	
 	private Object mData = null;
 	private Object[] mAsyncData = null;
+	private boolean mShouldExecute = false;
 	
 	/**
 	 * <p>构造函数
@@ -70,27 +71,42 @@ public abstract class DataHolder {
 		Object asyncData = mAsyncData[index];
 		if(asyncData instanceof SoftReference<?>){
 			SoftReference<?> asyncDataRef = (SoftReference<?>)asyncData;
-			return asyncDataRef.get();
-		}else{
-			return asyncData;
+			asyncData = asyncDataRef.get();
 		}
+		if(asyncData == null) mShouldExecute = true;
+		return asyncData;
 	}
 	
 	/**
-	 * <p>设置指定位置的异步数据
+	 * <p>内部方法：清除是否需要执行异步数据的标志。该方法只有在特定的逻辑顺序中才有意义
+	 */
+	void clearShouldExecute(){
+		mShouldExecute = false;
+	}
+	
+	/**
+	 * <p>内部方法：获取是否需要执行异步数据的标志。该方法只有在特定的逻辑顺序中才有意义
+	 * @return
+	 */
+	boolean getShouldExecute(){
+		return mShouldExecute;
+	}
+	
+	/**
+	 * <p>内部方法：设置指定位置的异步数据
 	 * @param index 异步数据的位置
 	 * @param asyncData
 	 */
-	public void setAsyncData(int index,Object asyncData){
+	void setAsyncData(int index,Object asyncData){
 		if(asyncData instanceof SoftReference<?>) throw new IllegalArgumentException("asyncData can not be a type of SoftReference which is used by itself");
 		mAsyncData[index] = asyncData;
 	}
 	
 	/**
-	 * <p>把指定位置的异步数据调整为弱引用，方便GC进行回收
+	 * <p>内部方法：把指定位置的异步数据调整为弱引用，方便GC进行回收
 	 * @param index
 	 */
-	public void changeAsyncDataToSoftReference(int index){
+	void changeAsyncDataToSoftReference(int index){
 		Object asyncData = mAsyncData[index];
 		if(asyncData instanceof SoftReference<?>) return;
 		mAsyncData[index] = new SoftReference<Object>(asyncData);
