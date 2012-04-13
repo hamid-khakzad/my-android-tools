@@ -147,7 +147,7 @@ public abstract class AsyncDataExecutor {
 										int size = genericAdapter.getCount();
 										for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
 											if(i >= size) break;
-											if(genericAdapter.queryDataHolder(i) == curHolderPoint){
+											if(curHolderPoint.equals(genericAdapter.queryDataHolder(i))){
 												nowPosition = i;
 												break;
 											}
