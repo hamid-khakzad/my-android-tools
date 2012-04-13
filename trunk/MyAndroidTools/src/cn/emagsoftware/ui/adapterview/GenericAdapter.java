@@ -182,7 +182,7 @@ public class GenericAdapter extends BaseAdapter {
 		}
 		if(mExecutor != null){
 			mExecutor.bindViewForRefresh((AdapterView<?>)parent);
-			mExecutor.pushAsync(position, holder, holder.getShouldExecute());
+			if(holder.getShouldExecute()) mExecutor.pushAsync(position, holder);
 		}
 		return returnVal;
 	}

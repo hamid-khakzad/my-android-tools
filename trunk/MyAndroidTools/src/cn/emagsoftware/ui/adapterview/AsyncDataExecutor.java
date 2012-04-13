@@ -43,11 +43,11 @@ public abstract class AsyncDataExecutor {
 		this.mAdapterView = adapterView;
 	}
 	
-	public void pushAsync(int position,DataHolder dataHolder,boolean shouldExecute){
-		if(!PUSH_THREAD.execPushingAsync(this,position,dataHolder,shouldExecute)) push(position,dataHolder,shouldExecute);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
+	public void pushAsync(int position,DataHolder dataHolder){
+		if(!PUSH_THREAD.execPushingAsync(this,position,dataHolder)) push(position,dataHolder);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
 	}
 	
-	private void push(int position,DataHolder dataHolder,boolean shouldExecute){
+	private void push(int position,DataHolder dataHolder){
 		Thread executeThread = null;
 		synchronized(mLockExecute){
 			int index = mPushedHolders.indexOf(dataHolder);
@@ -59,8 +59,7 @@ public abstract class AsyncDataExecutor {
 					mPushedPositions.remove(size - 1);
 					mPushedHolders.remove(size - 1);
 				}
-				if(!shouldExecute) mCurExecuteIndex++;
-				else if(mCurExecuteThreads.size() < mMaxThreadCount){
+				if(mCurExecuteThreads.size() < mMaxThreadCount){
 					executeThread = createExecuteThread(position,dataHolder);
 					mCurExecuteThreads.add(executeThread);
 					mCurExecuteIndex++;
@@ -72,8 +71,7 @@ public abstract class AsyncDataExecutor {
 					mPushedHolders.remove(index);
 					mPushedHolders.add(mCurExecuteIndex, dataHolder);
 				}
-				if(!shouldExecute) mCurExecuteIndex++;
-				else if(mCurExecuteThreads.size() < mMaxThreadCount){
+				if(mCurExecuteThreads.size() < mMaxThreadCount){
 					executeThread = createExecuteThread(position,dataHolder);
 					mCurExecuteThreads.add(executeThread);
 					mCurExecuteIndex++;
@@ -193,13 +191,13 @@ public abstract class AsyncDataExecutor {
 			handler = new Handler();
 			Looper.loop();
 		}
-		public boolean execPushingAsync(final AsyncDataExecutor executor,final int position,final DataHolder dataHolder,final boolean shouldExecute){
+		public boolean execPushingAsync(final AsyncDataExecutor executor,final int position,final DataHolder dataHolder){
 			if(handler == null) return false;
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					executor.push(position,dataHolder,shouldExecute);
+					executor.push(position,dataHolder);
 				}
 			});
 			return true;
