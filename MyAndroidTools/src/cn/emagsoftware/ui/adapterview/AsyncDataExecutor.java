@@ -5,12 +5,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import cn.emagsoftware.util.LogManager;
-
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.WrapperListAdapter;
+import cn.emagsoftware.util.LogManager;
 
 public abstract class AsyncDataExecutor {
 	
@@ -23,7 +24,6 @@ public abstract class AsyncDataExecutor {
 	private int mMaxPushedCount = 20;
 	
 	private AdapterView<?> mAdapterView = null;
-	private GenericAdapter mGenericAdapter = null;
 	
 	private List<Integer> mPushedPositions = new LinkedList<Integer>();
 	private List<DataHolder> mPushedHolders = new LinkedList<DataHolder>();
@@ -39,9 +39,8 @@ public abstract class AsyncDataExecutor {
 		this.mMaxPushedCount = maxPushedCount;
 	}
 	
-	public void bindForRefresh(AdapterView<?> adapterView,GenericAdapter genericAdapter){
+	public void bindViewForRefresh(AdapterView<?> adapterView){
 		this.mAdapterView = adapterView;
-		this.mGenericAdapter = genericAdapter;
 	}
 	
 	public void pushAsync(int position,DataHolder dataHolder,boolean shouldExecute){
@@ -124,69 +123,43 @@ public abstract class AsyncDataExecutor {
 								if(asyncData == null) throw new NullPointerException("the method 'onExecute' returns null");
 								curHolder.setAsyncData(i, asyncData);
 								//更新界面
-								final AdapterView<?> adapterViewPoint = mAdapterView;
-								final GenericAdapter genericAdapterPoint = mGenericAdapter;
-								if(adapterViewPoint != null && genericAdapterPoint != null){
-									final int iCopy = i;
-									final DataHolder curHolderPoint = curHolder;
-									//判断完再执行UI操作可提高UI操作的效率
-									if(genericAdapterPoint.isConvertView()){
-										mHandler.post(new Runnable() {
-											@Override
-											public void run() {
-												// TODO Auto-generated method stub
-												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-												int count = adapterViewPoint.getChildCount();    //不包含header和footer的个数
-												if(count <= 0) return;
-												int headerCount = 0;
-												if(adapterViewPoint instanceof ListView) headerCount = ((ListView)adapterViewPoint).getHeaderViewsCount();
-												int first = adapterViewPoint.getFirstVisiblePosition() - headerCount;
-												int last = adapterViewPoint.getLastVisiblePosition() - headerCount;
-												int nowPosition = -1;
-												int size = genericAdapterPoint.getCount();
-												for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
-													if(i >= size) break;
-													if(genericAdapterPoint.queryDataHolder(i) == curHolderPoint){
-														nowPosition = i;
-														break;
-													}
-												}
-												if(nowPosition != -1){    //当前DataHolder的最新位置仍在可见范围内
-													int convertPosition = nowPosition - first;
-													//getChildAt不包含header和footer的索引
-													curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), nowPosition, adapterViewPoint.getChildAt(convertPosition), asyncData, iCopy);
-												}
+								final int iCopy = i;
+								final DataHolder curHolderPoint = curHolder;
+								mHandler.post(new Runnable() {
+									@Override
+									public void run() {
+										// TODO Auto-generated method stub
+										//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+										AdapterView<?> adapterViewPoint = mAdapterView;
+										if(adapterViewPoint == null) return;
+										Adapter adapter = adapterViewPoint.getAdapter();
+										if(adapter == null) return;
+										if(adapter instanceof WrapperListAdapter) adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
+										if(!(adapter instanceof GenericAdapter)) return;
+										GenericAdapter genericAdapter = (GenericAdapter)adapter;    //需动态获取Adapter，以保证数据和UI的一致性
+										int count = adapterViewPoint.getChildCount();    //不包含header和footer的个数
+										if(count <= 0) return;
+										int headerCount = 0;
+										if(adapterViewPoint instanceof ListView) headerCount = ((ListView)adapterViewPoint).getHeaderViewsCount();
+										int first = adapterViewPoint.getFirstVisiblePosition() - headerCount;
+										int last = adapterViewPoint.getLastVisiblePosition() - headerCount;
+										int nowPosition = -1;
+										int size = genericAdapter.getCount();
+										for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
+											if(i >= size) break;
+											if(genericAdapter.queryDataHolder(i) == curHolderPoint){
+												nowPosition = i;
+												break;
 											}
-										});
-									}else{
-										mHandler.post(new Runnable() {
-											@Override
-											public void run() {
-												// TODO Auto-generated method stub
-												//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-												int count = adapterViewPoint.getChildCount();    //不包含header和footer的个数
-												if(count <= 0) return;
-												int headerCount = 0;
-												if(adapterViewPoint instanceof ListView) headerCount = ((ListView)adapterViewPoint).getHeaderViewsCount();
-												int first = adapterViewPoint.getFirstVisiblePosition() - headerCount;
-												int last = adapterViewPoint.getLastVisiblePosition() - headerCount;
-												int nowPosition = -1;
-												int size = genericAdapterPoint.getCount();
-												for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
-													if(i >= size) break;
-													if(genericAdapterPoint.queryDataHolder(i) == curHolderPoint){
-														nowPosition = i;
-														break;
-													}
-												}
-												if(nowPosition != -1){    //当前DataHolder的最新位置仍在可见范围内
-													//getChildAt不包含header和footer的索引
-													curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), nowPosition, adapterViewPoint.getChildAt(nowPosition), asyncData, iCopy);
-												}
-											}
-										});
+										}
+										if(nowPosition != -1){    //当前DataHolder的最新位置仍在可见范围内
+											int convertPosition = nowPosition;
+											if(genericAdapter.isConvertView()) convertPosition = nowPosition - first;
+											//getChildAt不包含header和footer的索引
+											curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), nowPosition, adapterViewPoint.getChildAt(convertPosition), asyncData, iCopy);
+										}
 									}
-								}
+								});
 							}catch(Exception e){
 								LogManager.logE(AsyncDataExecutor.class, "execute async data failed(position:"+curPosition+",index:"+i+")", e);
 							}
