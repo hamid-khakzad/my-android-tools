@@ -1,8 +1,8 @@
 package cn.emagsoftware.ui.adapterview;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import android.os.Handler;
@@ -25,8 +25,8 @@ public abstract class AsyncDataExecutor {
 	
 	private AdapterView<?> mAdapterView = null;
 	
-	private List<Integer> mPushedPositions = new LinkedList<Integer>();
-	private List<DataHolder> mPushedHolders = new LinkedList<DataHolder>();
+	private LinkedList<Integer> mPushedPositions = new LinkedList<Integer>();
+	private LinkedList<DataHolder> mPushedHolders = new LinkedList<DataHolder>();
 	private int mCurExecuteIndex = 0;
 	private byte[] mLockExecute = new byte[0];
 	private Set<Thread> mCurExecuteThreads = new HashSet<Thread>();
@@ -50,32 +50,36 @@ public abstract class AsyncDataExecutor {
 	private void push(int position,DataHolder dataHolder){
 		Thread executeThread = null;
 		synchronized(mLockExecute){
-			int index = mPushedHolders.indexOf(dataHolder);
-			if(index == -1){
-				mPushedPositions.add(mCurExecuteIndex, position);
-				mPushedHolders.add(mCurExecuteIndex, dataHolder);
-				int size = mPushedPositions.size();
-				if(size - mCurExecuteIndex > mMaxWaitCount){
-					mPushedPositions.remove(size - 1);
-					mPushedHolders.remove(size - 1);
+			Iterator<Integer> positionIterator = mPushedPositions.iterator();
+			Iterator<DataHolder> dataHolderIterator = mPushedHolders.iterator();
+			int index = -1;
+			boolean isRemoved = false;
+			while(positionIterator.hasNext()){
+				int curPosition = positionIterator.next();
+				if(++index < mCurExecuteIndex){
+					DataHolder curDataHolder = dataHolderIterator.next();
+					if(position == curPosition && dataHolder.equals(curDataHolder)) return;
+				}else{
+					if(position == curPosition){
+						positionIterator.remove();
+						dataHolderIterator.remove();
+						isRemoved = true;
+						break;
+					}
 				}
-				if(mCurExecuteThreads.size() < mMaxThreadCount){
-					executeThread = createExecuteThread(position,dataHolder);
-					mCurExecuteThreads.add(executeThread);
-					mCurExecuteIndex++;
+			}
+			mPushedPositions.add(mCurExecuteIndex, position);
+			mPushedHolders.add(mCurExecuteIndex, dataHolder);
+			if(!isRemoved){
+				if(mPushedPositions.size() - mCurExecuteIndex > mMaxWaitCount){
+					mPushedPositions.removeLast();
+					mPushedHolders.removeLast();
 				}
-			}else if(index >= mCurExecuteIndex){    //还未执行到
-				mPushedPositions.remove(index);
-				mPushedPositions.add(mCurExecuteIndex, position);
-				if(index != mCurExecuteIndex){
-					mPushedHolders.remove(index);
-					mPushedHolders.add(mCurExecuteIndex, dataHolder);
-				}
-				if(mCurExecuteThreads.size() < mMaxThreadCount){
-					executeThread = createExecuteThread(position,dataHolder);
-					mCurExecuteThreads.add(executeThread);
-					mCurExecuteIndex++;
-				}
+			}
+			if(mCurExecuteThreads.size() < mMaxThreadCount){
+				executeThread = createExecuteThread(position,dataHolder);
+				mCurExecuteThreads.add(executeThread);
+				mCurExecuteIndex++;
 			}
 		}
 		if(executeThread != null) ThreadPoolManager.executeThread(executeThread);
@@ -121,8 +125,9 @@ public abstract class AsyncDataExecutor {
 								if(asyncData == null) throw new NullPointerException("the method 'onExecute' returns null");
 								curHolder.setAsyncData(i, asyncData);
 								//更新界面
-								final int iCopy = i;
+								final int curPositionCopy = curPosition;
 								final DataHolder curHolderPoint = curHolder;
+								final int iCopy = i;
 								mHandler.post(new Runnable() {
 									@Override
 									public void run() {
@@ -135,26 +140,22 @@ public abstract class AsyncDataExecutor {
 										if(adapter instanceof WrapperListAdapter) adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
 										if(!(adapter instanceof GenericAdapter)) return;
 										GenericAdapter genericAdapter = (GenericAdapter)adapter;    //需动态获取Adapter，以保证数据和UI的一致性
+										if(curPositionCopy >= genericAdapter.getCount()) return;    //界面发生了改变
+										if(!curHolderPoint.equals(genericAdapter.queryDataHolder(curPositionCopy))) return;    //界面发生了改变
 										int count = adapterViewPoint.getChildCount();    //不包含header和footer的个数
 										if(count <= 0) return;
 										int headerCount = 0;
 										if(adapterViewPoint instanceof ListView) headerCount = ((ListView)adapterViewPoint).getHeaderViewsCount();
 										int first = adapterViewPoint.getFirstVisiblePosition() - headerCount;
 										int last = adapterViewPoint.getLastVisiblePosition() - headerCount;
-										int nowPosition = -1;
-										int size = genericAdapter.getCount();
-										for(int i = first;i <= last;i++){    //只循环可见范围以防止过长占用UI线程
-											if(i >= size) break;
-											if(curHolderPoint.equals(genericAdapter.queryDataHolder(i))){
-												nowPosition = i;
-												break;
-											}
-										}
-										if(nowPosition != -1){    //当前DataHolder的最新位置仍在可见范围内
-											int convertPosition = nowPosition;
-											if(genericAdapter.isConvertView()) convertPosition = nowPosition - first;
+										int end = count - 1 + first;
+				                        if (first > end) return;
+				                        if (last > end) last = end;
+										if(curPositionCopy >= first && curPositionCopy <= last){
+											int convertPosition = curPositionCopy;
+											if(genericAdapter.isConvertView()) convertPosition = curPositionCopy - first;
 											//getChildAt不包含header和footer的索引
-											curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), nowPosition, adapterViewPoint.getChildAt(convertPosition), asyncData, iCopy);
+											curHolderPoint.onAsyncDataExecuted(adapterViewPoint.getContext(), curPositionCopy, adapterViewPoint.getChildAt(convertPosition), asyncData, iCopy);
 										}
 									}
 								});
