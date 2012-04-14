@@ -21,7 +21,7 @@ public abstract class AsyncDataExecutor {
 	}
 	
 	private int mMaxThreadCount = 5;
-	private int mMaxPushedCount = 20;
+	private int mMaxWaitCount = 20;
 	
 	private AdapterView<?> mAdapterView = null;
 	
@@ -32,11 +32,11 @@ public abstract class AsyncDataExecutor {
 	private Set<Thread> mCurExecuteThreads = new HashSet<Thread>();
 	private Handler mHandler = new Handler(Looper.getMainLooper());
 	
-	public AsyncDataExecutor(int maxThreadCount,int maxPushedCount){
+	public AsyncDataExecutor(int maxThreadCount,int maxWaitCount){
 		if(maxThreadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
-		if(maxPushedCount <= 0) throw new IllegalArgumentException("maxPushedCount should be great than zero.");
+		if(maxWaitCount <= 0) throw new IllegalArgumentException("maxWaitCount should be great than zero.");
 		this.mMaxThreadCount = maxThreadCount;
-		this.mMaxPushedCount = maxPushedCount;
+		this.mMaxWaitCount = maxWaitCount;
 	}
 	
 	public void bindViewForRefresh(AdapterView<?> adapterView){
@@ -55,7 +55,7 @@ public abstract class AsyncDataExecutor {
 				mPushedPositions.add(mCurExecuteIndex, position);
 				mPushedHolders.add(mCurExecuteIndex, dataHolder);
 				int size = mPushedPositions.size();
-				if(size > mMaxPushedCount){
+				if(size - mCurExecuteIndex > mMaxWaitCount){
 					mPushedPositions.remove(size - 1);
 					mPushedHolders.remove(size - 1);
 				}
