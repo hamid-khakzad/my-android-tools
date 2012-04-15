@@ -27,12 +27,6 @@ public abstract class BaseLazyLoadingAdapter extends BaseLoadingAdapter {
 		mLimit = limit;
 	}
 	
-	public BaseLazyLoadingAdapter(Context context,boolean isConvertView,int limit){
-		super(context,isConvertView);
-		if(limit <= 0) throw new IllegalArgumentException("limit should be great than zero.");
-		mLimit = limit;
-	}
-	
 	/**
 	 * <p>绑定AdapterView，使其自动懒加载
 	 * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载

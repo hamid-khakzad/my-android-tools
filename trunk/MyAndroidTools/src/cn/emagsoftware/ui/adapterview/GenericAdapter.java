@@ -25,9 +25,9 @@ public class GenericAdapter extends BaseAdapter {
 		mContext = context;
 	}
 	
-	public GenericAdapter(Context context,boolean isConvertView){
+	public GenericAdapter(Context context,List<DataHolder> holders){
 		this(context);
-		mIsConvertView = isConvertView;
+		addDataHolders(holders);
 	}
 	
 	public void bindAsyncDataExecutor(AsyncDataExecutor executor){
@@ -114,6 +114,10 @@ public class GenericAdapter extends BaseAdapter {
 	public void clearDataHolders(){
 		mHolders.clear();
 		notifyDataSetChanged();
+	}
+	
+	public void setConvertView(boolean isConvertView){
+		mIsConvertView = isConvertView;
 	}
 	
 	public boolean isConvertView(){

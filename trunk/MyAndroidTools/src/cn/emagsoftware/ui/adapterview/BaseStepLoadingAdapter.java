@@ -23,10 +23,6 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 		super(context);
 	}
 	
-	public BaseStepLoadingAdapter(Context context,boolean isConvertView){
-		super(context,isConvertView);
-	}
-	
 	/**
 	 * <p>绑定AdapterView，使其自动分步加载
 	 * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载
