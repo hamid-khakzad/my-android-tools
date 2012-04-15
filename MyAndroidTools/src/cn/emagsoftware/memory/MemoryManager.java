@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ListView;
 import cn.emagsoftware.util.LogManager;
 
 public final class MemoryManager {
@@ -116,9 +117,22 @@ public final class MemoryManager {
 	 * @param callback
 	 */
 	public static void releaseBitmaps(AdapterView<?> view,MemoryManager.ReleaseBitmapsCallback callback){
-		int count = view.getChildCount();    //不包含header和footer的个数
-		for(int i = 0;i < count;i++){
-			callback.releaseBitmaps(view.getChildAt(i));
+		int count = view.getChildCount();
+		if(view instanceof ListView){
+			ListView listView = (ListView)view;
+			int first = listView.getHeaderViewsCount();
+			int last = listView.getAdapter().getCount() - listView.getFooterViewsCount() - 1;
+			if(last - first < 0) return;
+			int firstVisible = listView.getFirstVisiblePosition();
+			for(int i = 0;i < count;i++){
+				int position = i + firstVisible;
+				if(position < first || position > last) continue;    //不包含header和footer
+				callback.releaseBitmaps(listView.getChildAt(i));
+			}
+		}else{
+			for(int i = 0;i < count;i++){
+				callback.releaseBitmaps(view.getChildAt(i));
+			}
 		}
 	}
 	
