@@ -149,20 +149,14 @@ public abstract class AsyncDataExecutor {
 										if(mAdapterView == null || mGenericAdapter == null) return;
 										if(curPositionCopy >= mGenericAdapter.getCount()) return;    //界面发生了改变
 										if(!curHolderPoint.equals(mGenericAdapter.queryDataHolder(curPositionCopy))) return;    //界面发生了改变
-										int count = mAdapterView.getChildCount();    //不包含header和footer的个数
-										if(count <= 0) return;
-										int headerCount = 0;
-										if(mAdapterView instanceof ListView) headerCount = ((ListView)mAdapterView).getHeaderViewsCount();
-										int first = mAdapterView.getFirstVisiblePosition() - headerCount;
-										int last = mAdapterView.getLastVisiblePosition() - headerCount;
-										int end = count - 1 + first;
-				                        if (first > end) return;
-				                        if (last > end) last = end;
-										if(curPositionCopy >= first && curPositionCopy <= last){
-											int convertPosition = curPositionCopy;
-											if(mGenericAdapter.isConvertView()) convertPosition = curPositionCopy - first;
-											//getChildAt不包含header和footer的索引
-											curHolderPoint.onAsyncDataExecuted(mAdapterView.getContext(), curPositionCopy, mAdapterView.getChildAt(convertPosition), asyncData, iCopy);
+										int first = mAdapterView.getFirstVisiblePosition();
+										int last = mAdapterView.getLastVisiblePosition();
+										int position = curPositionCopy;
+										if(mAdapterView instanceof ListView){
+											position = position + ((ListView)mAdapterView).getHeaderViewsCount();
+										}
+										if(position >= first && position <= last){
+											curHolderPoint.onAsyncDataExecuted(mAdapterView.getContext(), curPositionCopy, mAdapterView.getChildAt(position - first), asyncData, iCopy);
 										}
 									}
 								});
