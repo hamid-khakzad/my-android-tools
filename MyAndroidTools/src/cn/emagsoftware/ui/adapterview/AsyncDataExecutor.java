@@ -7,8 +7,10 @@ import java.util.Set;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.WrapperListAdapter;
 import cn.emagsoftware.util.LogManager;
 
 public abstract class AsyncDataExecutor {
@@ -22,7 +24,6 @@ public abstract class AsyncDataExecutor {
 	private int mMaxWaitCount = 20;
 	
 	private AdapterView<?> mAdapterView = null;
-	private GenericAdapter mGenericAdapter = null;
 	
 	private LinkedList<Integer> mPushedPositions = new LinkedList<Integer>();
 	private LinkedList<DataHolder> mPushedHolders = new LinkedList<DataHolder>();
@@ -38,15 +39,8 @@ public abstract class AsyncDataExecutor {
 		this.mMaxWaitCount = maxWaitCount;
 	}
 	
-	/**
-	 * <p>绑定刷新UI时使用到的AdapterView和GenericAdapter，若这两者发生变化，需要重新调用此方法进行刷新
-	 * <p>该方法只能在UI线程中调用，这样才能保证同步
-	 * @param adapterView
-	 * @param genericAdapter
-	 */
-	public void bindForRefresh(AdapterView<?> adapterView,GenericAdapter genericAdapter){
+	public void bindViewForRefresh(AdapterView<?> adapterView){
 		this.mAdapterView = adapterView;
-		this.mGenericAdapter = genericAdapter;
 	}
 	
 	public void pushAsync(int position,DataHolder dataHolder){
@@ -146,9 +140,14 @@ public abstract class AsyncDataExecutor {
 									public void run() {
 										// TODO Auto-generated method stub
 										//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-										if(mAdapterView == null || mGenericAdapter == null) return;
-										if(curPositionCopy >= mGenericAdapter.getCount()) return;    //界面发生了改变
-										if(!curHolderPoint.equals(mGenericAdapter.queryDataHolder(curPositionCopy))) return;    //界面发生了改变
+										if(mAdapterView == null) return;
+										Adapter adapter = mAdapterView.getAdapter();
+										if(adapter == null) return;
+										if(adapter instanceof WrapperListAdapter) adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
+										if(!(adapter instanceof GenericAdapter)) return;
+										GenericAdapter genericAdapter = (GenericAdapter)adapter;
+										if(curPositionCopy >= genericAdapter.getCount()) return;    //界面发生了改变
+										if(!curHolderPoint.equals(genericAdapter.queryDataHolder(curPositionCopy))) return;    //界面发生了改变
 										int first = mAdapterView.getFirstVisiblePosition();
 										int last = mAdapterView.getLastVisiblePosition();
 										int position = curPositionCopy;
