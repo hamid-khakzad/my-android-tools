@@ -116,7 +116,7 @@ public final class MemoryManager {
 	 * @param callback
 	 */
 	public static void releaseBitmaps(AdapterView<?> view,MemoryManager.ReleaseBitmapsCallback callback){
-		int count = view.getChildCount();
+		int count = view.getChildCount();    //不包含header和footer的个数
 		for(int i = 0;i < count;i++){
 			callback.releaseBitmaps(view.getChildAt(i));
 		}
