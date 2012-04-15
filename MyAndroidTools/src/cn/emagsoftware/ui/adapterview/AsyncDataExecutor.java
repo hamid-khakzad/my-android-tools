@@ -103,8 +103,17 @@ public abstract class AsyncDataExecutor {
 						curHolder = firstDataHolder;
 					}else{
 						synchronized(mLockExecute){
-							mPushedPositions.remove((Integer)curPosition);
-							mPushedHolders.remove(curHolder);
+							Iterator<Integer> positionIterator = mPushedPositions.iterator();
+							Iterator<DataHolder> dataHolderIterator = mPushedHolders.iterator();
+							while(positionIterator.hasNext()){
+								int onePosition = positionIterator.next();
+								DataHolder oneDataHolder = dataHolderIterator.next();
+								if(curPosition == onePosition && curHolder.equals(oneDataHolder)){
+									positionIterator.remove();
+									dataHolderIterator.remove();
+									break;
+								}
+							}
 							if(mCurExecuteIndex > 0) mCurExecuteIndex--;
 							for(int i = 0;i < curHolder.getAsyncDataCount();i++){
 								curHolder.changeAsyncDataToSoftReference(i);
