@@ -112,7 +112,7 @@ public final class MemoryManager {
 	/**
 	 * <p>与recycleBitmaps方法不同的是，当前方法一般用于缓存的AdapterView，作用是释放AdapterView的各项对Bitmap的引用，这样使用软引用实现的Adapter对应的Bitmap便可以被虚拟机回收
 	 * <p>释放引用的通常做法是对AdapterView的各项重新设置一个初始的、默认的Bitmap
-	 * <p>缓存的AdapterView在重新显示时会自动调用Adapter重新渲染数据，这也就是释放引用只能针对AdapterView的原因
+	 * <p>缓存的AdapterView在被重新布局显示时会自动调用Adapter重新渲染数据，这也就是释放引用只能针对AdapterView的原因
 	 * @param view
 	 * @param callback
 	 */

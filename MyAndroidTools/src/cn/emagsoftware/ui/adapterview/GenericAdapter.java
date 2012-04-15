@@ -185,7 +185,7 @@ public class GenericAdapter extends BaseAdapter {
 			holder.onUpdateView(mContext, position, convertView, holder.getData());
 		}
 		if(mExecutor != null){
-			mExecutor.bindViewForRefresh((AdapterView<?>)parent);
+			mExecutor.bindForRefresh((AdapterView<?>)parent,this);
 			if(holder.getShouldExecute()) mExecutor.pushAsync(position, holder);
 		}
 		return returnVal;
