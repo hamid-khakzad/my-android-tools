@@ -3,6 +3,7 @@ package cn.emagsoftware.ui.adapterview;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Set;
 
 import android.os.Handler;
@@ -56,8 +57,8 @@ public abstract class AsyncDataExecutor {
 	private void push(int position,DataHolder dataHolder){
 		Thread executeThread = null;
 		synchronized(mLockExecute){
-			Iterator<Integer> positionIterator = mPushedPositions.iterator();
-			Iterator<DataHolder> dataHolderIterator = mPushedHolders.iterator();
+			ListIterator<Integer> positionIterator = mPushedPositions.listIterator();
+			ListIterator<DataHolder> dataHolderIterator = mPushedHolders.listIterator();
 			int index = -1;
 			boolean isRemoved = false;
 			while(positionIterator.hasNext()){
@@ -65,6 +66,10 @@ public abstract class AsyncDataExecutor {
 				DataHolder curDataHolder = dataHolderIterator.next();
 				if(++index < mCurExecuteIndex){
 					if(position == curPosition && dataHolder.equals(curDataHolder)) return;
+				}else if(index == mCurExecuteIndex){
+					positionIterator.add(position);
+					dataHolderIterator.add(dataHolder);
+					index++;
 				}else if(position == curPosition){
 					positionIterator.remove();
 					dataHolderIterator.remove();
@@ -72,8 +77,6 @@ public abstract class AsyncDataExecutor {
 					break;
 				}
 			}
-			mPushedPositions.add(mCurExecuteIndex, position);
-			mPushedHolders.add(mCurExecuteIndex, dataHolder);
 			if(!isRemoved){
 				if(mPushedPositions.size() - mCurExecuteIndex > mMaxWaitCount){
 					mPushedPositions.removeLast();
