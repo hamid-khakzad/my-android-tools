@@ -60,28 +60,25 @@ public abstract class AsyncDataExecutor {
 			ListIterator<Integer> positionIterator = mPushedPositions.listIterator();
 			ListIterator<DataHolder> dataHolderIterator = mPushedHolders.listIterator();
 			int index = -1;
-			boolean isRemoved = false;
-			while(positionIterator.hasNext()){
+			while(++index < mCurExecuteIndex){
 				int curPosition = positionIterator.next();
 				DataHolder curDataHolder = dataHolderIterator.next();
-				if(++index < mCurExecuteIndex){
-					if(position == curPosition && dataHolder.equals(curDataHolder)) return;
-				}else if(index == mCurExecuteIndex){
-					positionIterator.add(position);
-					dataHolderIterator.add(dataHolder);
-					index++;
-				}else if(position == curPosition){
+				if(position == curPosition && dataHolder.equals(curDataHolder)) return;
+			}
+			positionIterator.add(position);
+			dataHolderIterator.add(dataHolder);
+			while(positionIterator.hasNext()){
+				int curPosition = positionIterator.next();
+				dataHolderIterator.next();
+				if(position == curPosition){
 					positionIterator.remove();
 					dataHolderIterator.remove();
-					isRemoved = true;
 					break;
 				}
 			}
-			if(!isRemoved){
-				if(mPushedPositions.size() - mCurExecuteIndex > mMaxWaitCount){
-					mPushedPositions.removeLast();
-					mPushedHolders.removeLast();
-				}
+			if(mPushedPositions.size() - mCurExecuteIndex > mMaxWaitCount){
+				mPushedPositions.removeLast();
+				mPushedHolders.removeLast();
 			}
 			if(mCurExecuteThreads.size() < mMaxThreadCount){
 				executeThread = createExecuteThread(position,dataHolder);
