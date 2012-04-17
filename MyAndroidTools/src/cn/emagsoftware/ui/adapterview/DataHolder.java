@@ -9,7 +9,7 @@ public abstract class DataHolder {
 	
 	private Object mData = null;
 	private Object[] mAsyncData = null;
-	private boolean mShouldExecute = false;
+	ExecuteConfig mExecuteConfig = new ExecuteConfig();
 	
 	/**
 	 * <p>构造函数
@@ -73,23 +73,8 @@ public abstract class DataHolder {
 			SoftReference<?> asyncDataRef = (SoftReference<?>)asyncData;
 			asyncData = asyncDataRef.get();
 		}
-		if(asyncData == null) mShouldExecute = true;
+		if(asyncData == null) mExecuteConfig.mShouldExecute = true;
 		return asyncData;
-	}
-	
-	/**
-	 * <p>内部方法：清除是否需要执行异步数据的标志。该方法只有在特定的逻辑顺序中才有意义
-	 */
-	void clearShouldExecute(){
-		mShouldExecute = false;
-	}
-	
-	/**
-	 * <p>内部方法：获取是否需要执行异步数据的标志。该方法只有在特定的逻辑顺序中才有意义
-	 * @return
-	 */
-	boolean getShouldExecute(){
-		return mShouldExecute;
 	}
 	
 	/**
@@ -118,6 +103,12 @@ public abstract class DataHolder {
 	 */
 	public int getAsyncDataCount(){
 		return mAsyncData.length;
+	}
+	
+	class ExecuteConfig{
+		boolean mShouldExecute = false;
+		boolean mIsExecuting = false;
+		int mPosition = -1;
 	}
 	
 }

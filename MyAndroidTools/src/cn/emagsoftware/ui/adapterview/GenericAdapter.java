@@ -177,7 +177,7 @@ public class GenericAdapter extends BaseAdapter {
 		// TODO Auto-generated method stub
 		DataHolder holder = queryDataHolder(position);
 		View returnVal;
-		holder.clearShouldExecute();
+		holder.mExecuteConfig.mShouldExecute = false;
 		if(convertView == null || !mIsConvertView){
 			returnVal = holder.onCreateView(mContext, position, holder.getData());
 		}else{
@@ -186,7 +186,8 @@ public class GenericAdapter extends BaseAdapter {
 		}
 		if(mExecutor != null){
 			mExecutor.bindForRefresh((AdapterView<?>)parent,this);
-			if(holder.getShouldExecute()) mExecutor.pushAsync(position, holder);
+			holder.mExecuteConfig.mPosition = position;
+			if(holder.mExecuteConfig.mShouldExecute) mExecutor.pushAsync(holder);
 		}
 		return returnVal;
 	}
