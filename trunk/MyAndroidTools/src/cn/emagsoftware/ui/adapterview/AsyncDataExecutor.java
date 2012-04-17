@@ -156,13 +156,13 @@ public abstract class AsyncDataExecutor {
 		}
 		public boolean execPushingAsync(final AsyncDataExecutor executor,final DataHolder dataHolder){
 			if(handler == null) return false;
-			handler.postDelayed(new Runnable() {    //每隔200毫秒执行，以避免连续执行带来的界面滑动卡顿现象
+			handler.postDelayed(new Runnable() {    //每隔320毫秒执行，以避免连续执行带来的界面滑动卡顿现象
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
 					executor.push(dataHolder);
 				}
-			},200);
+			},320);
 			return true;
 		}
 	}
