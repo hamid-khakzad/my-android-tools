@@ -1,9 +1,7 @@
 package cn.emagsoftware.ui.adapterview;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.Set;
 
 import android.os.Handler;
@@ -25,9 +23,7 @@ public abstract class AsyncDataExecutor {
 	private AdapterView<?> mAdapterView = null;
 	private GenericAdapter mGenericAdapter = null;
 	
-	private LinkedList<Integer> mPushedPositions = new LinkedList<Integer>();
 	private LinkedList<DataHolder> mPushedHolders = new LinkedList<DataHolder>();
-	private int mCurExecuteIndex = 0;
 	private byte[] mLockExecute = new byte[0];
 	private Set<Thread> mCurExecuteThreads = new HashSet<Thread>();
 	private Handler mHandler = new Handler(Looper.getMainLooper());
@@ -50,48 +46,28 @@ public abstract class AsyncDataExecutor {
 		this.mGenericAdapter = genericAdapter;
 	}
 	
-	public void pushAsync(int position,DataHolder dataHolder){
-		if(!PUSH_THREAD.execPushingAsync(this,position,dataHolder)) push(position,dataHolder);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
+	public void pushAsync(DataHolder dataHolder){
+		if(!PUSH_THREAD.execPushingAsync(this,dataHolder)) push(dataHolder);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
 	}
 	
-	private void push(int position,DataHolder dataHolder){
+	private void push(DataHolder dataHolder){
+		if(dataHolder.mExecuteConfig.mIsExecuting) return;
+		dataHolder.mExecuteConfig.mIsExecuting = true;
 		Thread executeThread = null;
 		synchronized(mLockExecute){
-			ListIterator<Integer> positionIterator = mPushedPositions.listIterator();
-			ListIterator<DataHolder> dataHolderIterator = mPushedHolders.listIterator();
-			int index = -1;
-			while(++index < mCurExecuteIndex){
-				int curPosition = positionIterator.next();
-				DataHolder curDataHolder = dataHolderIterator.next();
-				if(position == curPosition && dataHolder.equals(curDataHolder)) return;
-			}
-			positionIterator.add(position);
-			dataHolderIterator.add(dataHolder);
-			while(positionIterator.hasNext()){
-				int curPosition = positionIterator.next();
-				dataHolderIterator.next();
-				if(position == curPosition){
-					positionIterator.remove();
-					dataHolderIterator.remove();
-					break;
-				}
-			}
-			if(mPushedPositions.size() - mCurExecuteIndex > mMaxWaitCount){
-				mPushedPositions.removeLast();
-				mPushedHolders.removeLast();
-			}
 			if(mCurExecuteThreads.size() < mMaxThreadCount){
-				executeThread = createExecuteThread(position,dataHolder);
+				executeThread = createExecuteThread(dataHolder);
 				mCurExecuteThreads.add(executeThread);
-				mCurExecuteIndex++;
+			}else{
+				mPushedHolders.addFirst(dataHolder);
+				if(mPushedHolders.size() > mMaxWaitCount) mPushedHolders.removeLast();
 			}
 		}
 		if(executeThread != null) ThreadPoolManager.executeThread(executeThread);
 	}
 	
-	private Thread createExecuteThread(final int firstPosition,final DataHolder firstDataHolder){
+	private Thread createExecuteThread(final DataHolder firstDataHolder){
 		return new Thread(){
-			private int curPosition;
 			private DataHolder curHolder;
 			@Override
 			public void run() {
@@ -99,32 +75,17 @@ public abstract class AsyncDataExecutor {
 				super.run();
 				while(true){
 					if(curHolder == null){
-						curPosition = firstPosition;
 						curHolder = firstDataHolder;
 					}else{
+						curHolder.mExecuteConfig.mIsExecuting = false;
+						for(int i = 0;i < curHolder.getAsyncDataCount();i++){
+							curHolder.changeAsyncDataToSoftReference(i);
+						}
 						synchronized(mLockExecute){
-							Iterator<Integer> positionIterator = mPushedPositions.iterator();
-							Iterator<DataHolder> dataHolderIterator = mPushedHolders.iterator();
-							while(positionIterator.hasNext()){
-								int onePosition = positionIterator.next();
-								DataHolder oneDataHolder = dataHolderIterator.next();
-								if(curPosition == onePosition && curHolder.equals(oneDataHolder)){
-									positionIterator.remove();
-									dataHolderIterator.remove();
-									break;
-								}
-							}
-							if(mCurExecuteIndex > 0) mCurExecuteIndex--;
-							for(int i = 0;i < curHolder.getAsyncDataCount();i++){
-								curHolder.changeAsyncDataToSoftReference(i);
-							}
-							if(mCurExecuteIndex >= mPushedPositions.size()){
+							curHolder = mPushedHolders.poll();
+							if(curHolder == null){
 								mCurExecuteThreads.remove(this);
 								return;
-							}else{
-								curPosition = mPushedPositions.get(mCurExecuteIndex);
-								curHolder = mPushedHolders.get(mCurExecuteIndex);
-								mCurExecuteIndex++;
 							}
 						}
 					}
@@ -134,11 +95,10 @@ public abstract class AsyncDataExecutor {
 						Object curAsyncData = curHolder.getAsyncData(i);
 						if(curAsyncData == null){
 							try{
-								final Object asyncData = onExecute(curPosition,curHolder,i);
+								final Object asyncData = onExecute(curHolder.mExecuteConfig.mPosition,curHolder,i);
 								if(asyncData == null) throw new NullPointerException("the method 'onExecute' returns null");
 								curHolder.setAsyncData(i, asyncData);
 								//更新界面
-								final int curPositionCopy = curPosition;
 								final DataHolder curHolderPoint = curHolder;
 								final int iCopy = i;
 								mHandler.post(new Runnable() {
@@ -147,21 +107,22 @@ public abstract class AsyncDataExecutor {
 										// TODO Auto-generated method stub
 										//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
 										if(mAdapterView == null || mGenericAdapter == null) return;
-										if(curPositionCopy >= mGenericAdapter.getCount()) return;    //界面发生了改变
-										if(!curHolderPoint.equals(mGenericAdapter.queryDataHolder(curPositionCopy))) return;    //界面发生了改变
+										int position = curHolderPoint.mExecuteConfig.mPosition;
+										if(position >= mGenericAdapter.getCount()) return;    //界面发生了改变
+										if(!curHolderPoint.equals(mGenericAdapter.queryDataHolder(position))) return;    //界面发生了改变
 										int first = mAdapterView.getFirstVisiblePosition();
 										int last = mAdapterView.getLastVisiblePosition();
-										int position = curPositionCopy;
+										int wrapPosition = position;
 										if(mAdapterView instanceof ListView){
-											position = position + ((ListView)mAdapterView).getHeaderViewsCount();
+											wrapPosition = wrapPosition + ((ListView)mAdapterView).getHeaderViewsCount();
 										}
-										if(position >= first && position <= last){
-											curHolderPoint.onAsyncDataExecuted(mAdapterView.getContext(), curPositionCopy, mAdapterView.getChildAt(position - first), asyncData, iCopy);
+										if(wrapPosition >= first && wrapPosition <= last){
+											curHolderPoint.onAsyncDataExecuted(mAdapterView.getContext(), position, mAdapterView.getChildAt(wrapPosition - first), asyncData, iCopy);
 										}
 									}
 								});
 							}catch(Exception e){
-								LogManager.logE(AsyncDataExecutor.class, "execute async data failed(position:"+curPosition+",index:"+i+")", e);
+								LogManager.logE(AsyncDataExecutor.class, "execute async data failed(position:"+curHolder.mExecuteConfig.mPosition+",index:"+i+")", e);
 							}
 						}else{
 							curHolder.setAsyncData(i, curAsyncData);
@@ -193,15 +154,15 @@ public abstract class AsyncDataExecutor {
 			handler = new Handler();
 			Looper.loop();
 		}
-		public boolean execPushingAsync(final AsyncDataExecutor executor,final int position,final DataHolder dataHolder){
+		public boolean execPushingAsync(final AsyncDataExecutor executor,final DataHolder dataHolder){
 			if(handler == null) return false;
-			handler.post(new Runnable() {
+			handler.postDelayed(new Runnable() {    //每隔200毫秒执行，以避免连续执行带来的界面滑动卡顿现象
 				@Override
 				public void run() {
 					// TODO Auto-generated method stub
-					executor.push(position,dataHolder);
+					executor.push(dataHolder);
 				}
-			});
+			},200);
 			return true;
 		}
 	}
