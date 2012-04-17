@@ -12,7 +12,7 @@ import android.widget.BaseAdapter;
 public class GenericAdapter extends BaseAdapter {
 	
 	protected Context mContext = null;
-	private List<DataHolder> mHolders = new ArrayList<DataHolder>();
+	private List<DataHolder> mHolders = null;
 	/**是否转换View以提高性能*/
 	private boolean mIsConvertView = true;
 	/**是否循环显示View*/
@@ -23,11 +23,13 @@ public class GenericAdapter extends BaseAdapter {
 	public GenericAdapter(Context context){
 		if(context == null) throw new NullPointerException();
 		mContext = context;
+		mHolders = new ArrayList<DataHolder>();
 	}
 	
 	public GenericAdapter(Context context,List<DataHolder> holders){
-		this(context);
-		addDataHolders(holders);
+		if(context == null || holders == null) throw new NullPointerException();
+		mContext = context;
+		mHolders = new ArrayList<DataHolder>(holders);
 	}
 	
 	public void bindAsyncDataExecutor(AsyncDataExecutor executor){
