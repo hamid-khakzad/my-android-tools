@@ -3,7 +3,7 @@ package cn.emagsoftware.ui.adapterview;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import cn.emagsoftware.ui.UIThread;
+import cn.emagsoftware.util.AsyncWeakTask;
 import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
@@ -63,45 +63,46 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 		if(mIsLoading) return false;
 		mIsLoading = true;
 		mCurCondition = condition;
-		onBeginLoad(mContext,condition);    //在load中调用而不是在UIThread的onBeginUI中，可使UI线程衔接一致，避免带来外部的不同步情况
+		onBeginLoad(mContext,condition);
 		final int start = getRealCount();
-		ThreadPoolManager.executeThread(new UIThread(mContext){
+		new AsyncWeakTask<Object, Integer, Object>(mContext) {
 			@Override
-			protected Object onRunNoUI(Context context) throws Exception {
+			protected Object doInBackground(Object... params) {
 				// TODO Auto-generated method stub
-				super.onRunNoUI(context);
-				return onLoad(context,condition,start,mPage + 1);
+				try{
+					return onLoad(condition,start,mPage + 1);
+				}catch(Exception e){
+					return e;
+				}
 			}
 			@SuppressWarnings("unchecked")
 			@Override
-			protected void onSuccessUI(Context context,Object result) {
+			protected void onPostExecute(Object[] objs, Object result) {
 				// TODO Auto-generated method stub
-				super.onSuccessUI(context,result);
-				mPage++;
-				List<DataHolder> resultList = (List<DataHolder>)result;
-				if(resultList != null && resultList.size() > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
-				mIsLoading = false;
-				mIsLoaded = true;
-				if(mPages == -1){
-					if(resultList == null || resultList.size() == 0) mIsLoadedAll = true;
-					else mIsLoadedAll = false;
+				if(result instanceof Exception){
+					Exception e = (Exception)result;
+					LogManager.logE(BaseStepLoadingAdapter.class, "Execute step loading failed.", e);
+					mIsLoading = false;
+					mIsException = true;
+					onAfterLoad((Context)objs[0],condition,e);
 				}else{
-					if(mPage >= mPages) mIsLoadedAll = true;
-					else mIsLoadedAll = false;
+					mPage++;
+					List<DataHolder> resultList = (List<DataHolder>)result;
+					if(resultList != null && resultList.size() > 0) addDataHolders(resultList);    //该方法需在UI线程中执行且是非线程安全的
+					mIsLoading = false;
+					mIsLoaded = true;
+					if(mPages == -1){
+						if(resultList == null || resultList.size() == 0) mIsLoadedAll = true;
+						else mIsLoadedAll = false;
+					}else{
+						if(mPage >= mPages) mIsLoadedAll = true;
+						else mIsLoadedAll = false;
+					}
+					mIsException = false;
+					onAfterLoad((Context)objs[0],condition,null);
 				}
-				mIsException = false;
-				onAfterLoad(context,condition,null);
 			}
-			@Override
-			protected void onExceptionUI(Context context,Exception e) {
-				// TODO Auto-generated method stub
-				super.onExceptionUI(context,e);
-				LogManager.logE(BaseStepLoadingAdapter.class, "Execute step loading failed.", e);
-				mIsLoading = false;
-				mIsException = true;
-				onAfterLoad(context,condition,e);
-			}
-		});
+		}.execute("");
 		return true;
 	}
 	
@@ -150,24 +151,23 @@ public abstract class BaseStepLoadingAdapter extends BaseLoadingAdapter {
 	}
 	
 	/**
-	 * <p>对于当前类而言，已使用onLoad(Context context,Object condition,int start,int page)替换了当前方法的作用，故将其简单实现以防止子类被强制要求实现
+	 * <p>对于当前类而言，已使用onLoad(Object condition,int start,int page)替换了当前方法的作用，故将其简单实现以防止子类被强制要求实现
 	 */
 	@Override
-	public List<DataHolder> onLoad(Context context,Object condition) throws Exception {
+	public List<DataHolder> onLoad(Object condition) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
 	/**
 	 * <p>加载的具体实现，通过传入的参数可以实现分步加载。该方法由非UI线程回调，所以可以执行耗时操作
-	 * @param context
 	 * @param condition
 	 * @param start 要加载的开始序号，最小值为0
 	 * @param page 要加载的页码，最小值为1
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract List<DataHolder> onLoad(Context context,Object condition,int start,int page) throws Exception;
+	public abstract List<DataHolder> onLoad(Object condition,int start,int page) throws Exception;
 	
 	private class StepLoadingListener implements AbsListView.OnScrollListener{
 		private AbsListView.OnScrollListener mOriginalListener = null;
