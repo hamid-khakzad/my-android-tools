@@ -9,7 +9,7 @@ import android.os.Looper;
  * <p>该类支持在非UI-Thread中创建并启动
  * @author Wendell
  * @version 2.0
- * @deprecated 该类已舍弃，可使用AsyncTask代替，涉及到更新UI的，可使用AsyncUITask代替
+ * @deprecated 该类已舍弃，可使用AsyncTask或AsyncWeakTask代替
  */
 public class UIThread extends Thread {
 	
