@@ -1,9 +1,11 @@
 package cn.emagsoftware.ui.adapterview;
 
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.AdapterView;
@@ -12,26 +14,25 @@ import cn.emagsoftware.util.LogManager;
 
 public abstract class AsyncDataExecutor {
 	
-	private static PushThread PUSH_THREAD = new PushThread();
+	private static PushTask PUSH_TASK = new PushTask();
 	static{
-		ThreadPoolManager.executeThread(PUSH_THREAD);
+		PUSH_TASK.execute("");
 	}
 	
-	private int mMaxThreadCount = 5;
+	private int mMaxTaskCount = 5;
 	private int mMaxWaitCount = 20;
 	
-	private AdapterView<?> mAdapterView = null;
-	private GenericAdapter mGenericAdapter = null;
+	private WeakReference<AdapterView<?>> mAdapterViewRef = null;
+	private WeakReference<GenericAdapter> mGenericAdapterRef = null;
 	
 	private LinkedList<DataHolder> mPushedHolders = new LinkedList<DataHolder>();
 	private byte[] mLockExecute = new byte[0];
-	private Set<Thread> mCurExecuteThreads = new HashSet<Thread>();
-	private Handler mHandler = new Handler(Looper.getMainLooper());
+	private Set<AsyncTask<DataHolder, Object, Object>> mCurExecuteTasks = new HashSet<AsyncTask<DataHolder, Object, Object>>();
 	
-	public AsyncDataExecutor(int maxThreadCount,int maxWaitCount){
-		if(maxThreadCount <= 0) throw new IllegalArgumentException("maxThreadCount should be great than zero.");
+	public AsyncDataExecutor(int maxTaskCount,int maxWaitCount){
+		if(maxTaskCount <= 0) throw new IllegalArgumentException("maxTaskCount should be great than zero.");
 		if(maxWaitCount <= 0) throw new IllegalArgumentException("maxWaitCount should be great than zero.");
-		this.mMaxThreadCount = maxThreadCount;
+		this.mMaxTaskCount = maxTaskCount;
 		this.mMaxWaitCount = maxWaitCount;
 	}
 	
@@ -42,40 +43,40 @@ public abstract class AsyncDataExecutor {
 	 * @param genericAdapter
 	 */
 	public void bindForRefresh(AdapterView<?> adapterView,GenericAdapter genericAdapter){
-		this.mAdapterView = adapterView;
-		this.mGenericAdapter = genericAdapter;
+		mAdapterViewRef = new WeakReference<AdapterView<?>>(adapterView);
+		mGenericAdapterRef = new WeakReference<GenericAdapter>(genericAdapter);
 	}
 	
 	public void pushAsync(DataHolder dataHolder){
-		if(!PUSH_THREAD.execPushingAsync(this,dataHolder)) push(dataHolder);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
+		if(!PUSH_TASK.execPushingAsync(this,dataHolder)) push(dataHolder);    //异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
 	}
 	
 	private void push(DataHolder dataHolder){
 		if(dataHolder.mExecuteConfig.mIsExecuting) return;
 		dataHolder.mExecuteConfig.mIsExecuting = true;
-		Thread executeThread = null;
+		AsyncTask<DataHolder, Object, Object> executeTask = null;
 		synchronized(mLockExecute){
-			if(mCurExecuteThreads.size() < mMaxThreadCount){
-				executeThread = createExecuteThread(dataHolder);
-				mCurExecuteThreads.add(executeThread);
+			if(mCurExecuteTasks.size() < mMaxTaskCount){
+				executeTask = createExecuteTask();
+				mCurExecuteTasks.add(executeTask);
 			}else{
 				mPushedHolders.addFirst(dataHolder);
 				if(mPushedHolders.size() > mMaxWaitCount) mPushedHolders.removeLast();
 			}
 		}
-		if(executeThread != null) ThreadPoolManager.executeThread(executeThread);
+		if(executeTask != null) executeTask.execute(dataHolder);
 	}
 	
-	private Thread createExecuteThread(final DataHolder firstDataHolder){
-		return new Thread(){
+	private AsyncTask<DataHolder, Object, Object> createExecuteTask(){
+		return new AsyncTask<DataHolder, Object, Object>(){
 			private DataHolder curHolder;
 			@Override
-			public void run() {
+			protected Object doInBackground(DataHolder... params) {
 				// TODO Auto-generated method stub
-				super.run();
 				while(true){
 					if(curHolder == null){
-						curHolder = firstDataHolder;
+						curHolder = params[0];
+						params[0] = null;
 					}else{
 						curHolder.mExecuteConfig.mIsExecuting = false;
 						for(int i = 0;i < curHolder.getAsyncDataCount();i++){
@@ -84,8 +85,8 @@ public abstract class AsyncDataExecutor {
 						synchronized(mLockExecute){
 							curHolder = mPushedHolders.poll();
 							if(curHolder == null){
-								mCurExecuteThreads.remove(this);
-								return;
+								mCurExecuteTasks.remove(this);
+								return null;
 							}
 						}
 					}
@@ -95,32 +96,11 @@ public abstract class AsyncDataExecutor {
 						Object curAsyncData = curHolder.getAsyncData(i);
 						if(curAsyncData == null){
 							try{
-								final Object asyncData = onExecute(curHolder.mExecuteConfig.mPosition,curHolder,i);
+								Object asyncData = onExecute(curHolder.mExecuteConfig.mPosition,curHolder,i);
 								if(asyncData == null) throw new NullPointerException("the method 'onExecute' returns null");
 								curHolder.setAsyncData(i, asyncData);
 								//更新界面
-								final DataHolder curHolderPoint = curHolder;
-								final int iCopy = i;
-								mHandler.post(new Runnable() {
-									@Override
-									public void run() {
-										// TODO Auto-generated method stub
-										//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-										if(mAdapterView == null || mGenericAdapter == null) return;
-										int position = curHolderPoint.mExecuteConfig.mPosition;
-										if(position >= mGenericAdapter.getCount()) return;    //界面发生了改变
-										if(!curHolderPoint.equals(mGenericAdapter.queryDataHolder(position))) return;    //界面发生了改变
-										int first = mAdapterView.getFirstVisiblePosition();
-										int last = mAdapterView.getLastVisiblePosition();
-										int wrapPosition = position;
-										if(mAdapterView instanceof ListView){
-											wrapPosition = wrapPosition + ((ListView)mAdapterView).getHeaderViewsCount();
-										}
-										if(wrapPosition >= first && wrapPosition <= last){
-											curHolderPoint.onAsyncDataExecuted(mAdapterView.getContext(), position, mAdapterView.getChildAt(wrapPosition - first), asyncData, iCopy);
-										}
-									}
-								});
+								publishProgress(curHolder,asyncData,i);
 							}catch(Exception e){
 								LogManager.logE(AsyncDataExecutor.class, "execute async data failed(position:"+curHolder.mExecuteConfig.mPosition+",index:"+i+")", e);
 							}
@@ -128,6 +108,28 @@ public abstract class AsyncDataExecutor {
 							curHolder.setAsyncData(i, curAsyncData);
 						}
 					}
+				}
+			}
+			@Override
+			protected void onProgressUpdate(Object... values) {
+				// TODO Auto-generated method stub
+				super.onProgressUpdate(values);
+				//这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
+				AdapterView<?> adapterView = mAdapterViewRef.get();
+				GenericAdapter genericAdapter = mGenericAdapterRef.get();
+				if(adapterView == null || genericAdapter == null) return;
+				DataHolder holder = (DataHolder)values[0];
+				int position = holder.mExecuteConfig.mPosition;
+				if(position >= genericAdapter.getCount()) return;    //界面发生了改变
+				if(!holder.equals(genericAdapter.queryDataHolder(position))) return;    //界面发生了改变
+				int first = adapterView.getFirstVisiblePosition();
+				int last = adapterView.getLastVisiblePosition();
+				int wrapPosition = position;
+				if(adapterView instanceof ListView){
+					wrapPosition = wrapPosition + ((ListView)adapterView).getHeaderViewsCount();
+				}
+				if(wrapPosition >= first && wrapPosition <= last){
+					holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wrapPosition - first), values[1], (Integer)values[2]);
 				}
 			}
 		};
@@ -144,15 +146,15 @@ public abstract class AsyncDataExecutor {
 	 */
 	public abstract Object onExecute(int position,DataHolder dataHolder,int asyncDataIndex) throws Exception;
 	
-	private static class PushThread extends Thread{
+	private static class PushTask extends AsyncTask<Object, Integer, Object>{
 		private Handler handler = null;
 		@Override
-		public void run() {
+		protected Object doInBackground(Object... params) {
 			// TODO Auto-generated method stub
-			super.run();
 			Looper.prepare();
 			handler = new Handler();
 			Looper.loop();
+			return null;
 		}
 		public boolean execPushingAsync(final AsyncDataExecutor executor,final DataHolder dataHolder){
 			if(handler == null) return false;
