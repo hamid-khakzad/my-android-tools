@@ -3,21 +3,24 @@ package cn.emagsoftware.ui.theme;
 import cn.emagsoftware.ui.ConfigChangeHandlingActivity;
 import android.os.Bundle;
 
-public abstract class ThemeActivity extends ConfigChangeHandlingActivity {
-	
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
-		super.onCreate(savedInstanceState);
-		ThemeEngine.addThemeActivity(this);
-		getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_THEMENAME));
-	}
-	
-	@Override
-	protected void onDestroy() {
-		// TODO Auto-generated method stub
-		super.onDestroy();
-		ThemeEngine.removeThemeActivity(this);
-	}
-	
+public abstract class ThemeActivity extends ConfigChangeHandlingActivity
+{
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        // TODO Auto-generated method stub
+        super.onCreate(savedInstanceState);
+        ThemeEngine.addThemeActivity(this);
+        getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_THEMENAME));
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        // TODO Auto-generated method stub
+        super.onDestroy();
+        ThemeEngine.removeThemeActivity(this);
+    }
+
 }
