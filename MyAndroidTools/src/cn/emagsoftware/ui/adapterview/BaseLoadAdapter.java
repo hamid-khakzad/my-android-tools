@@ -34,6 +34,11 @@ public abstract class BaseLoadAdapter extends GenericAdapter
         mCallback = callback;
     }
 
+    public LoadCallback getLoadCallback()
+    {
+        return mCallback;
+    }
+
     /**
      * <p>加载的执行方法
      * 
