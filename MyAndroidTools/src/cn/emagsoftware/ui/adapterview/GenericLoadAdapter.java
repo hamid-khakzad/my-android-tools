@@ -7,7 +7,7 @@ import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
 
-public abstract class GenericLoadAdapter extends GenericAdapter
+public class GenericLoadAdapter extends GenericAdapter
 {
 
     /** 是否正在加载 */
@@ -21,7 +21,7 @@ public abstract class GenericLoadAdapter extends GenericAdapter
     /** 加载时的回调对象 */
     private LoadCallback mLoadCallback = null;
 
-    protected GenericLoadAdapter(Context context)
+    GenericLoadAdapter(Context context)
     {
         super(context);
     }
