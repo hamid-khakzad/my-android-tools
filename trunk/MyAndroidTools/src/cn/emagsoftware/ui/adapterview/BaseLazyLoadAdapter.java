@@ -10,7 +10,7 @@ import android.content.Context;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
-public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
+public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
 {
 
     /** 当前的页码 */
@@ -19,10 +19,10 @@ public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
     private int              mPages       = -1;
     /** 是否已经加载了全部数据 */
     private boolean          mIsLoadedAll = false;
-    /** 分步加载时的回调对象 */
-    private StepLoadCallback mCallback    = null;
+    /** 懒加载时的回调对象 */
+    private LazyLoadCallback mCallback    = null;
 
-    public BaseStepLoadAdapter(Context context, BaseStepLoadAdapter.StepLoadCallback callback)
+    public BaseLazyLoadAdapter(Context context, BaseLazyLoadAdapter.LazyLoadCallback callback)
     {
         super(context);
         if (callback == null)
@@ -30,14 +30,25 @@ public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
         mCallback = callback;
     }
 
+    public LazyLoadCallback getLazyLoadCallback()
+    {
+        return mCallback;
+    }
+
+    @Override
+    public LoadCallback getLoadCallback()
+    {
+        throw new UnsupportedOperationException("Unsupported,use getLazyLoadCallback() instead");
+    }
+
     /**
-     * <p>绑定AdapterView，使其自动分步加载 <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载 <p>AbsListView的bindStepLoading实现实际上执行了OnScrollListener事件；
-     * 用户若包含自己的OnScrollListener逻辑，请在bindStepLoading之前调用setOnScrollListener，bindStepLoading方法会将用户的逻辑包含进来； 若在bindStepLoading之后调用setOnScrollListener，将取消bindStepLoading的作用
+     * <p>绑定AdapterView，使其自动懒加载 <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载 <p>bindLazyLoading实际上设置了AbsListView的OnScrollListener监听；
+     * 用户若包含自己的OnScrollListener监听，请在bindLazyLoading之前调用setOnScrollListener，bindLazyLoading方法会将用户的逻辑包含进来； 若在bindLazyLoading之后调用setOnScrollListener，将取消bindLazyLoading的作用
      * 
      * @param adapterView
      * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
      */
-    public void bindStepLoading(AdapterView<?> adapterView, int remainingCount)
+    public void bindLazyLoading(AdapterView<?> adapterView, int remainingCount)
     {
         if (adapterView instanceof AbsListView)
         {
@@ -63,12 +74,12 @@ public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
             }
         } else
         {
-            throw new UnsupportedOperationException("Only supports step loading for the AdapterView which is AbsListView.");
+            throw new UnsupportedOperationException("Only supports lazy loading for the AdapterView which is AbsListView.");
         }
     }
 
     /**
-     * <p>覆盖了父类的同名方法，用来执行分步加载
+     * <p>覆盖了父类的同名方法，用来执行懒加载
      */
     @Override
     public boolean load(final Object condition)
@@ -98,11 +109,11 @@ public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
             @Override
             protected void onPostExecute(Object[] objs, Object result)
             {
-                BaseStepLoadAdapter adapter = (BaseStepLoadAdapter) objs[0];
+                BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
                 if (result instanceof Exception)
                 {
                     Exception e = (Exception) result;
-                    LogManager.logE(BaseStepLoadAdapter.class, "Execute step loading failed.", e);
+                    LogManager.logE(BaseLazyLoadAdapter.class, "Execute lazy loading failed.", e);
                     adapter.mIsLoading = false;
                     adapter.mIsException = true;
                     adapter.onAfterLoad(adapter.mContext, condition, e);
@@ -146,7 +157,7 @@ public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
     }
 
     /**
-     * <p>设置总页数 <p>通过调用该方法可限制页码范围，从而避免不必要的额外加载，否则只有在分步加载的数据为空时才认为已全部加载
+     * <p>设置总页数 <p>通过调用该方法可限制页码范围，从而避免不必要的额外加载，否则只有在懒加载的数据为空时才认为已全部加载
      * 
      * @param pages
      */
@@ -187,11 +198,11 @@ public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
         mPage = 0;
     }
 
-    public static abstract class StepLoadCallback
+    public static abstract class LazyLoadCallback
     {
 
         /**
-         * <p>加载的具体实现，通过传入的参数可以实现分步加载。该方法由非UI线程回调，所以可以执行耗时操作
+         * <p>加载的具体实现，通过传入的参数可以实现懒加载。该方法由非UI线程回调，所以可以执行耗时操作
          * 
          * @param condition
          * @param start 要加载的开始序号，最小值为0
