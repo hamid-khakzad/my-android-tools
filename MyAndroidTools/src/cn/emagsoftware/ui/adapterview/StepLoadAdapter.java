@@ -10,24 +10,35 @@ import android.content.Context;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
-public class GenericStepLoadAdapter extends GenericLoadAdapter
+public class StepLoadAdapter extends LoadAdapter
 {
 
     /** 当前的页码 */
-    private int              mPage             = 0;
+    private int              mPage        = 0;
     /** 总页数 */
-    private int              mPages            = -1;
+    private int              mPages       = -1;
     /** 是否已经加载了全部数据 */
-    private boolean          mIsLoadedAll      = false;
+    private boolean          mIsLoadedAll = false;
     /** 分步加载时的回调对象 */
-    private StepLoadCallback mStepLoadCallback = null;
+    private StepLoadCallback mCallback    = null;
 
-    public GenericStepLoadAdapter(Context context, GenericStepLoadAdapter.StepLoadCallback callback)
+    public StepLoadAdapter(Context context, StepLoadAdapter.StepLoadCallback callback)
     {
         super(context);
         if (callback == null)
             throw new NullPointerException();
-        mStepLoadCallback = callback;
+        mCallback = callback;
+    }
+
+    public StepLoadCallback getStepLoadCallback()
+    {
+        return mCallback;
+    }
+
+    @Override
+    public LoadCallback getLoadCallback()
+    {
+        throw new UnsupportedOperationException("Unsupported,use getStepLoadCallback() instead");
     }
 
     /**
@@ -77,7 +88,7 @@ public class GenericStepLoadAdapter extends GenericLoadAdapter
             return false;
         mIsLoading = true;
         mCurCondition = condition;
-        mStepLoadCallback.onBeginLoad(mContext, condition);
+        mCallback.onBeginLoad(mContext, condition);
         final int start = getRealCount();
         final int page = mPage;
         new AsyncWeakTask<Object, Integer, Object>(this)
@@ -87,7 +98,7 @@ public class GenericStepLoadAdapter extends GenericLoadAdapter
             {
                 try
                 {
-                    return mStepLoadCallback.onLoad(condition, start, page + 1);
+                    return mCallback.onLoad(condition, start, page + 1);
                 } catch (Exception e)
                 {
                     return e;
@@ -98,14 +109,14 @@ public class GenericStepLoadAdapter extends GenericLoadAdapter
             @Override
             protected void onPostExecute(Object[] objs, Object result)
             {
-                GenericStepLoadAdapter adapter = (GenericStepLoadAdapter) objs[0];
+                StepLoadAdapter adapter = (StepLoadAdapter) objs[0];
                 if (result instanceof Exception)
                 {
                     Exception e = (Exception) result;
-                    LogManager.logE(GenericStepLoadAdapter.class, "Execute step loading failed.", e);
+                    LogManager.logE(StepLoadAdapter.class, "Execute step loading failed.", e);
                     adapter.mIsLoading = false;
                     adapter.mIsException = true;
-                    mStepLoadCallback.onAfterLoad(adapter.mContext, condition, e);
+                    mCallback.onAfterLoad(adapter.mContext, condition, e);
                 } else
                 {
                     adapter.mPage++;
@@ -128,7 +139,7 @@ public class GenericStepLoadAdapter extends GenericLoadAdapter
                             adapter.mIsLoadedAll = false;
                     }
                     adapter.mIsException = false;
-                    mStepLoadCallback.onAfterLoad(adapter.mContext, condition, null);
+                    mCallback.onAfterLoad(adapter.mContext, condition, null);
                 }
             }
         }.execute("");

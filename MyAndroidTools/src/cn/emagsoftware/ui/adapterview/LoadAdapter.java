@@ -7,7 +7,7 @@ import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
 
-public class GenericLoadAdapter extends GenericAdapter
+public class LoadAdapter extends GenericAdapter
 {
 
     /** 是否正在加载 */
@@ -19,19 +19,24 @@ public class GenericLoadAdapter extends GenericAdapter
     /** 当前的加载条件 */
     protected Object     mCurCondition = null;
     /** 加载时的回调对象 */
-    private LoadCallback mLoadCallback = null;
+    private LoadCallback mCallback     = null;
 
-    GenericLoadAdapter(Context context)
+    LoadAdapter(Context context)
     {
         super(context);
     }
 
-    public GenericLoadAdapter(Context context, GenericLoadAdapter.LoadCallback callback)
+    public LoadAdapter(Context context, LoadAdapter.LoadCallback callback)
     {
         super(context);
         if (callback == null)
             throw new NullPointerException();
-        mLoadCallback = callback;
+        mCallback = callback;
+    }
+
+    public LoadCallback getLoadCallback()
+    {
+        return mCallback;
     }
 
     /**
@@ -46,7 +51,7 @@ public class GenericLoadAdapter extends GenericAdapter
             return false;
         mIsLoading = true;
         mCurCondition = condition;
-        mLoadCallback.onBeginLoad(mContext, condition);
+        mCallback.onBeginLoad(mContext, condition);
         new AsyncWeakTask<Object, Integer, Object>(this)
         {
             @Override
@@ -54,7 +59,7 @@ public class GenericLoadAdapter extends GenericAdapter
             {
                 try
                 {
-                    return mLoadCallback.onLoad(condition);
+                    return mCallback.onLoad(condition);
                 } catch (Exception e)
                 {
                     return e;
@@ -65,14 +70,14 @@ public class GenericLoadAdapter extends GenericAdapter
             @Override
             protected void onPostExecute(Object[] objs, Object result)
             {
-                GenericLoadAdapter adapter = (GenericLoadAdapter) objs[0];
+                LoadAdapter adapter = (LoadAdapter) objs[0];
                 if (result instanceof Exception)
                 {
                     Exception e = (Exception) result;
-                    LogManager.logE(GenericLoadAdapter.class, "Execute loading failed.", e);
+                    LogManager.logE(LoadAdapter.class, "Execute loading failed.", e);
                     adapter.mIsLoading = false;
                     adapter.mIsException = true;
-                    mLoadCallback.onAfterLoad(adapter.mContext, condition, e);
+                    mCallback.onAfterLoad(adapter.mContext, condition, e);
                 } else
                 {
                     List<DataHolder> resultList = (List<DataHolder>) result;
@@ -81,7 +86,7 @@ public class GenericLoadAdapter extends GenericAdapter
                     adapter.mIsLoading = false;
                     adapter.mIsLoaded = true;
                     adapter.mIsException = false;
-                    mLoadCallback.onAfterLoad(adapter.mContext, condition, null);
+                    mCallback.onAfterLoad(adapter.mContext, condition, null);
                 }
             }
         }.execute("");
