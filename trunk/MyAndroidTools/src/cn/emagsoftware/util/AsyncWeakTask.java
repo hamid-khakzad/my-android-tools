@@ -31,10 +31,61 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         }
     }
 
-    protected abstract void onPostExecute(Object[] objs, Result result);
+    protected void onPreExecute(Object[] objs)
+    {
+    }
+
+    protected void onProgressUpdate(Object[] objs, Object... values)
+    {
+    }
+
+    protected void onCancelled(Object[] objs)
+    {
+    }
+
+    protected void onPostExecute(Object[] objs, Result result)
+    {
+    }
+
+    @Override
+    protected final void onPreExecute()
+    {
+        Object[] objs = getObjects();
+        if (objs == null)
+            cancel(true);
+        else
+            onPreExecute(objs);
+    }
+
+    @Override
+    protected final void onProgressUpdate(Object... values)
+    {
+        Object[] objs = getObjects();
+        if (objs == null)
+            cancel(true);
+        else
+            onProgressUpdate(objs, values);
+    }
+
+    @Override
+    protected final void onCancelled()
+    {
+        Object[] objs = getObjects();
+        if (objs != null)
+            onCancelled(objs);
+    }
 
     @Override
     protected final void onPostExecute(Result result)
+    {
+        Object[] objs = getObjects();
+        if (objs == null)
+            cancel(true);
+        else
+            onPostExecute(objs, result);
+    }
+
+    private Object[] getObjects()
     {
         Object[] objs = new Object[mObjReferences.size()];
         Iterator<WeakReference<Object>> objIterator = mObjReferences.iterator();
@@ -42,9 +93,9 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         {
             objs[i] = objIterator.next().get();
             if (objs[i] == null)
-                return; // 只要有一个Object被回收，就取消当前任务，因为传入和传出的Object个数不一致可能带来一系列问题
+                return null; // 只要有一个Object被回收，就返回null，因为传出的Object个数若和传入的不一致，可能带来一系列问题
         }
-        onPostExecute(objs, result);
-    };
+        return objs;
+    }
 
 }

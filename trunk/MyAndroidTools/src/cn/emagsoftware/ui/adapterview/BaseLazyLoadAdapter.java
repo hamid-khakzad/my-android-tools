@@ -88,11 +88,17 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             return false;
         mIsLoading = true;
         mCurCondition = condition;
-        onBeginLoad(mContext, condition);
         final int start = getRealCount();
         final int page = mPage;
         new AsyncWeakTask<Object, Integer, Object>(this)
         {
+            @Override
+            protected void onPreExecute(Object[] objs)
+            {
+                BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
+                adapter.onBeginLoad(adapter.mContext, condition);
+            }
+
             @Override
             protected Object doInBackground(Object... params)
             {
