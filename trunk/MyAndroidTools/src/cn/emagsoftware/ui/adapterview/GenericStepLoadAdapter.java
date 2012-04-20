@@ -10,7 +10,7 @@ import android.content.Context;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
-public abstract class GenericStepLoadAdapter extends GenericLoadAdapter
+public class GenericStepLoadAdapter extends GenericLoadAdapter
 {
 
     /** µ±Ç°µÄÒ³Âë */
