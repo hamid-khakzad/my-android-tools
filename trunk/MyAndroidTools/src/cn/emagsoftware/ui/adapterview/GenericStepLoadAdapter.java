@@ -206,7 +206,7 @@ public abstract class GenericStepLoadAdapter extends GenericLoadAdapter
          * @return
          * @throws Exception
          */
-        public abstract List<DataHolder> onLoad(Object condition, int start, int page) throws Exception;
+        protected abstract List<DataHolder> onLoad(Object condition, int start, int page) throws Exception;
 
         /**
          * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
