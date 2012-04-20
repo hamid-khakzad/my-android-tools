@@ -7,7 +7,7 @@ import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
 
-public class LoadAdapter extends GenericAdapter
+public abstract class BaseLoadAdapter extends GenericAdapter
 {
 
     /** 是否正在加载 */
@@ -21,22 +21,17 @@ public class LoadAdapter extends GenericAdapter
     /** 加载时的回调对象 */
     private LoadCallback mCallback     = null;
 
-    LoadAdapter(Context context)
+    BaseLoadAdapter(Context context)
     {
         super(context);
     }
 
-    public LoadAdapter(Context context, LoadAdapter.LoadCallback callback)
+    public BaseLoadAdapter(Context context, BaseLoadAdapter.LoadCallback callback)
     {
         super(context);
         if (callback == null)
             throw new NullPointerException();
         mCallback = callback;
-    }
-
-    public LoadCallback getLoadCallback()
-    {
-        return mCallback;
     }
 
     /**
@@ -51,7 +46,7 @@ public class LoadAdapter extends GenericAdapter
             return false;
         mIsLoading = true;
         mCurCondition = condition;
-        mCallback.onBeginLoad(mContext, condition);
+        onBeginLoad(mContext, condition);
         new AsyncWeakTask<Object, Integer, Object>(this)
         {
             @Override
@@ -70,14 +65,14 @@ public class LoadAdapter extends GenericAdapter
             @Override
             protected void onPostExecute(Object[] objs, Object result)
             {
-                LoadAdapter adapter = (LoadAdapter) objs[0];
+                BaseLoadAdapter adapter = (BaseLoadAdapter) objs[0];
                 if (result instanceof Exception)
                 {
                     Exception e = (Exception) result;
-                    LogManager.logE(LoadAdapter.class, "Execute loading failed.", e);
+                    LogManager.logE(BaseLoadAdapter.class, "Execute loading failed.", e);
                     adapter.mIsLoading = false;
                     adapter.mIsException = true;
-                    mCallback.onAfterLoad(adapter.mContext, condition, e);
+                    adapter.onAfterLoad(adapter.mContext, condition, e);
                 } else
                 {
                     List<DataHolder> resultList = (List<DataHolder>) result;
@@ -86,7 +81,7 @@ public class LoadAdapter extends GenericAdapter
                     adapter.mIsLoading = false;
                     adapter.mIsLoaded = true;
                     adapter.mIsException = false;
-                    mCallback.onAfterLoad(adapter.mContext, condition, null);
+                    adapter.onAfterLoad(adapter.mContext, condition, null);
                 }
             }
         }.execute("");
@@ -133,15 +128,25 @@ public class LoadAdapter extends GenericAdapter
         return mIsException;
     }
 
+    /**
+     * <p>在加载之前的回调方法，可以显示一些loading之类的字样。如对于ListView，可以通过addFooterView方法添加一个正在加载的提示
+     * 
+     * @param context
+     * @param condition
+     */
+    protected abstract void onBeginLoad(Context context, Object condition);
+
+    /**
+     * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
+     * 
+     * @param context
+     * @param condition
+     * @param exception
+     */
+    protected abstract void onAfterLoad(Context context, Object condition, Exception exception);
+
     public abstract static class LoadCallback
     {
-        /**
-         * <p>在加载之前的回调方法，可以显示一些loading之类的字样。如对于ListView，可以通过addFooterView方法添加一个正在加载的提示
-         * 
-         * @param context
-         * @param condition
-         */
-        protected abstract void onBeginLoad(Context context, Object condition);
 
         /**
          * <p>加载的具体实现，该方法将在非UI线程中执行，要注意不能执行UI的操作
@@ -152,14 +157,6 @@ public class LoadAdapter extends GenericAdapter
          */
         protected abstract List<DataHolder> onLoad(Object condition) throws Exception;
 
-        /**
-         * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
-         * 
-         * @param context
-         * @param condition
-         * @param exception
-         */
-        protected abstract void onAfterLoad(Context context, Object condition, Exception exception);
     }
 
 }

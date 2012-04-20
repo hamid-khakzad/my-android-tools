@@ -10,7 +10,7 @@ import android.content.Context;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
-public class StepLoadAdapter extends LoadAdapter
+public abstract class BaseStepLoadAdapter extends BaseLoadAdapter
 {
 
     /** 当前的页码 */
@@ -22,23 +22,12 @@ public class StepLoadAdapter extends LoadAdapter
     /** 分步加载时的回调对象 */
     private StepLoadCallback mCallback    = null;
 
-    public StepLoadAdapter(Context context, StepLoadAdapter.StepLoadCallback callback)
+    public BaseStepLoadAdapter(Context context, BaseStepLoadAdapter.StepLoadCallback callback)
     {
         super(context);
         if (callback == null)
             throw new NullPointerException();
         mCallback = callback;
-    }
-
-    public StepLoadCallback getStepLoadCallback()
-    {
-        return mCallback;
-    }
-
-    @Override
-    public LoadCallback getLoadCallback()
-    {
-        throw new UnsupportedOperationException("Unsupported,use getStepLoadCallback() instead");
     }
 
     /**
@@ -88,7 +77,7 @@ public class StepLoadAdapter extends LoadAdapter
             return false;
         mIsLoading = true;
         mCurCondition = condition;
-        mCallback.onBeginLoad(mContext, condition);
+        onBeginLoad(mContext, condition);
         final int start = getRealCount();
         final int page = mPage;
         new AsyncWeakTask<Object, Integer, Object>(this)
@@ -109,14 +98,14 @@ public class StepLoadAdapter extends LoadAdapter
             @Override
             protected void onPostExecute(Object[] objs, Object result)
             {
-                StepLoadAdapter adapter = (StepLoadAdapter) objs[0];
+                BaseStepLoadAdapter adapter = (BaseStepLoadAdapter) objs[0];
                 if (result instanceof Exception)
                 {
                     Exception e = (Exception) result;
-                    LogManager.logE(StepLoadAdapter.class, "Execute step loading failed.", e);
+                    LogManager.logE(BaseStepLoadAdapter.class, "Execute step loading failed.", e);
                     adapter.mIsLoading = false;
                     adapter.mIsException = true;
-                    mCallback.onAfterLoad(adapter.mContext, condition, e);
+                    adapter.onAfterLoad(adapter.mContext, condition, e);
                 } else
                 {
                     adapter.mPage++;
@@ -139,7 +128,7 @@ public class StepLoadAdapter extends LoadAdapter
                             adapter.mIsLoadedAll = false;
                     }
                     adapter.mIsException = false;
-                    mCallback.onAfterLoad(adapter.mContext, condition, null);
+                    adapter.onAfterLoad(adapter.mContext, condition, null);
                 }
             }
         }.execute("");
@@ -200,13 +189,6 @@ public class StepLoadAdapter extends LoadAdapter
 
     public static abstract class StepLoadCallback
     {
-        /**
-         * <p>在加载之前的回调方法，可以显示一些loading之类的字样。如对于ListView，可以通过addFooterView方法添加一个正在加载的提示
-         * 
-         * @param context
-         * @param condition
-         */
-        protected abstract void onBeginLoad(Context context, Object condition);
 
         /**
          * <p>加载的具体实现，通过传入的参数可以实现分步加载。该方法由非UI线程回调，所以可以执行耗时操作
@@ -219,14 +201,6 @@ public class StepLoadAdapter extends LoadAdapter
          */
         protected abstract List<DataHolder> onLoad(Object condition, int start, int page) throws Exception;
 
-        /**
-         * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
-         * 
-         * @param context
-         * @param condition
-         * @param exception
-         */
-        protected abstract void onAfterLoad(Context context, Object condition, Exception exception);
     }
 
     private class WrappedOnScrollListener implements AbsListView.OnScrollListener
