@@ -23,7 +23,7 @@ import android.os.Looper;
  * <p>Wifi操作的广播接收类，注意，该类实例是非线程安全的 <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。 <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * 
  * @author Wendell
- * @version 2.8
+ * @version 2.9
  */
 public abstract class WifiCallback extends BroadcastReceiver
 {
@@ -401,7 +401,7 @@ public abstract class WifiCallback extends BroadcastReceiver
         } catch (IllegalArgumentException e)
         {
             // 重复反注册会抛出该异常，如通过代码注册的receiver在当前activity销毁时会自动反注册，若再反注册，即会抛出该异常
-            LogManager.logE(WifiCallback.class, "unregister receiver failed.", e);
+            LogManager.logW(WifiCallback.class, "unregister receiver failed.", e);
             return false;
         }
     }

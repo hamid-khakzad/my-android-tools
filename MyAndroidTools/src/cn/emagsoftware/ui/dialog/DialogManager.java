@@ -50,6 +50,7 @@ public abstract class DialogManager
         {
             if (isAndroid4Above)
             {
+                onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
                     ab.setNegativeButton(buttons[0], onClickListener);
                 if (buttons.length >= 2)
@@ -68,6 +69,22 @@ public abstract class DialogManager
         }
         ab.setCancelable(cancelable);
         return ab;
+    }
+
+    private static OnClickListener convertListenerForAndroid4Above(final OnClickListener onClickListener)
+    {
+        return new OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                if (which == DialogInterface.BUTTON_POSITIVE)
+                    which = DialogInterface.BUTTON_NEGATIVE;
+                else if (which == DialogInterface.BUTTON_NEGATIVE)
+                    which = DialogInterface.BUTTON_POSITIVE;
+                onClickListener.onClick(dialog, which);
+            }
+        };
     }
 
     public static AlertDialog.Builder createAlertDialogBuilder(Context context, int titleId, int[] buttonIds, OnClickListener onClickListener, boolean cancelable)
@@ -185,12 +202,22 @@ public abstract class DialogManager
             pd.setMessage(msg);
         if (buttons != null)
         {
-            if (buttons.length >= 1)
-                pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-            if (buttons.length >= 2)
-                pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
-            if (buttons.length >= 3)
-                pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
+            if(isAndroid4Above){
+                onClickListener = convertListenerForAndroid4Above(onClickListener);
+                if (buttons.length >= 1)
+                    pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[2], onClickListener);
+            }else{
+                if (buttons.length >= 1)
+                    pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
+            }
         }
         pd.setCancelable(cancelable);
         pd.show();
@@ -234,12 +261,22 @@ public abstract class DialogManager
             tad.setMessage(msg);
         if (buttons != null)
         {
-            if (buttons.length >= 1)
-                tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-            if (buttons.length >= 2)
-                tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
-            if (buttons.length >= 3)
-                tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
+            if(isAndroid4Above){
+                onClickListener = convertListenerForAndroid4Above(onClickListener);
+                if (buttons.length >= 1)
+                    tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[2], onClickListener);
+            }else{
+                if (buttons.length >= 1)
+                    tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
+            }
         }
         tad.setCancelable(cancelable);
         tad.show();
@@ -284,12 +321,22 @@ public abstract class DialogManager
             tad.setView(view);
         if (buttons != null)
         {
-            if (buttons.length >= 1)
-                tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
-            if (buttons.length >= 2)
-                tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
-            if (buttons.length >= 3)
-                tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
+            if(isAndroid4Above){
+                onClickListener = convertListenerForAndroid4Above(onClickListener);
+                if (buttons.length >= 1)
+                    tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[2], onClickListener);
+            }else{
+                if (buttons.length >= 1)
+                    tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[2], onClickListener);
+            }
         }
         tad.setCancelable(cancelable);
         tad.show();
