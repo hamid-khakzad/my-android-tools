@@ -2,6 +2,8 @@ package cn.emagsoftware.ui.dialog;
 
 import java.lang.reflect.Field;
 
+import cn.emagsoftware.telephony.TelephonyMgr;
+
 import android.R;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -18,12 +20,14 @@ import android.view.View;
  * <p>对话框管理类
  * 
  * @author Wendell
- * @version 1.6
+ * @version 1.7
  * 
  */
 public abstract class DialogManager
 {
-
+    
+    private static boolean isAndroid4Above = TelephonyMgr.isAndroid4Above();
+    
     /**
      * <p>默认情况下，对话框利用了与当前方法相同的原理将程序定义的主题样式替换成自己的R.style.Theme_Dialog，这就是对话框没有显示程序定义样式的原因。 但若是外部创建了View（如通过AlertDialog.Builder或手工创建）再添加进对话框，则这些View将使用程序定义的样式，从而与对话框样式不一致。
      * <b>若要使外部创建的View也拥有对话框的默认样式，在构造View时，可调用当前方法转换Context后再传入View的构造函数，便会使View获得与对话框一致的样式。</b>
@@ -44,12 +48,21 @@ public abstract class DialogManager
             ab.setTitle(title);
         if (buttons != null)
         {
-            if (buttons.length >= 1)
-                ab.setPositiveButton(buttons[0], onClickListener);
-            if (buttons.length >= 2)
-                ab.setNeutralButton(buttons[1], onClickListener);
-            if (buttons.length >= 3)
-                ab.setNegativeButton(buttons[2], onClickListener);
+            if(isAndroid4Above){
+                if (buttons.length >= 1)
+                    ab.setNegativeButton(buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    ab.setNeutralButton(buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    ab.setPositiveButton(buttons[2], onClickListener);
+            }else{
+                if (buttons.length >= 1)
+                    ab.setPositiveButton(buttons[0], onClickListener);
+                if (buttons.length >= 2)
+                    ab.setNeutralButton(buttons[1], onClickListener);
+                if (buttons.length >= 3)
+                    ab.setNegativeButton(buttons[2], onClickListener);
+            }
         }
         ab.setCancelable(cancelable);
         return ab;
