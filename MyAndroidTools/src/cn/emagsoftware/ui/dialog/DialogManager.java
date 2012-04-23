@@ -73,6 +73,8 @@ public abstract class DialogManager
 
     private static OnClickListener convertListenerForAndroid4Above(final OnClickListener onClickListener)
     {
+        if (onClickListener == null)
+            return null;
         return new OnClickListener()
         {
             @Override
