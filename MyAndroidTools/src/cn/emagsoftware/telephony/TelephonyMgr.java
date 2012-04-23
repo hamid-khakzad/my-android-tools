@@ -2,7 +2,10 @@ package cn.emagsoftware.telephony;
 
 import java.io.File;
 
+import cn.emagsoftware.util.LogManager;
+
 import android.content.Context;
+import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
 import android.telephony.TelephonyManager;
@@ -86,6 +89,23 @@ public final class TelephonyMgr
     public static boolean isExternalStorageValid()
     {
         return getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+    }
+
+    public static int getSDKVersion()
+    {
+        try
+        {
+            return Integer.valueOf(Build.VERSION.SDK);
+        } catch (NumberFormatException e)
+        {
+            LogManager.logW(TelephonyMgr.class, "can not convert SDK", e);
+            return 0;
+        }
+    }
+
+    public static boolean isAndroid4Above()
+    {
+        return getSDKVersion() >= 14;
     }
 
 }
