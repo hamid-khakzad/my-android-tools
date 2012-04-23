@@ -202,7 +202,8 @@ public abstract class DialogManager
             pd.setMessage(msg);
         if (buttons != null)
         {
-            if(isAndroid4Above){
+            if (isAndroid4Above)
+            {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
                     pd.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[0], onClickListener);
@@ -210,7 +211,8 @@ public abstract class DialogManager
                     pd.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
                 if (buttons.length >= 3)
                     pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[2], onClickListener);
-            }else{
+            } else
+            {
                 if (buttons.length >= 1)
                     pd.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
                 if (buttons.length >= 2)
@@ -261,7 +263,8 @@ public abstract class DialogManager
             tad.setMessage(msg);
         if (buttons != null)
         {
-            if(isAndroid4Above){
+            if (isAndroid4Above)
+            {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
                     tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[0], onClickListener);
@@ -269,7 +272,8 @@ public abstract class DialogManager
                     tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
                 if (buttons.length >= 3)
                     tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[2], onClickListener);
-            }else{
+            } else
+            {
                 if (buttons.length >= 1)
                     tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
                 if (buttons.length >= 2)
@@ -321,7 +325,8 @@ public abstract class DialogManager
             tad.setView(view);
         if (buttons != null)
         {
-            if(isAndroid4Above){
+            if (isAndroid4Above)
+            {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
                     tad.setButton(DialogInterface.BUTTON_NEGATIVE, buttons[0], onClickListener);
@@ -329,7 +334,8 @@ public abstract class DialogManager
                     tad.setButton(DialogInterface.BUTTON_NEUTRAL, buttons[1], onClickListener);
                 if (buttons.length >= 3)
                     tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[2], onClickListener);
-            }else{
+            } else
+            {
                 if (buttons.length >= 1)
                     tad.setButton(DialogInterface.BUTTON_POSITIVE, buttons[0], onClickListener);
                 if (buttons.length >= 2)
