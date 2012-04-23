@@ -24,12 +24,7 @@ public final class WifiUtils
     private WifiLock    wifiLock    = null;
     private Handler     handler     = new Handler(Looper.getMainLooper());
 
-    public static WifiUtils getInstance(Context context)
-    {
-        return new WifiUtils(context);
-    }
-
-    private WifiUtils(Context context)
+    public WifiUtils(Context context)
     {
         if (context == null)
             throw new NullPointerException();

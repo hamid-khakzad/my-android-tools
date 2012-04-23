@@ -69,7 +69,7 @@ public abstract class WifiCallback extends BroadcastReceiver
         if (isUnregistered)
             return; // 如果已经反注册，将直接返回
         String action = arg1.getAction();
-        WifiUtils wifiUtils = WifiUtils.getInstance(arg0);
+        WifiUtils wifiUtils = new WifiUtils(arg0);
         if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION))
         {
             int state = arg1.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
