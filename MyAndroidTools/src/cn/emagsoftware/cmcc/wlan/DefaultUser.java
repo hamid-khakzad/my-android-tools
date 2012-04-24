@@ -59,17 +59,23 @@ class DefaultUser extends User
         // TODO Auto-generated method stub
         isCancelLogin = false;
         if (isCancelLogin)
-            return User.RETURN_FALSE_CANCEL; // 判断是否已取消登录
-        int result = isLogged(); // 判断是否已经登录
-        if (result != User.RETURN_FALSE_GENERIC)
-            return result; // 已登录或产生错误都将返回，除了未登录
+            return User.LOGIN_FALSE_CANCEL; // 判断是否已取消登录
+        try
+        {
+            if (isLogged()) // 判断是否已经登录
+                return User.LOGIN_TRUE;
+        } catch (IOException e)
+        {
+            LogManager.logE(DefaultUser.class, "check isLogged failed.", e);
+            return User.LOGIN_FALSE_NET_ERROR;
+        }
         if (isCancelLogin)
-            return User.RETURN_FALSE_CANCEL; // 判断是否已取消登录
-        result = parseLoginPage(this.cmccPageHtml); // 解析CMCC登录页面
-        if (result != User.RETURN_TRUE)
+            return User.LOGIN_FALSE_CANCEL; // 判断是否已取消登录
+        int result = parseLoginPage(this.cmccPageHtml); // 解析CMCC登录页面
+        if (result != User.LOGIN_TRUE)
             return result; // 任何原因的解析失败，都将返回
         if (isCancelLogin)
-            return User.RETURN_FALSE_CANCEL; // 判断是否已取消登录
+            return User.LOGIN_FALSE_CANCEL; // 判断是否已取消登录
         return doLogin(); // 模拟提交表单，验证当前帐户
     }
 
@@ -81,11 +87,11 @@ class DefaultUser extends User
             try
             {
                 doParseLoginPage(pageHtml);
-                return User.RETURN_TRUE;
+                return User.LOGIN_TRUE;
             } catch (ParserException e)
             {
                 LogManager.logE(DefaultUser.class, "parsing cmcc logining page failed.", e);
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGIN_FALSE_RESPONSE_PARSE_ERROR;
             }
         } else
         {
@@ -99,7 +105,7 @@ class DefaultUser extends User
                     location = extractNextUrl(formatHtml);
                     if (location == null || location.trim().length() == 0)
                     {
-                        return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                        return User.LOGIN_FALSE_RESPONSE_PARSE_ERROR;
                     }
                 }
             }
@@ -110,7 +116,7 @@ class DefaultUser extends User
             } catch (IOException e)
             {
                 LogManager.logE(DefaultUser.class, "requesting " + location + " failed.", e);
-                return User.RETURN_FALSE_NET_ERROR;
+                return User.LOGIN_FALSE_NET_ERROR;
             }
         }
     }
@@ -263,7 +269,7 @@ class DefaultUser extends User
             String html = result.getDataString("gb2312");
             String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_LOGINRES;
             if (keywordLoginRes == null || html.indexOf(keywordLoginRes) == -1)
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGIN_FALSE_RESPONSE_PARSE_ERROR;
             // 获取登录后的code，通过code可以判断出登录结果
             int code = -1;
             if (!keywordLoginRes.endsWith(SEPARATOR))
@@ -272,7 +278,7 @@ class DefaultUser extends User
             String temp = html.substring(start);
             int end = temp.indexOf(SEPARATOR);
             if (end == -1)
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGIN_FALSE_RESPONSE_PARSE_ERROR;
             temp = temp.substring(0, end);
             try
             {
@@ -280,19 +286,19 @@ class DefaultUser extends User
             } catch (NumberFormatException e)
             {
                 LogManager.logE(DefaultUser.class, "parsing code from logining result page failed.", e);
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGIN_FALSE_RESPONSE_PARSE_ERROR;
             }
             LogManager.logD(DefaultUser.class, "logging returns code:" + code);
             if (code == 1 || code == 3)
-                return User.RETURN_FALSE_NAME_OR_PWD_WRONG; // 用户名或密码有误
+                return User.LOGIN_FALSE_NAME_OR_PWD_WRONG; // 用户名或密码有误
             else if (code == 2)
-                return User.RETURN_FALSE_NAME_OR_PWD_INVALID; // 账户异常，如欠费等
+                return User.LOGIN_FALSE_NAME_OR_PWD_INVALID; // 账户异常，如欠费等
             else if (code == 7 || code == 26 || code == 105)
-                return User.RETURN_FALSE_NET_ERROR; // 服务端的网络异常
+                return User.LOGIN_FALSE_NET_ERROR; // 服务端的网络异常
             else if (code == 15 || code == 17 || code == 55 || code == 106)
-                return User.RETURN_FALSE_ALREADY_LOGIN; // 当前帐户已登录
+                return User.LOGIN_FALSE_ALREADY_LOGIN; // 当前帐户已登录
             else if (code != 0)
-                return User.RETURN_FALSE_GENERIC; // 其他登录失败情况
+                return User.LOGIN_FALSE_GENERIC; // 其他登录失败情况
             try
             {
                 // when it is login response html, extract the parameters
@@ -304,11 +310,11 @@ class DefaultUser extends User
             {
                 LogManager.logE(DefaultUser.class, "deal logining result page failed.", e);
             }
-            return User.RETURN_TRUE;
+            return User.LOGIN_TRUE;
         } catch (IOException e)
         {
             LogManager.logE(DefaultUser.class, "logining failed.", e);
-            return User.RETURN_FALSE_NET_ERROR;
+            return User.LOGIN_FALSE_NET_ERROR;
         }
     }
 
@@ -320,26 +326,19 @@ class DefaultUser extends User
     }
 
     @Override
-    public int isLogged()
+    public boolean isLogged() throws IOException
     {
         // TODO Auto-generated method stub
-        try
-        {
-            HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL);
-            String host = result.getResponseURL().getHost();
-            String html = result.getDataString("gb2312");
-            if (GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0)
-            { // 若能访问到原始站点，证明已登录
-                return User.RETURN_TRUE;
-            }
-            // 若不能访问原始站点，即重定向到了CMCC页面
-            this.cmccPageHtml = html;
-            return User.RETURN_FALSE_GENERIC;
-        } catch (IOException e)
-        {
-            LogManager.logE(DefaultUser.class, "requesting " + GUIDE_URL + " failed.", e);
-            return User.RETURN_FALSE_NET_ERROR;
+        HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL);
+        String host = result.getResponseURL().getHost();
+        String html = result.getDataString("gb2312");
+        if (GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0)
+        { // 若能访问到原始站点，证明已登录
+            return true;
         }
+        // 若不能访问原始站点，即重定向到了CMCC页面
+        this.cmccPageHtml = html;
+        return false;
     }
 
     protected HttpResponseResult doHttpGetContainsRedirect(String url) throws IOException
@@ -430,7 +429,7 @@ class DefaultUser extends User
             String html = result.getDataString("gb2312");
             String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_OFFLINERES;
             if (keywordLoginRes == null || html.indexOf(keywordLoginRes) == -1)
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGOUT_FALSE_RESPONSE_PARSE_ERROR;
             // 获取登录后的code，通过code可以判断出登录结果
             int code = -1;
             if (!keywordLoginRes.endsWith(SEPARATOR))
@@ -439,7 +438,7 @@ class DefaultUser extends User
             String temp = html.substring(start);
             int end = temp.indexOf(SEPARATOR);
             if (end == -1)
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGOUT_FALSE_RESPONSE_PARSE_ERROR;
             temp = temp.substring(0, end);
             try
             {
@@ -447,16 +446,20 @@ class DefaultUser extends User
             } catch (NumberFormatException e)
             {
                 LogManager.logE(DefaultUser.class, "parsing code from logouting result page failed.", e);
-                return User.RETURN_FALSE_RESPONSE_PARSE_ERROR;
+                return User.LOGOUT_FALSE_RESPONSE_PARSE_ERROR;
             }
             LogManager.logD(DefaultUser.class, "logouting returns code:" + code);
-            if (code != 0)
-                return User.RETURN_FALSE_GENERIC;
-            return User.RETURN_TRUE;
+            if (code == 7 || code == 18)
+                return User.LOGOUT_FALSE_NET_ERROR; // 服务端的网络异常
+            else if (code == 11) // 资费不足，已自动下线
+                return User.LOGOUT_FALSE_ALREADY_OFFLINE_CHARGE_SHORT;
+            else if (code != 0)
+                return User.LOGOUT_FALSE_GENERIC;
+            return User.LOGOUT_TRUE;
         } catch (IOException e)
         {
             LogManager.logE(DefaultUser.class, "logouting failed.", e);
-            return User.RETURN_FALSE_NET_ERROR;
+            return User.LOGOUT_FALSE_NET_ERROR;
         }
     }
 
