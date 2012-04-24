@@ -9,7 +9,8 @@ public abstract class User
     public static final int RETURN_FALSE_CANCEL               = 3;
     public static final int RETURN_FALSE_RESPONSE_PARSE_ERROR = 4;
     public static final int RETURN_FALSE_NAME_OR_PWD_WRONG    = 5;
-    public static final int RETURN_FALSE_ALREADY_LOGIN        = 6;
+    public static final int RETURN_FALSE_NAME_OR_PWD_INVALID  = 6;
+    public static final int RETURN_FALSE_ALREADY_LOGIN        = 7;
 
     public static User getDefaultImpl(String userName, String password)
     {
