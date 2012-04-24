@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import android.os.AsyncTask;
+import android.os.Handler;
 
 /**
  * <p>此类适用于执行依赖于特定数据(尤其为大数据)的异步操作且依赖数据被回收后任务可取消的情况，该类内部对依赖数据使用了虚引用，不妨碍其被回收
@@ -19,7 +20,9 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
 {
 
     private List<WeakReference<Object>> mObjReferences = null;
-
+    private Handler mHandler = new Handler();
+    private boolean mShouldCallbackWhenCancelled = true;
+    
     public AsyncWeakTask(Object... objs)
     {
         mObjReferences = new ArrayList<WeakReference<Object>>(objs.length);
@@ -30,12 +33,19 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
             mObjReferences.add(new WeakReference<Object>(obj));
         }
     }
-
+    
+    private boolean cancelWithoutCallback(boolean mayInterruptIfRunning){
+        mShouldCallbackWhenCancelled = false;
+        return cancel(mayInterruptIfRunning);
+    }
+    
     protected void onPreExecute(Object[] objs)
     {
     }
-
-    protected void onProgressUpdate(Object[] objs, Object... values)
+    
+    protected abstract Result doInBackgroundImpl(Params... params) throws Exception;
+    
+    protected void onProgressUpdate(Object[] objs, Progress... values)
     {
     }
 
@@ -46,23 +56,47 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     protected void onPostExecute(Object[] objs, Result result)
     {
     }
+    
+    protected void onException(Object[] objs,Exception e)
+    {
+    }
 
     @Override
     protected final void onPreExecute()
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancel(true);
+            cancelWithoutCallback(true);
         else
             onPreExecute(objs);
     }
+    
+    @Override
+    protected final Result doInBackground(Params... params){
+        try{
+            return doInBackgroundImpl(params);   
+        }catch(final Exception e){
+            mHandler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    Object[] objs = getObjects();
+                    if (objs != null)
+                        onException(objs,e);
+                }
+            });
+            cancelWithoutCallback(true);
+            return null;
+        }
+    }
 
     @Override
-    protected final void onProgressUpdate(Object... values)
+    protected final void onProgressUpdate(Progress... values)
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancel(true);
+            cancelWithoutCallback(true);
         else
             onProgressUpdate(objs, values);
     }
@@ -70,6 +104,10 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onCancelled()
     {
+        if(!mShouldCallbackWhenCancelled) {
+            mShouldCallbackWhenCancelled = true;
+            return;
+        }
         Object[] objs = getObjects();
         if (objs != null)
             onCancelled(objs);
@@ -80,7 +118,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancel(true);
+            cancelWithoutCallback(true);
         else
             onPostExecute(objs, result);
     }
