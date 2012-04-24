@@ -19,10 +19,10 @@ import android.os.Handler;
 public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result>
 {
 
-    private List<WeakReference<Object>> mObjReferences = null;
-    private Handler mHandler = new Handler();
-    private boolean mShouldCallbackWhenCancelled = true;
-    
+    private List<WeakReference<Object>> mObjReferences               = null;
+    private Handler                     mHandler                     = new Handler();
+    private boolean                     mShouldCallbackWhenCancelled = true;
+
     public AsyncWeakTask(Object... objs)
     {
         mObjReferences = new ArrayList<WeakReference<Object>>(objs.length);
@@ -33,18 +33,19 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
             mObjReferences.add(new WeakReference<Object>(obj));
         }
     }
-    
-    private boolean cancelWithoutCallback(boolean mayInterruptIfRunning){
+
+    private boolean cancelWithoutCallback(boolean mayInterruptIfRunning)
+    {
         mShouldCallbackWhenCancelled = false;
         return cancel(mayInterruptIfRunning);
     }
-    
+
     protected void onPreExecute(Object[] objs)
     {
     }
-    
+
     protected abstract Result doInBackgroundImpl(Params... params) throws Exception;
-    
+
     protected void onProgressUpdate(Object[] objs, Progress... values)
     {
     }
@@ -56,8 +57,8 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     protected void onPostExecute(Object[] objs, Result result)
     {
     }
-    
-    protected void onException(Object[] objs,Exception e)
+
+    protected void onException(Object[] objs, Exception e)
     {
     }
 
@@ -70,12 +71,15 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         else
             onPreExecute(objs);
     }
-    
+
     @Override
-    protected final Result doInBackground(Params... params){
-        try{
-            return doInBackgroundImpl(params);   
-        }catch(final Exception e){
+    protected final Result doInBackground(Params... params)
+    {
+        try
+        {
+            return doInBackgroundImpl(params);
+        } catch (final Exception e)
+        {
             mHandler.post(new Runnable()
             {
                 @Override
@@ -83,7 +87,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
                 {
                     Object[] objs = getObjects();
                     if (objs != null)
-                        onException(objs,e);
+                        onException(objs, e);
                 }
             });
             cancelWithoutCallback(true);
@@ -104,7 +108,8 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onCancelled()
     {
-        if(!mShouldCallbackWhenCancelled) {
+        if (!mShouldCallbackWhenCancelled)
+        {
             mShouldCallbackWhenCancelled = true;
             return;
         }
