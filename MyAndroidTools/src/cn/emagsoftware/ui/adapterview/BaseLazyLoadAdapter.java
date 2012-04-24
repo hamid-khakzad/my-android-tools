@@ -100,15 +100,9 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             }
 
             @Override
-            protected Object doInBackground(Object... params)
+            protected Object doInBackgroundImpl(Object... params) throws Exception
             {
-                try
-                {
-                    return mCallback.onLoad(condition, start, page + 1);
-                } catch (Exception e)
-                {
-                    return e;
-                }
+                return mCallback.onLoad(condition, start, page + 1);
             }
 
             @SuppressWarnings("unchecked")
@@ -116,37 +110,37 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             protected void onPostExecute(Object[] objs, Object result)
             {
                 BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
-                if (result instanceof Exception)
+                adapter.mPage++;
+                List<DataHolder> resultList = (List<DataHolder>) result;
+                if (resultList != null && resultList.size() > 0)
+                    adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
+                adapter.mIsLoading = false;
+                adapter.mIsLoaded = true;
+                if (adapter.mPages == -1)
                 {
-                    Exception e = (Exception) result;
-                    LogManager.logE(BaseLazyLoadAdapter.class, "Execute lazy loading failed.", e);
-                    adapter.mIsLoading = false;
-                    adapter.mIsException = true;
-                    adapter.onAfterLoad(adapter.mContext, condition, e);
+                    if (resultList == null || resultList.size() == 0)
+                        adapter.mIsLoadedAll = true;
+                    else
+                        adapter.mIsLoadedAll = false;
                 } else
                 {
-                    adapter.mPage++;
-                    List<DataHolder> resultList = (List<DataHolder>) result;
-                    if (resultList != null && resultList.size() > 0)
-                        adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
-                    adapter.mIsLoading = false;
-                    adapter.mIsLoaded = true;
-                    if (adapter.mPages == -1)
-                    {
-                        if (resultList == null || resultList.size() == 0)
-                            adapter.mIsLoadedAll = true;
-                        else
-                            adapter.mIsLoadedAll = false;
-                    } else
-                    {
-                        if (adapter.mPage >= adapter.mPages)
-                            adapter.mIsLoadedAll = true;
-                        else
-                            adapter.mIsLoadedAll = false;
-                    }
-                    adapter.mIsException = false;
-                    adapter.onAfterLoad(adapter.mContext, condition, null);
+                    if (adapter.mPage >= adapter.mPages)
+                        adapter.mIsLoadedAll = true;
+                    else
+                        adapter.mIsLoadedAll = false;
                 }
+                adapter.mIsException = false;
+                adapter.onAfterLoad(adapter.mContext, condition, null);
+            }
+            
+            @Override
+            protected void onException(Object[] objs, Exception e)
+            {
+                LogManager.logE(BaseLazyLoadAdapter.class, "Execute lazy loading failed.", e);
+                BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
+                adapter.mIsLoading = false;
+                adapter.mIsException = true;
+                adapter.onAfterLoad(adapter.mContext, condition, e);
             }
         }.execute("");
         return true;

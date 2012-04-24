@@ -61,15 +61,9 @@ public abstract class BaseLoadAdapter extends GenericAdapter
             }
 
             @Override
-            protected Object doInBackground(Object... params)
+            protected Object doInBackgroundImpl(Object... params) throws Exception
             {
-                try
-                {
-                    return mCallback.onLoad(condition);
-                } catch (Exception e)
-                {
-                    return e;
-                }
+                return mCallback.onLoad(condition);
             }
 
             @SuppressWarnings("unchecked")
@@ -77,23 +71,23 @@ public abstract class BaseLoadAdapter extends GenericAdapter
             protected void onPostExecute(Object[] objs, Object result)
             {
                 BaseLoadAdapter adapter = (BaseLoadAdapter) objs[0];
-                if (result instanceof Exception)
-                {
-                    Exception e = (Exception) result;
-                    LogManager.logE(BaseLoadAdapter.class, "Execute loading failed.", e);
-                    adapter.mIsLoading = false;
-                    adapter.mIsException = true;
-                    adapter.onAfterLoad(adapter.mContext, condition, e);
-                } else
-                {
-                    List<DataHolder> resultList = (List<DataHolder>) result;
-                    if (resultList != null && resultList.size() > 0)
-                        adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
-                    adapter.mIsLoading = false;
-                    adapter.mIsLoaded = true;
-                    adapter.mIsException = false;
-                    adapter.onAfterLoad(adapter.mContext, condition, null);
-                }
+                List<DataHolder> resultList = (List<DataHolder>) result;
+                if (resultList != null && resultList.size() > 0)
+                    adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
+                adapter.mIsLoading = false;
+                adapter.mIsLoaded = true;
+                adapter.mIsException = false;
+                adapter.onAfterLoad(adapter.mContext, condition, null);
+            }
+
+            @Override
+            protected void onException(Object[] objs, Exception e)
+            {
+                LogManager.logE(BaseLoadAdapter.class, "Execute loading failed.", e);
+                BaseLoadAdapter adapter = (BaseLoadAdapter) objs[0];
+                adapter.mIsLoading = false;
+                adapter.mIsException = true;
+                adapter.onAfterLoad(adapter.mContext, condition, e);
             }
         }.execute("");
         return true;
