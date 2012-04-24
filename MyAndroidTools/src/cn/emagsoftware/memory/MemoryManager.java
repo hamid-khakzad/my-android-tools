@@ -134,7 +134,7 @@ public final class MemoryManager
         {
             ListView listView = (ListView) view;
             int first = listView.getHeaderViewsCount();
-            int last = listView.getAdapter().getCount() - listView.getFooterViewsCount() - 1;
+            int last = listView.getCount() - listView.getFooterViewsCount() - 1;
             if (last - first < 0)
                 return;
             int firstVisible = listView.getFirstVisiblePosition();
