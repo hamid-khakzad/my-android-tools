@@ -285,7 +285,11 @@ class DefaultUser extends User
             LogManager.logD(DefaultUser.class, "logging returns code:" + code);
             if (code == 1 || code == 3)
                 return User.RETURN_FALSE_NAME_OR_PWD_WRONG; // 用户名或密码有误
-            else if (code == 26 || code == 55)
+            else if (code == 2)
+                return User.RETURN_FALSE_NAME_OR_PWD_INVALID; // 账户异常，如欠费等
+            else if (code == 7 || code == 26 || code == 105)
+                return User.RETURN_FALSE_NET_ERROR; // 服务端的网络异常
+            else if (code == 15 || code == 17 || code == 55 || code == 106)
                 return User.RETURN_FALSE_ALREADY_LOGIN; // 当前帐户已登录
             else if (code != 0)
                 return User.RETURN_FALSE_GENERIC; // 其他登录失败情况
