@@ -132,7 +132,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 adapter.mIsException = false;
                 adapter.onAfterLoad(adapter.mContext, condition, null);
             }
-            
+
             @Override
             protected void onException(Object[] objs, Exception e)
             {
