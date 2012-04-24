@@ -1,16 +1,24 @@
 package cn.emagsoftware.cmcc.wlan;
 
+import java.io.IOException;
+
 public abstract class User
 {
 
-    public static final int RETURN_TRUE                       = 0;
-    public static final int RETURN_FALSE_GENERIC              = 1;
-    public static final int RETURN_FALSE_NET_ERROR            = 2;
-    public static final int RETURN_FALSE_CANCEL               = 3;
-    public static final int RETURN_FALSE_RESPONSE_PARSE_ERROR = 4;
-    public static final int RETURN_FALSE_NAME_OR_PWD_WRONG    = 5;
-    public static final int RETURN_FALSE_NAME_OR_PWD_INVALID  = 6;
-    public static final int RETURN_FALSE_ALREADY_LOGIN        = 7;
+    public static final int LOGIN_TRUE                                = 0;
+    public static final int LOGIN_FALSE_NET_ERROR                     = 1;
+    public static final int LOGIN_FALSE_CANCEL                        = 2;
+    public static final int LOGIN_FALSE_RESPONSE_PARSE_ERROR          = 3;
+    public static final int LOGIN_FALSE_NAME_OR_PWD_WRONG             = 4;
+    public static final int LOGIN_FALSE_NAME_OR_PWD_INVALID           = 5;
+    public static final int LOGIN_FALSE_ALREADY_LOGIN                 = 6;
+    public static final int LOGIN_FALSE_GENERIC                       = 7;
+
+    public static final int LOGOUT_TRUE                               = 0;
+    public static final int LOGOUT_FALSE_NET_ERROR                    = 1;
+    public static final int LOGOUT_FALSE_RESPONSE_PARSE_ERROR         = 2;
+    public static final int LOGOUT_FALSE_ALREADY_OFFLINE_CHARGE_SHORT = 3;
+    public static final int LOGOUT_FALSE_GENERIC                      = 4;
 
     public static User getDefaultImpl(String userName, String password)
     {
@@ -46,7 +54,7 @@ public abstract class User
 
     public abstract void cancelLogin();
 
-    public abstract int isLogged();
+    public abstract boolean isLogged() throws IOException;
 
     public abstract int logout();
 
