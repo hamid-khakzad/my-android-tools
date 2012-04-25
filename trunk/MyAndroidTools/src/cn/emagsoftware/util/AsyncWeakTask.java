@@ -19,9 +19,9 @@ import android.os.Handler;
 public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result>
 {
 
-    private List<WeakReference<Object>> mObjReferences               = null;
-    private Handler                     mHandler                     = new Handler();
-    private boolean                     mShouldCallbackWhenCancelled = true;
+    private List<WeakReference<Object>> mObjReferences             = null;
+    private Handler                     mHandler                   = new Handler();
+    private boolean                     mShouldCallbackOnCancelled = true;
 
     public AsyncWeakTask(Object... objs)
     {
@@ -34,9 +34,9 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         }
     }
 
-    private boolean cancelWithoutCallback(boolean mayInterruptIfRunning)
+    private boolean cancelWhenRecycled(boolean mayInterruptIfRunning)
     {
-        mShouldCallbackWhenCancelled = false;
+        mShouldCallbackOnCancelled = false;
         return cancel(mayInterruptIfRunning);
     }
 
@@ -67,7 +67,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWithoutCallback(true);
+            cancelWhenRecycled(true);
         else
             onPreExecute(objs);
     }
@@ -90,7 +90,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
                         onException(objs, e);
                 }
             });
-            cancelWithoutCallback(true);
+            cancelWhenRecycled(true);
             return null;
         }
     }
@@ -100,7 +100,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWithoutCallback(true);
+            cancelWhenRecycled(true);
         else
             onProgressUpdate(objs, values);
     }
@@ -108,11 +108,8 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onCancelled()
     {
-        if (!mShouldCallbackWhenCancelled)
-        {
-            mShouldCallbackWhenCancelled = true;
+        if (!mShouldCallbackOnCancelled)
             return;
-        }
         Object[] objs = getObjects();
         if (objs != null)
             onCancelled(objs);
@@ -123,7 +120,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWithoutCallback(true);
+            cancelWhenRecycled(true);
         else
             onPostExecute(objs, result);
     }
