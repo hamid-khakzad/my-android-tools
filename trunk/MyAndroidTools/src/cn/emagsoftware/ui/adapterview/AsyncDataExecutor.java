@@ -154,25 +154,13 @@ public abstract class AsyncDataExecutor
                     return;
                 DataHolder holder = (DataHolder) values[0];
                 int position = holder.mExecuteConfig.mPosition;
-
-                // 判断Adapter是否发生了改变
                 if (position >= genericAdapter.getCount())
-                    return;
+                    return; // 数据发生了变化
                 if (!holder.equals(genericAdapter.queryDataHolder(position)))
-                    return;
-
-                // 判断position是否在AdapterView的有效范围之内（AdapterView和Adapter可能存在不同步，所以两者均要判断）
+                    return; // 数据发生了变化
                 int wrapPosition = position;
-                int count = adapterView.getCount();
                 if (adapterView instanceof ListView)
-                {
-                    ListView listView = (ListView) adapterView;
-                    wrapPosition = wrapPosition + listView.getHeaderViewsCount();
-                    count = count - listView.getFooterViewsCount();
-                }
-                if (wrapPosition >= count)
-                    return;
-
+                    wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
                 int first = adapterView.getFirstVisiblePosition();
                 int last = adapterView.getLastVisiblePosition();
                 if (wrapPosition >= first && wrapPosition <= last)
