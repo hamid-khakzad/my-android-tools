@@ -10,12 +10,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.FrameLayout;
 
 /**
  * Tab形式的布局类
  * 
  * @author Wendell
- * @version 3.1
+ * @version 4.0
  */
 public class TabLayout extends ViewGroup
 {
@@ -31,7 +32,8 @@ public class TabLayout extends ViewGroup
     protected boolean              mIsLayout             = false;
 
     protected ViewGroup            head                  = null;
-    protected ViewGroup            content               = null;
+    /** 之所以content使用FrameLayout，是因为只能使用setVisibility(View.INVISIBLE)来实现Tab切换，使用View.GONE可能会给UI更新带来问题，如通过notifyDataSetChanged()更新为GONE的AdapterView时，可能会使Adapter和AdapterView的状态不同步 */
+    protected FrameLayout          content               = null;
     protected List<View>           tabs                  = new ArrayList<View>();
 
     protected OnTabChangedListener mOnTabChangedListener = null;
@@ -89,21 +91,25 @@ public class TabLayout extends ViewGroup
     protected void refreshLayout()
     {
         if (getChildCount() != 2)
-            throw new IllegalStateException("TabLayout can only contains two children!");
+            throw new IllegalStateException("TabLayout can only contains two children(head and content)!");
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
-        if (!(child1 instanceof ViewGroup) || !(child2 instanceof ViewGroup))
-            throw new IllegalStateException("TabLayout children should be ViewGroup but not View!");
-        ViewGroup childGroup1 = (ViewGroup) child1;
-        ViewGroup childGroup2 = (ViewGroup) child2;
         if (headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_LEFT))
         {
-            head = childGroup1;
-            content = childGroup2;
+            if (!(child1 instanceof ViewGroup))
+                throw new IllegalStateException("TabLayout’s head child should be a ViewGroup!");
+            if (!(child2 instanceof FrameLayout))
+                throw new IllegalStateException("TabLayout’s content child should be a FrameLayout!");
+            head = (ViewGroup) child1;
+            content = (FrameLayout) child2;
         } else if (headPosition.equals(HEAD_POSITION_BOTTOM) || headPosition.equals(HEAD_POSITION_RIGHT))
         {
-            head = childGroup2;
-            content = childGroup1;
+            if (!(child2 instanceof ViewGroup))
+                throw new IllegalStateException("TabLayout’s head child should be a ViewGroup!");
+            if (!(child1 instanceof FrameLayout))
+                throw new IllegalStateException("TabLayout’s content child should be a FrameLayout!");
+            head = (ViewGroup) child2;
+            content = (FrameLayout) child1;
         }
         tabs.clear();
         refreshTabs(head);
@@ -167,7 +173,7 @@ public class TabLayout extends ViewGroup
             {
                 if (tabView instanceof CompoundButton)
                     ((CompoundButton) tabView).setChecked(false);
-                contentView.setVisibility(View.GONE);
+                contentView.setVisibility(View.INVISIBLE);
             }
         }
         this.selectedTabIndex = index;
@@ -187,14 +193,19 @@ public class TabLayout extends ViewGroup
         return head;
     }
 
-    public ViewGroup getContent()
+    public FrameLayout getContent()
     {
         return content;
     }
 
     public List<View> getTabs()
     {
-        return tabs;
+        List<View> returnCopy = new ArrayList<View>(tabs.size());
+        for (View view : tabs)
+        {
+            returnCopy.add(view);
+        }
+        return returnCopy;
     }
 
     public int getTabCount()
