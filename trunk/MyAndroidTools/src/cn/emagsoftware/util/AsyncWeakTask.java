@@ -119,9 +119,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     protected final void onPostExecute(Result result)
     {
         Object[] objs = getObjects();
-        if (objs == null)
-            cancelWhenRecycled(true);
-        else
+        if (objs != null)
             onPostExecute(objs, result);
     }
 
