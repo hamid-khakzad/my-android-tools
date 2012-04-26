@@ -81,7 +81,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         } catch (final Exception e)
         {
             if (mIsRecycled)
-            { // 内部cancelWhenRecycled(true)导致的异常不能回调onException；此后产生的异常，由于依赖数据已回收，同样不会执行onException，所以这里的判断条件依然不会带来问题
+            { // 内部cancelWhenRecycled(true)导致的异常不能回调onException；此后产生的异常，由于依赖数据已回收，同样不会执行onException，所以这里的统一处理依然不会带来问题
                 return null; // 由于依赖数据已回收，onCancelled和onPostExecute都不会被实质执行，所以这里可以直接返回
             }
             mHandler.post(new Runnable()
