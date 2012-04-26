@@ -19,9 +19,9 @@ import android.os.Handler;
 public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result>
 {
 
-    private List<WeakReference<Object>> mObjReferences             = null;
-    private Handler                     mHandler                   = new Handler();
-    private boolean                     mShouldCallbackOnCancelled = true;
+    private List<WeakReference<Object>> mObjReferences = null;
+    private Handler                     mHandler       = new Handler();
+    private boolean                     mIsRecycled    = false;
 
     public AsyncWeakTask(Object... objs)
     {
@@ -36,7 +36,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
 
     private boolean cancelWhenRecycled(boolean mayInterruptIfRunning)
     {
-        mShouldCallbackOnCancelled = false;
+        mIsRecycled = true;
         return cancel(mayInterruptIfRunning);
     }
 
@@ -80,6 +80,10 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
             return doInBackgroundImpl(params);
         } catch (final Exception e)
         {
+            if (e instanceof InterruptedException && mIsRecycled)
+            { // cancel(true)可能导致InterruptedException，但内部cancelWhenRecycled导致该异常时不能回调onException。若用户后续调用cancel(true)导致了该异常，由于依赖数据已被回收，同样不会执行onException，所以这里的直接返回对该情况同样适用
+                return null; // 可直接返回，因为mIsRecycled为true时onCancelled不会被实质执行
+            }
             mHandler.post(new Runnable()
             {
                 @Override
@@ -90,7 +94,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
                         onException(objs, e);
                 }
             });
-            cancelWhenRecycled(false);
+            cancelWhenRecycled(false); // 在内部调用并传true时会打印出InterruptedException，这里传false避免之，尽管该异常不影响结果
             return null;
         }
     }
@@ -108,7 +112,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onCancelled()
     {
-        if (!mShouldCallbackOnCancelled)
+        if (mIsRecycled)
             return;
         Object[] objs = getObjects();
         if (objs != null)
