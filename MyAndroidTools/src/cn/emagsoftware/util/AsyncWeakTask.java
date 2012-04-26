@@ -90,7 +90,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
                         onException(objs, e);
                 }
             });
-            cancelWhenRecycled(true);
+            cancelWhenRecycled(false);
             return null;
         }
     }
