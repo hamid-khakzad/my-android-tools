@@ -80,9 +80,9 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
             return doInBackgroundImpl(params);
         } catch (final Exception e)
         {
-            if (e instanceof InterruptedException && mIsRecycled)
-            { // cancel(true)可能导致InterruptedException，但内部cancelWhenRecycled导致该异常时不能回调onException。若用户后续调用cancel(true)导致了该异常，由于依赖数据已被回收，同样不会执行onException，所以这里的直接返回对该情况同样适用
-                return null; // 可直接返回，因为mIsRecycled为true时onCancelled不会被实质执行
+            if (mIsRecycled)
+            { // 内部cancelWhenRecycled(true)导致的异常不能回调onException；此后产生的异常，由于依赖数据已回收，同样不会执行onException，所以这里的判断条件依然不会带来问题
+                return null; // 由于依赖数据已回收，onCancelled和onPostExecute都不会被实质执行，所以这里可以直接返回
             }
             mHandler.post(new Runnable()
             {
