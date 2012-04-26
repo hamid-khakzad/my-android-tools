@@ -10,9 +10,9 @@
             <Button android:text="tab2" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
          </LinearLayout>
      </RelativeLayout>
-     <LinearLayout android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="#342333">
+     <FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="#342333">
          <TextView android:text="text1" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
          <Button android:text="button1" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
-     </LinearLayout>
+     </FrameLayout>
   </cn.emagsoftware.ui.TabLayout>
 </LinearLayout>
