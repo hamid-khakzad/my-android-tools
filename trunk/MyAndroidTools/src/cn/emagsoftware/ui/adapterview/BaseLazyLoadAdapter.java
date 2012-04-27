@@ -236,7 +236,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 mOriginalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
             if (view.getVisibility() != View.VISIBLE) // 由于在执行layout并显示时总会触发该事件，所以在未显示时禁止不必要的触发（执行setOnScrollListener或修改AbsListView的Item个数时都会触发该事件）
                 return;
-            if (visibleItemCount == 0) // 通过visibleItemCount为0来判断还未layout的情况，该情况下可见状态也可能为View.VISIBLE，要排除之
+            if (visibleItemCount == 0) // 通过visibleItemCount为0来判断从未layout的情况，该情况下可见状态也可能为View.VISIBLE，要排除之
                 return;
             if (firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount && !isLoadedAll() && !isException())
             {
