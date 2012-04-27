@@ -7,6 +7,7 @@ import cn.emagsoftware.util.AsyncWeakTask;
 import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 
@@ -233,9 +234,9 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             // 执行原始监听器的逻辑
             if (mOriginalListener != null)
                 mOriginalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
-            // 执行setOnScrollListener时就会触发onScroll，此时要排除AbsListView不可见或可见Item个数为0的情况
-            // 修改AbsListView的Item个数时会触发onScroll，此时要排除AbsListView不可见的情况
-            if (visibleItemCount == 0)
+            if (view.getVisibility() != View.VISIBLE) // 未显示时不触发（执行setOnScrollListener或修改AbsListView的Item个数时都会触发onScroll），会在显示之前的layout时触发
+                return;
+            if (!view.isLayoutRequested()) // 从未layout的情况下，其可见状态也可能为View.VISIBLE，要排除这种情况
                 return;
             if (firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount && !isLoadedAll() && !isException())
             {
