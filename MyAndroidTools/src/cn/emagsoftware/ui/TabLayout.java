@@ -32,7 +32,7 @@ public class TabLayout extends ViewGroup
     protected boolean              mIsLayout             = false;
 
     protected ViewGroup            head                  = null;
-    /** 之所以content使用FrameLayout，是因为只能使用setVisibility(View.INVISIBLE)来实现Tab切换，使用View.GONE可能会给UI更新带来问题，如通过notifyDataSetChanged()更新为GONE的AdapterView时，可能会使Adapter和AdapterView的状态不同步 */
+    /** 之所以content使用FrameLayout，是因为只能使用setVisibility(View.INVISIBLE)来实现Tab切换，使用View.GONE会使界面重新layout而影响性能，且可能会给UI更新带来问题，如通过notifyDataSetChanged()更新为GONE的AdapterView时，可能会使Adapter和AdapterView的状态不同步 */
     protected FrameLayout          content               = null;
     protected List<View>           tabs                  = new ArrayList<View>();
 
