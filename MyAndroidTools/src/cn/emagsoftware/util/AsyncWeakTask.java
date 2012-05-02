@@ -28,10 +28,15 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         mObjReferences = new ArrayList<WeakReference<Object>>(objs.length);
         for (Object obj : objs)
         {
-            if (obj == null)
-                throw new NullPointerException();
-            mObjReferences.add(new WeakReference<Object>(obj));
+            addToWeakReference(obj);
         }
+    }
+
+    public final void addToWeakReference(Object obj)
+    {
+        if (obj == null)
+            throw new NullPointerException();
+        mObjReferences.add(new WeakReference<Object>(obj));
     }
 
     private boolean cancelWhenRecycled(boolean mayInterruptIfRunning)
