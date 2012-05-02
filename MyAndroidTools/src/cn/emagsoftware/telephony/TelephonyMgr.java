@@ -1,15 +1,17 @@
 package cn.emagsoftware.telephony;
 
 import java.io.File;
-
-import cn.emagsoftware.util.LogManager;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
+import android.os.IBinder;
 import android.os.StatFs;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
+import cn.emagsoftware.util.LogManager;
 
 public final class TelephonyMgr
 {
@@ -18,10 +20,69 @@ public final class TelephonyMgr
     {
     }
 
-    public static String getSubscriberId(Context context)
+    public static boolean isDualMode()
+    {
+        try
+        {
+            Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
+            method.setAccessible(true);
+            return method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null;
+        } catch (ClassNotFoundException e)
+        {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getDeviceId(Context context)
     {
         TelephonyManager tm = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
-        return tm.getSubscriberId();
+        return tm.getDeviceId();
+    }
+
+    public static String getSubscriberId(int cardIndex)
+    {
+        String name = null;
+        if (cardIndex == 0)
+            name = "iphonesubinfo";
+        else if (cardIndex == 1)
+            name = "iphonesubinfo2";
+        else
+            throw new IllegalArgumentException("cardIndex can only be 0 or 1");
+        try
+        {
+            Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
+            method.setAccessible(true);
+            Object param = method.invoke(null, name);
+            if (param == null && cardIndex == 1)
+                param = method.invoke(null, "iphonesubinfo1");
+            if (param == null)
+                throw new RuntimeException("can not found the card index " + cardIndex);
+            method = Class.forName("com.android.internal.telephony.IPhoneSubInfo$Stub").getDeclaredMethod("asInterface", IBinder.class);
+            method.setAccessible(true);
+            Object stubObj = method.invoke(null, param);
+            return (String) stubObj.getClass().getMethod("getSubscriberId").invoke(stubObj);
+        } catch (ClassNotFoundException e)
+        {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public static int getSimState(Context context)
@@ -44,7 +105,7 @@ public final class TelephonyMgr
     {
         TelephonyManager tm = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
         String simOperatorName = tm.getSimOperatorName();
-        String subscriberId = getSubscriberId(context);
+        String subscriberId = getSubscriberId(0);
         if ("CMCC".equalsIgnoreCase(simOperatorName) || (!TextUtils.isEmpty(subscriberId) && (subscriberId.contains("46000") || subscriberId.contains("46002") || subscriberId.contains("46007"))))
             return true;
         else
