@@ -65,7 +65,7 @@ public final class TelephonyMgr
             if (param == null && cardIndex == 1)
                 param = method.invoke(null, "iphonesubinfo1");
             if (param == null)
-                throw new RuntimeException("can not found the card index " + cardIndex);
+                return null;
             method = Class.forName("com.android.internal.telephony.IPhoneSubInfo$Stub").getDeclaredMethod("asInterface", IBinder.class);
             method.setAccessible(true);
             Object stubObj = method.invoke(null, param);
@@ -84,21 +84,63 @@ public final class TelephonyMgr
             throw new RuntimeException(e);
         }
     }
-
-    public static int getSimState(Context context)
+    
+    public static int getSimState(int cardIndex)
     {
-        TelephonyManager tm = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
-        return tm.getSimState();
+        String name = null;
+        if (cardIndex == 0)
+            name = "gsm.sim.state";
+        else if (cardIndex == 1)
+            name = "gsm.sim.state_2";
+        else
+            throw new IllegalArgumentException("cardIndex can only be 0 or 1");
+        try
+        {
+            Method method = Class.forName("android.os.SystemProperties").getDeclaredMethod("get", String.class);
+            method.setAccessible(true);
+            Object prop = method.invoke(null, name);
+            if ("ABSENT".equals(prop))
+            {
+                return TelephonyManager.SIM_STATE_ABSENT;
+            } else if ("PIN_REQUIRED".equals(prop))
+            {
+                return TelephonyManager.SIM_STATE_PIN_REQUIRED;
+            } else if ("PUK_REQUIRED".equals(prop))
+            {
+                return TelephonyManager.SIM_STATE_PUK_REQUIRED;
+            } else if ("NETWORK_LOCKED".equals(prop))
+            {
+                return TelephonyManager.SIM_STATE_NETWORK_LOCKED;
+            } else if ("READY".equals(prop))
+            {
+                return TelephonyManager.SIM_STATE_READY;
+            } else
+            {
+                return TelephonyManager.SIM_STATE_UNKNOWN;
+            }
+        } catch (ClassNotFoundException e)
+        {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e)
+        {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e)
+        {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
-
+    
     public static boolean isSimCard(Context context)
     {
-        return getSimState(context) != TelephonyManager.SIM_STATE_ABSENT;
+        return getSimState(0) != TelephonyManager.SIM_STATE_ABSENT;
     }
 
     public static boolean isSimAndValidCard(Context context)
     {
-        return getSimState(context) == TelephonyManager.SIM_STATE_READY;
+        return getSimState(0) == TelephonyManager.SIM_STATE_READY;
     }
 
     public static boolean isChinaMobileCard(Context context)
