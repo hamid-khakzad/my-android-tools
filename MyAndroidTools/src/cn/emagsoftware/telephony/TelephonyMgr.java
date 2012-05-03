@@ -20,7 +20,7 @@ public final class TelephonyMgr
     {
     }
 
-    public static boolean isDualMode()
+    public static boolean isDualMode() throws ReflectHiddenFuncException
     {
         try
         {
@@ -29,16 +29,16 @@ public final class TelephonyMgr
             return method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null;
         } catch (ClassNotFoundException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (NoSuchMethodException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         }
     }
 
@@ -48,7 +48,7 @@ public final class TelephonyMgr
         return tm.getDeviceId();
     }
 
-    public static String getSubscriberId(int cardIndex)
+    public static String getSubscriberId(int cardIndex) throws ReflectHiddenFuncException
     {
         String name = null;
         if (cardIndex == 0)
@@ -72,33 +72,38 @@ public final class TelephonyMgr
             return (String) stubObj.getClass().getMethod("getSubscriberId").invoke(stubObj);
         } catch (ClassNotFoundException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (NoSuchMethodException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         }
     }
-    
-    public static int getSimState(int cardIndex)
+
+    public static int getFirstSimState() throws ReflectHiddenFuncException
     {
-        String name = null;
-        if (cardIndex == 0)
-            name = "gsm.sim.state";
-        else if (cardIndex == 1)
-            name = "gsm.sim.state_2";
-        else
-            throw new IllegalArgumentException("cardIndex can only be 0 or 1");
+        return getSimState("gsm.sim.state");
+    }
+
+    public static int getSecondSimState() throws ReflectHiddenFuncException
+    {
+        return getSimState("gsm.sim.state_2");
+    }
+
+    private static int getSimState(String simState) throws ReflectHiddenFuncException
+    {
         try
         {
             Method method = Class.forName("android.os.SystemProperties").getDeclaredMethod("get", String.class);
             method.setAccessible(true);
-            Object prop = method.invoke(null, name);
+            String prop = (String) method.invoke(null, simState);
+            if (prop != null)
+                prop = prop.split(",")[0]; // 有些机器返回好几个状态描述
             if ("ABSENT".equals(prop))
             {
                 return TelephonyManager.SIM_STATE_ABSENT;
@@ -120,48 +125,36 @@ public final class TelephonyMgr
             }
         } catch (ClassNotFoundException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (NoSuchMethodException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         } catch (IllegalAccessException e)
         {
-            throw new RuntimeException(e);
+            throw new ReflectHiddenFuncException(e);
         }
     }
-    
-    public static boolean isSimCard(Context context)
+
+    public static boolean isFirstSimValid() throws ReflectHiddenFuncException
     {
-        return getSimState(0) != TelephonyManager.SIM_STATE_ABSENT;
+        return getFirstSimState() == TelephonyManager.SIM_STATE_READY;
     }
 
-    public static boolean isSimAndValidCard(Context context)
+    public static boolean isSecondSimValid() throws ReflectHiddenFuncException
     {
-        return getSimState(0) == TelephonyManager.SIM_STATE_READY;
+        return getSecondSimState() == TelephonyManager.SIM_STATE_READY;
     }
 
-    public static boolean isChinaMobileCard(Context context)
+    public static boolean isChinaMobileCard(int cardIndex) throws ReflectHiddenFuncException
     {
-        TelephonyManager tm = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
-        String simOperatorName = tm.getSimOperatorName();
-        String subscriberId = getSubscriberId(0);
-        if ("CMCC".equalsIgnoreCase(simOperatorName) || (!TextUtils.isEmpty(subscriberId) && (subscriberId.contains("46000") || subscriberId.contains("46002") || subscriberId.contains("46007"))))
+        String subscriberId = getSubscriberId(cardIndex);
+        if (!TextUtils.isEmpty(subscriberId) && (subscriberId.contains("46000") || subscriberId.contains("46002") || subscriberId.contains("46007")))
             return true;
         else
             return false;
-    }
-
-    public static boolean isSimAndChinaMobileCard(Context context)
-    {
-        return isSimCard(context) && isChinaMobileCard(context);
-    }
-
-    public static boolean isSimAndValidAndChinaMobileCard(Context context)
-    {
-        return isSimAndValidCard(context) && isChinaMobileCard(context);
     }
 
     public static String getExternalStorageState()
