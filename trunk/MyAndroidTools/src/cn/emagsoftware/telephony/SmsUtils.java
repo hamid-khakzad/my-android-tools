@@ -1,12 +1,15 @@
 package cn.emagsoftware.telephony;
 
-import cn.emagsoftware.telephony.receiver.SmsInterceptor;
-import cn.emagsoftware.telephony.receiver.SmsReceiver;
-import cn.emagsoftware.telephony.receiver.SmsSendCallback;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.telephony.SmsManager;
+import cn.emagsoftware.telephony.receiver.SmsInterceptor;
+import cn.emagsoftware.telephony.receiver.SmsReceiver;
+import cn.emagsoftware.telephony.receiver.SmsSendCallback;
 
 public final class SmsUtils
 {
@@ -29,9 +32,16 @@ public final class SmsUtils
      * @param text
      * @param ssc
      * @param timeout 单位为毫秒，设为0将永不超时
+     * @param cardIndex 卡位置，0或1
+     * @throws ReflectHiddenFuncException
      */
-    public static void sendMessage(Context context, String to, String text, SmsSendCallback ssc, int timeout)
+    public static void sendMessage(Context context, String to, String text, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException
     {
+        if (cardIndex != 0 && cardIndex != 1)
+            throw new IllegalArgumentException("cardIndex can only be 0 or 1");
+        boolean isDualMode = TelephonyMgr.isDualMode();
+        if (!isDualMode && cardIndex == 1)
+            return;
         sendMessageToken = sendMessageToken + 1;
         Intent sentIntent = new Intent(SMS_SENT_ACTION);
         sentIntent.putExtra("SMS_TOKEN", sendMessageToken);
@@ -49,8 +59,26 @@ public final class SmsUtils
             ssc.setTimeout(timeout);
             ssc.registerMe();
         }
-        // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
-        smsManager.sendTextMessage(to, null, text, sentPI, null);
+        if (isDualMode)
+        {
+            try
+            {
+                Method method = smsManager.getClass().getMethod("sendTextMessage", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class, int.class);
+                method.invoke(smsManager, to, null, text, sentPI, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+            } catch (NoSuchMethodException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            } catch (InvocationTargetException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            } catch (IllegalAccessException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            }
+        } else
+        {
+            smsManager.sendTextMessage(to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+        }
     }
 
     /**
