@@ -167,7 +167,7 @@ public abstract class SmsSendCallback extends BroadcastReceiver
         } catch (IllegalArgumentException e)
         {
             // 重复反注册会抛出该异常，如通过代码注册的receiver在当前activity销毁时会自动反注册，若再反注册，即会抛出该异常
-            LogManager.logE(SmsSendCallback.class, "unregister receiver failed.", e);
+            LogManager.logW(SmsSendCallback.class, "unregister receiver failed.", e);
             return false;
         }
     }
