@@ -66,36 +66,49 @@ public final class SmsUtils
             ssc.setTimeout(timeout);
             ssc.registerMe();
         }
-        if (isDualMode)
+        try
         {
-            try
+            if (isDualMode)
             {
-                Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
-                method.setAccessible(true);
-                Object param = method.invoke(null, name);
-                if (param == null)
-                    throw new ReflectHiddenFuncException("can not get service which is named '" + name + "'");
-                method = Class.forName("com.android.internal.telephony.ISms$Stub").getDeclaredMethod("asInterface", IBinder.class);
-                method.setAccessible(true);
-                Object stubObj = method.invoke(null, param);
-                method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
-                method.invoke(stubObj, to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
-            } catch (ClassNotFoundException e)
+                try
+                {
+                    Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
+                    method.setAccessible(true);
+                    Object param = method.invoke(null, name);
+                    if (param == null)
+                        throw new ReflectHiddenFuncException("can not get service which is named '" + name + "'");
+                    method = Class.forName("com.android.internal.telephony.ISms$Stub").getDeclaredMethod("asInterface", IBinder.class);
+                    method.setAccessible(true);
+                    Object stubObj = method.invoke(null, param);
+                    method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
+                    method.invoke(stubObj, to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                } catch (ClassNotFoundException e)
+                {
+                    throw new ReflectHiddenFuncException(e);
+                } catch (NoSuchMethodException e)
+                {
+                    throw new ReflectHiddenFuncException(e);
+                } catch (InvocationTargetException e)
+                {
+                    throw new ReflectHiddenFuncException(e);
+                } catch (IllegalAccessException e)
+                {
+                    throw new ReflectHiddenFuncException(e);
+                }
+            } else
             {
-                throw new ReflectHiddenFuncException(e);
-            } catch (NoSuchMethodException e)
-            {
-                throw new ReflectHiddenFuncException(e);
-            } catch (InvocationTargetException e)
-            {
-                throw new ReflectHiddenFuncException(e);
-            } catch (IllegalAccessException e)
-            {
-                throw new ReflectHiddenFuncException(e);
+                SmsManager.getDefault().sendTextMessage(to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
             }
-        } else
+        } catch (ReflectHiddenFuncException e)
         {
-            SmsManager.getDefault().sendTextMessage(to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+            if (ssc != null)
+                ssc.unregisterMe();
+            throw e;
+        } catch (RuntimeException e)
+        {
+            if (ssc != null)
+                ssc.unregisterMe();
+            throw e;
         }
     }
 
