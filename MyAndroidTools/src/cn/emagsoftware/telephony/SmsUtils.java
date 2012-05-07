@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.IBinder;
 import android.telephony.SmsManager;
 import cn.emagsoftware.telephony.receiver.SmsInterceptor;
 import cn.emagsoftware.telephony.receiver.SmsReceiver;
@@ -18,7 +19,6 @@ public final class SmsUtils
     public static final String SMS_DELIVERED_ACTION = "cn.emagsoftware.telephony.SMS_DELIVERED";
 
     private static int         sendMessageToken     = 0;
-    private static SmsManager  smsManager           = SmsManager.getDefault();
 
     private SmsUtils()
     {
@@ -37,11 +37,18 @@ public final class SmsUtils
      */
     public static void sendMessage(Context context, String to, String text, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException
     {
-        if (cardIndex != 0 && cardIndex != 1)
-            throw new IllegalArgumentException("cardIndex can only be 0 or 1");
         boolean isDualMode = TelephonyMgr.isDualMode();
-        if (!isDualMode && cardIndex == 1)
-            return;
+        String name = null;
+        if (cardIndex == 0)
+            name = "isms";
+        else if (cardIndex == 1)
+        {
+            if (!isDualMode)
+                return;
+            name = "isms2";
+        } else
+            throw new IllegalArgumentException("cardIndex can only be 0 or 1");
+
         sendMessageToken = sendMessageToken + 1;
         Intent sentIntent = new Intent(SMS_SENT_ACTION);
         sentIntent.putExtra("SMS_TOKEN", sendMessageToken);
@@ -63,8 +70,19 @@ public final class SmsUtils
         {
             try
             {
-                Method method = smsManager.getClass().getMethod("sendTextMessage", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class, int.class);
-                method.invoke(smsManager, to, null, text, sentPI, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
+                method.setAccessible(true);
+                Object param = method.invoke(null, name);
+                if (param == null)
+                    throw new ReflectHiddenFuncException("can not get service which is named '" + name + "'");
+                method = Class.forName("com.android.internal.telephony.ISms$Stub").getDeclaredMethod("asInterface", IBinder.class);
+                method.setAccessible(true);
+                Object stubObj = method.invoke(null, param);
+                method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
+                method.invoke(stubObj, to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+            } catch (ClassNotFoundException e)
+            {
+                throw new ReflectHiddenFuncException(e);
             } catch (NoSuchMethodException e)
             {
                 throw new ReflectHiddenFuncException(e);
@@ -77,7 +95,7 @@ public final class SmsUtils
             }
         } else
         {
-            smsManager.sendTextMessage(to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+            SmsManager.getDefault().sendTextMessage(to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
         }
     }
 
