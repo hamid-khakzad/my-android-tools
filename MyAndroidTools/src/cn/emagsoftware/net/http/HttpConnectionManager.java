@@ -329,11 +329,8 @@ public final class HttpConnectionManager
                 sslCont.init(null, new TrustManager[] { new MyX509TrustManager() }, new SecureRandom());
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
                 HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(myUrl.getHost()));
-                httpConn = (HttpsURLConnection) myUrl.openConnection();
-            } else
-            {
-                httpConn = (HttpURLConnection) myUrl.openConnection();
             }
+            httpConn = (HttpsURLConnection) myUrl.openConnection();
             httpConn.setRequestMethod(method);
             HttpURLConnection.setFollowRedirects(false);
             httpConn.setInstanceFollowRedirects(false);
