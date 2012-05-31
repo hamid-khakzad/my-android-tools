@@ -20,13 +20,13 @@ import android.view.View;
  * <p>对话框管理类
  * 
  * @author Wendell
- * @version 1.7
+ * @version 1.8
  * 
  */
 public abstract class DialogManager
 {
 
-    private static boolean isAndroid4Above = TelephonyMgr.isAndroid4Above();
+    private static boolean isUsingNewButtonPlacementStyle = TelephonyMgr.isUsingNewButtonPlacementStyle();
 
     /**
      * <p>默认情况下，对话框利用了与当前方法相同的原理将程序定义的主题样式替换成自己的R.style.Theme_Dialog，这就是对话框没有显示程序定义样式的原因。 但若是外部创建了View（如通过AlertDialog.Builder或手工创建）再添加进对话框，则这些View将使用程序定义的样式，从而与对话框样式不一致。
@@ -48,7 +48,7 @@ public abstract class DialogManager
             ab.setTitle(title);
         if (buttons != null)
         {
-            if (isAndroid4Above)
+            if (isUsingNewButtonPlacementStyle)
             {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
@@ -204,7 +204,7 @@ public abstract class DialogManager
             pd.setMessage(msg);
         if (buttons != null)
         {
-            if (isAndroid4Above)
+            if (isUsingNewButtonPlacementStyle)
             {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
@@ -265,7 +265,7 @@ public abstract class DialogManager
             tad.setMessage(msg);
         if (buttons != null)
         {
-            if (isAndroid4Above)
+            if (isUsingNewButtonPlacementStyle)
             {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
@@ -327,7 +327,7 @@ public abstract class DialogManager
             tad.setView(view);
         if (buttons != null)
         {
-            if (isAndroid4Above)
+            if (isUsingNewButtonPlacementStyle)
             {
                 onClickListener = convertListenerForAndroid4Above(onClickListener);
                 if (buttons.length >= 1)
