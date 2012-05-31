@@ -203,5 +203,12 @@ public final class TelephonyMgr
     {
         return getSDKVersion() >= 14;
     }
-
+    
+    public static boolean isUsingNewButtonPlacementStyle()
+    {
+        String model = Build.MODEL;
+        if("GT-P3108".equals(model) || "GT-I9108".equals(model) || "GT-I9228".equals(model)) return false;
+        return isAndroid4Above();
+    }
+    
 }
