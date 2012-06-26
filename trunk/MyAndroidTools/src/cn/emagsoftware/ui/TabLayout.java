@@ -16,7 +16,7 @@ import android.widget.FrameLayout;
  * Tab形式的布局类
  * 
  * @author Wendell
- * @version 4.0
+ * @version 4.1
  */
 public class TabLayout extends ViewGroup
 {
@@ -219,33 +219,35 @@ public class TabLayout extends ViewGroup
         // TODO Auto-generated method stub
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
+        int paddingLeft = getPaddingLeft();
+        int paddingTop = getPaddingTop();
         if (headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_BOTTOM))
         {
-            int top = 0;
+            int firstHeight = 0;
             if (child1.getVisibility() != View.GONE)
             {
                 int child1Width = child1.getMeasuredWidth();
                 int child1Height = child1.getMeasuredHeight();
-                child1.layout(0, 0, child1Width, child1Height);
-                top = child1Height;
+                child1.layout(paddingLeft, paddingTop, paddingLeft + child1Width, paddingTop + child1Height);
+                firstHeight = child1Height;
             }
             if (child2.getVisibility() != View.GONE)
             {
-                child2.layout(0, top, child2.getMeasuredWidth(), top + child2.getMeasuredHeight());
+                child2.layout(paddingLeft, paddingTop + firstHeight, paddingLeft + child2.getMeasuredWidth(), paddingTop + firstHeight + child2.getMeasuredHeight());
             }
         } else if (headPosition.equals(HEAD_POSITION_LEFT) || headPosition.equals(HEAD_POSITION_RIGHT))
         {
-            int left = 0;
+            int firstWidth = 0;
             if (child1.getVisibility() != View.GONE)
             {
                 int child1Width = child1.getMeasuredWidth();
                 int child1Height = child1.getMeasuredHeight();
-                child1.layout(0, 0, child1Width, child1Height);
-                left = child1Width;
+                child1.layout(paddingLeft, paddingTop, paddingLeft + child1Width, paddingTop + child1Height);
+                firstWidth = child1Width;
             }
             if (child2.getVisibility() != View.GONE)
             {
-                child2.layout(left, 0, left + child2.getMeasuredWidth(), child2.getMeasuredHeight());
+                child2.layout(paddingLeft + firstWidth, paddingTop, paddingLeft + firstWidth + child2.getMeasuredWidth(), paddingTop + child2.getMeasuredHeight());
             }
         }
 
@@ -306,8 +308,10 @@ public class TabLayout extends ViewGroup
         // 非EXACTLY模式需要根据子容器来计算父容器的大小，对TabLayout而言比较复杂且实际应用中完全可以避免，故暂不支持
         if (widthMode != MeasureSpec.EXACTLY || heightMode != MeasureSpec.EXACTLY)
             throw new IllegalStateException("TabLayout only can run at EXACTLY mode!");
-        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        int wrapWidthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int wrapHeightSize = MeasureSpec.getSize(heightMeasureSpec);
+        int widthSize = wrapWidthSize - getPaddingLeft() - getPaddingRight();
+        int heightSize = wrapHeightSize - getPaddingTop() - getPaddingBottom();
 
         // 刷新布局
         refreshLayout();
@@ -399,7 +403,7 @@ public class TabLayout extends ViewGroup
                 child1.measure(MeasureSpec.makeMeasureSpec(remainWidth, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize, MeasureSpec.EXACTLY));
             }
         }
-        setMeasuredDimension(widthSize, heightSize);
+        setMeasuredDimension(wrapWidthSize, wrapHeightSize);
     }
 
     public void setOnTabChangedListener(OnTabChangedListener mOnTabChangedListener)
