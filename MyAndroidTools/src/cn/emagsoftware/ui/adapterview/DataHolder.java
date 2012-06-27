@@ -67,6 +67,16 @@ public abstract class DataHolder
     }
 
     /**
+     * <p>重设构造函数中传入的数据对象
+     * 
+     * @param data
+     */
+    public void setData(Object data)
+    {
+        mData = data;
+    }
+
+    /**
      * <p>获取指定位置的异步数据，未加载或已被回收时返回null
      * 
      * @param index 异步数据的位置
