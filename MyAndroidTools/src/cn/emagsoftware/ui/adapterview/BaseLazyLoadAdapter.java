@@ -3,13 +3,13 @@ package cn.emagsoftware.ui.adapterview;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import cn.emagsoftware.util.AsyncWeakTask;
-import cn.emagsoftware.util.LogManager;
-
 import android.content.Context;
 import android.view.View;
 import android.widget.AbsListView;
+import android.widget.Adapter;
 import android.widget.AdapterView;
+import cn.emagsoftware.util.AsyncWeakTask;
+import cn.emagsoftware.util.LogManager;
 
 public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
 {
@@ -49,7 +49,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
      * @param adapterView
      * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
      */
-    public void bindLazyLoading(AdapterView<?> adapterView, int remainingCount)
+    public void bindLazyLoading(AdapterView<? extends Adapter> adapterView, int remainingCount)
     {
         if (adapterView instanceof AbsListView)
         {
