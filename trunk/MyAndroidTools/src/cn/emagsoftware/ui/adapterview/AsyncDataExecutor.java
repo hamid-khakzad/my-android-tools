@@ -75,7 +75,7 @@ public abstract class AsyncDataExecutor
             {
                 mPushedHolders.addFirst(dataHolder);
                 if (mPushedHolders.size() > mMaxWaitCount)
-                    mPushedHolders.removeLast();
+                    mPushedHolders.removeLast().mExecuteConfig.mIsExecuting = false;
             }
         }
         if (executeTask != null)
@@ -199,14 +199,14 @@ public abstract class AsyncDataExecutor
             if (handler == null)
                 return false;
             handler.postDelayed(new Runnable()
-            { // 每隔320毫秒执行，以避免连续执行带来的界面滑动卡顿现象
+            { // 每隔380毫秒执行，以避免连续执行带来的界面滑动卡顿现象
                         @Override
                         public void run()
                         {
                             // TODO Auto-generated method stub
                             executor.push(dataHolder);
                         }
-                    }, 320);
+                    }, 380);
             return true;
         }
     }
