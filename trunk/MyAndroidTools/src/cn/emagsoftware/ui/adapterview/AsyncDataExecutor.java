@@ -8,6 +8,7 @@ import java.util.Set;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import cn.emagsoftware.util.LogManager;
@@ -15,21 +16,21 @@ import cn.emagsoftware.util.LogManager;
 public abstract class AsyncDataExecutor
 {
 
-    private static PushTask                            PUSH_TASK          = new PushTask();
+    private static PushTask                               PUSH_TASK          = new PushTask();
     static
     {
         PUSH_TASK.execute("");
     }
 
-    private int                                        mMaxTaskCount      = 5;
+    private int                                           mMaxTaskCount      = 5;
 
-    private int                                        mMaxWaitCount      = 20;
-    private WeakReference<AdapterView<?>>              mAdapterViewRef    = null;
-    private WeakReference<GenericAdapter>              mGenericAdapterRef = null;
+    private int                                           mMaxWaitCount      = 20;
+    private WeakReference<AdapterView<? extends Adapter>> mAdapterViewRef    = null;
+    private WeakReference<GenericAdapter>                 mGenericAdapterRef = null;
 
-    private LinkedList<DataHolder>                     mPushedHolders     = new LinkedList<DataHolder>();
-    private byte[]                                     mLockExecute       = new byte[0];
-    private Set<AsyncTask<DataHolder, Object, Object>> mCurExecuteTasks   = new HashSet<AsyncTask<DataHolder, Object, Object>>();
+    private LinkedList<DataHolder>                        mPushedHolders     = new LinkedList<DataHolder>();
+    private byte[]                                        mLockExecute       = new byte[0];
+    private Set<AsyncTask<DataHolder, Object, Object>>    mCurExecuteTasks   = new HashSet<AsyncTask<DataHolder, Object, Object>>();
 
     public AsyncDataExecutor(int maxTaskCount)
     {
@@ -38,10 +39,10 @@ public abstract class AsyncDataExecutor
         this.mMaxTaskCount = maxTaskCount;
     }
 
-    void refreshVariables(AdapterView<?> adapterView, GenericAdapter genericAdapter)
+    void refreshVariables(AdapterView<? extends Adapter> adapterView, GenericAdapter genericAdapter)
     {
         mMaxWaitCount = adapterView.getLastVisiblePosition() - adapterView.getFirstVisiblePosition() + 2; // AdapterView在第一次布局显示时可能需要加2，所以这里统一加2
-        mAdapterViewRef = new WeakReference<AdapterView<?>>(adapterView);
+        mAdapterViewRef = new WeakReference<AdapterView<? extends Adapter>>(adapterView);
         mGenericAdapterRef = new WeakReference<GenericAdapter>(genericAdapter);
     }
 
@@ -144,7 +145,7 @@ public abstract class AsyncDataExecutor
                 // TODO Auto-generated method stub
                 super.onProgressUpdate(values);
                 // 这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-                AdapterView<?> adapterView = mAdapterViewRef.get();
+                AdapterView<? extends Adapter> adapterView = mAdapterViewRef.get();
                 GenericAdapter genericAdapter = mGenericAdapterRef.get();
                 if (adapterView == null || genericAdapter == null)
                     return;

@@ -6,6 +6,7 @@ import java.util.List;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 
@@ -217,6 +218,7 @@ public class GenericAdapter extends BaseAdapter
         return position;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
@@ -234,7 +236,7 @@ public class GenericAdapter extends BaseAdapter
         }
         if (mExecutor != null)
         {
-            mExecutor.refreshVariables((AdapterView<?>) parent, this);
+            mExecutor.refreshVariables((AdapterView<? extends Adapter>) parent, this);
             holder.mExecuteConfig.mPosition = position;
             if (holder.mExecuteConfig.mShouldExecute)
                 mExecutor.pushAsync(holder);

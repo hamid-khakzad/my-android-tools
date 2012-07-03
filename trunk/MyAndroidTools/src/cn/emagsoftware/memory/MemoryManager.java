@@ -9,8 +9,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import cn.emagsoftware.util.LogManager;
 
 public final class MemoryManager
@@ -127,27 +127,15 @@ public final class MemoryManager
      * @param view
      * @param callback
      */
-    public static void releaseBitmaps(AdapterView<?> view, MemoryManager.ReleaseBitmapsCallback callback)
+    public static void releaseBitmaps(AdapterView<? extends Adapter> view, MemoryManager.ReleaseBitmapsCallback callback)
     {
         int count = view.getChildCount();
-        if (view instanceof ListView)
+        int firstVisible = view.getFirstVisiblePosition();
+        Adapter adapter = view.getAdapter();
+        for (int i = 0; i < count; i++)
         {
-            ListView listView = (ListView) view;
-            int first = listView.getHeaderViewsCount();
-            int last = listView.getCount() - listView.getFooterViewsCount() - 1;
-            if (last - first < 0)
-                return;
-            int firstVisible = listView.getFirstVisiblePosition();
-            for (int i = 0; i < count; i++)
-            {
-                int position = i + firstVisible;
-                if (position < first || position > last)
-                    continue; // 不包含header和footer
-                callback.releaseBitmaps(listView.getChildAt(i));
-            }
-        } else
-        {
-            for (int i = 0; i < count; i++)
+            int position = i + firstVisible;
+            if (adapter.getItemViewType(position) != AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER) // 不包含header和footer
             {
                 callback.releaseBitmaps(view.getChildAt(i));
             }
