@@ -22,8 +22,8 @@ public abstract class AsyncDataExecutor
     }
 
     private int                                        mMaxTaskCount      = 5;
-    private int                                        mMaxWaitCount      = 20;
 
+    private int                                        mMaxWaitCount      = 20;
     private WeakReference<AdapterView<?>>              mAdapterViewRef    = null;
     private WeakReference<GenericAdapter>              mGenericAdapterRef = null;
 
@@ -31,29 +31,21 @@ public abstract class AsyncDataExecutor
     private byte[]                                     mLockExecute       = new byte[0];
     private Set<AsyncTask<DataHolder, Object, Object>> mCurExecuteTasks   = new HashSet<AsyncTask<DataHolder, Object, Object>>();
 
-    public AsyncDataExecutor(int maxTaskCount, int maxWaitCount)
+    public AsyncDataExecutor(int maxTaskCount)
     {
         if (maxTaskCount <= 0)
             throw new IllegalArgumentException("maxTaskCount should be great than zero.");
-        if (maxWaitCount <= 0)
-            throw new IllegalArgumentException("maxWaitCount should be great than zero.");
         this.mMaxTaskCount = maxTaskCount;
-        this.mMaxWaitCount = maxWaitCount;
     }
 
-    /**
-     * <p>绑定刷新UI时使用到的AdapterView和GenericAdapter，若这两者发生变化，需要重新调用此方法进行刷新 <p>该方法只能在UI线程中调用，这样才能保证同步
-     * 
-     * @param adapterView
-     * @param genericAdapter
-     */
-    public void bindForRefresh(AdapterView<?> adapterView, GenericAdapter genericAdapter)
+    void refreshVariables(AdapterView<?> adapterView, GenericAdapter genericAdapter)
     {
+        mMaxWaitCount = adapterView.getLastVisiblePosition() - adapterView.getFirstVisiblePosition() + 1;
         mAdapterViewRef = new WeakReference<AdapterView<?>>(adapterView);
         mGenericAdapterRef = new WeakReference<GenericAdapter>(genericAdapter);
     }
 
-    public void pushAsync(DataHolder dataHolder)
+    void pushAsync(DataHolder dataHolder)
     {
         if (!PUSH_TASK.execPushingAsync(this, dataHolder))
             push(dataHolder); // 异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
@@ -74,8 +66,12 @@ public abstract class AsyncDataExecutor
             } else
             {
                 mPushedHolders.addFirst(dataHolder);
-                if (mPushedHolders.size() > mMaxWaitCount)
+                int excessCount = mPushedHolders.size() - mMaxWaitCount;
+                while (excessCount > 0)
+                {
                     mPushedHolders.removeLast().mExecuteConfig.mIsExecuting = false;
+                    excessCount--;
+                }
             }
         }
         if (executeTask != null)

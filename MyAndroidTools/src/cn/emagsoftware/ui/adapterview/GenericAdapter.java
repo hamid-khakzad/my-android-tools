@@ -234,7 +234,7 @@ public class GenericAdapter extends BaseAdapter
         }
         if (mExecutor != null)
         {
-            mExecutor.bindForRefresh((AdapterView<?>) parent, this);
+            mExecutor.refreshVariables((AdapterView<?>) parent, this);
             holder.mExecuteConfig.mPosition = position;
             if (holder.mExecuteConfig.mShouldExecute)
                 mExecutor.pushAsync(holder);
