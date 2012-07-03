@@ -40,7 +40,7 @@ public abstract class AsyncDataExecutor
 
     void refreshVariables(AdapterView<?> adapterView, GenericAdapter genericAdapter)
     {
-        mMaxWaitCount = adapterView.getLastVisiblePosition() - adapterView.getFirstVisiblePosition() + 1;
+        mMaxWaitCount = adapterView.getLastVisiblePosition() - adapterView.getFirstVisiblePosition() + 2; // AdapterView在第一次布局显示时可能需要加2，所以这里统一加2
         mAdapterViewRef = new WeakReference<AdapterView<?>>(adapterView);
         mGenericAdapterRef = new WeakReference<GenericAdapter>(genericAdapter);
     }
