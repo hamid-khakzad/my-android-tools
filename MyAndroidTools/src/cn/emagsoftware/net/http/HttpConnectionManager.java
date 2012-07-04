@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -552,21 +553,36 @@ public final class HttpConnectionManager
         if (cookies != null)
         {
             String sessionCookie = null;
-            String unknownSessionPrefix = null;
-            String unknownSessionCookie = null;
-            for (String cookie : cookies)
+            ListIterator<String> sessionCookies = cookies.listIterator(cookies.size());
+            a: while (sessionCookies.hasPrevious()) // 倒序，按惯例要取最后一个session cookie
             {
+                String cookie = sessionCookies.previous();
                 if (cookie != null)
                 {
                     String[] cookieArr = cookie.split(";");
-                    for (String perCookie : cookieArr)
+                    for (int i = cookieArr.length - 1; i >= 0; i--) // 倒序，按惯例要取最后一个session cookie
                     {
-                        perCookie = perCookie.trim();
+                        String perCookie = cookieArr[i].trim();
                         if (perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID="))
                         {
-                            sessionCookie = perCookie; // 可能有多个session cookie，这里按照惯例取最后一个
-                        } else if (sessionCookie == null)
+                            sessionCookie = perCookie;
+                            break a;
+                        }
+                    }
+                }
+            }
+            if (sessionCookie == null) // 取不到时取猜测的未知session cookie
+            {
+                String unknownSessionPrefix = null;
+                String unknownSessionCookie = null;
+                for (String cookie : cookies)
+                {
+                    if (cookie != null)
+                    {
+                        String[] cookieArr = cookie.split(";");
+                        for (String perCookie : cookieArr)
                         {
+                            perCookie = perCookie.trim();
                             if (unknownSessionPrefix == null)
                             {
                                 int index = perCookie.indexOf("=");
@@ -577,14 +593,13 @@ public final class HttpConnectionManager
                                 }
                             } else if (perCookie.startsWith(unknownSessionPrefix))
                             {
-                                unknownSessionCookie = perCookie; // 未知的session cookie同样按照惯例取最后一个
+                                unknownSessionCookie = perCookie; // 未知的session cookie同样按惯例取最后一个
                             }
                         }
                     }
                 }
+                sessionCookie = unknownSessionCookie;
             }
-            if (sessionCookie == null)
-                sessionCookie = unknownSessionCookie; // 取不到时取猜测的未知session cookie
             if (sessionCookie != null)
             {
                 LogManager.logI(HttpConnectionManager.class, "prepare to save session(" + sessionCookie + ") for url " + url.toString() + "...");
