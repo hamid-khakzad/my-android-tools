@@ -13,8 +13,8 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,32 +36,32 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 3.8
+ * @version 3.9
  */
 public final class HttpConnectionManager
 {
 
-    public static final String               HTTPS_PREFIX                   = "https";
+    public static final String         HTTPS_PREFIX                   = "https";
 
-    public static final String               HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
-    public static final String               HEADER_REQUEST_CONNECTION      = "Connection";
-    public static final String               HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
-    public static final String               HEADER_REQUEST_ACCEPT_CHARSET  = "Accept-Charset";
-    public static final String               HEADER_REQUEST_CONTENT_TYPE    = "Content-Type";
-    public static final String               HEADER_REQUEST_USER_AGENT      = "User-Agent";
-    public static final String               HEADER_REQUEST_COOKIE          = "Cookie";
+    public static final String         HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
+    public static final String         HEADER_REQUEST_CONNECTION      = "Connection";
+    public static final String         HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
+    public static final String         HEADER_REQUEST_ACCEPT_CHARSET  = "Accept-Charset";
+    public static final String         HEADER_REQUEST_CONTENT_TYPE    = "Content-Type";
+    public static final String         HEADER_REQUEST_USER_AGENT      = "User-Agent";
+    public static final String         HEADER_REQUEST_COOKIE          = "Cookie";
 
-    public static final String               HEADER_RESPONSE_CONTENT_TYPE   = "Content-Type";
-    public static final String               HEADER_RESPONSE_LOCATION       = "Location";
-    public static final String               HEADER_RESPONSE_SET_COOKIE     = "Set-Cookie";
+    public static final String         HEADER_RESPONSE_CONTENT_TYPE   = "Content-Type";
+    public static final String         HEADER_RESPONSE_LOCATION       = "Location";
+    public static final String         HEADER_RESPONSE_SET_COOKIE     = "Set-Cookie";
 
-    public static final int                  REDIRECT_MAX_COUNT             = 10;
-    public static final int                  CMWAP_CHARGEPAGE_MAX_COUNT     = 5;
+    public static final int            REDIRECT_MAX_COUNT             = 10;
+    public static final int            CMWAP_CHARGEPAGE_MAX_COUNT     = 5;
 
-    private static boolean                   isKeepSession                  = false;
-    private static Map<String, List<String>> sessions                       = Collections.synchronizedMap(new HashMap<String, List<String>>());
+    private static boolean             isKeepSession                  = false;
+    private static Map<String, String> sessions                       = new Hashtable<String, String>();
 
-    private static boolean                   isUseCMWap                     = false;
+    private static boolean             isUseCMWap                     = false;
 
     private HttpConnectionManager()
     {
@@ -456,7 +456,11 @@ public final class HttpConnectionManager
                     }
                 }
                 if (isKeepSession)
-                    saveSession(originalUrl, httpConn.getHeaderFields()); // 需要使用原始URL保存session
+                {
+                    Map<String, List<String>> headerFields = httpConn.getHeaderFields();
+                    if (headerFields != null)
+                        saveSession(originalUrl, headerFields); // 需要使用原始URL保存session
+                }
                 return httpConn;
             } else if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
             {
@@ -503,7 +507,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>根据url从缓存中查找能够维持session的cookie值，多个值之间用分号分隔。若未找到将返回null
+     * <p>根据url从缓存中查找能够维持session的cookie值。若未找到将返回null
      * 
      * @param url
      * @return
@@ -518,48 +522,22 @@ public final class HttpConnectionManager
             port = url.getDefaultPort();
         String authority = host.concat(":").concat(String.valueOf(port));
         String path = url.getPath();
-        List<String> sessionCookies = null;
+        String sessionCookie = null;
         if (path.equals("") || path.equals("/"))
         {
-            sessionCookies = sessions.get(authority);
+            sessionCookie = sessions.get(authority);
         } else
         {
             int index = path.indexOf("/", 1);
             if (index != -1)
                 path = path.substring(0, index);
-            sessionCookies = sessions.get(authority.concat(path));
-            if (sessionCookies == null)
+            sessionCookie = sessions.get(authority.concat(path));
+            if (sessionCookie == null)
             {
-                sessionCookies = sessions.get(authority);
+                sessionCookie = sessions.get(authority);
             }
         }
-        if (sessionCookies == null)
-            return null;
-        StringBuffer sessionCookiesBuffer = new StringBuffer();
-        for (int i = 0; i < sessionCookies.size(); i++)
-        {
-            if (i != 0)
-                sessionCookiesBuffer.append(";");
-            sessionCookiesBuffer.append(sessionCookies.get(i));
-        }
-        return sessionCookiesBuffer.toString();
-    }
-
-    /**
-     * <p>保存用于维持session的cookie值，多个值之间用分号分隔
-     * 
-     * @param url
-     * @param sessionCookiesStr
-     */
-    public static void saveSession(URL url, String sessionCookiesStr)
-    {
-        List<String> sessionCookies = new ArrayList<String>();
-        String[] sessionCookiesArr = sessionCookiesStr.split(";");
-        for (String sessionCookie : sessionCookiesArr)
-        {
-            sessionCookies.add(sessionCookie);
-        }
-        saveSession(url, sessionCookies);
+        return sessionCookie;
     }
 
     /**
@@ -570,34 +548,34 @@ public final class HttpConnectionManager
      */
     private static void saveSession(URL url, Map<String, List<String>> responseHeaders)
     {
-        if (responseHeaders != null)
+        List<String> cookies = responseHeaders.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase()); // 在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
+        if (cookies != null)
         {
-            List<String> cookies = responseHeaders.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase()); // 在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
-            if (cookies != null)
+            String firstCookie = null;
+            String sessionCookie = null;
+            for (String cookie : cookies)
             {
-                List<String> sessionCookies = new ArrayList<String>();
-                for (String cookie : cookies)
+                if (cookie != null)
                 {
-                    if (cookie != null)
+                    String[] cookieArr = cookie.split(";");
+                    for (String perCookie : cookieArr)
                     {
-                        String[] cookieArr = cookie.split(";");
-                        String sessionCookie = null;
-                        for (String perCookie : cookieArr)
+                        perCookie = perCookie.trim();
+                        if (firstCookie == null)
+                            firstCookie = perCookie;
+                        if (perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID="))
                         {
-                            perCookie = perCookie.trim();
-                            if (perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID="))
-                            {
-                                sessionCookie = perCookie;
-                                break;
-                            }
+                            sessionCookie = perCookie; // 可能有多个sessionCookie，这里按照惯例循环取最后一个
                         }
-                        if (sessionCookie == null)
-                            sessionCookie = cookieArr[0].trim();
-                        LogManager.logI(HttpConnectionManager.class, "prepare to save session(" + sessionCookie + ") for url " + url + "...");
-                        sessionCookies.add(sessionCookie);
                     }
                 }
-                saveSession(url, sessionCookies);
+            }
+            if (sessionCookie == null)
+                sessionCookie = firstCookie; // 取不到时取第一个cookie
+            if (sessionCookie != null)
+            {
+                LogManager.logI(HttpConnectionManager.class, "prepare to save session(" + sessionCookie + ") for url " + url.toString() + "...");
+                saveSession(url, sessionCookie);
             }
         }
     }
@@ -606,12 +584,12 @@ public final class HttpConnectionManager
      * <p>保存用于维持session的cookie值
      * 
      * @param url
-     * @param sessionCookies
+     * @param sessionCookie
      */
-    private static void saveSession(URL url, List<String> sessionCookies)
+    public static void saveSession(URL url, String sessionCookie)
     {
-        if (sessionCookies.size() == 0)
-            return;
+        if (sessionCookie == null)
+            throw new NullPointerException();
         String host = url.getHost().toLowerCase();
         if (host.equals("localhost"))
             host = "127.0.0.1";
@@ -622,13 +600,13 @@ public final class HttpConnectionManager
         String path = url.getPath();
         if (path.equals("") || path.equals("/"))
         {
-            sessions.put(authority, sessionCookies);
+            sessions.put(authority, sessionCookie);
         } else
         {
             int index = path.indexOf("/", 1);
             if (index != -1)
                 path = path.substring(0, index);
-            sessions.put(authority.concat(path), sessionCookies);
+            sessions.put(authority.concat(path), sessionCookie);
         }
     }
 
