@@ -551,8 +551,9 @@ public final class HttpConnectionManager
         List<String> cookies = responseHeaders.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase()); // 在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
         if (cookies != null)
         {
-            String firstCookie = null;
             String sessionCookie = null;
+            String unknownSessionPrefix = null;
+            String unknownSessionCookie = null;
             for (String cookie : cookies)
             {
                 if (cookie != null)
@@ -561,17 +562,29 @@ public final class HttpConnectionManager
                     for (String perCookie : cookieArr)
                     {
                         perCookie = perCookie.trim();
-                        if (firstCookie == null)
-                            firstCookie = perCookie;
                         if (perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID="))
                         {
-                            sessionCookie = perCookie; // 可能有多个sessionCookie，这里按照惯例循环取最后一个
+                            sessionCookie = perCookie; // 可能有多个session cookie，这里按照惯例取最后一个
+                        }else
+                        {
+                            if(unknownSessionPrefix == null)
+                            {
+                                int index = perCookie.indexOf("=");
+                                if(index != -1)
+                                {
+                                    unknownSessionPrefix = perCookie.substring(0, index + 1);
+                                    unknownSessionCookie = perCookie;
+                                }
+                            }else if(perCookie.startsWith(unknownSessionPrefix))
+                            {
+                                unknownSessionCookie = perCookie; // 未知的session cookie同样按照惯例取最后一个
+                            }
                         }
                     }
                 }
             }
             if (sessionCookie == null)
-                sessionCookie = firstCookie; // 取不到时取第一个cookie
+                sessionCookie = unknownSessionCookie; // 取不到时取猜测的未知session cookie
             if (sessionCookie != null)
             {
                 LogManager.logI(HttpConnectionManager.class, "prepare to save session(" + sessionCookie + ") for url " + url.toString() + "...");
