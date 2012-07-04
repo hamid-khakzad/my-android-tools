@@ -565,17 +565,17 @@ public final class HttpConnectionManager
                         if (perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID="))
                         {
                             sessionCookie = perCookie; // 可能有多个session cookie，这里按照惯例取最后一个
-                        }else
+                        } else if (sessionCookie == null)
                         {
-                            if(unknownSessionPrefix == null)
+                            if (unknownSessionPrefix == null)
                             {
                                 int index = perCookie.indexOf("=");
-                                if(index != -1)
+                                if (index != -1)
                                 {
                                     unknownSessionPrefix = perCookie.substring(0, index + 1);
                                     unknownSessionCookie = perCookie;
                                 }
-                            }else if(perCookie.startsWith(unknownSessionPrefix))
+                            } else if (perCookie.startsWith(unknownSessionPrefix))
                             {
                                 unknownSessionCookie = perCookie; // 未知的session cookie同样按照惯例取最后一个
                             }
