@@ -37,7 +37,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.0
+ * @version 4.1
  */
 public final class HttpConnectionManager
 {
@@ -71,11 +71,6 @@ public final class HttpConnectionManager
     public static void setKeepSession(boolean isKeepSession)
     {
         HttpConnectionManager.isKeepSession = isKeepSession;
-    }
-
-    public static void clearSessions()
-    {
-        sessions.clear();
     }
 
     /**
@@ -507,6 +502,33 @@ public final class HttpConnectionManager
         }
     }
 
+    public static void clearSessions()
+    {
+        sessions.clear();
+    }
+
+    public static boolean clearSession(URL url)
+    {
+        String host = url.getHost().toLowerCase();
+        if (host.equals("localhost"))
+            host = "127.0.0.1";
+        int port = url.getPort();
+        if (port == -1)
+            port = url.getDefaultPort();
+        String authority = host.concat(":").concat(String.valueOf(port));
+        String path = url.getPath();
+        if (path.equals("") || path.equals("/"))
+        {
+            return sessions.remove(authority) != null;
+        } else
+        {
+            int index = path.indexOf("/", 1);
+            if (index != -1)
+                path = path.substring(0, index);
+            return sessions.remove(authority.concat(path)) != null;
+        }
+    }
+
     /**
      * <p>根据url从缓存中查找能够维持session的cookie值。若未找到将返回null
      * 
@@ -533,7 +555,7 @@ public final class HttpConnectionManager
             if (index != -1)
                 path = path.substring(0, index);
             sessionCookie = sessions.get(authority.concat(path));
-            if (sessionCookie == null)
+            if (sessionCookie == null) // 查找不到时将返回根url的session cookie
             {
                 sessionCookie = sessions.get(authority);
             }
