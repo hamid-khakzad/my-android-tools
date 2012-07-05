@@ -37,7 +37,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.1
+ * @version 4.2
  */
 public final class HttpConnectionManager
 {
@@ -593,49 +593,7 @@ public final class HttpConnectionManager
                     }
                 }
             }
-            if (sessionCookie == null) // 取不到时取猜测的未知session cookie
-            {
-                String unknownSessionPrefix = null;
-                a: for (String cookie : cookies)
-                {
-                    if (cookie != null)
-                    {
-                        String[] cookieArr = cookie.split(";");
-                        for (String perCookie : cookieArr)
-                        {
-                            perCookie = perCookie.trim();
-                            int index = perCookie.indexOf("=");
-                            if (index != -1)
-                            {
-                                unknownSessionPrefix = perCookie.substring(0, index + 1);
-                                break a;
-                            }
-                        }
-                    }
-                }
-                if (unknownSessionPrefix != null)
-                {
-                    sessionCookies = cookies.listIterator(cookies.size());
-                    a: while (sessionCookies.hasPrevious()) // 倒序，按惯例要取最后一个session cookie
-                    {
-                        String cookie = sessionCookies.previous();
-                        if (cookie != null)
-                        {
-                            String[] cookieArr = cookie.split(";");
-                            for (int i = cookieArr.length - 1; i >= 0; i--) // 倒序，按惯例要取最后一个session cookie
-                            {
-                                String perCookie = cookieArr[i].trim();
-                                if (perCookie.startsWith(unknownSessionPrefix))
-                                {
-                                    sessionCookie = perCookie;
-                                    break a;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (sessionCookie != null)
+            if (sessionCookie != null) // 未找到session cookie时不能清除原来的值，服务器可能只会在session发生改变时才会向客户端发送新的session cookie
             {
                 LogManager.logI(HttpConnectionManager.class, "prepare to save session(" + sessionCookie + ") for url " + url.toString() + "...");
                 saveSession(url, sessionCookie);
