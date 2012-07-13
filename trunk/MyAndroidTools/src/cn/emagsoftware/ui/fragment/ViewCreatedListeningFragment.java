@@ -9,8 +9,8 @@ import android.view.ViewGroup;
 public class ViewCreatedListeningFragment extends Fragment
 {
 
-    private OnViewCreatedListener mListener           = null;
-    private Bundle                mSavedInstanceState = null;
+    OnViewCreatedListener mListener           = null;
+    private Bundle        mSavedInstanceState = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -27,8 +27,6 @@ public class ViewCreatedListeningFragment extends Fragment
      */
     public void setOnViewCreatedListener(OnViewCreatedListener listener)
     {
-        if (mListener == listener)
-            return;
         mListener = listener;
         if (listener != null)
         {
@@ -45,6 +43,11 @@ public class ViewCreatedListeningFragment extends Fragment
         super.onViewCreated(view, savedInstanceState);
         if (mListener != null)
             mListener.onViewCreated(view, savedInstanceState);
+    }
+
+    void execSuperOnViewCreated(View view, Bundle savedInstanceState)
+    {
+        super.onViewCreated(view, savedInstanceState);
     }
 
 }
