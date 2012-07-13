@@ -1,11 +1,11 @@
 package cn.emagsoftware.ui;
 
-import android.app.Activity;
 import android.content.res.Configuration;
+import android.support.v4.app.FragmentActivity;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 
-public abstract class ConfigChangeHandlingActivity extends Activity
+public abstract class ConfigChangeHandlingActivity extends FragmentActivity
 {
 
     protected int  curContentViewResID = View.NO_ID;

@@ -1,10 +1,10 @@
 package cn.emagsoftware.ui.test;
 
 import cn.emagsoftware.ui.R;
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 
-public class TestActivity extends Activity
+public class TestActivity extends FragmentActivity
 {
 
     @Override
