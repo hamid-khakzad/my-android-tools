@@ -12,9 +12,9 @@ public class ViewExistsInAttachFragment extends ViewCreatedListeningFragment
     public void onViewCreated(View view, Bundle savedInstanceState)
     {
         // TODO Auto-generated method stub
-        super.execSuperOnViewCreated(view, savedInstanceState);
         boolean isViewChanged = mViewPoint != view;
         mViewPoint = view;
+        super.execSuperOnViewCreated(view, savedInstanceState);
         if (isViewChanged && mListener != null)
             mListener.onViewCreated(view, savedInstanceState);
     }
