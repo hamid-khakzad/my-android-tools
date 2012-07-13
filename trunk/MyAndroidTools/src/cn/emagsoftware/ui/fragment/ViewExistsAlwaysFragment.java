@@ -6,9 +6,9 @@ import android.view.View;
 
 public class ViewExistsAlwaysFragment extends Fragment
 {
-    
+
     private View mViewPoint = null;
-    
+
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState)
     {
@@ -16,14 +16,14 @@ public class ViewExistsAlwaysFragment extends Fragment
         super.onViewCreated(view, savedInstanceState);
         mViewPoint = view;
     }
-    
+
     @Override
     public final void onDestroyView()
     {
         // TODO Auto-generated method stub
         super.onDestroyView();
     }
-    
+
     @Override
     public View getView()
     {
@@ -31,5 +31,5 @@ public class ViewExistsAlwaysFragment extends Fragment
         super.getView();
         return mViewPoint;
     }
-    
+
 }

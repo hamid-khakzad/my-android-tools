@@ -6,9 +6,9 @@ import android.view.View;
 
 public class ViewExistsInAttachFragment extends Fragment
 {
-    
+
     private View mViewPoint = null;
-    
+
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState)
     {
@@ -16,18 +16,18 @@ public class ViewExistsInAttachFragment extends Fragment
         super.onViewCreated(view, savedInstanceState);
         mViewPoint = view;
     }
-    
+
     @Override
     public final void onDestroyView()
     {
         // TODO Auto-generated method stub
         super.onDestroyView();
     }
-    
+
     public void onDestroyViewImpl()
     {
     }
-    
+
     @Override
     public void onDetach()
     {
@@ -36,7 +36,7 @@ public class ViewExistsInAttachFragment extends Fragment
         onDestroyViewImpl();
         mViewPoint = null;
     }
-    
+
     @Override
     public View getView()
     {
@@ -44,5 +44,5 @@ public class ViewExistsInAttachFragment extends Fragment
         super.getView();
         return mViewPoint;
     }
-    
+
 }
