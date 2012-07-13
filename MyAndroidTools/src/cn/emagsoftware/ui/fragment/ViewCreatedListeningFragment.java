@@ -27,6 +27,8 @@ public class ViewCreatedListeningFragment extends Fragment
      */
     public void setOnViewCreatedListener(OnViewCreatedListener listener)
     {
+        if (mListener == listener)
+            return;
         mListener = listener;
         if (listener != null)
         {
