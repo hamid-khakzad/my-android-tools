@@ -9,8 +9,8 @@ import android.view.ViewGroup;
 public class GenericFragment extends Fragment
 {
 
-    OnViewCreatedListener mListener           = null;
     private Bundle        mSavedInstanceState = null;
+    OnViewCreatedListener mListener           = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -18,6 +18,20 @@ public class GenericFragment extends Fragment
         // TODO Auto-generated method stub
         mSavedInstanceState = savedInstanceState;
         return super.onCreateView(inflater, container, savedInstanceState);
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState)
+    {
+        // TODO Auto-generated method stub
+        super.onViewCreated(view, savedInstanceState);
+        if (mListener != null)
+            mListener.onViewCreated(getActivity(), view, savedInstanceState);
+    }
+
+    void execSuperOnViewCreated(View view, Bundle savedInstanceState)
+    {
+        super.onViewCreated(view, savedInstanceState);
     }
 
     /**
@@ -34,20 +48,6 @@ public class GenericFragment extends Fragment
             if (view != null)
                 listener.onViewCreated(getActivity(), view, mSavedInstanceState);
         }
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState)
-    {
-        // TODO Auto-generated method stub
-        super.onViewCreated(view, savedInstanceState);
-        if (mListener != null)
-            mListener.onViewCreated(getActivity(), view, savedInstanceState);
-    }
-
-    void execSuperOnViewCreated(View view, Bundle savedInstanceState)
-    {
-        super.onViewCreated(view, savedInstanceState);
     }
 
 }
