@@ -1,5 +1,6 @@
 package cn.emagsoftware.ui.fragment;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,6 +59,27 @@ public class ViewExistsAlwaysFragment extends GenericFragment
         // TODO Auto-generated method stub
         super.getView();
         return mViewPoint;
+    }
+
+    @Override
+    public void setOnViewCreatedListener(OnViewCreatedListener listener)
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("current method is not supported for this class,use setOnViewCreatedListener(Activity, OnViewCreatedListener) instead");
+    }
+
+    public void setOnViewCreatedListener(Activity activity, OnViewCreatedListener listener)
+    {
+        // TODO Auto-generated method stub
+        if (activity == null)
+            throw new NullPointerException();
+        mListener = listener;
+        if (listener != null)
+        {
+            View view = getView();
+            if (view != null)
+                listener.onViewCreated(activity, view, mSavedInstanceState);
+        }
     }
 
 }
