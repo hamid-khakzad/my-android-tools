@@ -6,7 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class ViewCreatedListeningFragment extends Fragment
+public class GenericFragment extends Fragment
 {
 
     OnViewCreatedListener mListener           = null;
