@@ -1,7 +1,9 @@
 package cn.emagsoftware.ui.fragment;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 
 public class ViewExistsAlwaysFragment extends GenericFragment
 {
@@ -9,14 +11,38 @@ public class ViewExistsAlwaysFragment extends GenericFragment
     private View mViewPoint = null;
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState)
+    public final View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
         // TODO Auto-generated method stub
-        boolean isViewChanged = mViewPoint != view;
+        super.onCreateView(inflater, container, savedInstanceState);
+        if (mViewPoint == null)
+            return onCreateViewImpl(inflater, container, savedInstanceState);
+        else
+            return mViewPoint;
+    }
+
+    public View onCreateViewImpl(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
+    {
+        return null;
+    }
+
+    @Override
+    public final void onViewCreated(View view, Bundle savedInstanceState)
+    {
+        // TODO Auto-generated method stub
+        boolean isNone = mViewPoint == null;
         mViewPoint = view;
         super.execSuperOnViewCreated(view, savedInstanceState);
-        if (isViewChanged && mListener != null)
-            mListener.onViewCreated(getActivity(), view, savedInstanceState);
+        if (isNone)
+        {
+            onViewCreatedImpl(view, savedInstanceState);
+            if (mListener != null)
+                mListener.onViewCreated(getActivity(), view, savedInstanceState);
+        }
+    }
+
+    public void onViewCreatedImpl(View view, Bundle savedInstanceState)
+    {
     }
 
     @Override
