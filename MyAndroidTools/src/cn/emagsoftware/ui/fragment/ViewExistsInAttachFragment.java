@@ -3,7 +3,7 @@ package cn.emagsoftware.ui.fragment;
 import android.os.Bundle;
 import android.view.View;
 
-public class ViewExistsInAttachFragment extends ViewCreatedListeningFragment
+public class ViewExistsInAttachFragment extends GenericFragment
 {
 
     private View mViewPoint = null;
@@ -16,7 +16,7 @@ public class ViewExistsInAttachFragment extends ViewCreatedListeningFragment
         mViewPoint = view;
         super.execSuperOnViewCreated(view, savedInstanceState);
         if (isViewChanged && mListener != null)
-            mListener.onViewCreated(view, savedInstanceState);
+            mListener.onViewCreated(getActivity(), view, savedInstanceState);
     }
 
     @Override
