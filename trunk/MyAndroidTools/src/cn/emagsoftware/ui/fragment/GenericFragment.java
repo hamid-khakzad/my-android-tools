@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 public class GenericFragment extends Fragment
 {
 
-    private Bundle        mSavedInstanceState = null;
+    Bundle                mSavedInstanceState = null;
     OnViewCreatedListener mListener           = null;
 
     @Override
