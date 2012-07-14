@@ -32,7 +32,7 @@ public class ViewCreatedListeningFragment extends Fragment
         {
             View view = getView();
             if (view != null)
-                listener.onViewCreated(view, mSavedInstanceState);
+                listener.onViewCreated(getActivity(), view, mSavedInstanceState);
         }
     }
 
@@ -42,7 +42,7 @@ public class ViewCreatedListeningFragment extends Fragment
         // TODO Auto-generated method stub
         super.onViewCreated(view, savedInstanceState);
         if (mListener != null)
-            mListener.onViewCreated(view, savedInstanceState);
+            mListener.onViewCreated(getActivity(), view, savedInstanceState);
     }
 
     void execSuperOnViewCreated(View view, Bundle savedInstanceState)
