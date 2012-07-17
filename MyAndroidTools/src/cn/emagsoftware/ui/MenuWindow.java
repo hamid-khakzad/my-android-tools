@@ -25,6 +25,11 @@ public class MenuWindow
         setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_menuwindow_bg", "drawable", context.getPackageName())));
     }
 
+    public void setSoftInputMode(int mode)
+    {
+        pw.setSoftInputMode(mode);
+    }
+
     public void setWidth(int width)
     {
         pw.setWidth(width);

@@ -28,6 +28,11 @@ public class ToastWindow
         setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
     }
 
+    public void setSoftInputMode(int mode)
+    {
+        pw.setSoftInputMode(mode);
+    }
+
     public void setWidth(int width)
     {
         pw.setWidth(width);
