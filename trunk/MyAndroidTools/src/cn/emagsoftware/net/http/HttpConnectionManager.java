@@ -30,7 +30,6 @@ import javax.net.ssl.X509TrustManager;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import cn.emagsoftware.util.Base64;
 import cn.emagsoftware.util.LogManager;
 
 /**
@@ -410,9 +409,8 @@ public final class HttpConnectionManager
                             {
                                 tempOutput.write(b, 0, len);
                             }
-                            byte[] wmlData = tempOutput.toByteArray();
-                            String wmlStr = new String(wmlData, "UTF-8");
-                            LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(base64 content:".concat(Base64.encode(wmlData)).concat(")"));
+                            String wmlStr = new String(tempOutput.toByteArray(), "UTF-8");
+                            LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(utf-8 content:".concat(wmlStr).concat(")"));
                             // 解析资费提示页面中的URL
                             String parseUrl = null;
                             try
