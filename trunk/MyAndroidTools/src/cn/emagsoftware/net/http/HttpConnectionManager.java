@@ -37,7 +37,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.2
+ * @version 4.3
  */
 public final class HttpConnectionManager
 {
@@ -375,7 +375,23 @@ public final class HttpConnectionManager
                 output.close();
             }
             int rspCode = httpConn.getResponseCode();
-            if (rspCode == HttpURLConnection.HTTP_OK || rspCode == HttpURLConnection.HTTP_PARTIAL)
+            if (rspCode >= 400)
+            {
+                throw new IOException("requesting returns error http code:" + rspCode);
+            } else if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
+            {
+                if (!followRedirects)
+                    return httpConn;
+                // implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
+                String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
+                if (location == null)
+                    throw new IOException("redirects failed:could not find the location header");
+                if (location.toLowerCase().indexOf(originalUrl.getProtocol() + "://") < 0)
+                    location = originalUrl.getProtocol() + "://" + originalUrl.getHost() + location;
+                httpConn.disconnect();
+                LogManager.logI(HttpConnectionManager.class, "follow redirects...");
+                return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
+            } else
             {
                 if (isUseCMWap())
                 {
@@ -458,22 +474,6 @@ public final class HttpConnectionManager
                         saveSession(originalUrl, headerFields); // 需要使用原始URL保存session
                 }
                 return httpConn;
-            } else if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
-            {
-                if (!followRedirects)
-                    return httpConn;
-                // implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
-                String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
-                if (location == null)
-                    throw new IOException("redirects failed:could not find the location header");
-                if (location.toLowerCase().indexOf(originalUrl.getProtocol() + "://") < 0)
-                    location = originalUrl.getProtocol() + "://" + originalUrl.getHost() + location;
-                httpConn.disconnect();
-                LogManager.logI(HttpConnectionManager.class, "follow redirects...");
-                return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
-            } else
-            {
-                throw new IOException("requesting returns http code:" + rspCode);
             }
         } catch (IOException e)
         {
