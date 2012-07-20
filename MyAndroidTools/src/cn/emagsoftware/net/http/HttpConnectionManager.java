@@ -357,7 +357,7 @@ public final class HttpConnectionManager
                 String session = querySession(originalUrl); // 需要使用原始URL查询session
                 if (session != null)
                 {
-                    LogManager.logI(HttpConnectionManager.class, "queried session(" + session + ") for url " + myUrl);
+                    LogManager.logI(HttpConnectionManager.class, "queried session(" + session + ") for url " + originalUrl);
                     httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
                 }
             }
