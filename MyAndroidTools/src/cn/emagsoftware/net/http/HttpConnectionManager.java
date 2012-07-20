@@ -36,32 +36,34 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.3
+ * @version 4.4
  */
 public final class HttpConnectionManager
 {
 
-    public static final String         HTTPS_PREFIX                   = "https";
+    public static final String         HTTPS_PREFIX                     = "https";
 
-    public static final String         HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
-    public static final String         HEADER_REQUEST_CONNECTION      = "Connection";
-    public static final String         HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
-    public static final String         HEADER_REQUEST_ACCEPT_CHARSET  = "Accept-Charset";
-    public static final String         HEADER_REQUEST_CONTENT_TYPE    = "Content-Type";
-    public static final String         HEADER_REQUEST_USER_AGENT      = "User-Agent";
-    public static final String         HEADER_REQUEST_COOKIE          = "Cookie";
+    public static final String         HEADER_REQUEST_ACCEPT_LANGUAGE   = "Accept-Language";
+    public static final String         HEADER_REQUEST_CONNECTION        = "Connection";
+    public static final String         HEADER_REQUEST_CACHE_CONTROL     = "Cache-Control";
+    public static final String         HEADER_REQUEST_ACCEPT_CHARSET    = "Accept-Charset";
+    public static final String         HEADER_REQUEST_CONTENT_TYPE      = "Content-Type";
+    public static final String         HEADER_REQUEST_USER_AGENT        = "User-Agent";
+    public static final String         HEADER_REQUEST_COOKIE            = "Cookie";
 
-    public static final String         HEADER_RESPONSE_CONTENT_TYPE   = "Content-Type";
-    public static final String         HEADER_RESPONSE_LOCATION       = "Location";
-    public static final String         HEADER_RESPONSE_SET_COOKIE     = "Set-Cookie";
+    public static final String         HEADER_RESPONSE_CONTENT_TYPE     = "Content-Type";
+    public static final String         HEADER_RESPONSE_LOCATION         = "Location";
+    public static final String         HEADER_RESPONSE_SET_COOKIE       = "Set-Cookie";
 
-    public static final int            REDIRECT_MAX_COUNT             = 10;
-    public static final int            CMWAP_CHARGEPAGE_MAX_COUNT     = 5;
+    public static final int            REDIRECT_MAX_COUNT               = 10;
+    public static final int            CMWAP_CHARGEPAGE_MAX_COUNT       = 3;
 
-    private static boolean             isKeepSession                  = false;
-    private static Map<String, String> sessions                       = new Hashtable<String, String>();
+    private static boolean             isKeepSession                    = true;
+    private static Map<String, String> sessions                         = new Hashtable<String, String>();
 
-    private static boolean             isUseCMWap                     = false;
+    private static boolean             isUseCMWap                       = false;
+
+    private static boolean             ignoreCMWapChargePageForNextTime = false;
 
     private HttpConnectionManager()
     {
@@ -90,6 +92,16 @@ public final class HttpConnectionManager
     public static boolean isUseCMWap()
     {
         return isUseCMWap;
+    }
+
+    /**
+     * <p>设置在下一次进行CMWap请求时是否忽略CMWap的资费页面，该设置只会一次有效
+     * 
+     * @param ignore
+     */
+    public static void ignoreCMWapChargePageForNextTime(boolean ignore)
+    {
+        HttpConnectionManager.ignoreCMWapChargePageForNextTime = ignore;
     }
 
     /**
@@ -303,7 +315,8 @@ public final class HttpConnectionManager
         URL originalUrl = new URL(packUrl);
         URL myUrl = originalUrl;
         String prefix = null;
-        if (isUseCMWap())
+        boolean useCMWap = isUseCMWap;
+        if (useCMWap)
         {
             prefix = myUrl.getAuthority();
             String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
@@ -348,7 +361,7 @@ public final class HttpConnectionManager
                     httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
                 }
             }
-            if (isUseCMWap())
+            if (useCMWap)
             {
                 httpConn.addRequestProperty("X-Online-Host", prefix);
             }
@@ -392,78 +405,82 @@ public final class HttpConnectionManager
                 return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
             } else
             {
-                if (isUseCMWap())
+                if (useCMWap)
                 {
-                    String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
-                    if (contentType != null && contentType.indexOf("vnd.wap.wml") != -1)
-                    { // CMWap有时会出现资费提示页面
-                        InputStream input = null;
-                        try
-                        {
-                            input = httpConn.getInputStream();
-                            BufferedInputStream buffInput = new BufferedInputStream(input);
-                            ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
-                            byte[] b = new byte[2 * 1024];
-                            int len;
-                            while ((len = buffInput.read(b)) > 0)
-                            {
-                                tempOutput.write(b, 0, len);
-                            }
-                            String wmlStr = new String(tempOutput.toByteArray(), "UTF-8");
-                            LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(utf-8 content:".concat(wmlStr).concat(")"));
-                            // 解析资费提示页面中的URL
-                            String parseUrl = null;
+                    if (!ignoreCMWapChargePageForNextTime)
+                    {
+                        String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
+                        if (contentType != null && contentType.indexOf("vnd.wap.wml") != -1)
+                        { // CMWap有时会出现资费提示页面
+                            InputStream input = null;
                             try
                             {
-                                XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-                                XmlPullParser xmlParser = factory.newPullParser();
-                                xmlParser.setInput(new StringReader(wmlStr));
-                                boolean onEnterForward = false;
-                                int eventType = xmlParser.getEventType();
-                                while (eventType != XmlPullParser.END_DOCUMENT)
+                                input = httpConn.getInputStream();
+                                BufferedInputStream buffInput = new BufferedInputStream(input);
+                                ByteArrayOutputStream tempOutput = new ByteArrayOutputStream();
+                                byte[] b = new byte[2 * 1024];
+                                int len;
+                                while ((len = buffInput.read(b)) > 0)
                                 {
-                                    switch (eventType)
-                                    {
-                                        case XmlPullParser.START_TAG:
-                                            String tagName = xmlParser.getName().toLowerCase();
-                                            if ("onevent".equals(tagName))
-                                            {
-                                                String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
-                                                if ("onenterforward".equals(s))
-                                                    onEnterForward = true;
-                                            } else if ("go".equals(tagName))
-                                            {
-                                                if (onEnterForward)
-                                                    parseUrl = xmlParser.getAttributeValue(null, "href");
-                                            }
-                                            break;
-                                    }
-                                    if (parseUrl != null)
-                                        break;
-                                    eventType = xmlParser.next();
+                                    tempOutput.write(b, 0, len);
                                 }
-                            } catch (Exception e)
-                            {
-                                LogManager.logW(HttpConnectionManager.class, "parse CMWap charge page failed", e);
-                            }
-                            if (parseUrl == null || parseUrl.equals(""))
-                            {
-                                LogManager.logW(HttpConnectionManager.class, "could not parse url from CMWap charge page,would use the original url to try again...");
-                                parseUrl = url;
-                            }
-                            return openConnection(parseUrl, urlEnc, method, followRedirects, connOrReadTimeout, currentRedirectCount, ++currentCMWapChargePageCount, requestHeaders, postData);
-                        } finally
-                        {
-                            try
-                            {
-                                if (input != null)
-                                    input.close();
+                                String wmlStr = new String(tempOutput.toByteArray(), "UTF-8");
+                                LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(utf-8 content:".concat(wmlStr).concat(")"));
+                                // 解析资费提示页面中的URL
+                                String parseUrl = null;
+                                try
+                                {
+                                    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                                    XmlPullParser xmlParser = factory.newPullParser();
+                                    xmlParser.setInput(new StringReader(wmlStr));
+                                    boolean onEnterForward = false;
+                                    int eventType = xmlParser.getEventType();
+                                    while (eventType != XmlPullParser.END_DOCUMENT)
+                                    {
+                                        switch (eventType)
+                                        {
+                                            case XmlPullParser.START_TAG:
+                                                String tagName = xmlParser.getName().toLowerCase();
+                                                if ("onevent".equals(tagName))
+                                                {
+                                                    String s = xmlParser.getAttributeValue(null, "type").toLowerCase();
+                                                    if ("onenterforward".equals(s))
+                                                        onEnterForward = true;
+                                                } else if ("go".equals(tagName))
+                                                {
+                                                    if (onEnterForward)
+                                                        parseUrl = xmlParser.getAttributeValue(null, "href");
+                                                }
+                                                break;
+                                        }
+                                        if (parseUrl != null)
+                                            break;
+                                        eventType = xmlParser.next();
+                                    }
+                                } catch (Exception e)
+                                {
+                                    LogManager.logW(HttpConnectionManager.class, "parse CMWap charge page failed", e);
+                                }
+                                if (parseUrl == null || parseUrl.equals(""))
+                                {
+                                    LogManager.logW(HttpConnectionManager.class, "could not parse url from CMWap charge page,would use the original url to try again...");
+                                    parseUrl = url;
+                                }
+                                return openConnection(parseUrl, urlEnc, method, followRedirects, connOrReadTimeout, currentRedirectCount, ++currentCMWapChargePageCount, requestHeaders, postData);
                             } finally
                             {
-                                httpConn.disconnect();
+                                try
+                                {
+                                    if (input != null)
+                                        input.close();
+                                } finally
+                                {
+                                    httpConn.disconnect();
+                                }
                             }
                         }
                     }
+                    ignoreCMWapChargePageForNextTime = false;
                 }
                 if (isKeepSession)
                 {
