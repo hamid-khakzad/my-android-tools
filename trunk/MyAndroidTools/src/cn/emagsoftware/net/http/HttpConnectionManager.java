@@ -407,11 +407,11 @@ public final class HttpConnectionManager
             {
                 if (useCMWap)
                 {
-                    if (!ignoreCMWapChargePageForNextTime)
-                    {
-                        String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
-                        if (contentType != null && contentType.indexOf("vnd.wap.wml") != -1)
-                        { // CMWap有时会出现资费提示页面
+                    String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
+                    if (contentType != null && contentType.indexOf("vnd.wap.wml") != -1)
+                    { // CMWap有时会出现资费提示页面
+                        if (!ignoreCMWapChargePageForNextTime)
+                        {
                             InputStream input = null;
                             try
                             {
@@ -479,8 +479,8 @@ public final class HttpConnectionManager
                                 }
                             }
                         }
+                        ignoreCMWapChargePageForNextTime = false;
                     }
-                    ignoreCMWapChargePageForNextTime = false;
                 }
                 if (isKeepSession)
                 {
