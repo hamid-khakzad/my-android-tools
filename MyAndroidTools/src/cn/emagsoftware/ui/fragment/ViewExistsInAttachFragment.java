@@ -33,15 +33,14 @@ public class ViewExistsInAttachFragment extends GenericFragment
         boolean isNone = mViewPoint == null;
         mViewPoint = view;
         super.execSuperOnViewCreated(view, savedInstanceState);
-        if (isNone)
+        if (isNone && mListener != null)
         {
-            onViewCreatedImpl(view, savedInstanceState);
-            if (mListener != null)
-                mListener.onViewCreated(getActivity(), view, savedInstanceState);
+            mListener.onCreateViewCallback(getActivity(), view, savedInstanceState);
         }
+        onViewCreatedImpl(view, savedInstanceState, isNone);
     }
 
-    public void onViewCreatedImpl(View view, Bundle savedInstanceState)
+    public void onViewCreatedImpl(View view, Bundle savedInstanceState, boolean isNewView)
     {
     }
 
@@ -50,9 +49,10 @@ public class ViewExistsInAttachFragment extends GenericFragment
     {
         // TODO Auto-generated method stub
         super.onDestroyView();
+        onDestroyViewImpl(false);
     }
 
-    public void onDestroyViewImpl()
+    public void onDestroyViewImpl(boolean isViewDestroyed)
     {
     }
 
@@ -61,7 +61,7 @@ public class ViewExistsInAttachFragment extends GenericFragment
     {
         // TODO Auto-generated method stub
         super.onDetach();
-        onDestroyViewImpl();
+        onDestroyViewImpl(true);
         mViewPoint = null;
     }
 

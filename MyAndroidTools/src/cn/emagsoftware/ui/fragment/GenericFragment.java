@@ -9,8 +9,8 @@ import android.view.ViewGroup;
 public class GenericFragment extends Fragment
 {
 
-    Bundle                mSavedInstanceState = null;
-    OnViewCreatedListener mListener           = null;
+    Bundle                       mSavedInstanceState = null;
+    OnCreateViewCallbackListener mListener           = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -26,7 +26,7 @@ public class GenericFragment extends Fragment
         // TODO Auto-generated method stub
         super.onViewCreated(view, savedInstanceState);
         if (mListener != null)
-            mListener.onViewCreated(getActivity(), view, savedInstanceState);
+            mListener.onCreateViewCallback(getActivity(), view, savedInstanceState);
     }
 
     void execSuperOnViewCreated(View view, Bundle savedInstanceState)
@@ -35,18 +35,18 @@ public class GenericFragment extends Fragment
     }
 
     /**
-     * <p>需要注意的是，如果View已经存在，那么在调用该方法时onViewCreated方法就会立即被回调
+     * <p>需要注意的是，如果View已经存在，那么在调用该方法时onCreateViewCallback方法就会立即被回调
      * 
      * @param listener
      */
-    public void setOnViewCreatedListener(OnViewCreatedListener listener)
+    public void setOnCreateViewCallbackListener(OnCreateViewCallbackListener listener)
     {
         mListener = listener;
         if (listener != null)
         {
             View view = getView();
             if (view != null)
-                listener.onViewCreated(getActivity(), view, mSavedInstanceState);
+                listener.onCreateViewCallback(getActivity(), view, mSavedInstanceState);
         }
     }
 

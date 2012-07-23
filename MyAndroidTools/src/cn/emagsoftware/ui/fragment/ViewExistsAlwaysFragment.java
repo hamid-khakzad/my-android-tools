@@ -34,15 +34,14 @@ public class ViewExistsAlwaysFragment extends GenericFragment
         boolean isNone = mViewPoint == null;
         mViewPoint = view;
         super.execSuperOnViewCreated(view, savedInstanceState);
-        if (isNone)
+        if (isNone && mListener != null)
         {
-            onViewCreatedImpl(view, savedInstanceState);
-            if (mListener != null)
-                mListener.onViewCreated(getActivity(), view, savedInstanceState);
+            mListener.onCreateViewCallback(getActivity(), view, savedInstanceState);
         }
+        onViewCreatedImpl(view, savedInstanceState, isNone);
     }
 
-    public void onViewCreatedImpl(View view, Bundle savedInstanceState)
+    public void onViewCreatedImpl(View view, Bundle savedInstanceState, boolean isNewView)
     {
     }
 
@@ -51,6 +50,11 @@ public class ViewExistsAlwaysFragment extends GenericFragment
     {
         // TODO Auto-generated method stub
         super.onDestroyView();
+        onDestroyViewImpl(false);
+    }
+
+    public void onDestroyViewImpl(boolean isViewDestroyed)
+    {
     }
 
     @Override
@@ -62,13 +66,13 @@ public class ViewExistsAlwaysFragment extends GenericFragment
     }
 
     @Override
-    public void setOnViewCreatedListener(OnViewCreatedListener listener)
+    public void setOnCreateViewCallbackListener(OnCreateViewCallbackListener listener)
     {
         // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("current method is not supported for this class,use setOnViewCreatedListener(Activity, OnViewCreatedListener) instead");
+        throw new UnsupportedOperationException("current method is not supported for this class,use setOnCreateViewCallbackListener(Activity, OnCreateViewCallbackListener) instead");
     }
 
-    public void setOnViewCreatedListener(Activity activity, OnViewCreatedListener listener)
+    public void setOnCreateViewCallbackListener(Activity activity, OnCreateViewCallbackListener listener)
     {
         // TODO Auto-generated method stub
         if (activity == null)
@@ -78,7 +82,7 @@ public class ViewExistsAlwaysFragment extends GenericFragment
         {
             View view = getView();
             if (view != null)
-                listener.onViewCreated(activity, view, mSavedInstanceState);
+                listener.onCreateViewCallback(activity, view, mSavedInstanceState);
         }
     }
 
