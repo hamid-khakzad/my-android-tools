@@ -130,20 +130,20 @@ public final class MemoryManager
     public static void releaseBitmaps(AdapterView<? extends Adapter> view, MemoryManager.ReleaseBitmapsCallback callback)
     {
         int count = view.getChildCount();
-        int firstVisible = view.getFirstVisiblePosition();
-        Adapter adapter = view.getAdapter();
         for (int i = 0; i < count; i++)
         {
-            int position = i + firstVisible;
-            if (adapter.getItemViewType(position) != AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER) // 不包含header和footer
+            View child = view.getChildAt(i);
+            if (!callback.isHeaderOrFooter(child)) // 不能包含header和footer
             {
-                callback.releaseBitmaps(view.getChildAt(i));
+                callback.releaseBitmaps(child);
             }
         }
     }
 
     public static interface ReleaseBitmapsCallback
     {
+        public boolean isHeaderOrFooter(View child);
+
         public void releaseBitmaps(View child);
     }
 

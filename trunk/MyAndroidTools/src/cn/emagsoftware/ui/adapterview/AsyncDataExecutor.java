@@ -98,6 +98,7 @@ public abstract class AsyncDataExecutor
                     } else
                     {
                         curHolder.mExecuteConfig.mIsExecuting = false;
+                        // 统一置为软引用时，可能由publishProgress导致的界面重构仍在继续，但数据被回收没有这么快，且此时mIsExecuting为false可使DataHolder被重新执行
                         for (int i = 0; i < curHolder.getAsyncDataCount(); i++)
                         {
                             curHolder.changeAsyncDataToSoftReference(i);
@@ -112,8 +113,8 @@ public abstract class AsyncDataExecutor
                             }
                         }
                     }
-                    // 界面重绘可能会重复使用到异步数据，但DataHolder在执行过程中却不允许重复执行，所以执行时要遍历检查所有的异步项，并且先前已执行完的要升级为强引用
-                    // 当前线程会在DataHolder全部执行完且移出队列后统一将异步数据置为软引用
+                    // publishProgress涉及的UI操作可能会导致界面重构，从而重复使用到异步数据，但DataHolder在执行过程中却不允许重复执行，所以执行时要遍历检查所有的异步项，并且先前已执行完的要升级为强引用
+                    // 当前线程会在DataHolder全部执行完后统一将所有异步数据置为软引用
                     for (int i = 0; i < curHolder.getAsyncDataCount(); i++)
                     {
                         Object curAsyncData = curHolder.getAsyncData(i);
@@ -152,9 +153,9 @@ public abstract class AsyncDataExecutor
                 DataHolder holder = (DataHolder) values[0];
                 int position = holder.mExecuteConfig.mPosition;
                 if (position >= genericAdapter.getCount())
-                    return; // 数据发生了变化
+                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                 if (!holder.equals(genericAdapter.queryDataHolder(position)))
-                    return; // 数据发生了变化
+                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                 int wrapPosition = position;
                 if (adapterView instanceof ListView)
                     wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
