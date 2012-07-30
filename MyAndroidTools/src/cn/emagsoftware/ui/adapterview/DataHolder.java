@@ -5,6 +5,11 @@ import java.lang.ref.SoftReference;
 import android.content.Context;
 import android.view.View;
 
+/**
+ * <p>当前类没有提供setData方法，因为这可能会影响异步数据加载机制，如果需要改变data，可使用新data来创建新的DataHolder实例
+ * 
+ * @author Wendell
+ */
 public abstract class DataHolder
 {
 
@@ -64,16 +69,6 @@ public abstract class DataHolder
     public Object getData()
     {
         return mData;
-    }
-
-    /**
-     * <p>重设构造函数中传入的数据对象
-     * 
-     * @param data
-     */
-    public void setData(Object data)
-    {
-        mData = data;
     }
 
     /**
