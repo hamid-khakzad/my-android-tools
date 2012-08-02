@@ -248,6 +248,41 @@ public class ThemeFactory implements LayoutInflater.Factory
                             view.setBackgroundDrawable(d);
                             view.setPadding(i, j, k, m);
                         }
+                    } else if (name.equals("padding"))
+                    {
+                        int dimen = getPackageDimensionPixelSize(context.getResources().getResourceEntryName(resId));
+                        if (dimen >= 0)
+                        {
+                            view.setPadding(dimen, dimen, dimen, dimen);
+                        }
+                    } else if (name.equals("paddingLeft"))
+                    {
+                        int dimen = getPackageDimensionPixelSize(context.getResources().getResourceEntryName(resId));
+                        if (dimen >= 0)
+                        {
+                            view.setPadding(dimen, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom());
+                        }
+                    } else if (name.equals("paddingTop"))
+                    {
+                        int dimen = getPackageDimensionPixelSize(context.getResources().getResourceEntryName(resId));
+                        if (dimen >= 0)
+                        {
+                            view.setPadding(view.getPaddingLeft(), dimen, view.getPaddingRight(), view.getPaddingBottom());
+                        }
+                    } else if (name.equals("paddingRight"))
+                    {
+                        int dimen = getPackageDimensionPixelSize(context.getResources().getResourceEntryName(resId));
+                        if (dimen >= 0)
+                        {
+                            view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), dimen, view.getPaddingBottom());
+                        }
+                    } else if (name.equals("paddingBottom"))
+                    {
+                        int dimen = getPackageDimensionPixelSize(context.getResources().getResourceEntryName(resId));
+                        if (dimen >= 0)
+                        {
+                            view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), dimen);
+                        }
                     } else if (name.equals("textColor"))
                     {
                         if (view instanceof TextView)
@@ -377,6 +412,266 @@ public class ThemeFactory implements LayoutInflater.Factory
                     view.setPadding(i, j, k, m);
                 }
             }
+            value = style.get("android:padding");
+            if (value != null)
+            {
+                if (value.startsWith("@dimen/"))
+                {
+                    value = value.substring("@dimen/".length());
+                    int d = getPackageDimensionPixelSize(value);
+                    if (d >= 0)
+                    {
+                        view.setPadding(d, d, d, d);
+                    }
+                } else
+                {
+                    int dipIndex = -1;
+                    int dpIndex = -1;
+                    int pxIndex = -1;
+                    int d = -1;
+                    if ((dipIndex = value.indexOf("dip")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dipIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((dpIndex = value.indexOf("dp")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dpIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((pxIndex = value.indexOf("px")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, pxIndex));
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    }
+                    if (d >= 0)
+                    {
+                        view.setPadding(d, d, d, d);
+                    }
+                }
+            }
+            value = style.get("android:paddingLeft");
+            if (value != null)
+            {
+                if (value.startsWith("@dimen/"))
+                {
+                    value = value.substring("@dimen/".length());
+                    int d = getPackageDimensionPixelSize(value);
+                    if (d >= 0)
+                    {
+                        view.setPadding(d, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom());
+                    }
+                } else
+                {
+                    int dipIndex = -1;
+                    int dpIndex = -1;
+                    int pxIndex = -1;
+                    int d = -1;
+                    if ((dipIndex = value.indexOf("dip")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dipIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((dpIndex = value.indexOf("dp")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dpIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((pxIndex = value.indexOf("px")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, pxIndex));
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    }
+                    if (d >= 0)
+                    {
+                        view.setPadding(d, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom());
+                    }
+                }
+            }
+            value = style.get("android:paddingTop");
+            if (value != null)
+            {
+                if (value.startsWith("@dimen/"))
+                {
+                    value = value.substring("@dimen/".length());
+                    int d = getPackageDimensionPixelSize(value);
+                    if (d >= 0)
+                    {
+                        view.setPadding(view.getPaddingLeft(), d, view.getPaddingRight(), view.getPaddingBottom());
+                    }
+                } else
+                {
+                    int dipIndex = -1;
+                    int dpIndex = -1;
+                    int pxIndex = -1;
+                    int d = -1;
+                    if ((dipIndex = value.indexOf("dip")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dipIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((dpIndex = value.indexOf("dp")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dpIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((pxIndex = value.indexOf("px")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, pxIndex));
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    }
+                    if (d >= 0)
+                    {
+                        view.setPadding(view.getPaddingLeft(), d, view.getPaddingRight(), view.getPaddingBottom());
+                    }
+                }
+            }
+            value = style.get("android:paddingRight");
+            if (value != null)
+            {
+                if (value.startsWith("@dimen/"))
+                {
+                    value = value.substring("@dimen/".length());
+                    int d = getPackageDimensionPixelSize(value);
+                    if (d >= 0)
+                    {
+                        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), d, view.getPaddingBottom());
+                    }
+                } else
+                {
+                    int dipIndex = -1;
+                    int dpIndex = -1;
+                    int pxIndex = -1;
+                    int d = -1;
+                    if ((dipIndex = value.indexOf("dip")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dipIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((dpIndex = value.indexOf("dp")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dpIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((pxIndex = value.indexOf("px")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, pxIndex));
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    }
+                    if (d >= 0)
+                    {
+                        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), d, view.getPaddingBottom());
+                    }
+                }
+            }
+            value = style.get("android:paddingBottom");
+            if (value != null)
+            {
+                if (value.startsWith("@dimen/"))
+                {
+                    value = value.substring("@dimen/".length());
+                    int d = getPackageDimensionPixelSize(value);
+                    if (d >= 0)
+                    {
+                        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), d);
+                    }
+                } else
+                {
+                    int dipIndex = -1;
+                    int dpIndex = -1;
+                    int pxIndex = -1;
+                    int d = -1;
+                    if ((dipIndex = value.indexOf("dip")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dipIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((dpIndex = value.indexOf("dp")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, dpIndex));
+                            final float scale = context.getResources().getDisplayMetrics().density;
+                            d = (int) (d * scale + 0.5f);
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    } else if ((pxIndex = value.indexOf("px")) != -1)
+                    {
+                        try
+                        {
+                            d = Integer.valueOf(value.substring(0, pxIndex));
+                        } catch (NumberFormatException e)
+                        {
+                        }
+                    }
+                    if (d >= 0)
+                    {
+                        view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), d);
+                    }
+                }
+            }
             if (view instanceof TextView)
             {
                 TextView textView = (TextView) view;
@@ -481,6 +776,18 @@ public class ThemeFactory implements LayoutInflater.Factory
             return packageRes.getDrawable(drawableId);
         }
         return null;
+    }
+
+    private int getPackageDimensionPixelSize(String dimensionName)
+    {
+        if (packageName == null)
+            return -1;
+        int dimenId = packageRes.getIdentifier(dimensionName, "dimen", packageName);
+        if (dimenId > 0)
+        {
+            return packageRes.getDimensionPixelSize(dimenId);
+        }
+        return -1;
     }
 
     private ColorStateList getPackageColor(String colorName)
