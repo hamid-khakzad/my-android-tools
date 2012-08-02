@@ -163,7 +163,7 @@ public class ThemeFactory implements LayoutInflater.Factory
     {
         if (themeMap == null)
             return; // 如果未给定通用主题样式的名字或给定的名字无效，将返回
-        Class viewClass = view.getClass();
+        Class<?> viewClass = view.getClass();
         while (true)
         {
             if (viewClass == null)
