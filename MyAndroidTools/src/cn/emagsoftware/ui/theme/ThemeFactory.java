@@ -30,7 +30,7 @@ import android.widget.TextView;
 public class ThemeFactory implements LayoutInflater.Factory
 {
 
-    private static String[]                          ANDROID_VIEW_FULLNAME_PREFIX = { "android.widget.", "android.webkit.", "android.view." };
+    private static String[]                          ANDROID_VIEW_FULLNAME_PREFIX = { "android.widget.", "android.webkit.", "android.view.", null };
     private static ThemeFactory                      factory                      = null;
 
     private Context                                  context                      = null;
@@ -144,7 +144,7 @@ public class ThemeFactory implements LayoutInflater.Factory
         {
             try
             {
-                // 将优先直接以name来实例化View，没有时再匹配前缀，故对于自定义View也同样适用
+                // 如果始终无法实例化view，ANDROID_VIEW_FULLNAME_PREFIX最后将认为是自定义view而使用null
                 view = inflater.createView(name, ANDROID_VIEW_FULLNAME_PREFIX[i], attrs);
                 break;
             } catch (ClassNotFoundException e)
