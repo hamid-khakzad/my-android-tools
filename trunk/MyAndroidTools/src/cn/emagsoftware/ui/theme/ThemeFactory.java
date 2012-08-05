@@ -35,24 +35,26 @@ public class ThemeFactory implements LayoutInflater.Factory
 
     private Context                                  context                      = null;
     private String                                   packageName                  = null;
-    private String                                   themeName                    = null;
+    private String                                   generalThemeName             = null;
     private Resources                                packageRes                   = null;
     private HashMap<String, HashMap<String, String>> stylesMap                    = new HashMap<String, HashMap<String, String>>();
-    private HashMap<String, String>                  themeMap                     = null;
+    private HashMap<String, String>                  generalThemeMap              = null;
+
+    private boolean                                  shouldApplyTheme             = true;
 
     /**
      * <p>创建或修改ThemeFactory实例，当前类是单例的
      * 
      * @param context
      * @param packageName 需要应用的主题包名，如果要使用默认主题，可传null
-     * @param themeName 主题包styles.xml中通用主题样式的名字，如果没有通用主题样式，可传null
+     * @param generalThemeName 主题包styles.xml中通用主题样式的名字，如果没有通用主题样式，可传null
      * @return
      */
-    public static ThemeFactory createOrUpdateInstance(Context context, String packageName, String themeName)
+    public static ThemeFactory createOrUpdateInstance(Context context, String packageName, String generalThemeName)
     {
         if (factory == null)
             factory = new ThemeFactory(context);
-        factory.update(packageName, themeName);
+        factory.update(packageName, generalThemeName);
         return factory;
     }
 
@@ -63,22 +65,22 @@ public class ThemeFactory implements LayoutInflater.Factory
         this.context = context;
     }
 
-    private void update(String packageName, String themeName)
+    private void update(String packageName, String generalThemeName)
     {
         if (this.packageName == null && packageName == null)
             return; // 相同设置将直接返回
         if (this.packageName != null && this.packageName.equals(packageName))
         {
-            if (this.themeName == null && themeName == null)
+            if (this.generalThemeName == null && generalThemeName == null)
                 return; // 相同设置将直接返回
-            if (this.themeName != null && this.themeName.equals(themeName))
+            if (this.generalThemeName != null && this.generalThemeName.equals(generalThemeName))
                 return; // 相同设置将直接返回
         }
         this.packageName = packageName;
-        this.themeName = themeName;
+        this.generalThemeName = generalThemeName;
         this.packageRes = null;
         this.stylesMap.clear();
-        this.themeMap = null;
+        this.generalThemeMap = null;
         try
         {
             loadStyles();
@@ -125,9 +127,9 @@ public class ThemeFactory implements LayoutInflater.Factory
                 }
                 eventType = parser.next();
             }
-            if (themeName != null)
+            if (generalThemeName != null)
             {
-                this.themeMap = stylesMap.get(themeName);
+                this.generalThemeMap = stylesMap.get(generalThemeName);
             }
         }
     }
@@ -136,32 +138,46 @@ public class ThemeFactory implements LayoutInflater.Factory
     public View onCreateView(String name, Context context, AttributeSet attrs)
     {
         // TODO Auto-generated method stub
-        if (packageName == null)
-            return null; // 返回null时系统会自己创建默认样式的View
-        LayoutInflater inflater = LayoutInflater.from(context);
-        View view = null;
-        for (int i = 0; i < ANDROID_VIEW_FULLNAME_PREFIX.length; i++)
+        if (shouldApplyTheme)
         {
-            try
+            if (packageName == null)
+                return null; // 返回null时系统会自己创建默认样式的View
+            LayoutInflater inflater = LayoutInflater.from(context);
+            View view = null;
+            for (int i = 0; i < ANDROID_VIEW_FULLNAME_PREFIX.length; i++)
             {
-                // 如果始终无法实例化view，ANDROID_VIEW_FULLNAME_PREFIX最后将认为是自定义view而使用null
-                view = inflater.createView(name, ANDROID_VIEW_FULLNAME_PREFIX[i], attrs);
-                break;
-            } catch (ClassNotFoundException e)
-            {
-                continue;
+                try
+                {
+                    // 如果始终无法实例化view，ANDROID_VIEW_FULLNAME_PREFIX最后将认为是自定义view而使用null
+                    view = inflater.createView(name, ANDROID_VIEW_FULLNAME_PREFIX[i], attrs);
+                    break;
+                } catch (ClassNotFoundException e)
+                {
+                    continue;
+                }
             }
+            if (view == null)
+                return null;
+            applyTheme(view); // 应用通用主题样式
+            applyThemeFromLayout(view, attrs); // 应用布局文件中的样式
+            return view;
         }
-        if (view == null)
-            return null;
-        applyTheme(view); // 应用通用主题样式
-        applyThemeFromLayout(view, attrs); // 应用布局文件中的样式
-        return view;
+        return null;
+    }
+
+    void setApplyTheme(boolean shouldApplyTheme)
+    {
+        this.shouldApplyTheme = shouldApplyTheme;
+    }
+
+    boolean getApplyTheme()
+    {
+        return shouldApplyTheme;
     }
 
     private void applyTheme(View view)
     {
-        if (themeMap == null)
+        if (generalThemeMap == null)
             return; // 如果未给定通用主题样式的名字或给定的名字无效，将返回
         Class<?> viewClass = view.getClass();
         while (true)
@@ -189,7 +205,7 @@ public class ThemeFactory implements LayoutInflater.Factory
             char firstChar = className.charAt(0);
             className = className.replace(firstChar, Character.toLowerCase(firstChar));
             String itemName = "android:".concat(className).concat("Style");
-            String itemValue = themeMap.get(itemName);
+            String itemValue = generalThemeMap.get(itemName);
             if (itemValue != null)
             {
                 if (itemValue.startsWith("@style/"))
@@ -210,14 +226,14 @@ public class ThemeFactory implements LayoutInflater.Factory
             String value = paramAttributeSet.getAttributeValue(p);
             if (value.startsWith("?"))
             {
-                if (themeMap == null)
+                if (generalThemeMap == null)
                     continue; // 如果未给定通用主题样式的名字或给定的名字无效，将忽略
-                String theme = null;
+                String key = null;
                 if (value.startsWith("?attr/"))
-                    theme = value.substring("?attr/".length());
+                    key = value.substring("?attr/".length());
                 else
-                    theme = value.substring(1);
-                value = themeMap.get(theme);
+                    key = value.substring(1);
+                value = generalThemeMap.get(key);
                 if (value == null)
                     continue;
             }
