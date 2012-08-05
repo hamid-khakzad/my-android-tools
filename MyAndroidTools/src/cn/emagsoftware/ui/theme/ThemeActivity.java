@@ -12,7 +12,7 @@ public abstract class ThemeActivity extends ConfigChangeHandlingActivity
         // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         ThemeEngine.addThemeActivity(this);
-        getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_THEMENAME));
+        getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_GENERALTHEME_NAME));
     }
 
     @Override
