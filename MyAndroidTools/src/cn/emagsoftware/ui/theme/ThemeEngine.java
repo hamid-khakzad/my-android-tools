@@ -49,14 +49,14 @@ public final class ThemeEngine
      */
     public static void changeTheme(Context context, String packageName, String generalThemeName)
     {
+        CUR_PACKAGENAME = packageName;
+        CUR_GENERALTHEME_NAME = generalThemeName;
         ThemeFactory.createOrUpdateInstance(context, packageName, generalThemeName);
         for (int i = 0; i < mThemeActivities.size(); i++)
         {
             ThemeActivity tActivity = mThemeActivities.get(i);
             tActivity.resetContentView();
         }
-        CUR_PACKAGENAME = packageName;
-        CUR_GENERALTHEME_NAME = generalThemeName;
     }
 
     public static String getCurPackageName()
