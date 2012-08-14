@@ -207,7 +207,7 @@ public final class TelephonyMgr
     public static boolean isUsingNewButtonPlacementStyle()
     {
         String model = Build.MODEL;
-        if("GT-P3108".equals(model) || "GT-I9108".equals(model) || "GT-I9228".equals(model)) return false;
+        if("GT-P3108".equals(model) || "GT-I9108".equals(model) || "GT-I9228".equals(model) || "GT-I9050".equals(model)) return false;
         return isAndroid4Above();
     }
     
