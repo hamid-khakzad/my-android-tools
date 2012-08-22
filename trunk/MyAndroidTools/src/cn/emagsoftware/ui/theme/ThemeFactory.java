@@ -38,7 +38,6 @@ public class ThemeFactory implements LayoutInflater.Factory
     private static String[]                          ANDROID_VIEW_FULLNAME_PREFIX = { "android.widget.", "android.webkit.", "android.view.", null };
     private static ThemeFactory                      factory                      = null;
 
-    private Context                                  context                      = null;
     private String                                   packageName                  = null;
     private String                                   generalThemeName             = null;
     private Resources                                packageRes                   = null;
@@ -58,19 +57,18 @@ public class ThemeFactory implements LayoutInflater.Factory
     public static ThemeFactory createOrUpdateInstance(Context context, String packageName, String generalThemeName)
     {
         if (factory == null)
-            factory = new ThemeFactory(context);
-        factory.update(packageName, generalThemeName);
+            factory = new ThemeFactory();
+        if (context == null)
+            throw new NullPointerException();
+        factory.update(context, packageName, generalThemeName);
         return factory;
     }
 
-    private ThemeFactory(Context context)
+    private ThemeFactory()
     {
-        if (context == null)
-            throw new NullPointerException();
-        this.context = context;
     }
 
-    private void update(String packageName, String generalThemeName)
+    private void update(Context context, String packageName, String generalThemeName)
     {
         if (this.packageName == null && packageName == null)
             return; // 相同设置将直接返回
@@ -88,14 +86,14 @@ public class ThemeFactory implements LayoutInflater.Factory
         this.generalThemeMap = null;
         try
         {
-            loadStyles();
+            loadStyles(context);
         } catch (Exception e)
         {
             throw new RuntimeException(e);
         }
     }
 
-    private void loadStyles() throws NameNotFoundException, XmlPullParserException, IOException
+    private void loadStyles(Context context) throws NameNotFoundException, XmlPullParserException, IOException
     {
         if (packageName == null)
             return; // 使用默认主题时将不需要加载样式
@@ -163,8 +161,8 @@ public class ThemeFactory implements LayoutInflater.Factory
             }
             if (view == null)
                 return null;
-            applyTheme(view); // 应用通用主题样式
-            applyThemeFromLayout(view, attrs); // 应用布局文件中的样式
+            applyTheme(context, view); // 应用通用主题样式
+            applyThemeFromLayout(context, view, attrs); // 应用布局文件中的样式
             return view;
         }
         return null;
@@ -180,7 +178,7 @@ public class ThemeFactory implements LayoutInflater.Factory
         return shouldApplyTheme;
     }
 
-    private void applyTheme(View view)
+    private void applyTheme(Context context, View view)
     {
         if (generalThemeMap == null)
             return; // 如果未给定通用主题样式的名字或给定的名字无效，将返回
@@ -216,13 +214,13 @@ public class ThemeFactory implements LayoutInflater.Factory
                 if (itemValue.startsWith("@style/"))
                 {
                     String style = itemValue.substring("@style/".length());
-                    applyStyle(view, style);
+                    applyStyle(context, view, style);
                 }
             }
         }
     }
 
-    private void applyThemeFromLayout(View view, AttributeSet paramAttributeSet)
+    private void applyThemeFromLayout(Context context, View view, AttributeSet paramAttributeSet)
     {
         int count = paramAttributeSet.getAttributeCount();
         for (int p = 0; p < count; p++)
@@ -245,7 +243,7 @@ public class ThemeFactory implements LayoutInflater.Factory
             if (value.startsWith("@style/"))
             {
                 String style = value.substring("@style/".length());
-                applyStyle(view, style);
+                applyStyle(context, view, style);
             } else if (value.startsWith("@"))
             {
                 int resId = 0;
@@ -400,7 +398,7 @@ public class ThemeFactory implements LayoutInflater.Factory
         }
     }
 
-    private void applyStyle(View view, String styleName)
+    private void applyStyle(Context context, View view, String styleName)
     {
         HashMap<String, String> style = stylesMap.get(styleName);
         if (style != null)
