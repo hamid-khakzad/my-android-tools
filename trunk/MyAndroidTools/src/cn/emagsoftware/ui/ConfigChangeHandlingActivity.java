@@ -5,6 +5,11 @@ import android.content.res.Configuration;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 
+/**
+ * @deprecated 对ConfigurationChanged尤其是涉及到界面重构的处理现在首推交给系统结束并重启Activity，这种方式与Activity被回收后的恢复方式是一致的，从而降低开发和维护代码的成本
+ * @author Wendell
+ * 
+ */
 public abstract class ConfigChangeHandlingActivity extends Activity
 {
 
