@@ -27,6 +27,11 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+/**
+ * @deprecated 请使用cn.emagsoftware.ui.theme2包执行主题切换功能
+ * @author Wendell
+ * 
+ */
 public class ThemeFactory implements LayoutInflater.Factory
 {
 

@@ -3,6 +3,11 @@ package cn.emagsoftware.ui.theme;
 import cn.emagsoftware.ui.ConfigChangeHandlingActivity;
 import android.os.Bundle;
 
+/**
+ * @deprecated 请使用cn.emagsoftware.ui.theme2包执行主题切换功能
+ * @author Wendell
+ * 
+ */
 public abstract class ThemeActivity extends ConfigChangeHandlingActivity
 {
 

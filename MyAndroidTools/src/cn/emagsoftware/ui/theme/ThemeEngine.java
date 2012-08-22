@@ -10,6 +10,11 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ResolveInfo;
 
+/**
+ * @deprecated 请使用cn.emagsoftware.ui.theme2包执行主题切换功能
+ * @author Wendell
+ * 
+ */
 public final class ThemeEngine
 {
 
