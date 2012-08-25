@@ -20,7 +20,7 @@ public final class StaticManager
      * @param context
      * @param launchActivity
      */
-    public static void restartAppWhenDalvikRecycled(Context context, Class<Activity> launchActivity)
+    public static void restartAppWhenDalvikRecycled(Context context, Class<? extends Activity> launchActivity)
     {
         Intent intent = new Intent(context, launchActivity);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -34,7 +34,7 @@ public final class StaticManager
      * @param context
      * @param rootActivity
      */
-    public static void sendQuitIntentToRootActivity(Context context, Class<Activity> rootActivity)
+    public static void sendQuitIntentToRootActivity(Context context, Class<? extends Activity> rootActivity)
     {
         Intent intent = new Intent(context, rootActivity);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
