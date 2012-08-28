@@ -26,7 +26,8 @@ public final class TelephonyMgr
         {
             Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
             method.setAccessible(true);
-            return method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null;
+            return (method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null)
+                    || (method.invoke(null, "telephony.registry") != null && method.invoke(null, "telephony.registry2") != null);
         } catch (ClassNotFoundException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -203,12 +204,13 @@ public final class TelephonyMgr
     {
         return getSDKVersion() >= 14;
     }
-    
+
     public static boolean isUsingNewButtonPlacementStyle()
     {
         String model = Build.MODEL;
-        if("GT-P3108".equals(model) || "GT-I9108".equals(model) || "GT-I9228".equals(model) || "GT-I9050".equals(model)) return false;
+        if ("GT-P3108".equals(model) || "GT-I9108".equals(model) || "GT-I9228".equals(model) || "GT-I9050".equals(model))
+            return false;
         return isAndroid4Above();
     }
-    
+
 }
