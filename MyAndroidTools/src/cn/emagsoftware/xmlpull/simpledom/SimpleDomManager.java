@@ -37,7 +37,7 @@ public final class SimpleDomManager
         XmlSerializer serializer = Xml.newSerializer();
         StringWriter output = new StringWriter();
         serializer.setOutput(output);
-        serializer.startDocument("utf-8", true);
+        serializer.startDocument(null, true);
         serializeDomImpl(serializer, dom);
         serializer.endDocument();
         return output.toString();
