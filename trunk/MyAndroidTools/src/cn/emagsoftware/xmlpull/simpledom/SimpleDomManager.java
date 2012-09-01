@@ -78,10 +78,28 @@ public final class SimpleDomManager
                 serializer.startTag(null, key);
                 if (element.isLeaf())
                 {
-                    serializer.text(element.getText());
+                    String text = null;
+                    try
+                    {
+                        text = element.getText();
+                    } catch (XmlPullParserException e)
+                    {
+                        // 该异常不会出现，因为外部已作判断，故简单处理之
+                        throw new RuntimeException(e);
+                    }
+                    serializer.text(text);
                 } else
                 {
-                    serializeDomImpl(serializer, element.getChildren());
+                    Map<String, List<Element>> subDom = null;
+                    try
+                    {
+                        subDom = element.getChildren();
+                    } catch (XmlPullParserException e)
+                    {
+                        // 该异常不会出现，因为外部已作判断，故简单处理之
+                        throw new RuntimeException(e);
+                    }
+                    serializeDomImpl(serializer, subDom);
                 }
                 serializer.endTag(null, key);
             }
