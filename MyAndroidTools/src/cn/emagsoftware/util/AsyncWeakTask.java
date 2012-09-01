@@ -19,9 +19,9 @@ import android.os.Handler;
 public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result>
 {
 
-    private List<WeakReference<Object>> mObjReferences        = null;
-    private Handler                     mHandler              = new Handler();
-    private boolean                     mIsWithoutOnCancelled = false;
+    private List<WeakReference<Object>> mObjReferences          = null;
+    private Handler                     mHandler                = new Handler();
+    private boolean                     mIsWithoutOnPostExecute = false;
 
     public AsyncWeakTask(Object... objs)
     {
@@ -37,12 +37,6 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         if (obj == null)
             throw new NullPointerException();
         mObjReferences.add(new WeakReference<Object>(obj));
-    }
-
-    private boolean cancelWithoutOnCancelled(boolean mayInterruptIfRunning)
-    {
-        mIsWithoutOnCancelled = true;
-        return cancel(mayInterruptIfRunning);
     }
 
     protected void onPreExecute(Object[] objs)
@@ -72,7 +66,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWithoutOnCancelled(true);
+            cancel(true); // 由于依赖数据被回收导致onCancelled自动不执行
         else
             onPreExecute(objs);
     }
@@ -97,7 +91,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
                         onException(objs, e);
                 }
             });
-            cancelWithoutOnCancelled(false); // 在内部调用并传true时会打印出InterruptedException，这里传false避免之，尽管该异常不影响结果
+            mIsWithoutOnPostExecute = true;
             return null;
         }
     }
@@ -107,7 +101,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWithoutOnCancelled(true);
+            cancel(true); // 由于依赖数据被回收导致onCancelled自动不执行
         else
             onProgressUpdate(objs, values);
     }
@@ -115,8 +109,6 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onCancelled()
     {
-        if (mIsWithoutOnCancelled)
-            return;
         Object[] objs = getObjects();
         if (objs != null)
             onCancelled(objs);
@@ -125,6 +117,8 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onPostExecute(Result result)
     {
+        if (mIsWithoutOnPostExecute)
+            return;
         Object[] objs = getObjects();
         if (objs != null)
             onPostExecute(objs, result);
