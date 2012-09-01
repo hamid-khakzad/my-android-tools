@@ -19,9 +19,9 @@ import android.os.Handler;
 public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<Params, Progress, Result>
 {
 
-    private List<WeakReference<Object>> mObjReferences = null;
-    private Handler                     mHandler       = new Handler();
-    private boolean                     mIsRecycled    = false;
+    private List<WeakReference<Object>> mObjReferences        = null;
+    private Handler                     mHandler              = new Handler();
+    private boolean                     mIsWithoutOnCancelled = false;
 
     public AsyncWeakTask(Object... objs)
     {
@@ -39,9 +39,9 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         mObjReferences.add(new WeakReference<Object>(obj));
     }
 
-    private boolean cancelWhenRecycled(boolean mayInterruptIfRunning)
+    private boolean cancelWithoutOnCancelled(boolean mayInterruptIfRunning)
     {
-        mIsRecycled = true;
+        mIsWithoutOnCancelled = true;
         return cancel(mayInterruptIfRunning);
     }
 
@@ -72,7 +72,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWhenRecycled(true);
+            cancelWithoutOnCancelled(true);
         else
             onPreExecute(objs);
     }
@@ -85,21 +85,19 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
             return doInBackgroundImpl(params);
         } catch (final Exception e)
         {
-            if (mIsRecycled)
-            { // 内部cancelWhenRecycled(true)导致的异常不能回调onException；此后产生的异常，由于依赖数据已回收，同样不会执行onException，所以这里的统一处理依然不会带来问题
-                return null; // 由于依赖数据已回收，onCancelled和onPostExecute都不会被实质执行，所以这里可以直接返回
-            }
             mHandler.post(new Runnable()
             {
                 @Override
                 public void run()
                 {
+                    if (isCancelled())
+                        return;
                     Object[] objs = getObjects();
                     if (objs != null)
                         onException(objs, e);
                 }
             });
-            cancelWhenRecycled(false); // 在内部调用并传true时会打印出InterruptedException，这里传false避免之，尽管该异常不影响结果
+            cancelWithoutOnCancelled(false); // 在内部调用并传true时会打印出InterruptedException，这里传false避免之，尽管该异常不影响结果
             return null;
         }
     }
@@ -109,7 +107,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     {
         Object[] objs = getObjects();
         if (objs == null)
-            cancelWhenRecycled(true);
+            cancelWithoutOnCancelled(true);
         else
             onProgressUpdate(objs, values);
     }
@@ -117,7 +115,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onCancelled()
     {
-        if (mIsRecycled)
+        if (mIsWithoutOnCancelled)
             return;
         Object[] objs = getObjects();
         if (objs != null)
