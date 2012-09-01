@@ -4,6 +4,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.xmlpull.v1.XmlPullParserException;
+
+/**
+ * <p>简单的xml元素类 <p>当前类的一些条件冲突使用XmlPullParserException抛出，是为了方便外部对xml错误的统一捕获而不至于出现遗漏
+ * 
+ * @author Wendell
+ * 
+ */
 public class Element
 {
     private String                     text     = "";
@@ -15,38 +23,38 @@ public class Element
         this.isLeaf = isLeaf;
     }
 
-    public String getText()
+    public String getText() throws XmlPullParserException
     {
         if (!isLeaf)
-            throw new IllegalStateException("only leaf element can get text!");
+            throw new XmlPullParserException("only leaf element can get text!");
         return text;
     }
 
-    public void setText(String text)
+    public void setText(String text) throws XmlPullParserException
     {
         if (!isLeaf)
-            throw new IllegalStateException("only leaf element can set text!");
+            throw new XmlPullParserException("only leaf element can set text!");
         if (text == null)
             throw new NullPointerException();
         this.text = text;
     }
 
-    public Map<String, List<Element>> getChildren()
+    public Map<String, List<Element>> getChildren() throws XmlPullParserException
     {
         if (isLeaf)
-            throw new IllegalStateException("leaf element can not get children!");
+            throw new XmlPullParserException("leaf element can not get children!");
         return children;
     }
 
-    public void setSingleTagChildren(Map<String, Element> children)
+    public void setSingleTagChildren(Map<String, Element> children) throws XmlPullParserException
     {
         setChildren(SimpleDomManager.convertDom(children));
     }
 
-    public void setChildren(Map<String, List<Element>> children)
+    public void setChildren(Map<String, List<Element>> children) throws XmlPullParserException
     {
         if (isLeaf)
-            throw new IllegalStateException("leaf element can not set children!");
+            throw new XmlPullParserException("leaf element can not set children!");
         if (children == null)
             throw new NullPointerException();
         this.children = children;
