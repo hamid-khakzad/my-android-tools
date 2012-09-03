@@ -25,21 +25,28 @@ public final class SimpleDomManager
     {
     }
 
-    public static String serializeSingleTagDom(Map<String, Element> dom) throws IOException
+    public static String serializeSingleTagDom(Map<String, Element> dom)
     {
         return serializeDom(convertDom(dom));
     }
 
-    public static String serializeDom(Map<String, List<Element>> dom) throws IOException
+    public static String serializeDom(Map<String, List<Element>> dom)
     {
         if (dom == null)
             throw new NullPointerException();
         XmlSerializer serializer = Xml.newSerializer();
         StringWriter output = new StringWriter();
-        serializer.setOutput(output);
-        serializer.startDocument(null, true);
-        serializeDomImpl(serializer, dom);
-        serializer.endDocument();
+        try
+        {
+            serializer.setOutput(output);
+            serializer.startDocument(null, true);
+            serializeDomImpl(serializer, dom);
+            serializer.endDocument();
+        } catch (IOException e)
+        {
+            // 序列化到字符串一般不会出现IOException
+            throw new RuntimeException(e);
+        }
         return output.toString();
     }
 
@@ -124,14 +131,21 @@ public final class SimpleDomManager
         return newDom;
     }
 
-    public static Map<String, List<Element>> parseData(String data) throws XmlPullParserException, IOException
+    public static Map<String, List<Element>> parseData(String data) throws XmlPullParserException
     {
         if (data == null)
             throw new NullPointerException();
         XmlPullParser parser = Xml.newPullParser();
         parser.setInput(new StringReader(data));
         Map<String, List<Element>> dom = new HashMap<String, List<Element>>();
-        parseDataImpl(parser, dom);
+        try
+        {
+            parseDataImpl(parser, dom);
+        } catch (IOException e)
+        {
+            // 从字符串解析一般不会出现IOException
+            throw new RuntimeException(e);
+        }
         return dom;
     }
 
