@@ -185,7 +185,9 @@ public final class SimpleDomManager
                         existedList.add(element);
                         isCurTagPut = true;
                         parseDataImpl(parser, childrenDom);
-                        shouldNext = false; // 递归会以父节点的END_TAG事件结束，此时需要执行父节点的END_TAG代码以保证逻辑一致性，故不能越过
+                        // 递归会以父节点的END_TAG事件结束，此时需要执行父节点的END_TAG代码以保证逻辑一致性，故不能越过
+                        eventType = parser.getEventType();
+                        shouldNext = false;
                     }
                     break;
                 case XmlPullParser.TEXT:
