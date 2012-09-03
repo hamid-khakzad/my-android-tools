@@ -25,12 +25,12 @@ public final class SimpleDomManager
     {
     }
 
-    public static String serializeSingleTagDom(Map<String, Element> dom)
+    public static String serializeSingleTagDom(Map<String, Element> dom, boolean containsXmlHead)
     {
-        return serializeDom(convertDom(dom));
+        return serializeDom(convertDom(dom), containsXmlHead);
     }
 
-    public static String serializeDom(Map<String, List<Element>> dom)
+    public static String serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead)
     {
         if (dom == null)
             throw new NullPointerException();
@@ -39,7 +39,8 @@ public final class SimpleDomManager
         try
         {
             serializer.setOutput(output);
-            serializer.startDocument(null, true);
+            if (containsXmlHead)
+                serializer.startDocument(null, true);
             serializeDomImpl(serializer, dom);
             serializer.endDocument();
         } catch (IOException e)
@@ -50,18 +51,19 @@ public final class SimpleDomManager
         return output.toString();
     }
 
-    public static void serializeSingleTagDom(Map<String, Element> dom, OutputStream output, String encoding) throws IOException
+    public static void serializeSingleTagDom(Map<String, Element> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
     {
-        serializeDom(convertDom(dom), output, encoding);
+        serializeDom(convertDom(dom), containsXmlHead, output, encoding);
     }
 
-    public static void serializeDom(Map<String, List<Element>> dom, OutputStream output, String encoding) throws IOException
+    public static void serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
     {
         if (dom == null || output == null || encoding == null)
             throw new NullPointerException();
         XmlSerializer serializer = Xml.newSerializer();
         serializer.setOutput(output, encoding);
-        serializer.startDocument(encoding, true);
+        if (containsXmlHead)
+            serializer.startDocument(encoding, true);
         serializeDomImpl(serializer, dom);
         serializer.endDocument();
     }
