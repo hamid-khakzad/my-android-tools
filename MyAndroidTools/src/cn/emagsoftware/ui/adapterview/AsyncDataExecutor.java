@@ -16,27 +16,39 @@ import cn.emagsoftware.util.LogManager;
 public abstract class AsyncDataExecutor
 {
 
-    private static PushTask                               PUSH_TASK          = new PushTask();
+    private static PushTask                               PUSH_TASK              = new PushTask();
     static
     {
         PUSH_TASK.execute("");
     }
 
-    private int                                           mMaxTaskCount      = 5;
+    private int                                           mMaxTaskCount          = 5;
 
-    private int                                           mMaxWaitCount      = 20;
-    private WeakReference<AdapterView<? extends Adapter>> mAdapterViewRef    = null;
-    private WeakReference<GenericAdapter>                 mGenericAdapterRef = null;
+    private int                                           mMaxWaitCount          = 20;
+    private WeakReference<AdapterView<? extends Adapter>> mAdapterViewRef        = null;
+    private WeakReference<GenericAdapter>                 mGenericAdapterRef     = null;
 
-    private LinkedList<DataHolder>                        mPushedHolders     = new LinkedList<DataHolder>();
-    private byte[]                                        mLockExecute       = new byte[0];
-    private Set<AsyncTask<DataHolder, Object, Object>>    mCurExecuteTasks   = new HashSet<AsyncTask<DataHolder, Object, Object>>();
+    private LinkedList<DataHolder>                        mPushedHolders         = new LinkedList<DataHolder>();
+    private byte[]                                        mLockExecute           = new byte[0];
+    private Set<AsyncTask<DataHolder, Object, Object>>    mCurExecuteTasks       = new HashSet<AsyncTask<DataHolder, Object, Object>>();
+
+    private boolean                                       mNotifyAsyncDataForAll = false;
 
     public AsyncDataExecutor(int maxTaskCount)
     {
         if (maxTaskCount <= 0)
             throw new IllegalArgumentException("maxTaskCount should be great than zero.");
         this.mMaxTaskCount = maxTaskCount;
+    }
+
+    /**
+     * <p>设置在加载完GenericAdapter的异步数据后是否通知该GenericAdapter对应的所有AdapterView <p>一般不要调用该方法并传true，这会影响到性能，除非当前的GenericAdapter被多个AdapterView共用，且在异步数据加载完后需要即时同步到各个AdapterView
+     * 
+     * @param notifyAsyncDataForAll
+     */
+    public void setNotifyAsyncDataForAll(boolean notifyAsyncDataForAll)
+    {
+        this.mNotifyAsyncDataForAll = notifyAsyncDataForAll;
     }
 
     void refreshVariables(AdapterView<? extends Adapter> adapterView, GenericAdapter genericAdapter)
@@ -145,24 +157,31 @@ public abstract class AsyncDataExecutor
             {
                 // TODO Auto-generated method stub
                 super.onProgressUpdate(values);
-                // 这里采取最小范围的更新策略，通过notifyDataSetChanged更新会影响效率
-                AdapterView<? extends Adapter> adapterView = mAdapterViewRef.get();
                 GenericAdapter genericAdapter = mGenericAdapterRef.get();
-                if (adapterView == null || genericAdapter == null)
+                if (genericAdapter == null)
                     return;
-                DataHolder holder = (DataHolder) values[0];
-                int position = holder.mExecuteConfig.mPosition;
-                if (position >= genericAdapter.getCount())
-                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                if (!holder.equals(genericAdapter.queryDataHolder(position)))
-                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                int wrapPosition = position;
-                if (adapterView instanceof ListView)
-                    wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
-                int first = adapterView.getFirstVisiblePosition();
-                int last = adapterView.getLastVisiblePosition();
-                if (wrapPosition >= first && wrapPosition <= last)
-                    holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wrapPosition - first), values[1], (Integer) values[2]);
+                if (mNotifyAsyncDataForAll)
+                {
+                    genericAdapter.notifyDataSetChanged();
+                } else
+                {
+                    AdapterView<? extends Adapter> adapterView = mAdapterViewRef.get();
+                    if (adapterView == null)
+                        return;
+                    DataHolder holder = (DataHolder) values[0];
+                    int position = holder.mExecuteConfig.mPosition;
+                    if (position >= genericAdapter.getCount())
+                        return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                    if (!holder.equals(genericAdapter.queryDataHolder(position)))
+                        return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                    int wrapPosition = position;
+                    if (adapterView instanceof ListView)
+                        wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
+                    int first = adapterView.getFirstVisiblePosition();
+                    int last = adapterView.getLastVisiblePosition();
+                    if (wrapPosition >= first && wrapPosition <= last)
+                        holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wrapPosition - first), values[1], (Integer) values[2]);
+                }
             }
         };
     }
