@@ -7,6 +7,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,6 @@ public final class SimpleDomManager
 
     private SimpleDomManager()
     {
-    }
-
-    public static String serializeSingleTagDom(Map<String, Element> dom, boolean containsXmlHead)
-    {
-        return serializeDom(convertDom(dom), containsXmlHead);
     }
 
     public static String serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead)
@@ -49,11 +45,6 @@ public final class SimpleDomManager
             throw new RuntimeException(e);
         }
         return output.toString();
-    }
-
-    public static void serializeSingleTagDom(Map<String, Element> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
-    {
-        serializeDom(convertDom(dom), containsXmlHead, output, encoding);
     }
 
     public static void serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
@@ -115,12 +106,16 @@ public final class SimpleDomManager
         }
     }
 
-    public static Map<String, List<Element>> convertDom(Map<String, Element> dom)
+    public static Map<String, List<Element>> convertDom(Map<String, Element> dom, boolean keepOrder)
     {
         if (dom == null)
             throw new NullPointerException();
         Iterator<Entry<String, Element>> maps = dom.entrySet().iterator();
-        Map<String, List<Element>> newDom = new HashMap<String, List<Element>>();
+        Map<String, List<Element>> newDom = null;
+        if (keepOrder)
+            newDom = new LinkedHashMap<String, List<Element>>();
+        else
+            newDom = new HashMap<String, List<Element>>();
         while (maps.hasNext())
         {
             Entry<String, Element> map = maps.next();
