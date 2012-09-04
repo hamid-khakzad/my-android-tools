@@ -1,11 +1,14 @@
 package cn.emagsoftware.memory;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
@@ -149,32 +152,107 @@ public final class MemoryManager
 
     public static void recycleBitmaps(Drawable drawable)
     {
-        List<Bitmap> bitmaps = AbstractBitmapSelector.drawableToBitmaps(drawable, false);
+        List<Bitmap> bitmaps = drawableToBitmaps(drawable, false);
         for (Bitmap b : bitmaps)
         {
             b.recycle();
         }
     }
 
-    public static void recycleBitmaps(View view, AbstractBitmapSelector[] selectors, boolean recursive)
+    private static List<Bitmap> drawableToBitmaps(Drawable drawable, boolean includeRecycled)
     {
-        for (AbstractBitmapSelector selector : selectors)
+        List<Bitmap> bitmaps = new LinkedList<Bitmap>();
+        if (drawable instanceof BitmapDrawable)
         {
-            List<Bitmap> bitmaps = selector.select(view, false);
-            for (Bitmap b : bitmaps)
+            Bitmap b = ((BitmapDrawable) drawable).getBitmap();
+            if (b != null)
             {
-                b.recycle();
+                if (includeRecycled)
+                    bitmaps.add(b);
+                else if (!b.isRecycled())
+                    bitmaps.add(b);
             }
         }
-        if (recursive && view instanceof ViewGroup)
+        return bitmaps;
+    }
+
+    /**
+     * <p>回收Bitmaps
+     * 
+     * @param context
+     * @param view
+     * @param callback
+     * @param drawableIdsToExclude 通过传入该参数可在回收时排除此类Drawable，此类Drawable通常是通过View.setBackgroundResource等方法设置的，他们在进程中的实例是唯一的，因此不能回收
+     */
+    public static void recycleBitmaps(Context context, View view, MemoryManager.RecycleBitmapsCallback callback, int[] drawableIdsToExclude)
+    {
+        if (context == null || view == null || callback == null)
+            throw new NullPointerException();
+        if (view instanceof ViewGroup)
         {
-            ViewGroup viewGroup = (ViewGroup) view;
-            for (int i = 0; i < viewGroup.getChildCount(); i++)
+            ViewGroup container = (ViewGroup) view;
+            if (callback.isContinue(container))
             {
-                View child = viewGroup.getChildAt(i);
-                recycleBitmaps(child, selectors, recursive);
+                for (int i = 0; i < container.getChildCount(); i++)
+                {
+                    View child = container.getChildAt(i);
+                    recycleBitmaps(context, child, callback, drawableIdsToExclude);
+                }
+            }
+        } else
+        {
+            List<Drawable> drawables = callback.select(view);
+            if (drawables != null)
+            {
+                if (drawableIdsToExclude == null || drawableIdsToExclude.length == 0)
+                {
+                    for (Drawable drawable : drawables)
+                    {
+                        if (drawable != null)
+                            recycleBitmaps(drawable);
+                    }
+                } else
+                {
+                    Resources res = context.getResources();
+                    for (Drawable drawable : drawables)
+                    {
+                        if (drawable != null)
+                        {
+                            List<Bitmap> curBitmaps = drawableToBitmaps(drawable, false);
+                            for (Bitmap curBitmap : curBitmaps)
+                            {
+                                boolean shouldExclude = false;
+                                A: for (int drawableId : drawableIdsToExclude)
+                                {
+                                    Drawable drawableToExclude = res.getDrawable(drawableId);
+                                    if (drawableToExclude != null)
+                                    {
+                                        List<Bitmap> curBitmapsToExclude = drawableToBitmaps(drawableToExclude, true);
+                                        for (Bitmap curBitmapToExclude : curBitmapsToExclude)
+                                        {
+                                            if (curBitmap == curBitmapToExclude)
+                                            {
+                                                shouldExclude = true;
+                                                break A;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (!shouldExclude)
+                                    curBitmap.recycle();
+                            }
+                        }
+                    }
+                }
             }
         }
+    }
+
+    public static interface RecycleBitmapsCallback
+    {
+        public boolean isContinue(ViewGroup container);
+
+        public List<Drawable> select(View view);
     }
 
     public static boolean isLowMemory(Context context)
