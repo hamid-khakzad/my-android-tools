@@ -1,10 +1,10 @@
 package cn.emagsoftware.xmlpull.simpledom;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -28,23 +28,17 @@ public final class SimpleDomManager
 
     public static String serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead)
     {
-        if (dom == null)
-            throw new NullPointerException();
-        XmlSerializer serializer = Xml.newSerializer();
-        StringWriter output = new StringWriter();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        String encoding = "utf-8";
         try
         {
-            serializer.setOutput(output);
-            if (containsXmlHead)
-                serializer.startDocument(null, true);
-            serializeDomImpl(serializer, dom);
-            serializer.endDocument();
+            serializeDom(dom, containsXmlHead, output, encoding);
+            return new String(output.toByteArray(), encoding);
         } catch (IOException e)
         {
             // 序列化到字符串一般不会出现IOException
             throw new RuntimeException(e);
         }
-        return output.toString();
     }
 
     public static void serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
