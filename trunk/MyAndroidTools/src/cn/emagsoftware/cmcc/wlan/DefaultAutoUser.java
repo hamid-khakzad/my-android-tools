@@ -14,35 +14,46 @@ import org.htmlparser.filters.NodeClassFilter;
 import org.htmlparser.tags.FormTag;
 import org.htmlparser.tags.FrameTag;
 import org.htmlparser.tags.InputTag;
-import org.htmlparser.tags.ScriptTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
 import android.content.Context;
 
+import cn.emagsoftware.net.http.HtmlManager;
 import cn.emagsoftware.net.http.HttpConnectionManager;
 import cn.emagsoftware.net.http.HttpResponseResult;
 import cn.emagsoftware.util.LogManager;
-import cn.emagsoftware.util.MathUtilities;
-import cn.emagsoftware.util.StringUtilities;
 
 class DefaultAutoUser extends AutoUser
 {
 
-    protected static final String GUIDE_URL            = "http://www.baidu.com";
-    protected static final String GUIDE_HOST           = "www.baidu.com";
-    protected static final String GD_JSESSIONID        = "JSESSIONID=";
-    protected static final String BJ_PHPSESSID         = "PHPSESSID=";
-    protected static final String CMCC_LOGOUTFORM_NAME = "portal";
+    protected static final String GUIDE_URL                    = "http://www.baidu.com";
+    protected static final String GUIDE_HOST                   = "www.baidu.com";
+    protected static final String GD_JSESSIONID                = "JSESSIONID=";
+    protected static final String BJ_PHPSESSID                 = "PHPSESSID=";
+    protected static final String KEYWORD_CMCCCS               = "cmcccs";
+    protected static final String KEYWORD_LOGINREQ             = "login_req";
+    protected static final String KEYWORD_LOGINRES             = "login_res";
+    protected static final String KEYWORD_APPLYPWDRES          = "applypwd_res";
+    protected static final String SEPARATOR                    = "|";
+    protected static final String CMCC_PORTAL_URL              = "https://221.176.1.140/wlan/index.php";
+    // for redirection
+    protected static final String INDICATOR_REDIRECT_PORTALURL = "portalurl";
+    protected static final String INDICATOR_LOGIN_AC_NAME      = "wlanacname";
+    protected static final String INDICATOR_LOGIN_USER_IP      = "wlanuserip";
+    // form parameters in cmcc logining page
+    protected static final String CMCC_LOGINFORM_NAME          = "loginform";
+    protected static final String CMCC_LOGOUTFORM_NAME         = "portal";
 
-    protected Context             context              = null;
-    protected boolean             isCancelLogin        = false;
-    protected String              sessionCookie        = null;
-    protected String              cmccPageUrl          = null;
-    protected String              cmccPageHtml         = null;
-    protected String              cmccLoginPageHtml    = null;
-    protected Map<String, String> cmccLogoutPageFields = new HashMap<String, String>();
-    protected String              cmccLogoutUrl        = null;
+    protected Context             context                      = null;
+    protected boolean             isCancelLogin                = false;
+    protected String              sessionCookie                = null;
+    protected String              cmccPortalUrl                = null;
+    protected String              cmccPageUrl                  = null;
+    protected String              cmccPageHtml                 = null;
+    protected String              cmccLoginPageHtml            = null;
+    protected Map<String, String> cmccLogoutPageFields         = new HashMap<String, String>();
+    protected String              cmccLogoutUrl                = null;
 
     public DefaultAutoUser(Context context)
     {
@@ -63,104 +74,30 @@ class DefaultAutoUser extends AutoUser
             boolean isLogged = isLogged();
             if (isLogged)
                 return context.getString(context.getResources().getIdentifier("DefaultAutoUser_requestpwd_alreadylogin", "string", context.getPackageName()));
-            Parser mHtmlParser = Parser.createParser(cmccPageHtml.toLowerCase(), "gb2312");
-            NodeClassFilter frameFilter = new NodeClassFilter(FrameTag.class);
-            NodeList nl = mHtmlParser.parse(frameFilter);
-            if (nl == null || nl.size() == 0)
-                throw new ParserException();
-            FrameTag ft = (FrameTag) nl.elementAt(0);
-            String loginUrl = ft.getAttribute("src");
-            if (loginUrl == null || loginUrl.equals(""))
-                throw new ParserException();
-            this.cmccLoginPageHtml = doHttpGetContainsRedirect(loginUrl).getDataString("gb2312");
-            mHtmlParser = Parser.createParser(cmccLoginPageHtml.toLowerCase(), "gb2312");
-            NodeClassFilter scriptFilter = new NodeClassFilter(ScriptTag.class);
-            nl = mHtmlParser.parse(scriptFilter);
-            if (nl == null || nl.size() == 0)
-                throw new ParserException();
-            ScriptTag st = (ScriptTag) nl.elementAt(0);
-            String scriptCode = st.getScriptCode();
-            int index = 0;
-            while (true)
-            { // 排除showurl被注释掉的情况
-                index = scriptCode.indexOf("showurl", index);
-                if (index == -1)
-                    throw new ParserException();
-                index = index + 1;
-                String beforeShowurl = scriptCode.substring(0, index);
-                int lineIndex = beforeShowurl.lastIndexOf("\n");
-                if (lineIndex == -1)
-                {
-                    if (beforeShowurl.contains("//"))
-                        continue; // 不考虑字符串中含有//的情况
-                    else
-                        break;
-                } else
-                {
-                    if (beforeShowurl.substring(lineIndex).contains("//"))
-                        continue; // 不考虑字符串中含有//的情况
-                    else
-                        break;
-                }
-            }
-            int begin = scriptCode.indexOf("\"", index);
-            if (begin == -1)
-            {
-                begin = scriptCode.indexOf("\'", index);
-                if (begin == -1)
-                    throw new ParserException();
-            }
-            int end = scriptCode.indexOf(";", index);
+            parseLoginPage(this.cmccPageHtml);
+            String action = cmccPortalUrl;
+            cmccPortalUrl = null;
+            if (action == null || action.trim().length() == 0)
+                action = CMCC_PORTAL_URL;
+            Map<String, String> pageFields = new HashMap<String, String>();
+            pageFields.put("USER", super.userName);
+            pageFields.put("actiontype", "APPLYPWD");
+            HttpResponseResult result = doHttpPostContainsRedirect(action, pageFields);
+            String html = result.getDataString("gb2312");
+            String keywordPwdRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_APPLYPWDRES + SEPARATOR;
+            int start = html.indexOf(keywordPwdRes);
+            if (start == -1)
+                throw new ParserException("can not find keyword from password response.");
+            start = start + keywordPwdRes.length();
+            start = html.indexOf(SEPARATOR, start);
+            if (start == -1)
+                throw new ParserException("can not find the begin separator from password response.");
+            start = start + 1;
+            String temp = html.substring(start);
+            int end = temp.indexOf(SEPARATOR);
             if (end == -1)
-                throw new ParserException();
-            String url = scriptCode.substring(begin + 1, end);
-            url = StringUtilities.replaceWordsAll(url, " ", "");
-            url = StringUtilities.replaceWordsAll(url, "\"", "");
-            url = StringUtilities.replaceWordsAll(url, "\'", "");
-            url = StringUtilities.replaceWordsAll(url, "+username", super.userName);
-            url = StringUtilities.replaceWordsAll(url, "+math.random()", String.valueOf(MathUtilities.Random(10000)));
-            url = StringUtilities.replaceWordsAll(url, "+", "");
-            if (url.startsWith("./"))
-            { // 解析路径
-                int httpIndex = this.cmccPageUrl.indexOf("://");
-                if (httpIndex == -1)
-                    throw new ParserException();
-                int mainIndex = this.cmccPageUrl.substring(httpIndex + 3).lastIndexOf("/");
-                if (mainIndex == -1)
-                    throw new ParserException();
-                mainIndex = this.cmccPageUrl.substring(httpIndex + 3, mainIndex + httpIndex + 3).lastIndexOf("/");
-                if (mainIndex == -1)
-                    throw new ParserException();
-                url = this.cmccPageUrl.substring(0, mainIndex + httpIndex + 3) + url.substring(1);
-            } else if (url.startsWith("/"))
-            {
-                int httpIndex = this.cmccPageUrl.indexOf("://");
-                if (httpIndex == -1)
-                    throw new ParserException();
-                int mainIndex = this.cmccPageUrl.substring(httpIndex + 3).indexOf("/");
-                if (mainIndex == -1)
-                    url = this.cmccPageUrl + url;
-                else
-                    url = this.cmccPageUrl.substring(0, mainIndex + httpIndex + 3) + url;
-            } else if (!url.startsWith("http"))
-            {
-                int httpIndex = this.cmccPageUrl.indexOf("://");
-                if (httpIndex == -1)
-                    throw new ParserException();
-                int mainIndex = this.cmccPageUrl.substring(httpIndex + 3).lastIndexOf("/");
-                if (mainIndex == -1)
-                    url = this.cmccPageUrl + "/" + url;
-                else
-                    url = this.cmccPageUrl.substring(0, mainIndex + httpIndex + 3) + "/" + url;
-            }
-            String responseText = doHttpGetContainsRedirect(url).getDataString("gb2312");
-            String[] responseArr = responseText.split("@");
-            if (responseArr.length != 2)
-                throw new ParserException();
-            if ("rtn_0000".equalsIgnoreCase(responseArr[0]))
-                return null; // 请求成功
-            else
-                return responseArr[1];
+                throw new ParserException("can not find the end separator from password response.");
+            return temp.substring(0, end);
         } catch (IOException e)
         {
             LogManager.logE(DefaultAutoUser.class, "requestPassword failed.", e);
@@ -170,6 +107,153 @@ class DefaultAutoUser extends AutoUser
             LogManager.logE(DefaultAutoUser.class, "requestPassword failed.", e);
             return context.getString(context.getResources().getIdentifier("DefaultAutoUser_parse_error", "string", context.getPackageName()));
         }
+    }
+
+    protected void parseLoginPage(String pageHtml) throws ParserException, IOException
+    {
+        String keywordLoginReq = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_LOGINREQ;
+        if (keywordLoginReq != null && pageHtml.indexOf(keywordLoginReq) != -1)
+        { // 当前页面已经是CMCC登录页面
+            doParseLoginPage(pageHtml);
+        } else
+        {
+            String formatHtml = HtmlManager.removeComment(pageHtml);
+            String location = extractPortalUrl(formatHtml);
+            if (location == null)
+            {
+                location = extractHref(formatHtml);
+                if (location == null)
+                {
+                    location = extractNextUrl(formatHtml);
+                    if (location == null || location.trim().length() == 0)
+                    {
+                        throw new ParserException("can not find the location after executing extractNextUrl().");
+                    }
+                }
+            }
+            HttpResponseResult result = doHttpGetContainsRedirect(location);
+            parseLoginPage(result.getDataString("gb2312"));
+        }
+    }
+
+    protected void doParseLoginPage(String loginPageHtml) throws ParserException
+    {
+        String formatHtml = HtmlManager.removeComment(loginPageHtml);
+        Parser mHtmlParser = Parser.createParser(formatHtml, "gb2312");
+        FormFilter filter = new FormFilter(CMCC_LOGINFORM_NAME);
+        NodeList formList = mHtmlParser.parse(filter);
+        if (formList == null || formList.size() == 0)
+            throw new ParserException("could not find the form named '" + CMCC_LOGINFORM_NAME + "'");
+        Node tag = formList.elementAt(0);
+        FormTag formTag = (FormTag) tag;
+        // 获取提交表单的URL
+        String formAction = formTag.getFormLocation();
+        if (formAction != null && formAction.trim().length() > 0)
+        {
+            this.cmccPortalUrl = formAction.trim();
+        }
+    }
+
+    protected String extractPortalUrl(String html)
+    {
+        /**
+         * <input type="hidden" name="wlanacname" value="0019.0010.100.00"> <input type="hidden" name="wlanuserip" value="218.205.219.117"> <input type="hidden" name="portalurl"
+         * value="http://221.176.1.140/wlan/index.php">
+         */
+        Parser mHtmlParser = Parser.createParser(html.toLowerCase(), "gb2312");
+        NodeClassFilter inputFilter = new NodeClassFilter(InputTag.class);
+        try
+        {
+            NodeList inputList = mHtmlParser.extractAllNodesThatMatch(inputFilter);
+            Map<String, String> params = new HashMap<String, String>();
+            for (int i = 0; i < inputList.size(); ++i)
+            {
+                Node tag = inputList.elementAt(i);
+                InputTag inputTag = (InputTag) tag;
+                // String attrType = inputTag.getAttribute("TYPE");
+                String attrName = inputTag.getAttribute("name");
+                String attrValue = inputTag.getAttribute("value");
+                if (attrName != null && attrValue != null)
+                {
+                    params.put(attrName.trim(), attrValue.trim());
+                }
+            }
+            if (params.size() > 0)
+            {
+                String portalUrl = params.get(INDICATOR_REDIRECT_PORTALURL);
+                String acname = params.get(INDICATOR_LOGIN_AC_NAME);
+                String userip = params.get(INDICATOR_LOGIN_USER_IP);
+                if (portalUrl != null && portalUrl.length() > 0 && acname != null && acname.length() > 0 && userip != null && userip.length() > 0)
+                {
+                    StringBuffer location = new StringBuffer(portalUrl);
+                    location.append("?");
+                    location.append(INDICATOR_LOGIN_AC_NAME).append("=").append(acname);
+                    location.append("&");
+                    location.append(INDICATOR_LOGIN_USER_IP).append("=").append(userip);
+                    return location.toString();
+                }
+            }
+            return null;
+        } catch (ParserException e)
+        {
+            return null;
+        }
+    }
+
+    protected String extractHref(String html)
+    {
+        /**
+         * <script language="javascript"> window.location.href="http://221.176.1.140/wlan/index.php?wlanacname=1037.0010.100.00&wlanuserip=117.134.26.92&ssid=&vlan=4095"; var
+         * PORTALLOGINURL="https://221.176.1.140/wlan/bin/login.pl"; var PORTALLOGOUTURL="https://221.176.1.140/wlan/bin/logout.pl"; </script>
+         */
+        String PREFIX = "window.location.href";
+        int index = html.indexOf(PREFIX);
+        if (index != -1)
+        {
+            String temp = html.substring(index + PREFIX.length());
+            index = temp.indexOf("=");
+            if (index != -1 && index < temp.length() - 1)
+            {
+                temp = temp.substring(index + 1).trim();
+                if (temp.length() > 0)
+                {
+                    int start = 0;
+                    int end = 1;
+                    if (temp.startsWith("\""))
+                    {
+                        start = 1;
+                        end = temp.indexOf("\"", start);
+                    } else
+                    {
+                        end = temp.indexOf(";", start);
+                    }
+                    if (end > start)
+                    {
+                        return temp.substring(start, end);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    protected String extractNextUrl(String html)
+    {
+        /**
+         * redirect html sample: <HTML> <HEAD> <META HTTP-EQUIV="REFRESH" CONTENT="1;URL=http://117.134.32.234   "> <TITLE> </TITLE> </HEAD> <?xml version="1.0" encoding="UTF-8"?>
+         * <WISPAccessGatewayParam xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.acmewisp.com/WISPAccessGatewayParam.xsd"> <Proxy>
+         * <MessageType>110</MessageType> <NextURL>http://221.176.1.140/wlan/index.php?wlanacip=117.134.32.234&wlanuserip=117.133.202.211&wlanacname=0099.0010.100.00</NextURL>
+         * <ResponseCode>200</ResponseCode> </Proxy> </WISPAccessGatewayParam> </HTML>
+         */
+        int startTagNextURL = html.toLowerCase().indexOf("<nexturl>");
+        int endTagNextURL = html.toLowerCase().indexOf("</nexturl>");
+
+        // extract "NextURL" from temp HTML and re-direct
+        if (startTagNextURL != -1 && endTagNextURL != -1)
+        {
+            return html.substring(startTagNextURL + "<nexturl>".length(), endTagNextURL);
+        }
+        return null;
     }
 
     @Override
