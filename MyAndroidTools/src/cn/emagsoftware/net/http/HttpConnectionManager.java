@@ -36,7 +36,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.4
+ * @version 4.5
  */
 public final class HttpConnectionManager
 {
@@ -175,9 +175,7 @@ public final class HttpConnectionManager
         {
             if (requestHeaders == null)
                 requestHeaders = new HashMap<String, List<String>>();
-            List<String> contentTypes = requestHeaders.get(HEADER_REQUEST_CONTENT_TYPE);
-            if (contentTypes == null)
-                contentTypes = new ArrayList<String>();
+            List<String> contentTypes = new ArrayList<String>(); // http规范规定Content-Type只能有一个
             contentTypes.add("application/x-www-form-urlencoded");
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
             byte[] paramsData = null;
@@ -242,9 +240,7 @@ public final class HttpConnectionManager
         {
             if (requestHeaders == null)
                 requestHeaders = new HashMap<String, List<String>>();
-            List<String> contentTypes = requestHeaders.get(HEADER_REQUEST_CONTENT_TYPE);
-            if (contentTypes == null)
-                contentTypes = new ArrayList<String>();
+            List<String> contentTypes = new ArrayList<String>(); // http规范规定Content-Type只能有一个
             contentTypes.add("application/octet-stream");
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
             if (postData == null)
