@@ -41,6 +41,7 @@ class DefaultUser extends User
     protected static final String CMCC_LOGINFORM_NAME          = "loginform";
     protected static final String INDICATOR_LOGIN_USERNAME     = "USER";
     protected static final String INDICATOR_LOGIN_PASSWORD     = "PWD";
+    protected static final String INDICATOR_LOGIN_FORCEFLAG    = "forceflag";
 
     protected boolean             isCancelLogin                = false;
     protected String              sessionCookie                = null;
@@ -263,6 +264,7 @@ class DefaultUser extends User
             action = CMCC_PORTAL_URL;
         cmccLoginPageFields.put(INDICATOR_LOGIN_USERNAME, super.userName);
         cmccLoginPageFields.put(INDICATOR_LOGIN_PASSWORD, super.password);
+        cmccLoginPageFields.put(INDICATOR_LOGIN_FORCEFLAG, "1");
         try
         {
             HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);
