@@ -1,7 +1,6 @@
 package cn.emagsoftware.cmcc.wlan;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -114,7 +113,7 @@ public class User
                     }
                 }
             }
-            HttpResponseResult result = doHttpGetContainsRedirect(location);
+            HttpResponseResult result = doHttpGet(location);
             parseLoginPage(result.getDataString("gb2312"));
         }
     }
@@ -266,7 +265,7 @@ public class User
         cmccLoginPageFields.put(INDICATOR_LOGIN_USERNAME, userName);
         cmccLoginPageFields.put(INDICATOR_LOGIN_PASSWORD, password);
         cmccLoginPageFields.put(INDICATOR_LOGIN_FORCEFLAG, "1");
-        HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);
+        HttpResponseResult result = doHttpPost(action, cmccLoginPageFields);
         String html = result.getDataString("gb2312");
         String keywordLoginRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_LOGINRES + SEPARATOR;
         int keywordIndex = html.indexOf(keywordLoginRes);
@@ -305,7 +304,7 @@ public class User
     public boolean isLogged() throws IOException
     {
         // TODO Auto-generated method stub
-        HttpResponseResult result = doHttpGetContainsRedirect(GUIDE_URL);
+        HttpResponseResult result = doHttpGet(GUIDE_URL);
         String host = result.getResponseURL().getHost();
         String html = result.getDataString("gb2312");
         if (GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0)
@@ -317,7 +316,7 @@ public class User
         return false;
     }
 
-    protected HttpResponseResult doHttpGetContainsRedirect(String url) throws IOException
+    protected HttpResponseResult doHttpGet(String url) throws IOException
     {
         Map<String, List<String>> requestHeaders = new HashMap<String, List<String>>();
         List<String> values = new ArrayList<String>();
@@ -326,19 +325,10 @@ public class User
         values = new ArrayList<String>();
         values.add("G3WLAN");
         requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-        HttpResponseResult result = HttpConnectionManager.doGet(url, "gb2312", false, 15000, requestHeaders);
-        int code = result.getResponseCode();
-        while (code == HttpURLConnection.HTTP_MOVED_TEMP)
-        {
-            List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
-            String location = headerValues.get(0);
-            result = HttpConnectionManager.doGet(location, "gb2312", false, 15000, requestHeaders);
-            code = result.getResponseCode();
-        }
-        return result;
+        return HttpConnectionManager.doGet(url, "gb2312", true, 15000, requestHeaders);
     }
 
-    protected HttpResponseResult doHttpPostContainsRedirect(String url, Map<String, String> params) throws IOException
+    protected HttpResponseResult doHttpPost(String url, Map<String, String> params) throws IOException
     {
         Map<String, List<String>> requestHeaders = new HashMap<String, List<String>>();
         List<String> values = new ArrayList<String>();
@@ -347,16 +337,7 @@ public class User
         values = new ArrayList<String>();
         values.add("G3WLAN");
         requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-        HttpResponseResult result = HttpConnectionManager.doPost(url, "gb2312", false, 15000, requestHeaders, params, "gb2312");
-        int code = result.getResponseCode();
-        while (code == HttpURLConnection.HTTP_MOVED_TEMP)
-        {
-            List<String> headerValues = result.getResponseHeaders().get(HttpConnectionManager.HEADER_RESPONSE_LOCATION.toLowerCase());
-            String location = headerValues.get(0);
-            result = HttpConnectionManager.doGet(location, "gb2312", false, 15000, requestHeaders);
-            code = result.getResponseCode();
-        }
-        return result;
+        return HttpConnectionManager.doPost(url, "gb2312", true, 15000, requestHeaders, params, "gb2312");
     }
 
     /**
@@ -372,7 +353,7 @@ public class User
         String action = cmccLoginUrl;
         if (action == null || action.trim().length() == 0)
             action = CMCC_PORTAL_URL;
-        HttpResponseResult result = doHttpPostContainsRedirect(action, cmccLoginPageFields);
+        HttpResponseResult result = doHttpPost(action, cmccLoginPageFields);
         String html = result.getDataString("gb2312");
         String keywordLogoutRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_OFFLINERES + SEPARATOR;
         int keywordIndex = html.indexOf(keywordLogoutRes);

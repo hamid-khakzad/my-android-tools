@@ -38,7 +38,7 @@ public class AutoUser extends User
         Map<String, String> pageFields = new HashMap<String, String>();
         pageFields.put(INDICATOR_LOGIN_USERNAME, super.userName);
         pageFields.put(INDICATOR_LOGIN_ACTIONTYPE, "APPLYPWD");
-        HttpResponseResult result = doHttpPostContainsRedirect(action, pageFields);
+        HttpResponseResult result = doHttpPost(action, pageFields);
         String html = result.getDataString("gb2312");
         String keywordPwdRes = KEYWORD_CMCCCS + SEPARATOR + KEYWORD_APPLYPWDRES + SEPARATOR;
         int keywordIndex = html.indexOf(keywordPwdRes);
