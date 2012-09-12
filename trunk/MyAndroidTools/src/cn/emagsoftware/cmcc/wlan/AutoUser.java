@@ -18,7 +18,7 @@ public class AutoUser extends User
     }
 
     /**
-     * <p>无论成功与否都会返回字符串描述，而不会像登录那样如果成功返回null
+     * <p>返回null表示成功，否则返回失败消息
      * 
      * @return
      * @throws IOException
@@ -48,11 +48,16 @@ public class AutoUser extends User
         int start = subHtml.indexOf(SEPARATOR);
         if (start == -1)
             throw new ParserException("can not find the begin separator from password response.");
-        subHtml = subHtml.substring(start + SEPARATOR.length());
-        int end = subHtml.indexOf(SEPARATOR);
-        if (end == -1)
-            throw new ParserException("can not find the end separator from password response.");
-        return subHtml.substring(0, end);
+        String sign = subHtml.substring(0, start);
+        if (!"0".equals(sign))
+        {
+            subHtml = subHtml.substring(start + SEPARATOR.length());
+            int end = subHtml.indexOf(SEPARATOR);
+            if (end == -1)
+                throw new ParserException("can not find the end separator from password response.");
+            return subHtml.substring(0, end);
+        }
+        return null;
     }
 
     @Override
