@@ -36,10 +36,10 @@ public final class NetManager
         {
             try
             {
-                HttpResponseResult result = HttpConnectionManager.doGet("http://www.baidu.com", "gb2312", true, timeout, null);
+                HttpResponseResult result = HttpConnectionManager.doGet("http://www.baidu.com", null, true, timeout, null);
                 String host = result.getResponseURL().getHost();
-                String content = result.getDataString("gb2312");
-                if ("www.baidu.com".equalsIgnoreCase(host) && content.indexOf("news.baidu.com") >= 0)
+                String content = result.getDataString("utf-8");
+                if ("www.baidu.com".equalsIgnoreCase(host) && content.indexOf("baidu.com") >= 0)
                 { // 若能访问到原始站点内容，证明网络有效
                     return true;
                 } else
