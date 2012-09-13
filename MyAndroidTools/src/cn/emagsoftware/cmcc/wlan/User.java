@@ -22,8 +22,6 @@ import cn.emagsoftware.util.LogManager;
 public class User
 {
 
-    protected static final String GUIDE_URL                    = "http://www.baidu.com";
-    protected static final String GUIDE_HOST                   = "www.baidu.com";
     protected static final String KEYWORD_CMCCCS               = "cmcccs";
     protected static final String KEYWORD_LOGINREQ             = "login_req";
     protected static final String KEYWORD_LOGINRES             = "login_res";
@@ -304,11 +302,11 @@ public class User
     public boolean isLogged() throws IOException
     {
         // TODO Auto-generated method stub
-        HttpResponseResult result = doHttpGet(GUIDE_URL);
+        HttpResponseResult result = doHttpGet("http://www.baidu.com");
         String host = result.getResponseURL().getHost();
         String html = result.getDataString("gb2312");
-        if (GUIDE_HOST.equalsIgnoreCase(host) && html.indexOf(GUIDE_HOST) >= 0)
-        { // 若能访问到原始站点，证明已登录
+        if ("www.baidu.com".equalsIgnoreCase(host) && html.indexOf("baidu.com") >= 0)
+        { // 若能访问到原始站点内容，证明已登录
             return true;
         }
         // 若不能访问原始站点，即重定向到了CMCC页面
