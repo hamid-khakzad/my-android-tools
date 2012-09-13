@@ -79,8 +79,8 @@ public class User
         isCancelLogin = false;
         if (isCancelLogin)
             return "CANCELLED"; // 判断是否已取消登录
-        if (isLogged()) // 已登录将抛出异常，因为这种情况下不能初始化参数，logout等功能都将失效
-            throw new IllegalStateException("can not call login() when already logged.");
+        if (!redirectedToPortal()) // 未能重定向到portal页面将抛出异常，因为无法初始化参数
+            throw new IllegalStateException("redirected to portal failed,already logged or using other network.");
         if (isCancelLogin)
             return "CANCELLED"; // 判断是否已取消登录
         parseLoginPage(this.cmccPortalHtml); // 解析CMCC登录页面
@@ -299,18 +299,15 @@ public class User
         isCancelLogin = true;
     }
 
-    public boolean isLogged() throws IOException
+    public boolean redirectedToPortal() throws IOException
     {
-        // TODO Auto-generated method stub
         HttpResponseResult result = doHttpGet("http://www.baidu.com");
-        String host = result.getResponseURL().getHost();
         String html = result.getDataString("gb2312");
-        if ("www.baidu.com".equalsIgnoreCase(host) && html.indexOf("baidu.com") >= 0)
-        { // 若能访问到原始站点内容，证明已登录
+        if (html.indexOf(KEYWORD_CMCCCS + SEPARATOR + KEYWORD_LOGINREQ) >= 0)
+        {
+            this.cmccPortalHtml = html;
             return true;
         }
-        // 若不能访问原始站点，即重定向到了CMCC页面
-        this.cmccPortalHtml = html;
         return false;
     }
 
