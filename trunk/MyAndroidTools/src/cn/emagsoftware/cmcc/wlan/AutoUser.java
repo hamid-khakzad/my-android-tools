@@ -29,8 +29,8 @@ public class AutoUser extends User
         // TODO Auto-generated method stub
         if (super.userName == null)
             throw new IllegalStateException("userName can not be null.");
-        if (isLogged())
-            throw new IllegalStateException("requestPassword() can only be called before logining.");
+        if (!redirectedToPortal()) // 未能重定向到portal页面将抛出异常，因为无法初始化参数
+            throw new IllegalStateException("redirected to portal failed,already logged or using other network.");
         parseLoginPage(this.cmccPortalHtml);
         String action = cmccLoginUrl;
         if (action == null || action.trim().length() == 0)
