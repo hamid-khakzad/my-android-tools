@@ -81,8 +81,8 @@ public class User
         isCancelLogin = false;
         if (isCancelLogin)
             return "CANCELLED"; // 判断是否已取消登录
-        if (isLogged()) // 判断是否已经登录
-            return null;
+        if (isLogged()) // 已登录将抛出异常，因为这种情况下不能初始化参数，logout等功能都将失效
+            throw new IllegalStateException("can not call login() when already logged.");
         if (isCancelLogin)
             return "CANCELLED"; // 判断是否已取消登录
         parseLoginPage(this.cmccPortalHtml); // 解析CMCC登录页面
