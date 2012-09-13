@@ -9,14 +9,11 @@ import android.net.NetworkInfo;
 import android.provider.Settings;
 
 import cn.emagsoftware.net.http.HttpConnectionManager;
-import cn.emagsoftware.net.http.HttpResponseResultStream;
+import cn.emagsoftware.net.http.HttpResponseResult;
 import cn.emagsoftware.util.LogManager;
 
 public final class NetManager
 {
-
-    private static final String USEFUL_TEST_URL  = "http://www.baidu.com";
-    private static final String USEFUL_TEST_HOST = "www.baidu.com";
 
     private NetManager()
     {
@@ -37,26 +34,20 @@ public final class NetManager
         int th = 1;
         while (th <= tryTimes)
         {
-            HttpResponseResultStream result = null;
             try
             {
-                result = HttpConnectionManager.doGetForStream(USEFUL_TEST_URL, "gb2312", true, timeout, null);
+                HttpResponseResult result = HttpConnectionManager.doGet("http://www.baidu.com", "gb2312", true, timeout, null);
                 String host = result.getResponseURL().getHost();
-                result.close();
-                if (USEFUL_TEST_HOST.equalsIgnoreCase(host)) // 若能访问到原始站点，证明网络有效
+                String content = result.getDataString("gb2312");
+                if ("www.baidu.com".equalsIgnoreCase(host) && content.indexOf("news.baidu.com") >= 0)
+                { // 若能访问到原始站点内容，证明网络有效
                     return true;
-                else
+                } else
+                {
                     return false;
+                }
             } catch (IOException e)
             {
-                try
-                {
-                    if (result != null)
-                        result.close();
-                } catch (IOException e1)
-                {
-                    e = e1;
-                }
                 LogManager.logE(NetManager.class, "the " + th + " time to check net for method of isNetUseful failed.", e);
             }
             th++;
