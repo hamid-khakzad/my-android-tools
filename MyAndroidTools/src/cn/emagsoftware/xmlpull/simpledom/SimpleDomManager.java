@@ -100,6 +100,12 @@ public final class SimpleDomManager
         }
     }
 
+    /**
+     * @deprecated 该方法一般为Element.setChildren(Map<String, List<Element>>)提供便捷调用，由于setChildren方法已不推荐使用，故将当前方法也标记为过时
+     * @param dom
+     * @param keepOrder
+     * @return
+     */
     public static Map<String, List<Element>> convertDom(Map<String, Element> dom, boolean keepOrder)
     {
         if (dom == null)
