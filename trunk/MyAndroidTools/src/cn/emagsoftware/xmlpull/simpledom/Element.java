@@ -31,10 +31,10 @@ public class Element
         children = new HashMap<String, List<Element>>();
     }
 
-    public Element(boolean isLeaf, boolean iskeepOrder)
+    public Element(boolean isLeaf, boolean keepOrder)
     {
         this.isLeaf = isLeaf;
-        if (iskeepOrder)
+        if (keepOrder)
             children = new LinkedHashMap<String, List<Element>>();
         else
             children = new HashMap<String, List<Element>>();
