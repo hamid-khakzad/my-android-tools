@@ -24,13 +24,13 @@ public class Element
     private Map<String, List<Element>> children = null;
 
     /**
-     * @deprecated 已使用 Element(isLeaf,iskeepOrder)代替
+     * @deprecated 请使用 Element(isLeaf,keepOrder)代替
      * @param isLeaf
      */
     public Element(boolean isLeaf)
     {
         this.isLeaf = isLeaf;
-        children = new HashMap<String, List<Element>>();
+        children = new LinkedHashMap<String, List<Element>>();
     }
 
     public Element(boolean isLeaf, boolean keepOrder)
@@ -49,13 +49,14 @@ public class Element
         return text;
     }
 
-    public void setText(String text) throws XmlPullParserException
+    public Element setText(String text) throws XmlPullParserException
     {
         if (!isLeaf)
             throw new XmlPullParserException("only leaf element can set text!");
         if (text == null)
             throw new NullPointerException();
         this.text = text;
+        return this;
     }
 
     public Map<String, List<Element>> getChildren() throws XmlPullParserException
@@ -74,7 +75,7 @@ public class Element
         return children.get(tagName);
     }
 
-    public void addChildren(String tagName, List<Element> curChildren) throws XmlPullParserException
+    public Element addChildren(String tagName, List<Element> curChildren) throws XmlPullParserException
     {
         if (isLeaf)
             throw new XmlPullParserException("leaf element can not add children!");
@@ -87,9 +88,10 @@ public class Element
             children.put(tagName, tagChildren);
         }
         tagChildren.addAll(curChildren);
+        return this;
     }
 
-    public void addChild(String tagName, Element curChild) throws XmlPullParserException
+    public Element addChild(String tagName, Element curChild) throws XmlPullParserException
     {
         if (isLeaf)
             throw new XmlPullParserException("leaf element can not add child!");
@@ -102,6 +104,7 @@ public class Element
             children.put(tagName, tagChildren);
         }
         tagChildren.add(curChild);
+        return this;
     }
 
     /**
@@ -109,13 +112,14 @@ public class Element
      * @param children
      * @throws XmlPullParserException
      */
-    public void setChildren(Map<String, List<Element>> children) throws XmlPullParserException
+    public Element setChildren(Map<String, List<Element>> children) throws XmlPullParserException
     {
         if (isLeaf)
             throw new XmlPullParserException("leaf element can not set children!");
         if (children == null)
             throw new NullPointerException();
         this.children = children;
+        return this;
     }
 
     /**
