@@ -1,10 +1,12 @@
 package cn.emagsoftware.xmlpull.simpledom;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -114,6 +116,34 @@ public class Element
         if (children == null)
             throw new NullPointerException();
         this.children = children;
+    }
+
+    /**
+     * @deprecated 该方法一般为setChildren(Map<String, List<Element>>)提供便捷调用，由于setChildren方法已不建议使用，故将当前方法也标记为过时
+     * @param dom
+     * @param keepOrder
+     * @return
+     */
+    public static Map<String, List<Element>> convertDom(Map<String, Element> dom, boolean keepOrder)
+    {
+        if (dom == null)
+            throw new NullPointerException();
+        Iterator<Entry<String, Element>> maps = dom.entrySet().iterator();
+        Map<String, List<Element>> newDom = null;
+        if (keepOrder)
+            newDom = new LinkedHashMap<String, List<Element>>();
+        else
+            newDom = new HashMap<String, List<Element>>();
+        while (maps.hasNext())
+        {
+            Entry<String, Element> map = maps.next();
+            String key = map.getKey();
+            Element value = map.getValue();
+            List<Element> list = new LinkedList<Element>();
+            list.add(value);
+            newDom.put(key, list);
+        }
+        return newDom;
     }
 
     public boolean isLeaf()
