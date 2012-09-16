@@ -23,16 +23,6 @@ public class Element
     private String                     text     = "";
     private Map<String, List<Element>> children = null;
 
-    /**
-     * @deprecated ÇëÊ¹ÓÃ Element(isLeaf,keepOrder)´úÌæ
-     * @param isLeaf
-     */
-    public Element(boolean isLeaf)
-    {
-        this.isLeaf = isLeaf;
-        children = new LinkedHashMap<String, List<Element>>();
-    }
-
     public Element(boolean isLeaf, boolean keepOrder)
     {
         this.isLeaf = isLeaf;
