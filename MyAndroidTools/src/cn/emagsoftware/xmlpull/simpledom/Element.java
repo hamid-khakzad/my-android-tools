@@ -56,15 +56,14 @@ public class Element
         return children;
     }
 
-    public List<Element> getChildren(String tagName) throws XmlPullParserException
-    {
-        if (isLeaf)
-            throw new XmlPullParserException("leaf element can not get children!");
-        if (tagName == null)
-            throw new NullPointerException();
-        return children.get(tagName);
-    }
-
+    /**
+     * <p>当前类的一个简单原则是对Children的操作要求通过getChildren()得到Map进行处理，但添加操作在代码编写上显示累赘，故提供此方法
+     * 
+     * @param tagName
+     * @param curChildren
+     * @return
+     * @throws XmlPullParserException
+     */
     public Element addChildren(String tagName, List<Element> curChildren) throws XmlPullParserException
     {
         if (isLeaf)
@@ -81,6 +80,14 @@ public class Element
         return this;
     }
 
+    /**
+     * <p>当前类的一个简单原则是对Children的操作要求通过getChildren()得到Map进行处理，但添加操作在代码编写上显示累赘，故提供此方法
+     * 
+     * @param tagName
+     * @param curChild
+     * @return
+     * @throws XmlPullParserException
+     */
     public Element addChild(String tagName, Element curChild) throws XmlPullParserException
     {
         if (isLeaf)
