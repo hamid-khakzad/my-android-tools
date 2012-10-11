@@ -8,10 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.xmlpull.v1.XmlPullParserException;
-
 /**
- * <p>简单的xml元素类 <p>当前类的一些条件冲突使用XmlPullParserException抛出，是为了方便外部对xml错误的统一捕获而不至于出现遗漏
+ * <p>简单的xml元素类
  * 
  * @author Wendell
  * 
@@ -19,40 +17,32 @@ import org.xmlpull.v1.XmlPullParserException;
 public class Element
 {
 
-    private boolean                    isLeaf   = false;
     private String                     text     = "";
     private Map<String, List<Element>> children = null;
 
-    public Element(boolean isLeaf, boolean keepOrder)
+    public Element(boolean keepChildrenOrder)
     {
-        this.isLeaf = isLeaf;
-        if (keepOrder)
+        if (keepChildrenOrder)
             children = new LinkedHashMap<String, List<Element>>();
         else
             children = new HashMap<String, List<Element>>();
     }
 
-    public String getText() throws XmlPullParserException
+    public String getText()
     {
-        if (!isLeaf)
-            throw new XmlPullParserException("only leaf element can get text!");
         return text;
     }
 
-    public Element setText(String text) throws XmlPullParserException
+    public Element setText(String text)
     {
-        if (!isLeaf)
-            throw new XmlPullParserException("only leaf element can set text!");
         if (text == null)
             throw new NullPointerException();
         this.text = text;
         return this;
     }
 
-    public Map<String, List<Element>> getChildren() throws XmlPullParserException
+    public Map<String, List<Element>> getChildren()
     {
-        if (isLeaf)
-            throw new XmlPullParserException("leaf element can not get children!");
         return children;
     }
 
@@ -62,12 +52,9 @@ public class Element
      * @param tagName
      * @param curChildren
      * @return
-     * @throws XmlPullParserException
      */
-    public Element addChildren(String tagName, List<Element> curChildren) throws XmlPullParserException
+    public Element addChildren(String tagName, List<Element> curChildren)
     {
-        if (isLeaf)
-            throw new XmlPullParserException("leaf element can not add children!");
         if (tagName == null || curChildren == null)
             throw new NullPointerException();
         List<Element> tagChildren = children.get(tagName);
@@ -86,12 +73,9 @@ public class Element
      * @param tagName
      * @param curChild
      * @return
-     * @throws XmlPullParserException
      */
-    public Element addChild(String tagName, Element curChild) throws XmlPullParserException
+    public Element addChild(String tagName, Element curChild)
     {
-        if (isLeaf)
-            throw new XmlPullParserException("leaf element can not add child!");
         if (tagName == null || curChild == null)
             throw new NullPointerException();
         List<Element> tagChildren = children.get(tagName);
@@ -107,12 +91,9 @@ public class Element
     /**
      * @deprecated 直接使用根Map来替换Children的思路已经强烈不建议使用
      * @param children
-     * @throws XmlPullParserException
      */
-    public Element setChildren(Map<String, List<Element>> children) throws XmlPullParserException
+    public Element setChildren(Map<String, List<Element>> children)
     {
-        if (isLeaf)
-            throw new XmlPullParserException("leaf element can not set children!");
         if (children == null)
             throw new NullPointerException();
         this.children = children;
@@ -122,16 +103,16 @@ public class Element
     /**
      * @deprecated 该方法一般为setChildren(Map<String, List<Element>>)提供便捷调用，由于setChildren方法已不建议使用，故将当前方法也标记为过时
      * @param dom
-     * @param keepOrder
+     * @param keepDomOrder
      * @return
      */
-    public static Map<String, List<Element>> convertDom(Map<String, Element> dom, boolean keepOrder)
+    public static Map<String, List<Element>> convertDom(Map<String, Element> dom, boolean keepDomOrder)
     {
         if (dom == null)
             throw new NullPointerException();
         Iterator<Entry<String, Element>> maps = dom.entrySet().iterator();
         Map<String, List<Element>> newDom = null;
-        if (keepOrder)
+        if (keepDomOrder)
             newDom = new LinkedHashMap<String, List<Element>>();
         else
             newDom = new HashMap<String, List<Element>>();
@@ -149,7 +130,7 @@ public class Element
 
     public boolean isLeaf()
     {
-        return isLeaf;
+        return children.size() == 0;
     }
 
 }
