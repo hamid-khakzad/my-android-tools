@@ -93,28 +93,10 @@ public final class SimpleDomManager
             serializer.startTag(null, key);
             if (element.isLeaf())
             {
-                String text = null;
-                try
-                {
-                    text = element.getText();
-                } catch (XmlPullParserException e)
-                {
-                    // 该异常不会出现，因为外部已作判断，故简单处理之
-                    throw new RuntimeException(e);
-                }
-                serializer.text(text);
+                serializer.text(element.getText());
             } else
             {
-                Map<String, List<Element>> subDom = null;
-                try
-                {
-                    subDom = element.getChildren();
-                } catch (XmlPullParserException e)
-                {
-                    // 该异常不会出现，因为外部已作判断，故简单处理之
-                    throw new RuntimeException(e);
-                }
-                serializeDomImpl(serializer, subDom);
+                serializeDomImpl(serializer, element.getChildren());
             }
             serializer.endTag(null, key);
         }
@@ -139,48 +121,30 @@ public final class SimpleDomManager
                 serializer.startTag(null, key);
                 if (element.isLeaf())
                 {
-                    String text = null;
-                    try
-                    {
-                        text = element.getText();
-                    } catch (XmlPullParserException e)
-                    {
-                        // 该异常不会出现，因为外部已作判断，故简单处理之
-                        throw new RuntimeException(e);
-                    }
-                    serializer.text(text);
+                    serializer.text(element.getText());
                 } else
                 {
-                    Map<String, List<Element>> subDom = null;
-                    try
-                    {
-                        subDom = element.getChildren();
-                    } catch (XmlPullParserException e)
-                    {
-                        // 该异常不会出现，因为外部已作判断，故简单处理之
-                        throw new RuntimeException(e);
-                    }
-                    serializeDomImpl(serializer, subDom);
+                    serializeDomImpl(serializer, element.getChildren());
                 }
                 serializer.endTag(null, key);
             }
         }
     }
 
-    public static Map<String, List<Element>> parseData(String data, boolean keepOrder) throws XmlPullParserException
+    public static Map<String, List<Element>> parseData(String data, boolean keepDomOrder) throws XmlPullParserException
     {
         if (data == null)
             throw new NullPointerException();
         XmlPullParser parser = Xml.newPullParser();
         parser.setInput(new StringReader(data));
         Map<String, List<Element>> dom = null;
-        if (keepOrder)
+        if (keepDomOrder)
             dom = new LinkedHashMap<String, List<Element>>();
         else
             dom = new HashMap<String, List<Element>>();
         try
         {
-            parseDataImpl(parser, dom, keepOrder);
+            parseDataImpl(parser, dom, keepDomOrder);
         } catch (IOException e)
         {
             // 从字符串解析一般不会出现IOException
@@ -189,22 +153,22 @@ public final class SimpleDomManager
         return dom;
     }
 
-    public static Map<String, List<Element>> parseData(InputStream input, String encoding, boolean keepOrder) throws XmlPullParserException, IOException
+    public static Map<String, List<Element>> parseData(InputStream input, String encoding, boolean keepDomOrder) throws XmlPullParserException, IOException
     {
         if (input == null || encoding == null)
             throw new NullPointerException();
         XmlPullParser parser = Xml.newPullParser();
         parser.setInput(input, encoding);
         Map<String, List<Element>> dom = null;
-        if (keepOrder)
+        if (keepDomOrder)
             dom = new LinkedHashMap<String, List<Element>>();
         else
             dom = new HashMap<String, List<Element>>();
-        parseDataImpl(parser, dom, keepOrder);
+        parseDataImpl(parser, dom, keepDomOrder);
         return dom;
     }
 
-    private static void parseDataImpl(XmlPullParser parser, Map<String, List<Element>> dom, boolean keepOrder) throws XmlPullParserException, IOException
+    private static void parseDataImpl(XmlPullParser parser, Map<String, List<Element>> dom, boolean keepDomOrder) throws XmlPullParserException, IOException
     {
         int eventType = parser.getEventType();
         String curTag = null;
@@ -220,7 +184,7 @@ public final class SimpleDomManager
                         curTag = parser.getName();
                     } else
                     {
-                        Element element = new Element(false, keepOrder);
+                        Element element = new Element(keepDomOrder);
                         List<Element> existedList = dom.get(curTag);
                         if (existedList == null)
                         {
@@ -229,14 +193,14 @@ public final class SimpleDomManager
                         }
                         existedList.add(element);
                         isCurTagPut = true;
-                        parseDataImpl(parser, element.getChildren(), keepOrder);
+                        parseDataImpl(parser, element.getChildren(), keepDomOrder);
                         // 递归会以父节点的END_TAG事件结束，此时需要执行父节点的END_TAG代码以保证逻辑一致性，故不能越过
                         eventType = parser.getEventType();
                         shouldNext = false;
                     }
                     break;
                 case XmlPullParser.TEXT:
-                    Element element = new Element(true, keepOrder);
+                    Element element = new Element(keepDomOrder);
                     element.setText(parser.getText());
                     List<Element> existedList = dom.get(curTag);
                     if (existedList == null)
@@ -258,7 +222,7 @@ public final class SimpleDomManager
                             existedList = new LinkedList<Element>();
                             dom.put(curTag, existedList);
                         }
-                        existedList.add(new Element(true, keepOrder));
+                        existedList.add(new Element(keepDomOrder));
                     }
                     curTag = null;
                     isCurTagPut = false;
