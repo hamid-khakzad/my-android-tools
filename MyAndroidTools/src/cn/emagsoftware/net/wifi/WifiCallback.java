@@ -23,7 +23,7 @@ import android.os.Looper;
  * <p>Wifi操作的广播接收类，注意，该类实例是非线程安全的 <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。 <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * 
  * @author Wendell
- * @version 2.9
+ * @version 3.0
  */
 public abstract class WifiCallback extends BroadcastReceiver
 {
@@ -38,6 +38,18 @@ public abstract class WifiCallback extends BroadcastReceiver
     public static final int             ACTION_NETWORK_OBTAININGIP     = 7;
     public static final int             ACTION_NETWORK_DISCONNECTED    = 8;
     public static final int             ACTION_NETWORK_CONNECTED       = 9;
+    public static final int             ACTION_WIFI_AP_ENABLED         = 10;
+    public static final int             ACTION_WIFI_AP_ENABLING        = 11;
+    public static final int             ACTION_WIFI_AP_DISABLED        = 12;
+    public static final int             ACTION_WIFI_AP_DISABLING       = 13;
+
+    private static final String         WIFI_AP_STATE_CHANGED_ACTION   = "android.net.wifi.WIFI_AP_STATE_CHANGED";
+    private static final String         EXTRA_WIFI_AP_STATE            = "wifi_state";
+    private static final int            WIFI_AP_STATE_DISABLING        = 10;
+    private static final int            WIFI_AP_STATE_DISABLED         = 11;
+    private static final int            WIFI_AP_STATE_ENABLING         = 12;
+    private static final int            WIFI_AP_STATE_ENABLED          = 13;
+    private static final int            WIFI_AP_STATE_FAILED           = 14;
 
     protected Context                   context                        = null;
     protected Handler                   handler                        = new Handler(Looper.getMainLooper());
@@ -289,6 +301,60 @@ public abstract class WifiCallback extends BroadcastReceiver
                     onNetworkConnected(wifiUtils.getConnectionInfo());
                 }
             }
+        } else if (action.equals(WIFI_AP_STATE_CHANGED_ACTION))
+        {
+            int state = arg1.getIntExtra(EXTRA_WIFI_AP_STATE, 0);
+            if (state == WIFI_AP_STATE_ENABLED)
+            {
+                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLED");
+                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_ENABLED) > -1)
+                {
+                    isDoneForAutoUnregisterActions = true;
+                    if (!unregisterMe())
+                        return;
+                }
+                onWifiApEnabled();
+            } else if (state == WIFI_AP_STATE_ENABLING)
+            {
+                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLING");
+                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_ENABLING) > -1)
+                {
+                    isDoneForAutoUnregisterActions = true;
+                    if (!unregisterMe())
+                        return;
+                }
+                onWifiApEnabling();
+            } else if (state == WIFI_AP_STATE_DISABLED)
+            {
+                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLED");
+                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_DISABLED) > -1)
+                {
+                    isDoneForAutoUnregisterActions = true;
+                    if (!unregisterMe())
+                        return;
+                }
+                onWifiApDisabled();
+            } else if (state == WIFI_AP_STATE_DISABLING)
+            {
+                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLING");
+                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_DISABLING) > -1)
+                {
+                    isDoneForAutoUnregisterActions = true;
+                    if (!unregisterMe())
+                        return;
+                }
+                onWifiApDisabling();
+            } else if (state == WIFI_AP_STATE_FAILED)
+            {
+                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_FAILED");
+                if (Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1)
+                {
+                    isDoneForAutoUnregisterActions = true;
+                    if (!unregisterMe())
+                        return;
+                }
+                onError();
+            }
         }
     }
 
@@ -340,6 +406,22 @@ public abstract class WifiCallback extends BroadcastReceiver
     {
     }
 
+    public void onWifiApEnabled()
+    {
+    }
+
+    public void onWifiApEnabling()
+    {
+    }
+
+    public void onWifiApDisabled()
+    {
+    }
+
+    public void onWifiApDisabling()
+    {
+    }
+
     public void onTimeout()
     {
     }
@@ -350,6 +432,7 @@ public abstract class WifiCallback extends BroadcastReceiver
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        wifiIntentFilter.addAction(WIFI_AP_STATE_CHANGED_ACTION);
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
         context.registerReceiver(this, wifiIntentFilter);
