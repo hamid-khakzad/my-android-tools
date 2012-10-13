@@ -554,6 +554,25 @@ public final class WifiUtils
         }
     }
 
+    public boolean setWifiApConfiguration(WifiConfiguration apConfig) throws ReflectHiddenFuncException
+    {
+        try
+        {
+            Method method = wifiManager.getClass().getMethod("setWifiApConfiguration", WifiConfiguration.class);
+            method.setAccessible(true);
+            return (Boolean) method.invoke(wifiManager, apConfig);
+        } catch (NoSuchMethodException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        } catch (InvocationTargetException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        } catch (IllegalAccessException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        }
+    }
+
     public void setWifiApEnabled(final WifiConfiguration apConfig, final boolean enabled, final WifiCallback callback, final int timeout) throws ReflectHiddenFuncException
     {
         if (!isWifiApEnabled() && !enabled)
