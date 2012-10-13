@@ -1,10 +1,8 @@
 package cn.emagsoftware.net.wifi;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
-
-import cn.emagsoftware.net.NetManager;
-import cn.emagsoftware.net.wifi.support.Wifi;
-import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
 import android.net.NetworkInfo;
@@ -15,6 +13,10 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
 import android.os.Handler;
 import android.os.Looper;
+import cn.emagsoftware.net.NetManager;
+import cn.emagsoftware.net.wifi.support.Wifi;
+import cn.emagsoftware.telephony.ReflectHiddenFuncException;
+import cn.emagsoftware.util.LogManager;
 
 public final class WifiUtils
 {
@@ -512,6 +514,160 @@ public final class WifiUtils
                     });
                 }
             }
+    }
+
+    public boolean isWifiApEnabled() throws ReflectHiddenFuncException
+    {
+        try
+        {
+            Method method = wifiManager.getClass().getMethod("isWifiApEnabled", new Class[0]);
+            method.setAccessible(true);
+            return (Boolean) method.invoke(wifiManager, new Object[0]);
+        } catch (NoSuchMethodException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        } catch (InvocationTargetException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        } catch (IllegalAccessException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        }
+    }
+
+    public WifiConfiguration getWifiApConfiguration() throws ReflectHiddenFuncException
+    {
+        try
+        {
+            Method method = wifiManager.getClass().getMethod("getWifiApConfiguration", new Class[0]);
+            method.setAccessible(true);
+            return (WifiConfiguration) method.invoke(wifiManager, new Object[0]);
+        } catch (NoSuchMethodException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        } catch (InvocationTargetException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        } catch (IllegalAccessException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        }
+    }
+
+    public void setWifiApEnabled(final WifiConfiguration apConfig, final boolean enabled, final WifiCallback callback, final int timeout) throws ReflectHiddenFuncException
+    {
+        if (!isWifiApEnabled() && !enabled)
+        { // 如果Wifi Ap不存在或已关闭时执行关闭Wifi Ap，在开机第一次调用将不会广播到Receiver，所以这里统一在外部回调
+            if (callback != null)
+            {
+                handler.post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        // TODO Auto-generated method stub
+                        callback.onWifiApDisabled(); // 尽管如果Wifi Ap不存在时，应回调onError，但判断Wifi Ap是否存在比较麻烦，所以这里统一回调onWifiApDisabled
+                    }
+                });
+            }
+            return;
+        }
+        Method method = null;
+        try
+        {
+            method = wifiManager.getClass().getMethod("setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
+            method.setAccessible(true);
+        } catch (NoSuchMethodException e)
+        {
+            throw new ReflectHiddenFuncException(e);
+        }
+        if (enabled)
+        {
+            int thisTimeout = timeout;
+            if (callback == null && thisTimeout < 0)
+                thisTimeout = 0;
+            final Method methodPoint = method;
+            setWifiEnabled(false, new WifiCallback(context)
+            {
+                @Override
+                public void onWifiDisabled()
+                {
+                    // TODO Auto-generated method stub
+                    super.onWifiDisabled();
+                    try
+                    {
+                        setWifiApEnabledImpl(methodPoint, apConfig, enabled, callback, timeout);
+                    } catch (ReflectHiddenFuncException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                @Override
+                public void onError()
+                {
+                    // TODO Auto-generated method stub
+                    super.onError();
+                    if (callback != null)
+                        callback.onError();
+                }
+
+                @Override
+                public void onTimeout()
+                {
+                    // TODO Auto-generated method stub
+                    super.onTimeout();
+                    if (callback != null)
+                        callback.onTimeout();
+                }
+            }, thisTimeout);
+        } else
+        {
+            setWifiApEnabledImpl(method, apConfig, enabled, callback, timeout);
+        }
+    }
+
+    private void setWifiApEnabledImpl(Method method, WifiConfiguration apConfig, boolean enabled, final WifiCallback callback, int timeout) throws ReflectHiddenFuncException
+    {
+        if (callback != null)
+        {
+            if (enabled)
+                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_AP_ENABLED, WifiCallback.ACTION_ERROR });
+            else
+                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_AP_DISABLED, WifiCallback.ACTION_ERROR });
+            callback.setTimeout(timeout);
+            callback.registerMe();
+        }
+        try
+        {
+            boolean circs = (Boolean) method.invoke(wifiManager, apConfig, enabled);
+            if (!circs)
+                if (callback != null)
+                {
+                    if (callback.unregisterMe())
+                    {
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                callback.onError();
+                            }
+                        });
+                    }
+                }
+        } catch (InvocationTargetException e)
+        {
+            if (callback != null)
+                callback.unregisterMe();
+            throw new ReflectHiddenFuncException(e);
+        } catch (IllegalAccessException e)
+        {
+            if (callback != null)
+                callback.unregisterMe();
+            throw new ReflectHiddenFuncException(e);
+        }
     }
 
 }
