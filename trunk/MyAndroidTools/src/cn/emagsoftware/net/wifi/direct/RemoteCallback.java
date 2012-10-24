@@ -2,6 +2,7 @@ package cn.emagsoftware.net.wifi.direct;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -101,11 +102,9 @@ public abstract class RemoteCallback implements Runnable
                             sc.finishConnect();
                     } catch (final IOException e)
                     {
-                        key.cancel();
                         try
                         {
-                            if (sc != null)
-                                sc.close();
+                            user.close();
                         } catch (final IOException e1)
                         {
                             handler.post(new Runnable()
@@ -130,124 +129,247 @@ public abstract class RemoteCallback implements Runnable
                         });
                         return;
                     }
-                    user.setKey(key);
-                    key.attach(new Object[] { user, "length", ByteBuffer.allocate(4) });
-                    key.interestOps(SelectionKey.OP_READ);
-                    handler.post(new Runnable()
+                    if (key == user.getKey())
                     {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            onConnected(user);
-                        }
-                    });
+                        key.attach(new Object[] { user, "info_accepted" });
+                    } else if (key == user.getTransferKey())
+                    {
+                        key.attach(new Object[] { user, "transferkey_accepted" });
+                    }
+                    key.interestOps(SelectionKey.OP_WRITE);
                 } else if (key.isReadable())
                 {
-                    Object[] objArr = (Object[]) key.attachment();
-                    if (objArr == null)
+                    Object[] objs = (Object[]) key.attachment();
+                    if (objs == null)
                     {
-                        objArr = new Object[] { null, "length", ByteBuffer.allocate(4) };
+                        objs = new Object[] { null, "length", ByteBuffer.allocate(4) };
                     }
-                    final Object[] objs = objArr;
-                    try
+                    if (objs[2] instanceof ByteBuffer)
                     {
-                        if (objs[2] instanceof ByteBuffer)
+                        ByteBuffer bb = (ByteBuffer) objs[2];
+                        SocketChannel sc = (SocketChannel) key.channel();
+                        sc.read(bb);
+                        if (!bb.hasRemaining())
                         {
-                            ByteBuffer bb = (ByteBuffer) objs[2];
-                            SocketChannel sc = (SocketChannel) key.channel();
-                            sc.read(bb);
-                            if (!bb.hasRemaining())
+                            bb.flip();
+                            if (objs[1].equals("length"))
                             {
-                                bb.flip();
-                                if (objs[1].equals("length"))
+                                key.attach(new Object[] { objs[0], "content", ByteBuffer.allocate(bb.getInt()) });
+                            } else if (objs[1].equals("content"))
+                            {
+                                String content = Charset.forName("UTF-8").newDecoder().decode(bb).toString();
+                                String[] contentArr = StringUtilities.parseFromCSV(content);
+                                if (contentArr[0].equals("info_accepted"))
                                 {
-                                    key.attach(new Object[] { objs[0], "content", ByteBuffer.allocate(bb.getInt()) });
-                                } else if (objs[1].equals("content"))
-                                {
-                                    String content = Charset.forName("UTF-8").newDecoder().decode(bb).toString();
-                                    String[] contentArr = StringUtilities.parseFromCSV(content);
-                                    if (contentArr[0].equals("userinfo"))
+                                    RemoteUser romoteUser = null;
+                                    Set<SelectionKey> skeys = selector.keys();
+                                    for (SelectionKey curKey : skeys)
                                     {
-                                        RemoteUser romoteUser = new RemoteUser(contentArr[1]);
-                                        romoteUser.setKey(key);
-                                        objs[0] = romoteUser;
-                                        handler.post(new Runnable()
+                                        if (curKey == key)
+                                            continue;
+                                        Object[] curObjs = (Object[]) curKey.attachment();
+                                        if (curObjs != null)
                                         {
-                                            @Override
-                                            public void run()
+                                            if (curObjs[0] != null)
                                             {
-                                                // TODO Auto-generated method stub
-                                                onAccepted((RemoteUser) objs[0]);
+                                                RemoteUser curRemoteUser = (RemoteUser) curObjs[0];
+                                                if (curRemoteUser.getTransferKey() != null)
+                                                {
+                                                    String curAddr = ((InetSocketAddress) ((SocketChannel) curKey.channel()).socket().getRemoteSocketAddress()).getAddress().getHostAddress();
+                                                    String addr = ((InetSocketAddress) sc.socket().getRemoteSocketAddress()).getAddress().getHostAddress();
+                                                    if (curAddr.equals(addr))
+                                                    {
+                                                        romoteUser = curRemoteUser;
+                                                        break;
+                                                    }
+                                                }
                                             }
-                                        });
-                                    } else if (contentArr[0].equals("transfer_request"))
-                                    {
-                                        final String path = contentArr[1];
-                                        final long size = Long.parseLong(contentArr[2]);
-                                        handler.post(new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                // TODO Auto-generated method stub
-                                                onTransferRequest((RemoteUser) objs[0], path, size);
-                                            }
-                                        });
-                                    } else if (contentArr[0].equals("transfer_reply"))
-                                    {
-                                        final boolean allow = Boolean.parseBoolean(contentArr[1]);
-                                        final String path = contentArr[2];
-                                        final long size = Long.parseLong(contentArr[3]);
-                                        handler.post(new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                // TODO Auto-generated method stub
-                                                onTransferReply((RemoteUser) objs[0], allow, path, size);
-                                            }
-                                        });
-                                    } else if (contentArr[0].equals("transfer"))
-                                    {
-
+                                        }
                                     }
+                                    if (romoteUser == null)
+                                    {
+                                        romoteUser = new RemoteUser(contentArr[1]);
+                                        romoteUser.setKey(key);
+                                        key.attach(new Object[] { romoteUser, "length", ByteBuffer.allocate(4) });
+                                    } else
+                                    {
+                                        romoteUser.setName(contentArr[1]);
+                                        romoteUser.setKey(key);
+                                        final RemoteUser romoteUserPoint = romoteUser;
+                                        handler.post(new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                // TODO Auto-generated method stub
+                                                onAccepted(romoteUserPoint);
+                                            }
+                                        });
+                                        key.attach(new Object[] { romoteUser, "connected" });
+                                        key.interestOps(SelectionKey.OP_WRITE);
+                                    }
+                                } else if (contentArr[0].equals("transferkey_accepted"))
+                                {
+                                    RemoteUser romoteUser = null;
+                                    Set<SelectionKey> skeys = selector.keys();
+                                    for (SelectionKey curKey : skeys)
+                                    {
+                                        if (curKey == key)
+                                            continue;
+                                        Object[] curObjs = (Object[]) curKey.attachment();
+                                        if (curObjs != null)
+                                        {
+                                            if (curObjs[0] != null)
+                                            {
+                                                RemoteUser curRemoteUser = (RemoteUser) curObjs[0];
+                                                if (curRemoteUser.getKey() != null)
+                                                {
+                                                    String curAddr = ((InetSocketAddress) ((SocketChannel) curKey.channel()).socket().getRemoteSocketAddress()).getAddress().getHostAddress();
+                                                    String addr = ((InetSocketAddress) sc.socket().getRemoteSocketAddress()).getAddress().getHostAddress();
+                                                    if (curAddr.equals(addr))
+                                                    {
+                                                        romoteUser = curRemoteUser;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (romoteUser == null)
+                                    {
+                                        romoteUser = new RemoteUser("");
+                                        romoteUser.setTransferKey(key);
+                                        key.attach(new Object[] { romoteUser, "length", ByteBuffer.allocate(4) });
+                                    } else
+                                    {
+                                        romoteUser.setTransferKey(key);
+                                        final RemoteUser romoteUserPoint = romoteUser;
+                                        handler.post(new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                // TODO Auto-generated method stub
+                                                onAccepted(romoteUserPoint);
+                                            }
+                                        });
+                                        romoteUser.getKey().attach(new Object[] { romoteUser, "connected" });
+                                        romoteUser.getKey().interestOps(SelectionKey.OP_WRITE);
+                                        key.attach(new Object[] { romoteUser, "length", ByteBuffer.allocate(4) });
+                                    }
+                                } else if (contentArr[0].equals("connected"))
+                                {
+                                    final RemoteUser remoteUser = (RemoteUser) objs[0];
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            // TODO Auto-generated method stub
+                                            onConnected(remoteUser);
+                                        }
+                                    });
+                                    key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4) });
+                                } else if (contentArr[0].equals("transfer_request"))
+                                {
+                                    final RemoteUser remoteUser = (RemoteUser) objs[0];
+                                    final String path = contentArr[1];
+                                    final long size = Long.parseLong(contentArr[2]);
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            // TODO Auto-generated method stub
+                                            onTransferRequest(remoteUser, path, size);
+                                        }
+                                    });
+                                } else if (contentArr[0].equals("transfer_reply"))
+                                {
+                                    final RemoteUser remoteUser = (RemoteUser) objs[0];
+                                    final boolean allow = Boolean.parseBoolean(contentArr[1]);
+                                    final String path = contentArr[2];
+                                    final long size = Long.parseLong(contentArr[3]);
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            // TODO Auto-generated method stub
+                                            onTransferReply(remoteUser, allow, path, size);
+                                        }
+                                    });
+                                } else if (contentArr[0].equals("transfer"))
+                                {
+
                                 }
                             }
                         }
-                    } catch (IOException e)
-                    {
-                        LogManager.logE(RemoteCallback.class, "io error.", e);
-                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
                     }
                 } else if (key.isWritable())
                 {
                     Object[] objs = (Object[]) key.attachment();
                     SocketChannel sc = (SocketChannel) key.channel();
-                    try
+                    if (objs[1].equals("info_accepted"))
                     {
-                        if (objs[1].equals("transfer_request"))
-                        {
-                            File file = (File) objs[2];
-                            String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", file.getAbsolutePath(), String.valueOf(file.length()) });
-                            sc.write(ByteBuffer.wrap(msg.getBytes("UTF-8")));
-                            key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                            key.interestOps(SelectionKey.OP_READ);
-                        } else if (objs[1].equals("transfer_reply"))
-                        {
-                            String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]), String.valueOf(objs[4]) });
-                            sc.write(ByteBuffer.wrap(msg.getBytes("UTF-8")));
-                            key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                            key.interestOps(SelectionKey.OP_READ);
-                        } else if (objs[1].equals("transfer"))
-                        {
-
-                        }
-                    } catch (IOException e)
-                    {
-                        LogManager.logE(RemoteCallback.class, "io error.", e);
+                        RemoteUser remoteUser = (RemoteUser) objs[0];
+                        String msg = StringUtilities.concatByCSV(new String[] { "info_accepted", remoteUser.getName() });
+                        byte[] msgByte = msg.getBytes("UTF-8");
+                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                        sendBuff.putInt(msgByte.length);
+                        sendBuff.put(msgByte);
+                        sendBuff.flip();
+                        sc.write(sendBuff);
                         key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
                         key.interestOps(SelectionKey.OP_READ);
+                    } else if (objs[1].equals("transferkey_accepted"))
+                    {
+                        String msg = "transferkey_accepted";
+                        byte[] msgByte = msg.getBytes("UTF-8");
+                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                        sendBuff.putInt(msgByte.length);
+                        sendBuff.put(msgByte);
+                        sendBuff.flip();
+                        sc.write(sendBuff);
+                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                        key.interestOps(SelectionKey.OP_READ);
+                    } else if (objs[1].equals("connected"))
+                    {
+                        String msg = "connected";
+                        byte[] msgByte = msg.getBytes("UTF-8");
+                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                        sendBuff.putInt(msgByte.length);
+                        sendBuff.put(msgByte);
+                        sendBuff.flip();
+                        sc.write(sendBuff);
+                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                        key.interestOps(SelectionKey.OP_READ);
+                    } else if (objs[1].equals("transfer_request"))
+                    {
+                        File file = (File) objs[2];
+                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", file.getAbsolutePath(), String.valueOf(file.length()) });
+                        byte[] msgByte = msg.getBytes("UTF-8");
+                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                        sendBuff.putInt(msgByte.length);
+                        sendBuff.put(msgByte);
+                        sendBuff.flip();
+                        sc.write(sendBuff);
+                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                        key.interestOps(SelectionKey.OP_READ);
+                    } else if (objs[1].equals("transfer_reply"))
+                    {
+                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]), String.valueOf(objs[4]) });
+                        byte[] msgByte = msg.getBytes("UTF-8");
+                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                        sendBuff.putInt(msgByte.length);
+                        sendBuff.put(msgByte);
+                        sendBuff.flip();
+                        sc.write(sendBuff);
+                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                        key.interestOps(SelectionKey.OP_READ);
+                    } else if (objs[1].equals("transfer"))
+                    {
+
                     }
                 }
             }

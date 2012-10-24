@@ -9,12 +9,18 @@ import android.net.wifi.ScanResult;
 public class RemoteUser
 {
 
-    private String       name       = null;
-    private ScanResult   scanResult = null;
-    private String       ip         = null;
-    private SelectionKey key        = null;
+    private String       name        = null;
+    private ScanResult   scanResult  = null;
+    private String       ip          = null;
+    private SelectionKey key         = null;
+    private SelectionKey transferKey = null;
 
     RemoteUser(String name)
+    {
+        setName(name);
+    }
+
+    void setName(String name)
     {
         if (name == null)
             throw new NullPointerException();
@@ -62,14 +68,38 @@ public class RemoteUser
         return key;
     }
 
+    void setTransferKey(SelectionKey transferKey)
+    {
+        if (transferKey == null)
+            throw new NullPointerException();
+        this.transferKey = transferKey;
+    }
+
+    SelectionKey getTransferKey()
+    {
+        return transferKey;
+    }
+
     public void close() throws IOException
     {
-        if (key != null)
+        try
         {
-            key.cancel();
-            ((SocketChannel) key.channel()).close();
-            key = null;
+            if (key != null)
+            {
+                key.cancel();
+                ((SocketChannel) key.channel()).close();
+                key = null;
+            }
+        } finally
+        {
+            if (transferKey != null)
+            {
+                transferKey.cancel();
+                ((SocketChannel) transferKey.channel()).close();
+                transferKey = null;
+            }
         }
+
     }
 
 }
