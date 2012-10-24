@@ -227,9 +227,13 @@ public class User
         if (ip == null)
             throw new IllegalStateException("can only connect to user which has been found by scanning and ap already been connected.");
         SocketChannel sc = SocketChannel.open();
+        SocketChannel transferSc = SocketChannel.open();
         sc.configureBlocking(false);
-        sc.register(selector, SelectionKey.OP_CONNECT, user);
+        transferSc.configureBlocking(false);
+        user.setKey(sc.register(selector, SelectionKey.OP_CONNECT, user));
+        user.setTransferKey(transferSc.register(selector, SelectionKey.OP_CONNECT, user));
         sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+        transferSc.connect(new InetSocketAddress(ip, LISTENING_PORT));
     }
 
     public void sendTransferRequest(RemoteUser user, File file) throws FileNotFoundException
