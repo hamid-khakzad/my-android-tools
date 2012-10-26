@@ -1,7 +1,6 @@
 package cn.emagsoftware.net.wifi.direct;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -16,6 +15,8 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
@@ -38,6 +39,7 @@ public class User
     private boolean             preWifiEnabled  = false;
 
     private Selector            selector        = null;
+    private RemoteCallback      callback        = null;
 
     private SelectionKey        listeningKey    = null;
 
@@ -48,6 +50,7 @@ public class User
         this.name = name;
         selector = Selector.open();
         callback.bindSelector(selector);
+        this.callback = callback;
         new Thread(callback).start();
     }
 
@@ -230,44 +233,48 @@ public class User
         SocketChannel transferSc = SocketChannel.open();
         sc.configureBlocking(false);
         transferSc.configureBlocking(false);
-        user.setKey(sc.register(selector, SelectionKey.OP_CONNECT, user));
-        user.setTransferKey(transferSc.register(selector, SelectionKey.OP_CONNECT, user));
         sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
         transferSc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+        user.setKey(sc.register(selector, SelectionKey.OP_CONNECT, user));
+        user.setTransferKey(transferSc.register(selector, SelectionKey.OP_CONNECT, user));
     }
 
-    public void sendTransferRequest(RemoteUser user, File file) throws FileNotFoundException
+    public void sendTransferRequest(RemoteUser user, File file)
     {
         SelectionKey key = user.getKey();
         if (key == null)
             throw new IllegalStateException("the input user has not been connected already.");
-        if (!file.isFile())
-            throw new FileNotFoundException("file is invalid.");
         Object[] objs = (Object[]) key.attachment();
         key.attach(new Object[] { objs[0], "transfer_request", file });
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void replyTransferRequest(RemoteUser user, boolean allow, String path, long size)
+    public void replyTransferRequest(RemoteUser user, boolean allow, String path)
     {
         SelectionKey key = user.getKey();
         if (key == null)
             throw new IllegalStateException("the input user has not been connected already.");
         Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_reply", allow, path, size });
+        key.attach(new Object[] { objs[0], "transfer_reply", allow, path });
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void sendTransfer(RemoteUser user, File file) throws FileNotFoundException
+    public void sendTransfer(final RemoteUser user, final File file)
     {
-        SelectionKey key = user.getKey();
-        if (key == null)
+        SelectionKey transferKey = user.getTransferKey();
+        if (transferKey == null)
             throw new IllegalStateException("the input user has not been connected already.");
-        if (!file.isFile())
-            throw new FileNotFoundException("file is invalid.");
-        Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer", file });
-        key.interestOps(SelectionKey.OP_WRITE);
+        new Handler(Looper.getMainLooper()).post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                // TODO Auto-generated method stub
+                callback.onTransferProgress(user, file.getAbsolutePath(), null, file.length(), 0);
+            }
+        });
+        transferKey.attach(new Object[] { user, "transfer", file });
+        transferKey.interestOps(SelectionKey.OP_WRITE);
     }
 
     public void closeAp(Context context, final CloseApCallback callback) throws ReflectHiddenFuncException

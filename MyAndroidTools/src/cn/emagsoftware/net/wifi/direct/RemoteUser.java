@@ -80,6 +80,11 @@ public class RemoteUser
         return transferKey;
     }
 
+    boolean isConnectedComplete()
+    {
+        return key != null && transferKey != null;
+    }
+
     public void close() throws IOException
     {
         try
@@ -87,16 +92,18 @@ public class RemoteUser
             if (key != null)
             {
                 key.cancel();
-                ((SocketChannel) key.channel()).close();
+                SocketChannel sc = (SocketChannel) key.channel();
                 key = null;
+                sc.close();
             }
         } finally
         {
             if (transferKey != null)
             {
                 transferKey.cancel();
-                ((SocketChannel) transferKey.channel()).close();
+                SocketChannel sc = (SocketChannel) transferKey.channel();
                 transferKey = null;
+                sc.close();
             }
         }
 
