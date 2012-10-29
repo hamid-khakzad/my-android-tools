@@ -43,6 +43,8 @@ public class User
 
     private SelectionKey        listeningKey    = null;
 
+    private Handler             handler         = new Handler(Looper.getMainLooper());
+
     public User(String name, RemoteCallback callback) throws IOException
     {
         if (name == null)
@@ -54,7 +56,71 @@ public class User
         new Thread(callback).start();
     }
 
-    public void openAp(Context context, final OpenApCallback callback) throws ReflectHiddenFuncException
+    public void listening(Context context,final ListeningCallback callback)
+    {
+        try
+        {
+            openAp(context, new WifiCallback(context)
+            {
+                @Override
+                public void onWifiApEnabled()
+                {
+                    // TODO Auto-generated method stub
+                    super.onWifiApEnabled();
+                    try
+                    {
+                        acceptIfNecessary();
+                        callback.onListening();
+                    }catch(final IOException e)
+                    {
+                        try
+                        {
+                            closeAp(context, new CloseApCallback(){
+                                @Override
+                                 public void onClosed()
+                                 {
+                                     // TODO Auto-generated method stub
+                                    callback.onError(e);
+                                 }
+                                 @Override
+                                 public void onError()
+                                 {
+                                     // TODO Auto-generated method stub
+                                     LogManager.logE(User.class, "close ap failed by 'onError()'.");
+                                     callback.onError(e);
+                                 }
+                             });
+                        }catch(ReflectHiddenFuncException e1)
+                        {
+                            LogManager.logE(User.class, "close ap failed.", e1);
+                            callback.onError(e);
+                        }
+                    }
+                }
+
+                @Override
+                public void onError()
+                {
+                    // TODO Auto-generated method stub
+                    super.onError();
+                    callback.onError(new RuntimeException("open ap failed by 'onError()'."));
+                }
+            });
+        } catch (final ReflectHiddenFuncException e)
+        {
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onError(e);
+                }
+            });
+        }
+    }
+
+    private void openAp(Context context, WifiCallback callback) throws ReflectHiddenFuncException
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         if (preApConfig == null)
@@ -68,24 +134,7 @@ public class User
             }
             preWifiEnabled = wifiUtils.isWifiEnabled();
         }
-        wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, new WifiCallback(context)
-        {
-            @Override
-            public void onWifiApEnabled()
-            {
-                // TODO Auto-generated method stub
-                super.onWifiApEnabled();
-                callback.onOpened();
-            }
-
-            @Override
-            public void onError()
-            {
-                // TODO Auto-generated method stub
-                super.onError();
-                callback.onError();
-            }
-        }, 0);
+        wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, callback, 0);
     }
 
     private WifiConfiguration createDirectApConfig(Context context)
@@ -123,9 +172,10 @@ public class User
         apconfig.hiddenSSID = false;
         return apconfig;
     }
-
-    public void listening() throws IOException
+    
+    private void acceptIfNecessary() throws IOException
     {
+        if(listeningKey != null) return;
         ServerSocketChannel serverChannel = null;
         try
         {
@@ -135,22 +185,108 @@ public class User
             listeningKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         } catch (IOException e)
         {
-            if (serverChannel != null)
-                serverChannel.close();
+            try
+            {
+                if (serverChannel != null)
+                    serverChannel.close();
+            }catch(IOException e1)
+            {
+                LogManager.logE(User.class, "close server socket channel failed.", e1);
+            }
+            throw e;
         }
     }
 
-    public void finishListening() throws IOException
+    private void closeAp(Context context, final CloseApCallback callback) throws ReflectHiddenFuncException
     {
-        if (listeningKey != null)
+        final WifiUtils wifiUtils = new WifiUtils(context);
+        wifiUtils.setWifiApEnabled(null, false, new WifiCallback(context)
         {
-            listeningKey.cancel();
-            ((ServerSocketChannel) listeningKey.channel()).close();
-            listeningKey = null;
-        }
+            @Override
+            public void onWifiApDisabled()
+            {
+                // TODO Auto-generated method stub
+                super.onWifiApDisabled();
+                if (preApConfig != null)
+                {
+                    try
+                    {
+                        wifiUtils.setWifiApConfiguration(preApConfig);
+                    } catch (ReflectHiddenFuncException e)
+                    {
+                        LogManager.logE(User.class, "restore ap config failed.", e);
+                    }
+                    if (preWifiStaticIp != -1)
+                        Settings.System.putInt(context.getContentResolver(), "wifi_static_ip", preWifiStaticIp);
+                    if (preWifiEnabled)
+                        wifiUtils.setWifiEnabled(true, null, 0);
+                    preApConfig = null;
+                    preWifiStaticIp = -1;
+                    preWifiEnabled = false;
+                }
+                callback.onClosed();
+            }
+
+            @Override
+            public void onError()
+            {
+                // TODO Auto-generated method stub
+                super.onError();
+                callback.onError();
+            }
+        }, 0);
     }
 
-    public void scanRemoteUsers(Context context, final ScanRemoteUsersCallback callback)
+    private interface CloseApCallback
+    {
+        public void onClosed();
+
+        public void onError();
+    }
+
+    public void finishListening(Context context,final FinishListeningCallback callback)
+    {
+        try
+        {
+            if (listeningKey != null)
+            {
+                listeningKey.cancel();
+                ((ServerSocketChannel) listeningKey.channel()).close();
+                listeningKey = null;
+            }
+            if(preApConfig != null)
+            {
+                closeAp(context, new CloseApCallback()
+                {
+                    @Override
+                    public void onClosed()
+                    {
+                        // TODO Auto-generated method stub
+                        callback.onFinished();
+                    }
+                    @Override
+                    public void onError()
+                    {
+                        // TODO Auto-generated method stub
+                        callback.onError(new RuntimeException("close ap failed by 'onError()'."));
+                    }
+                });
+            }
+        }catch(final Exception e)
+        {
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onError(e);
+                }
+            });
+        }
+    }
+    
+    public void scanUsers(Context context, final ScanUsersCallback callback)
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.startScan(new WifiCallback(context)
@@ -224,11 +360,11 @@ public class User
         }, 0);
     }
 
-    public void connectToRemoteUser(RemoteUser user) throws IOException
+    public void connectToUser(RemoteUser user) throws IOException
     {
         String ip = user.getIp();
         if (ip == null)
-            throw new IllegalStateException("can only connect to user which has been found by scanning and ap already been connected.");
+            throw new IllegalStateException("can only connect to user which ap has already been connected,call 'connectToRemoteAp(...)' first.");
         SocketChannel sc = SocketChannel.open();
         SocketChannel transferSc = SocketChannel.open();
         sc.configureBlocking(false);
@@ -264,7 +400,7 @@ public class User
         SelectionKey transferKey = user.getTransferKey();
         if (transferKey == null)
             throw new IllegalStateException("the input user has not been connected already.");
-        new Handler(Looper.getMainLooper()).post(new Runnable()
+        handler.post(new Runnable()
         {
             @Override
             public void run()
@@ -275,46 +411,6 @@ public class User
         });
         transferKey.attach(new Object[] { user, "transfer", file });
         transferKey.interestOps(SelectionKey.OP_WRITE);
-    }
-
-    public void closeAp(Context context, final CloseApCallback callback) throws ReflectHiddenFuncException
-    {
-        final WifiUtils wifiUtils = new WifiUtils(context);
-        wifiUtils.setWifiApEnabled(null, false, new WifiCallback(context)
-        {
-            @Override
-            public void onWifiApDisabled()
-            {
-                // TODO Auto-generated method stub
-                super.onWifiApDisabled();
-                if (preApConfig != null)
-                {
-                    try
-                    {
-                        wifiUtils.setWifiApConfiguration(preApConfig);
-                    } catch (ReflectHiddenFuncException e)
-                    {
-                        LogManager.logE(User.class, "restore ap config failed.", e);
-                    }
-                    if (preWifiStaticIp != -1)
-                        Settings.System.putInt(context.getContentResolver(), "wifi_static_ip", preWifiStaticIp);
-                    if (preWifiEnabled)
-                        wifiUtils.setWifiEnabled(true, null, 0);
-                    preApConfig = null;
-                    preWifiStaticIp = -1;
-                    preWifiEnabled = false;
-                }
-                callback.onClosed();
-            }
-
-            @Override
-            public void onError()
-            {
-                // TODO Auto-generated method stub
-                super.onError();
-                callback.onError();
-            }
-        }, 0);
     }
 
     public void close() throws IOException
