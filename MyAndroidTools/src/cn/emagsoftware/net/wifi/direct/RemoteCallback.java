@@ -552,11 +552,7 @@ public abstract class RemoteCallback implements Runnable
             }
         }
     }
-
-    public abstract void onAccepted(RemoteUser user);
-
-    public abstract void onAcceptedFailed(Exception e);
-
+    
     public abstract void onConnected(RemoteUser user);
 
     public abstract void onConnectedFailed(RemoteUser user, Exception e);
