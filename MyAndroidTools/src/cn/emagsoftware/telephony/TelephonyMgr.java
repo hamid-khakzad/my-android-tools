@@ -26,8 +26,12 @@ public final class TelephonyMgr
         {
             Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
             method.setAccessible(true);
-            return (method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null)
-                    || (method.invoke(null, "telephony.registry") != null && method.invoke(null, "telephony.registry2") != null);
+            String model = Build.MODEL;
+            if ("Philips T939".equals(model))
+                return method.invoke(null, "phone0") != null && method.invoke(null, "phone1") != null;
+            else
+                return (method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null)
+                        || (method.invoke(null, "telephony.registry") != null && method.invoke(null, "telephony.registry2") != null);
         } catch (ClassNotFoundException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -52,11 +56,20 @@ public final class TelephonyMgr
     public static String getSubscriberId(int cardIndex) throws ReflectHiddenFuncException
     {
         String name = null;
+        String model = Build.MODEL;
         if (cardIndex == 0)
-            name = "iphonesubinfo";
-        else if (cardIndex == 1)
-            name = "iphonesubinfo2";
-        else
+        {
+            if ("Philips T939".equals(model))
+                name = "iphonesubinfo0";
+            else
+                name = "iphonesubinfo";
+        } else if (cardIndex == 1)
+        {
+            if ("Philips T939".equals(model))
+                name = "iphonesubinfo1";
+            else
+                name = "iphonesubinfo2";
+        } else
             throw new IllegalArgumentException("cardIndex can only be 0 or 1");
         try
         {
