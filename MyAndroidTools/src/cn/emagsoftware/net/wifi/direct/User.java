@@ -55,7 +55,12 @@ public class User
         this.callback = callback;
         new Thread(callback).start();
     }
-
+    
+    public String getName()
+    {
+        return name;
+    }
+    
     public void listening(Context context,final ListeningCallback callback)
     {
         try
@@ -173,7 +178,7 @@ public class User
         return apconfig;
     }
     
-    private void acceptIfNecessary() throws IOException
+    void acceptIfNecessary() throws IOException
     {
         if(listeningKey != null) return;
         ServerSocketChannel serverChannel = null;
@@ -271,7 +276,17 @@ public class User
                         callback.onError(new RuntimeException("close ap failed by 'onError()'."));
                     }
                 });
+                return;
             }
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onFinished();
+                }
+            });
         }catch(final Exception e)
         {
             handler.post(new Runnable()
@@ -360,19 +375,37 @@ public class User
         }, 0);
     }
 
-    public void connectToUser(RemoteUser user) throws IOException
+    public void connectToUser(final RemoteUser user)
     {
         String ip = user.getIp();
         if (ip == null)
             throw new IllegalStateException("can only connect to user which ap has already been connected,call 'connectToRemoteAp(...)' first.");
-        SocketChannel sc = SocketChannel.open();
-        SocketChannel transferSc = SocketChannel.open();
-        sc.configureBlocking(false);
-        transferSc.configureBlocking(false);
-        sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
-        transferSc.connect(new InetSocketAddress(ip, LISTENING_PORT));
-        user.setKey(sc.register(selector, SelectionKey.OP_CONNECT, user));
-        user.setTransferKey(transferSc.register(selector, SelectionKey.OP_CONNECT, user));
+        SocketChannel sc = null;
+        try
+        {
+            sc = SocketChannel.open();
+            sc.configureBlocking(false);
+            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+            sc.register(selector, SelectionKey.OP_CONNECT, new Object[]{user,"connect",this});
+        }catch(final IOException e)
+        {
+            try
+            {
+                if(sc != null) sc.close();
+            }catch(IOException e1)
+            {
+                LogManager.logE(User.class, "close socket channel failed.", e1);
+            }
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onConnectedFailed(user, e);
+                }
+            });
+        }
     }
 
     public void sendTransferRequest(RemoteUser user, File file)
