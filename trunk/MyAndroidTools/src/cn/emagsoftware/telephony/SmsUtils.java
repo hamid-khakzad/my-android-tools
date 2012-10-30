@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.telephony.SmsManager;
 import cn.emagsoftware.telephony.receiver.SmsInterceptor;
@@ -39,13 +40,21 @@ public final class SmsUtils
     {
         boolean isDualMode = TelephonyMgr.isDualMode();
         String name = null;
+        String model = Build.MODEL;
         if (cardIndex == 0)
-            name = "isms";
-        else if (cardIndex == 1)
+        {
+            if ("Philips T939".equals(model))
+                name = "isms0";
+            else
+                name = "isms";
+        } else if (cardIndex == 1)
         {
             if (!isDualMode)
                 return;
-            name = "isms2";
+            if ("Philips T939".equals(model))
+                name = "isms1";
+            else
+                name = "isms2";
         } else
             throw new IllegalArgumentException("cardIndex can only be 0 or 1");
 
