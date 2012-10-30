@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -66,39 +67,23 @@ public abstract class RemoteCallback implements Runnable
                     {
                         sc = ((ServerSocketChannel) key.channel()).accept();
                         sc.configureBlocking(false);
-                        sc.register(selector, SelectionKey.OP_READ);
-                    } catch (final Exception e)
+                        sc.register(selector, SelectionKey.OP_READ, new Object[]{null, "length", ByteBuffer.allocate(4)});
+                    } catch (Exception e)
                     {
                         try
                         {
                             if (sc != null)
                                 sc.close();
-                        } catch (final IOException e1)
+                        } catch (IOException e1)
                         {
-                            handler.post(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    // TODO Auto-generated method stub
-                                    onAcceptedFailed(e1);
-                                }
-                            });
-                            continue;
+                            LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                         }
-                        handler.post(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                // TODO Auto-generated method stub
-                                onAcceptedFailed(e);
-                            }
-                        });
+                        LogManager.logE(RemoteCallback.class, "handle accept socket channel failed.", e);
                     }
                 } else if (key.isConnectable())
                 {
-                    final RemoteUser user = (RemoteUser) key.attachment();
+                    Object[] objs = (Object[])key.attachment();
+                    final RemoteUser user = (RemoteUser) objs[0];
                     SocketChannel sc = null;
                     try
                     {
@@ -109,19 +94,11 @@ public abstract class RemoteCallback implements Runnable
                     {
                         try
                         {
-                            user.close();
-                        } catch (final IOException e1)
+                            key.cancel();
+                            if(sc != null) sc.close();
+                        } catch (IOException e1)
                         {
-                            handler.post(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    // TODO Auto-generated method stub
-                                    onConnectedFailed(user, e1);
-                                }
-                            });
-                            continue;
+                            LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                         }
                         handler.post(new Runnable()
                         {
@@ -134,21 +111,11 @@ public abstract class RemoteCallback implements Runnable
                         });
                         continue;
                     }
-                    if (key == user.getKey())
-                    {
-                        key.attach(new Object[] { user, "info_accepted" });
-                    } else if (key == user.getTransferKey())
-                    {
-                        key.attach(new Object[] { user, "transferkey_accepted" });
-                    }
+                    key.attach(new Object[] { user, "info_send", objs[2] });
                     key.interestOps(SelectionKey.OP_WRITE);
                 } else if (key.isReadable())
                 {
                     Object[] objs = (Object[]) key.attachment();
-                    if (objs == null)
-                    {
-                        objs = new Object[] { null, "length", ByteBuffer.allocate(4) };
-                    }
                     SocketChannel sc = (SocketChannel) key.channel();
                     if (objs[2] instanceof ByteBuffer)
                     {
@@ -177,18 +144,15 @@ public abstract class RemoteCallback implements Runnable
                                         remoteUser.close();
                                     } finally
                                     {
-                                        if(remoteUser.isConnectedComplete())
+                                        handler.post(new Runnable()
                                         {
-                                            handler.post(new Runnable()
+                                            @Override
+                                            public void run()
                                             {
-                                                @Override
-                                                public void run()
-                                                {
-                                                    // TODO Auto-generated method stub
-                                                    onDisconnected(remoteUser);
-                                                }
-                                            });
-                                        }
+                                                // TODO Auto-generated method stub
+                                                onRemoteDisconnected(remoteUser);
+                                            }
+                                        });
                                     }
                                 }
                             }catch(IOException e)
@@ -216,55 +180,20 @@ public abstract class RemoteCallback implements Runnable
                                     continue;
                                 }
                                 String[] contentArr = StringUtilities.parseFromCSV(content);
-                                if (contentArr[0].equals("info_accepted"))
+                                if (contentArr[0].equals("info_send"))
                                 {
-                                    RemoteUser queryUser = null;
-                                    Set<SelectionKey> skeys = selector.keys();
-                                    for (SelectionKey curKey : skeys)
+                                    final RemoteUser remote = new RemoteUser(contentArr[1]);
+                                    remote.setKey(key);
+                                    handler.post(new Runnable()
                                     {
-                                        if (curKey == key)
-                                            continue;
-                                        Object[] curObjs = (Object[]) curKey.attachment();
-                                        if (curObjs != null)
+                                        @Override
+                                        public void run()
                                         {
-                                            if (curObjs[0] != null)
-                                            {
-                                                RemoteUser curRemoteUser = (RemoteUser) curObjs[0];
-                                                if (curRemoteUser.getTransferKey() != null)
-                                                {
-                                                    String curAddr = ((InetSocketAddress) ((SocketChannel) curKey.channel()).socket().getRemoteSocketAddress()).getAddress().getHostAddress();
-                                                    String addr = ((InetSocketAddress) sc.socket().getRemoteSocketAddress()).getAddress().getHostAddress();
-                                                    if (curAddr.equals(addr))
-                                                    {
-                                                        queryUser = curRemoteUser;
-                                                        break;
-                                                    }
-                                                }
-                                            }
+                                            // TODO Auto-generated method stub
+                                            onConnected(remote);
                                         }
-                                    }
-                                    if (queryUser == null)
-                                    {
-                                        queryUser = new RemoteUser(contentArr[1]);
-                                        queryUser.setKey(key);
-                                        key.attach(new Object[] { queryUser, "length", ByteBuffer.allocate(4) });
-                                    } else
-                                    {
-                                        queryUser.setName(contentArr[1]);
-                                        queryUser.setKey(key);
-                                        final RemoteUser queryUserPoint = queryUser;
-                                        handler.post(new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                // TODO Auto-generated method stub
-                                                onAccepted(queryUserPoint);
-                                            }
-                                        });
-                                        key.attach(new Object[] { queryUser, "connected" });
-                                        key.interestOps(SelectionKey.OP_WRITE);
-                                    }
+                                    });
+                                    key.attach(new Object[] { remote, "length", ByteBuffer.allocate(4) });
                                 } else if (contentArr[0].equals("transferkey_accepted"))
                                 {
                                     RemoteUser queryUser = null;
@@ -314,18 +243,6 @@ public abstract class RemoteCallback implements Runnable
                                         queryUser.getKey().interestOps(SelectionKey.OP_WRITE);
                                         key.attach(new Object[] { queryUser, "length", ByteBuffer.allocate(4) });
                                     }
-                                } else if (contentArr[0].equals("connected"))
-                                {
-                                    handler.post(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            // TODO Auto-generated method stub
-                                            onConnected(remoteUser);
-                                        }
-                                    });
-                                    key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4) });
                                 } else if (contentArr[0].equals("transfer_request"))
                                 {
                                     final String path = contentArr[1];
@@ -430,32 +347,71 @@ public abstract class RemoteCallback implements Runnable
                 {
                     Object[] objs = (Object[]) key.attachment();
                     SocketChannel sc = (SocketChannel) key.channel();
-                    if (objs[1].equals("info_accepted"))
+                    if (objs[1].equals("info_send"))
                     {
-                        RemoteUser remoteUser = (RemoteUser) objs[0];
-                        String msg = StringUtilities.concatByCSV(new String[] { "info_accepted", remoteUser.getName() });
-                        byte[] msgByte = msg.getBytes("UTF-8");
-                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                        sendBuff.putInt(msgByte.length);
-                        sendBuff.put(msgByte);
-                        sendBuff.flip();
-                        sc.write(sendBuff);
-                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                        key.interestOps(SelectionKey.OP_READ);
+                        final RemoteUser remoteUser = (RemoteUser) objs[0];
+                        try
+                        {
+                            ByteBuffer sendBuff = null;
+                            User user = null;
+                            if(objs[2] instanceof ByteBuffer)
+                            {
+                                sendBuff = (ByteBuffer)objs[2];
+                                user = (User)objs[3];
+                            }else
+                            {
+                                user = (User)objs[2];
+                                String msg = StringUtilities.concatByCSV(new String[] { "info_send", user.getName() });
+                                byte[] msgByte = msg.getBytes("UTF-8");
+                                sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                sendBuff.putInt(msgByte.length);
+                                sendBuff.put(msgByte);
+                                sendBuff.flip();
+                            }
+                            sc.write(sendBuff);
+                            if(sendBuff.hasRemaining())
+                            {
+                                key.attach(new Object[] { objs[0], "info_send", sendBuff, user });
+                            }else
+                            {
+                                key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                key.interestOps(SelectionKey.OP_READ);
+                                user.acceptIfNecessary();
+                            }
+                        }catch(final IOException e)
+                        {
+                            try
+                            {
+                                key.cancel();
+                                sc.close();
+                            }catch(IOException e1)
+                            {
+                                LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
+                            }
+                            handler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onConnectedFailed(remoteUser, e);
+                                }
+                            });
+                            continue;
+                        }
+                        remoteUser.setKey(key);
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onConnected(remoteUser);
+                            }
+                        });
                     } else if (objs[1].equals("transferkey_accepted"))
                     {
                         String msg = "transferkey_accepted";
-                        byte[] msgByte = msg.getBytes("UTF-8");
-                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                        sendBuff.putInt(msgByte.length);
-                        sendBuff.put(msgByte);
-                        sendBuff.flip();
-                        sc.write(sendBuff);
-                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                        key.interestOps(SelectionKey.OP_READ);
-                    } else if (objs[1].equals("connected"))
-                    {
-                        String msg = "connected";
                         byte[] msgByte = msg.getBytes("UTF-8");
                         ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
                         sendBuff.putInt(msgByte.length);
@@ -556,7 +512,9 @@ public abstract class RemoteCallback implements Runnable
     public abstract void onConnected(RemoteUser user);
 
     public abstract void onConnectedFailed(RemoteUser user, Exception e);
-
+    
+    public abstract void onRemoteDisconnected(RemoteUser user);
+    
     public abstract void onTransferRequest(RemoteUser user, String path, long size);
 
     public abstract void onTransferReply(RemoteUser user, boolean allow, String path);
@@ -588,7 +546,5 @@ public abstract class RemoteCallback implements Runnable
      * @param e
      */
     public abstract void onTransferFailed(RemoteUser user, String srcPath, String savingPath, long size, Exception e);
-    
-    public abstract void onDisconnected(RemoteUser user);
     
 }

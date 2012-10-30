@@ -17,16 +17,11 @@ public class RemoteUser
 
     RemoteUser(String name)
     {
-        setName(name);
-    }
-
-    void setName(String name)
-    {
         if (name == null)
             throw new NullPointerException();
         this.name = name;
     }
-
+    
     public String getName()
     {
         return name;
@@ -79,12 +74,7 @@ public class RemoteUser
     {
         return transferKey;
     }
-
-    boolean isConnectedComplete()
-    {
-        return key != null && transferKey != null;
-    }
-
+    
     public void close() throws IOException
     {
         try
