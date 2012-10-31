@@ -1,6 +1,7 @@
 package cn.emagsoftware.net.wifi.direct;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -55,13 +56,13 @@ public class User
         this.callback = callback;
         new Thread(callback).start();
     }
-    
+
     public String getName()
     {
         return name;
     }
-    
-    public void listening(Context context,final ListeningCallback callback)
+
+    public void listening(Context context, final ListeningCallback callback)
     {
         try
         {
@@ -76,26 +77,28 @@ public class User
                     {
                         acceptIfNecessary();
                         callback.onListening();
-                    }catch(final IOException e)
+                    } catch (final IOException e)
                     {
                         try
                         {
-                            closeAp(context, new CloseApCallback(){
+                            closeAp(context, new CloseApCallback()
+                            {
                                 @Override
-                                 public void onClosed()
-                                 {
-                                     // TODO Auto-generated method stub
+                                public void onClosed()
+                                {
+                                    // TODO Auto-generated method stub
                                     callback.onError(e);
-                                 }
-                                 @Override
-                                 public void onError()
-                                 {
-                                     // TODO Auto-generated method stub
-                                     LogManager.logE(User.class, "close ap failed by 'onError()'.");
-                                     callback.onError(e);
-                                 }
-                             });
-                        }catch(ReflectHiddenFuncException e1)
+                                }
+
+                                @Override
+                                public void onError()
+                                {
+                                    // TODO Auto-generated method stub
+                                    LogManager.logE(User.class, "close ap failed by 'onError()'.");
+                                    callback.onError(e);
+                                }
+                            });
+                        } catch (ReflectHiddenFuncException e1)
                         {
                             LogManager.logE(User.class, "close ap failed.", e1);
                             callback.onError(e);
@@ -177,10 +180,11 @@ public class User
         apconfig.hiddenSSID = false;
         return apconfig;
     }
-    
+
     void acceptIfNecessary() throws IOException
     {
-        if(listeningKey != null) return;
+        if (listeningKey != null)
+            return;
         ServerSocketChannel serverChannel = null;
         try
         {
@@ -194,7 +198,7 @@ public class User
             {
                 if (serverChannel != null)
                     serverChannel.close();
-            }catch(IOException e1)
+            } catch (IOException e1)
             {
                 LogManager.logE(User.class, "close server socket channel failed.", e1);
             }
@@ -249,7 +253,7 @@ public class User
         public void onError();
     }
 
-    public void finishListening(Context context,final FinishListeningCallback callback)
+    public void finishListening(Context context, final FinishListeningCallback callback)
     {
         try
         {
@@ -259,7 +263,7 @@ public class User
                 ((ServerSocketChannel) listeningKey.channel()).close();
                 listeningKey = null;
             }
-            if(preApConfig != null)
+            if (preApConfig != null)
             {
                 closeAp(context, new CloseApCallback()
                 {
@@ -269,6 +273,7 @@ public class User
                         // TODO Auto-generated method stub
                         callback.onFinished();
                     }
+
                     @Override
                     public void onError()
                     {
@@ -287,7 +292,7 @@ public class User
                     callback.onFinished();
                 }
             });
-        }catch(final Exception e)
+        } catch (final Exception e)
         {
             handler.post(new Runnable()
             {
@@ -300,7 +305,7 @@ public class User
             });
         }
     }
-    
+
     public void scanUsers(Context context, final ScanUsersCallback callback)
     {
         WifiUtils wifiUtils = new WifiUtils(context);
@@ -379,20 +384,21 @@ public class User
     {
         String ip = user.getIp();
         if (ip == null)
-            throw new IllegalStateException("can only connect to user which ap has already been connected,call 'connectToRemoteAp(...)' first.");
+            throw new IllegalStateException("ip not found,if the input user is found by scanning,call 'connectToRemoteAp(...)' first.");
         SocketChannel sc = null;
         try
         {
             sc = SocketChannel.open();
             sc.configureBlocking(false);
             sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
-            sc.register(selector, SelectionKey.OP_CONNECT, new Object[]{user,"connect",this});
-        }catch(final IOException e)
+            sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+        } catch (final IOException e)
         {
             try
             {
-                if(sc != null) sc.close();
-            }catch(IOException e1)
+                if (sc != null)
+                    sc.close();
+            } catch (IOException e1)
             {
                 LogManager.logE(User.class, "close socket channel failed.", e1);
             }
@@ -406,6 +412,11 @@ public class User
                 }
             });
         }
+    }
+
+    public void disconnectUser(RemoteUser user) throws IOException
+    {
+        user.close();
     }
 
     public void sendTransferRequest(RemoteUser user, File file)
@@ -428,27 +439,87 @@ public class User
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void sendTransfer(final RemoteUser user, final File file)
+    public void sendTransfer(RemoteUser user, File file)
     {
-        SelectionKey transferKey = user.getTransferKey();
-        if (transferKey == null)
+        if (user.getKey() == null)
             throw new IllegalStateException("the input user has not been connected already.");
+        final TransferEntity transfer = new TransferEntity();
+        transfer.setRemoteUser(user);
+        transfer.setSendPath(file.getAbsolutePath());
+        transfer.setSize(file.length());
+        user.addTransfer(transfer);
         handler.post(new Runnable()
         {
             @Override
             public void run()
             {
                 // TODO Auto-generated method stub
-                callback.onTransferProgress(user, file.getAbsolutePath(), null, file.length(), 0);
+                callback.onTransferProgress(transfer, 0);
             }
         });
-        transferKey.attach(new Object[] { user, "transfer", file });
-        transferKey.interestOps(SelectionKey.OP_WRITE);
+        String ip = user.getIp();
+        SocketChannel sc = null;
+        try
+        {
+            if (!file.isFile())
+                throw new FileNotFoundException("the input file is invalid.");
+            sc = SocketChannel.open();
+            sc.configureBlocking(false);
+            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+            sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
+        } catch (final IOException e)
+        {
+            try
+            {
+                if (sc != null)
+                    sc.close();
+            } catch (IOException e1)
+            {
+                LogManager.logE(User.class, "close socket channel failed.", e1);
+            }
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onTransferFailed(transfer, e);
+                }
+            });
+        }
     }
 
-    public void close() throws IOException
+    public void cancelTransfer(TransferEntity transfer) throws IOException
     {
-        selector.close();
+        transfer.close();
+    }
+
+    public void close(Context context, final CloseCallback callback)
+    {
+        finishListening(context, new FinishListeningCallback()
+        {
+            @Override
+            public void onFinished()
+            {
+                // TODO Auto-generated method stub
+                try
+                {
+                    selector.close();
+                } catch (IOException e)
+                {
+                    callback.onError(e);
+                    return;
+                }
+                callback.onClosed();
+            }
+
+            @Override
+            public void onError(Exception e)
+            {
+                // TODO Auto-generated method stub
+                callback.onError(e);
+            }
+        });
     }
 
 }

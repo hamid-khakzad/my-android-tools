@@ -3,17 +3,18 @@ package cn.emagsoftware.net.wifi.direct;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.LinkedList;
 
 import android.net.wifi.ScanResult;
 
 public class RemoteUser
 {
 
-    private String       name        = null;
-    private ScanResult   scanResult  = null;
-    private String       ip          = null;
-    private SelectionKey key         = null;
-    private SelectionKey transferKey = null;
+    private String                     name       = null;
+    private ScanResult                 scanResult = null;
+    private String                     ip         = null;
+    private SelectionKey               key        = null;
+    private LinkedList<TransferEntity> transfers  = new LinkedList<TransferEntity>();
 
     RemoteUser(String name)
     {
@@ -21,7 +22,7 @@ public class RemoteUser
             throw new NullPointerException();
         this.name = name;
     }
-    
+
     public String getName()
     {
         return name;
@@ -63,40 +64,44 @@ public class RemoteUser
         return key;
     }
 
-    void setTransferKey(SelectionKey transferKey)
+    void addTransfer(TransferEntity transfer)
     {
-        if (transferKey == null)
+        if (transfer == null)
             throw new NullPointerException();
-        this.transferKey = transferKey;
+        transfers.add(transfer);
     }
 
-    SelectionKey getTransferKey()
+    void removeTransfer(TransferEntity transfer)
     {
-        return transferKey;
+        if (transfer == null)
+            throw new NullPointerException();
+        transfers.remove(transfer);
     }
-    
-    public void close() throws IOException
+
+    void close() throws IOException
     {
-        try
+        LinkedList<TransferEntity> transfersClone = (LinkedList<TransferEntity>) transfers.clone();
+        IOException firstExcep = null;
+        for (TransferEntity transfer : transfersClone)
         {
-            if (key != null)
+            try
             {
-                key.cancel();
-                SocketChannel sc = (SocketChannel) key.channel();
-                key = null;
-                sc.close();
-            }
-        } finally
-        {
-            if (transferKey != null)
+                transfer.close();
+            } catch (IOException e)
             {
-                transferKey.cancel();
-                SocketChannel sc = (SocketChannel) transferKey.channel();
-                transferKey = null;
-                sc.close();
+                if (firstExcep == null)
+                    firstExcep = e;
             }
         }
-
+        if (firstExcep != null)
+            throw firstExcep;
+        if (key != null)
+        {
+            SocketChannel sc = (SocketChannel) key.channel();
+            sc.close();
+            key.cancel();
+            key = null;
+        }
     }
 
 }
