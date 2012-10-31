@@ -183,6 +183,7 @@ public abstract class RemoteCallback implements Runnable
                                 if (contentArr[0].equals("info_send"))
                                 {
                                     final RemoteUser remote = new RemoteUser(contentArr[1]);
+                                    remote.setIp(((InetSocketAddress) sc.socket().getRemoteSocketAddress()).getAddress().getHostAddress());
                                     remote.setKey(key);
                                     handler.post(new Runnable()
                                     {
@@ -194,6 +195,60 @@ public abstract class RemoteCallback implements Runnable
                                         }
                                     });
                                     key.attach(new Object[] { remote, "length", ByteBuffer.allocate(4) });
+                                } else if (contentArr[0].equals("transfer_request"))
+                                {
+                                    if(remoteUser != null)
+                                    {
+                                        final String path = contentArr[1];
+                                        final long size = Long.parseLong(contentArr[2]);
+                                        handler.post(new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                // TODO Auto-generated method stub
+                                                onTransferRequest(remoteUser, path, size);
+                                            }
+                                        });
+                                    }
+                                    key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4) });
+                                } else if (contentArr[0].equals("transfer_reply"))
+                                {
+                                    if(remoteUser != null)
+                                    {
+                                        final boolean allow = Boolean.parseBoolean(contentArr[1]);
+                                        final String path = contentArr[2];
+                                        handler.post(new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                // TODO Auto-generated method stub
+                                                onTransferReply(remoteUser, allow, path);
+                                            }
+                                        });
+                                    }
+                                    key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4) });
+                                } else if (contentArr[0].equals("transfer"))
+                                {
+                                    final String path = contentArr[1];
+                                    final long size = Long.parseLong(contentArr[2]);
+                                    final String savingPath = onGetSavingPathInBackground(remoteUser, path, size);
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            // TODO Auto-generated method stub
+                                            onTransferProgress(remoteUser, path, savingPath, size, 0);
+                                        }
+                                    });
+                                    File file = new File(savingPath);
+                                    File parentPath = file.getParentFile();
+                                    if (parentPath != null && !parentPath.exists())
+                                        if (!parentPath.mkdirs())
+                                            throw new IOException("can not create saving path.");
+                                    key.attach(new Object[] { remoteUser, "transfer_progress", new FileOutputStream(file).getChannel(), path, savingPath, size, 0, 0 });
                                 } else if (contentArr[0].equals("transferkey_accepted"))
                                 {
                                     RemoteUser queryUser = null;
@@ -236,61 +291,13 @@ public abstract class RemoteCallback implements Runnable
                                             public void run()
                                             {
                                                 // TODO Auto-generated method stub
-                                                onAccepted(queryUserPoint);
+                                                onConnected(queryUserPoint);
                                             }
                                         });
                                         queryUser.getKey().attach(new Object[] { queryUser, "connected" });
                                         queryUser.getKey().interestOps(SelectionKey.OP_WRITE);
                                         key.attach(new Object[] { queryUser, "length", ByteBuffer.allocate(4) });
                                     }
-                                } else if (contentArr[0].equals("transfer_request"))
-                                {
-                                    final String path = contentArr[1];
-                                    final long size = Long.parseLong(contentArr[2]);
-                                    handler.post(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            // TODO Auto-generated method stub
-                                            onTransferRequest(remoteUser, path, size);
-                                        }
-                                    });
-                                    key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4) });
-                                } else if (contentArr[0].equals("transfer_reply"))
-                                {
-                                    final boolean allow = Boolean.parseBoolean(contentArr[1]);
-                                    final String path = contentArr[2];
-                                    handler.post(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            // TODO Auto-generated method stub
-                                            onTransferReply(remoteUser, allow, path);
-                                        }
-                                    });
-                                    key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4) });
-                                } else if (contentArr[0].equals("transfer"))
-                                {
-                                    final String path = contentArr[1];
-                                    final long size = Long.parseLong(contentArr[2]);
-                                    final String savingPath = onGetSavingPathInBackground(remoteUser, path, size);
-                                    handler.post(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            // TODO Auto-generated method stub
-                                            onTransferProgress(remoteUser, path, savingPath, size, 0);
-                                        }
-                                    });
-                                    File file = new File(savingPath);
-                                    File parentPath = file.getParentFile();
-                                    if (parentPath != null && !parentPath.exists())
-                                        if (!parentPath.mkdirs())
-                                            throw new IOException("can not create saving path.");
-                                    key.attach(new Object[] { remoteUser, "transfer_progress", new FileOutputStream(file).getChannel(), path, savingPath, size, 0, 0 });
                                 }
                             }
                         }
@@ -409,41 +416,72 @@ public abstract class RemoteCallback implements Runnable
                                 onConnected(remoteUser);
                             }
                         });
-                    } else if (objs[1].equals("transferkey_accepted"))
-                    {
-                        String msg = "transferkey_accepted";
-                        byte[] msgByte = msg.getBytes("UTF-8");
-                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                        sendBuff.putInt(msgByte.length);
-                        sendBuff.put(msgByte);
-                        sendBuff.flip();
-                        sc.write(sendBuff);
-                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                        key.interestOps(SelectionKey.OP_READ);
                     } else if (objs[1].equals("transfer_request"))
                     {
-                        File file = (File)objs[2];
-                        if(!file.isFile()) throw new IOException("the file for transfer request is invalid.");
-                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", file.getAbsolutePath(), String.valueOf(file.length()) });
-                        byte[] msgByte = msg.getBytes("UTF-8");
-                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                        sendBuff.putInt(msgByte.length);
-                        sendBuff.put(msgByte);
-                        sendBuff.flip();
-                        sc.write(sendBuff);
-                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                        key.interestOps(SelectionKey.OP_READ);
+                        try
+                        {
+                            ByteBuffer sendBuff = null;
+                            if(objs[2] instanceof ByteBuffer)
+                            {
+                                sendBuff = (ByteBuffer)objs[2];
+                            }else
+                            {
+                                File file = (File)objs[2];
+                                if(!file.isFile()) throw new IOException("the file for transfer request is invalid.");
+                                String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", file.getAbsolutePath(), String.valueOf(file.length()) });
+                                byte[] msgByte = msg.getBytes("UTF-8");
+                                sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                sendBuff.putInt(msgByte.length);
+                                sendBuff.put(msgByte);
+                                sendBuff.flip();
+                            }
+                            sc.write(sendBuff);
+                            if(sendBuff.hasRemaining())
+                            {
+                                key.attach(new Object[] { objs[0], "transfer_request", sendBuff });
+                            }else
+                            {
+                                key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                key.interestOps(SelectionKey.OP_READ);
+                            }
+                        }catch(IOException e)
+                        {
+                            LogManager.logE(RemoteCallback.class, "transfer request failed.", e);
+                            key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                            key.interestOps(SelectionKey.OP_READ);
+                        }
                     } else if (objs[1].equals("transfer_reply"))
                     {
-                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]) });
-                        byte[] msgByte = msg.getBytes("UTF-8");
-                        ByteBuffer sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                        sendBuff.putInt(msgByte.length);
-                        sendBuff.put(msgByte);
-                        sendBuff.flip();
-                        sc.write(sendBuff);
-                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                        key.interestOps(SelectionKey.OP_READ);
+                        try
+                        {
+                            ByteBuffer sendBuff = null;
+                            if(objs[2] instanceof ByteBuffer)
+                            {
+                                sendBuff = (ByteBuffer)objs[2];
+                            }else
+                            {
+                                String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]) });
+                                byte[] msgByte = msg.getBytes("UTF-8");
+                                sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                sendBuff.putInt(msgByte.length);
+                                sendBuff.put(msgByte);
+                                sendBuff.flip();
+                            }
+                            sc.write(sendBuff);
+                            if(sendBuff.hasRemaining())
+                            {
+                                key.attach(new Object[] { objs[0], "transfer_reply", sendBuff });
+                            }else
+                            {
+                                key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                key.interestOps(SelectionKey.OP_READ);
+                            }
+                        }catch(IOException e)
+                        {
+                            LogManager.logE(RemoteCallback.class, "transfer reply failed.", e);
+                            key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                            key.interestOps(SelectionKey.OP_READ);
+                        }
                     } else if (objs[1].equals("transfer"))
                     {
                         File file = (File)objs[2];
@@ -515,36 +553,27 @@ public abstract class RemoteCallback implements Runnable
     
     public abstract void onRemoteDisconnected(RemoteUser user);
     
-    public abstract void onTransferRequest(RemoteUser user, String path, long size);
+    public abstract void onTransferRequest(RemoteUser user, String sendPath, long size);
 
-    public abstract void onTransferReply(RemoteUser user, boolean allow, String path);
+    public abstract void onTransferReply(RemoteUser user, boolean allow, String sendPath);
 
-    public abstract String onGetSavingPathInBackground(RemoteUser user, String path, long size);
+    public abstract String onGetSavingPathInBackground(RemoteUser user, String sendPath, long size);
     
     /**
-     * @param user
-     * @param srcPath
-     * @param savingPath 如果是发送文件的话，savingPath将传入null
-     * @param size
+     * @param transfer 如果是发送文件的话，transfer.getSavingPath()返回的值为null
      * @param progress 肯定会传入0和100用以给外部初始化下载和结束下载提供入口
      */
-    public abstract void onTransferProgress(RemoteUser user, String srcPath, String savingPath, long size, int progress);
+    public abstract void onTransferProgress(TransferEntity transfer, int progress);
     
     /**
-     * @param user
-     * @param srcPath
-     * @param savingPath 如果是发送文件的话，savingPath将传入null
-     * @param size
-     */
-    public abstract void onTransferCancelled(RemoteUser user, String srcPath, String savingPath, long size);
-    
-    /**
-     * @param user
-     * @param srcPath
-     * @param savingPath 如果是发送文件的话，savingPath将传入null
-     * @param size
+     * @param transfer 如果是发送文件的话，transfer.getSavingPath()返回的值为null
      * @param e
      */
-    public abstract void onTransferFailed(RemoteUser user, String srcPath, String savingPath, long size, Exception e);
+    public abstract void onTransferFailed(TransferEntity transfer, Exception e);
+    
+    /**
+     * @param transfer 如果是发送文件的话，transfer.getSavingPath()返回的值为null
+     */
+    public abstract void onRemoteTransferCancelled(TransferEntity transfer);
     
 }
