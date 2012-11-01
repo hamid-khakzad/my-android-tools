@@ -79,7 +79,10 @@ public class TransferEntity
     void close() throws IOException
     {
         if (transferKey == null)
+        {
+            remoteUser.removeTransfer(this);
             return;
+        }
         SocketChannel sc = (SocketChannel) transferKey.channel();
         sc.close();
         transferKey.cancel();
