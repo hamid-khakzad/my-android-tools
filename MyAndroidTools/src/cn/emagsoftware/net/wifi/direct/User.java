@@ -29,6 +29,7 @@ import cn.emagsoftware.util.MathUtilities;
 
 public class User
 {
+    static final int            SOCKET_TIMEOUT  = 20000;
 
     private static final String ACTION_CHARSET  = "UTF-8";
     private static final int    LISTENING_PORT  = 7001;
@@ -390,7 +391,7 @@ public class User
         {
             sc = SocketChannel.open();
             sc.configureBlocking(false);
-            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+            sc.socket().connect(new InetSocketAddress(ip, LISTENING_PORT), SOCKET_TIMEOUT);
             sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
         } catch (final IOException e)
         {
@@ -465,7 +466,8 @@ public class User
                 throw new FileNotFoundException("the input file is invalid.");
             sc = SocketChannel.open();
             sc.configureBlocking(false);
-            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+            sc.socket().connect(new InetSocketAddress(ip, LISTENING_PORT), SOCKET_TIMEOUT);
+            sc.socket().setSoTimeout(SOCKET_TIMEOUT);
             sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
         } catch (final IOException e)
         {

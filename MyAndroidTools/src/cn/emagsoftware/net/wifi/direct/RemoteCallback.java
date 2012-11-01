@@ -66,6 +66,7 @@ public abstract class RemoteCallback implements Runnable
                     {
                         sc = ((ServerSocketChannel) key.channel()).accept();
                         sc.configureBlocking(false);
+                        sc.socket().setSoTimeout(0);
                         sc.register(selector, SelectionKey.OP_READ, new Object[] { null, "length", ByteBuffer.allocate(4) });
                     } catch (Exception e)
                     {
@@ -316,6 +317,7 @@ public abstract class RemoteCallback implements Runnable
                                         });
                                         try
                                         {
+                                            sc.socket().setSoTimeout(User.SOCKET_TIMEOUT);
                                             File file = new File(transfer.getSavingPath());
                                             File parentPath = file.getParentFile();
                                             if (parentPath != null && !parentPath.exists())
