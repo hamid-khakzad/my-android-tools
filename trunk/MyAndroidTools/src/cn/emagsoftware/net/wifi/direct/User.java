@@ -553,30 +553,37 @@ public class User
 
     public void close(Context context, final CloseCallback callback)
     {
-        finishListening(context, new FinishListeningCallback()
+        try
         {
-            @Override
-            public void onFinished()
+            selector.close();
+            finishListening(context, new FinishListeningCallback()
             {
-                // TODO Auto-generated method stub
-                try
+                @Override
+                public void onFinished()
                 {
-                    selector.close();
-                } catch (IOException e)
-                {
-                    callback.onError(e);
-                    return;
+                    // TODO Auto-generated method stub
+                    callback.onClosed();
                 }
-                callback.onClosed();
-            }
 
-            @Override
-            public void onError(Exception e)
+                @Override
+                public void onError(Exception e)
+                {
+                    // TODO Auto-generated method stub
+                    callback.onError(e);
+                }
+            });
+        } catch (final IOException e)
+        {
+            handler.post(new Runnable()
             {
-                // TODO Auto-generated method stub
-                callback.onError(e);
-            }
-        });
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onError(e);
+                }
+            });
+        }
     }
 
 }
