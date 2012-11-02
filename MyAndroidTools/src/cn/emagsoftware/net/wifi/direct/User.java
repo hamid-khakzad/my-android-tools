@@ -97,7 +97,7 @@ public class User
                                 public void onError()
                                 {
                                     // TODO Auto-generated method stub
-                                    LogManager.logE(User.class, "close ap failed by 'onError()'.");
+                                    LogManager.logE(User.class, "close ap failed by 'CloseApCallback.onError()'.");
                                     callback.onError(e);
                                 }
                             });
@@ -114,7 +114,7 @@ public class User
                 {
                     // TODO Auto-generated method stub
                     super.onTimeout();
-                    callback.onError(new RuntimeException("open ap failed by 'onTimeout()'."));
+                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onTimeout()'."));
                 }
 
                 @Override
@@ -122,7 +122,7 @@ public class User
                 {
                     // TODO Auto-generated method stub
                     super.onError();
-                    callback.onError(new RuntimeException("open ap failed by 'onError()'."));
+                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onError()'."));
                 }
             }, WIFI_TIMEOUT);
         } catch (final ReflectHiddenFuncException e)
@@ -297,7 +297,7 @@ public class User
                     public void onError()
                     {
                         // TODO Auto-generated method stub
-                        callback.onError(new RuntimeException("close ap failed by 'onError()'."));
+                        callback.onError(new RuntimeException("close ap failed by 'CloseApCallback.onError()'."));
                     }
                 });
                 return;
