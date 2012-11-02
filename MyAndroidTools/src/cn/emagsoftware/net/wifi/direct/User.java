@@ -202,7 +202,14 @@ public class User
             serverChannel = ServerSocketChannel.open();
             serverChannel.configureBlocking(false);
             serverChannel.socket().bind(new InetSocketAddress(LISTENING_PORT));
-            listeningKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+            callback.setSleepForRegister(true);
+            try
+            {
+                listeningKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+            } finally
+            {
+                callback.setSleepForRegister(false);
+            }
         } catch (IOException e)
         {
             try
@@ -426,7 +433,14 @@ public class User
             sc = SocketChannel.open();
             sc.configureBlocking(false);
             sc.socket().connect(new InetSocketAddress(ip, LISTENING_PORT), SOCKET_TIMEOUT);
-            sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+            callback.setSleepForRegister(true);
+            try
+            {
+                sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+            } finally
+            {
+                callback.setSleepForRegister(false);
+            }
         } catch (final IOException e)
         {
             try
@@ -502,7 +516,14 @@ public class User
             sc.configureBlocking(false);
             sc.socket().connect(new InetSocketAddress(ip, LISTENING_PORT), SOCKET_TIMEOUT);
             sc.socket().setSoTimeout(SOCKET_TIMEOUT);
-            sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
+            callback.setSleepForRegister(true);
+            try
+            {
+                sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
+            } finally
+            {
+                callback.setSleepForRegister(false);
+            }
         } catch (final IOException e)
         {
             try
