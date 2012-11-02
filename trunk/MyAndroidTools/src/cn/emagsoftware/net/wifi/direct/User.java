@@ -29,6 +29,8 @@ import cn.emagsoftware.util.MathUtilities;
 
 public class User
 {
+
+    private static final int    WIFI_TIMEOUT    = 20000;
     static final int            SOCKET_TIMEOUT  = 20000;
 
     private static final String ACTION_CHARSET  = "UTF-8";
@@ -108,13 +110,21 @@ public class User
                 }
 
                 @Override
+                public void onTimeout()
+                {
+                    // TODO Auto-generated method stub
+                    super.onTimeout();
+                    callback.onError(new RuntimeException("open ap failed by 'onTimeout()'."));
+                }
+
+                @Override
                 public void onError()
                 {
                     // TODO Auto-generated method stub
                     super.onError();
                     callback.onError(new RuntimeException("open ap failed by 'onError()'."));
                 }
-            });
+            }, WIFI_TIMEOUT);
         } catch (final ReflectHiddenFuncException e)
         {
             handler.post(new Runnable()
@@ -129,7 +139,7 @@ public class User
         }
     }
 
-    private void openAp(Context context, WifiCallback callback) throws ReflectHiddenFuncException
+    private void openAp(Context context, WifiCallback callback, int timeout) throws ReflectHiddenFuncException
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         if (preApConfig == null)
@@ -143,7 +153,7 @@ public class User
             }
             preWifiEnabled = wifiUtils.isWifiEnabled();
         }
-        wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, callback, 0);
+        wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, callback, timeout);
     }
 
     private WifiConfiguration createDirectApConfig(Context context)
@@ -229,12 +239,20 @@ public class User
                     if (preWifiStaticIp != -1)
                         Settings.System.putInt(context.getContentResolver(), "wifi_static_ip", preWifiStaticIp);
                     if (preWifiEnabled)
-                        wifiUtils.setWifiEnabled(true, null, 0);
+                        wifiUtils.setWifiEnabled(true, null, WIFI_TIMEOUT);
                     preApConfig = null;
                     preWifiStaticIp = -1;
                     preWifiEnabled = false;
                 }
                 callback.onClosed();
+            }
+
+            @Override
+            public void onTimeout()
+            {
+                // TODO Auto-generated method stub
+                super.onTimeout();
+                callback.onError();
             }
 
             @Override
@@ -244,7 +262,7 @@ public class User
                 super.onError();
                 callback.onError();
             }
-        }, 0);
+        }, WIFI_TIMEOUT);
     }
 
     private interface CloseApCallback
@@ -343,13 +361,21 @@ public class User
             }
 
             @Override
+            public void onTimeout()
+            {
+                // TODO Auto-generated method stub
+                super.onTimeout();
+                callback.onError();
+            }
+
+            @Override
             public void onError()
             {
                 // TODO Auto-generated method stub
                 super.onError();
                 callback.onError();
             }
-        }, 0);
+        }, WIFI_TIMEOUT);
     }
 
     public void connectToRemoteAp(Context context, final RemoteUser user, final ConnectToRemoteApCallback callback)
@@ -372,13 +398,21 @@ public class User
             }
 
             @Override
+            public void onTimeout()
+            {
+                // TODO Auto-generated method stub
+                super.onTimeout();
+                callback.onError(user);
+            }
+
+            @Override
             public void onError()
             {
                 // TODO Auto-generated method stub
                 super.onError();
                 callback.onError(user);
             }
-        }, 0);
+        }, WIFI_TIMEOUT);
     }
 
     public void connectToUser(final RemoteUser user)
