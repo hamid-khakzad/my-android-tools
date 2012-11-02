@@ -432,7 +432,7 @@ public class User
         {
             sc = SocketChannel.open();
             sc.configureBlocking(false);
-            sc.socket().connect(new InetSocketAddress(ip, LISTENING_PORT), SOCKET_TIMEOUT);
+            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
             callback.setSleepForRegister(true);
             try
             {
@@ -514,7 +514,7 @@ public class User
                 throw new FileNotFoundException("the input file is invalid.");
             sc = SocketChannel.open();
             sc.configureBlocking(false);
-            sc.socket().connect(new InetSocketAddress(ip, LISTENING_PORT), SOCKET_TIMEOUT);
+            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
             sc.socket().setSoTimeout(SOCKET_TIMEOUT);
             callback.setSleepForRegister(true);
             try
