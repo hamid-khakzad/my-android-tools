@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -25,8 +26,9 @@ import cn.emagsoftware.util.StringUtilities;
 public abstract class RemoteCallback implements Runnable
 {
 
-    private Selector selector = null;
-    private Handler  handler  = new Handler(Looper.getMainLooper());
+    private Selector selector         = null;
+    private boolean  sleepForRegister = false;
+    private Handler  handler          = new Handler(Looper.getMainLooper());
 
     void bindSelector(Selector selector)
     {
@@ -37,6 +39,11 @@ public abstract class RemoteCallback implements Runnable
         this.selector = selector;
     }
 
+    void setSleepForRegister(boolean sleepForRegister)
+    {
+        this.sleepForRegister = sleepForRegister;
+    }
+
     @Override
     public final void run()
     {
@@ -45,14 +52,31 @@ public abstract class RemoteCallback implements Runnable
         {
             if (selector == null)
                 return;
+            int readyCount = 0;
             try
             {
-                selector.select();
+                readyCount = selector.select(600);
             } catch (IOException e)
             {
                 LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
                 return;
+            } catch (ClosedSelectorException e)
+            {
+                LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
+                return;
             }
+            if (sleepForRegister)
+            {
+                try
+                {
+                    Thread.sleep(150);
+                } catch (InterruptedException e)
+                {
+                    LogManager.logE(RemoteCallback.class, "sleep for register failed.", e);
+                }
+            }
+            if (readyCount <= 0)
+                continue;
             Set<SelectionKey> keys = selector.selectedKeys();
             Iterator<SelectionKey> iter = keys.iterator();
             while (iter.hasNext())
