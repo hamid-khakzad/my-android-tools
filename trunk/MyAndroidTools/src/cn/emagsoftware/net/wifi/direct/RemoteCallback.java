@@ -308,15 +308,19 @@ public abstract class RemoteCallback implements Runnable
                                         {
                                             if (curKey == key)
                                                 continue;
-                                            Object[] curObjs = (Object[]) curKey.attachment();
-                                            if (curObjs[0] != null)
+                                            Object curObj = curKey.attachment();
+                                            if (curObj instanceof Object[])
                                             {
-                                                RemoteUser curRemoteUser = (RemoteUser) curObjs[0];
-                                                String addr = ((InetSocketAddress) sc.socket().getRemoteSocketAddress()).getAddress().getHostAddress();
-                                                if (addr.equals(curRemoteUser.getIp()))
+                                                Object[] curObjs = (Object[]) curObj;
+                                                if (curObjs.length > 0 && curObjs[0] instanceof RemoteUser)
                                                 {
-                                                    queryUser = curRemoteUser;
-                                                    break;
+                                                    RemoteUser curRemoteUser = (RemoteUser) curObjs[0];
+                                                    String addr = ((InetSocketAddress) sc.socket().getRemoteSocketAddress()).getAddress().getHostAddress();
+                                                    if (addr.equals(curRemoteUser.getIp()))
+                                                    {
+                                                        queryUser = curRemoteUser;
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         }
