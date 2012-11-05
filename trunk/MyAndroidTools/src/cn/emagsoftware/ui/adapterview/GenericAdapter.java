@@ -218,6 +218,22 @@ public class GenericAdapter extends BaseAdapter
         return position;
     }
 
+    @Override
+    public int getItemViewType(int position)
+    {
+        // TODO Auto-generated method stub
+        return queryDataHolder(position).getType()[0];
+    }
+
+    @Override
+    public int getViewTypeCount()
+    {
+        // TODO Auto-generated method stub
+        if (getRealCount() == 0)
+            return super.getViewTypeCount();
+        return queryDataHolder(0).getType()[1];
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
