@@ -496,6 +496,7 @@ public class User
         transfer.setRemoteUser(user);
         transfer.setSendPath(file.getAbsolutePath());
         transfer.setSize(file.length());
+        transfer.setSender(true);
         user.addTransfer(transfer);
         handler.post(new Runnable()
         {

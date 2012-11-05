@@ -10,6 +10,7 @@ public class TransferEntity
     private String       sendPath;
     private String       savingPath;
     private long         size;
+    private boolean      isSender;
     private SelectionKey transferKey;
 
     TransferEntity()
@@ -62,6 +63,16 @@ public class TransferEntity
         if (size < 0)
             throw new IllegalArgumentException("size could not less than zero.");
         this.size = size;
+    }
+
+    public boolean isSender()
+    {
+        return isSender;
+    }
+
+    void setSender(boolean isSender)
+    {
+        this.isSender = isSender;
     }
 
     void setSelectionKey(SelectionKey transferKey)

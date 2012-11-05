@@ -329,6 +329,7 @@ public abstract class RemoteCallback implements Runnable
                                             transfer.setRemoteUser(queryUser);
                                             transfer.setSendPath(contentArr[1]);
                                             transfer.setSize(Long.parseLong(contentArr[2]));
+                                            transfer.setSender(false);
                                             transfer.setSavingPath(onGetSavingPathInBackground(queryUser, transfer.getSendPath(), transfer.getSize()));
                                             transfer.setSelectionKey(key);
                                             queryUser.addTransfer(transfer);
