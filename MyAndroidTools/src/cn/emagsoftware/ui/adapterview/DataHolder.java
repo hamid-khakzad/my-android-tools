@@ -62,6 +62,16 @@ public abstract class DataHolder
     public abstract void onAsyncDataExecuted(Context context, int position, View view, Object asyncData, int asyncDataIndex);
 
     /**
+     * <p>如果DataHolder需要产生不同的View，则需要覆盖该方法以提供不同类型的相关信息
+     * 
+     * @return 长度为2的int数组，第一个值表示当前类型，第二个值表示类型总数，第一个值必须小于第二个值
+     */
+    public int[] getType()
+    {
+        return new int[] { 0, 1 };
+    }
+
+    /**
      * <p>获取构造函数中传入的数据对象
      * 
      * @return
