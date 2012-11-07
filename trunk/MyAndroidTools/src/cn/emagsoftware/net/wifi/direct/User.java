@@ -488,7 +488,7 @@ public class User
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void sendTransfer(RemoteUser user, File file)
+    public void sendTransfer(RemoteUser user, File file, String extraDescription)
     {
         if (user.getKey() == null)
             throw new IllegalStateException("the input user has not been connected already.");
@@ -497,6 +497,7 @@ public class User
         transfer.setSendPath(file.getAbsolutePath());
         transfer.setSize(file.length());
         transfer.setSender(true);
+        transfer.setExtraDescription(extraDescription);
         user.addTransfer(transfer);
         handler.post(new Runnable()
         {
