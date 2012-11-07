@@ -250,7 +250,7 @@ public final class WifiUtils
      * @param callback
      * @param timeout 单位为毫秒，设为0将永不超时
      */
-    public void setWifiEnabled(boolean enabled, final WifiCallback callback, int timeout)
+    public void setWifiEnabled(final boolean enabled, final WifiCallback callback, final int timeout)
     {
         if (!isWifiEnabled() && !enabled)
         { // 如果Wifi不存在或已关闭时执行关闭Wifi，在开机第一次调用将不会广播到Receiver，所以这里统一在外部回调
@@ -268,6 +268,54 @@ public final class WifiUtils
             }
             return;
         }
+        if (enabled)
+        {
+            try
+            {
+                int thisTimeout = timeout;
+                if (callback == null)
+                    thisTimeout = 20000;
+                setWifiApEnabled(null, false, new WifiCallback(context)
+                {
+                    @Override
+                    public void onWifiApDisabled()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onWifiApDisabled();
+                        setWifiEnabledImpl(enabled, callback, timeout);
+                    }
+
+                    @Override
+                    public void onError()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onError();
+                        if (callback != null)
+                            callback.onError();
+                    }
+
+                    @Override
+                    public void onTimeout()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onTimeout();
+                        if (callback != null)
+                            callback.onTimeout();
+                    }
+                }, thisTimeout);
+            } catch (ReflectHiddenFuncException e)
+            {
+                LogManager.logW(WifiUtils.class, "disable wifi ap failed.", e);
+                setWifiEnabledImpl(enabled, callback, timeout);
+            }
+        } else
+        {
+            setWifiEnabledImpl(enabled, callback, timeout);
+        }
+    }
+
+    private void setWifiEnabledImpl(boolean enabled, final WifiCallback callback, int timeout)
+    {
         if (callback != null)
         {
             if (enabled)
@@ -603,8 +651,8 @@ public final class WifiUtils
         if (enabled)
         {
             int thisTimeout = timeout;
-            if (callback == null && thisTimeout < 0)
-                thisTimeout = 0;
+            if (callback == null)
+                thisTimeout = 20000;
             final Method methodPoint = method;
             setWifiEnabled(false, new WifiCallback(context)
             {
