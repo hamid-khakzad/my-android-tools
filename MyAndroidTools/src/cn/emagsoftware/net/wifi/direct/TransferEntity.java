@@ -13,6 +13,7 @@ public class TransferEntity
     private boolean      isSender;
     private String       extraDescription;
     private SelectionKey transferKey;
+    private Object       tag;
 
     TransferEntity()
     {
@@ -96,6 +97,18 @@ public class TransferEntity
         if (transferKey == null)
             throw new NullPointerException();
         this.transferKey = transferKey;
+    }
+
+    public Object getTag()
+    {
+        return tag;
+    }
+
+    public void setTag(Object tag)
+    {
+        if (tag == null)
+            throw new NullPointerException();
+        this.tag = tag;
     }
 
     void close() throws IOException
