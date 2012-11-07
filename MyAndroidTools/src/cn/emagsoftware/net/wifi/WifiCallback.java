@@ -1,11 +1,10 @@
 package cn.emagsoftware.net.wifi;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import cn.emagsoftware.util.LogManager;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -18,12 +17,13 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Looper;
+import cn.emagsoftware.util.LogManager;
 
 /**
  * <p>Wifi操作的广播接收类，注意，该类实例是非线程安全的 <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。 <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
  * 
  * @author Wendell
- * @version 3.0
+ * @version 3.1
  */
 public abstract class WifiCallback extends BroadcastReceiver
 {
@@ -43,13 +43,13 @@ public abstract class WifiCallback extends BroadcastReceiver
     public static final int             ACTION_WIFI_AP_DISABLED        = 12;
     public static final int             ACTION_WIFI_AP_DISABLING       = 13;
 
-    private static final String         WIFI_AP_STATE_CHANGED_ACTION   = "android.net.wifi.WIFI_AP_STATE_CHANGED";
-    private static final String         EXTRA_WIFI_AP_STATE            = "wifi_state";
-    private static final int            WIFI_AP_STATE_DISABLING        = 10;
-    private static final int            WIFI_AP_STATE_DISABLED         = 11;
-    private static final int            WIFI_AP_STATE_ENABLING         = 12;
-    private static final int            WIFI_AP_STATE_ENABLED          = 13;
-    private static final int            WIFI_AP_STATE_FAILED           = 14;
+    private static String               WIFI_AP_STATE_CHANGED_ACTION   = null;
+    private static String               EXTRA_WIFI_AP_STATE            = null;
+    private static int                  WIFI_AP_STATE_DISABLING        = -1;
+    private static int                  WIFI_AP_STATE_DISABLED         = -1;
+    private static int                  WIFI_AP_STATE_ENABLING         = -1;
+    private static int                  WIFI_AP_STATE_ENABLED          = -1;
+    private static int                  WIFI_AP_STATE_FAILED           = -1;
 
     protected Context                   context                        = null;
     protected Handler                   handler                        = new Handler(Looper.getMainLooper());
@@ -67,6 +67,37 @@ public abstract class WifiCallback extends BroadcastReceiver
             throw new NullPointerException();
         this.context = context;
         Arrays.sort(autoUnregisterActions);
+        // 以下参数在不同Android版本中的值不一致，故需要通过反射来获取
+        try
+        {
+            Field field = WifiManager.class.getDeclaredField("WIFI_AP_STATE_CHANGED_ACTION");
+            field.setAccessible(true);
+            WIFI_AP_STATE_CHANGED_ACTION = (String) field.get(null);
+            field = WifiManager.class.getDeclaredField("EXTRA_WIFI_AP_STATE");
+            field.setAccessible(true);
+            EXTRA_WIFI_AP_STATE = (String) field.get(null);
+            field = WifiManager.class.getDeclaredField("WIFI_AP_STATE_DISABLING");
+            field.setAccessible(true);
+            WIFI_AP_STATE_DISABLING = field.getInt(null);
+            field = WifiManager.class.getDeclaredField("WIFI_AP_STATE_DISABLED");
+            field.setAccessible(true);
+            WIFI_AP_STATE_DISABLED = field.getInt(null);
+            field = WifiManager.class.getDeclaredField("WIFI_AP_STATE_ENABLING");
+            field.setAccessible(true);
+            WIFI_AP_STATE_ENABLING = field.getInt(null);
+            field = WifiManager.class.getDeclaredField("WIFI_AP_STATE_ENABLED");
+            field.setAccessible(true);
+            WIFI_AP_STATE_ENABLED = field.getInt(null);
+            field = WifiManager.class.getDeclaredField("WIFI_AP_STATE_FAILED");
+            field.setAccessible(true);
+            WIFI_AP_STATE_FAILED = field.getInt(null);
+        } catch (NoSuchFieldException e)
+        {
+            LogManager.logW(WifiCallback.class, "reflect wifi ap field failed.", e);
+        } catch (IllegalAccessException e)
+        {
+            LogManager.logW(WifiCallback.class, "reflect wifi ap field failed.", e);
+        }
     }
 
     public void setNetCallbackUntilNew(boolean isUntilNew)
@@ -303,6 +334,8 @@ public abstract class WifiCallback extends BroadcastReceiver
             }
         } else if (action.equals(WIFI_AP_STATE_CHANGED_ACTION))
         {
+            if (EXTRA_WIFI_AP_STATE == null)
+                return;
             int state = arg1.getIntExtra(EXTRA_WIFI_AP_STATE, 0);
             if (state == WIFI_AP_STATE_ENABLED)
             {
@@ -432,7 +465,8 @@ public abstract class WifiCallback extends BroadcastReceiver
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         wifiIntentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-        wifiIntentFilter.addAction(WIFI_AP_STATE_CHANGED_ACTION);
+        if (WIFI_AP_STATE_CHANGED_ACTION != null)
+            wifiIntentFilter.addAction(WIFI_AP_STATE_CHANGED_ACTION);
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
         context.registerReceiver(this, wifiIntentFilter);
