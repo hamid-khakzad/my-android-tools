@@ -335,6 +335,50 @@ public class User
     public void scanUsers(Context context, final ScanUsersCallback callback)
     {
         WifiUtils wifiUtils = new WifiUtils(context);
+        boolean isWifiApEnabled = false;
+        try
+        {
+            isWifiApEnabled = wifiUtils.isWifiApEnabled();
+        } catch (ReflectHiddenFuncException e)
+        {
+        }
+        if (isWifiApEnabled)
+        {
+            scanUsersImpl(context, callback);
+        } else
+        {
+            wifiUtils.setWifiEnabled(true, new WifiCallback(context)
+            {
+                @Override
+                public void onWifiEnabled()
+                {
+                    // TODO Auto-generated method stub
+                    super.onWifiEnabled();
+                    scanUsersImpl(context, callback);
+                }
+
+                @Override
+                public void onError()
+                {
+                    // TODO Auto-generated method stub
+                    super.onError();
+                    callback.onError();
+                }
+
+                @Override
+                public void onTimeout()
+                {
+                    // TODO Auto-generated method stub
+                    super.onTimeout();
+                    callback.onError();
+                }
+            }, WIFI_TIMEOUT);
+        }
+    }
+
+    private void scanUsersImpl(Context context, final ScanUsersCallback callback)
+    {
+        WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.startScan(new WifiCallback(context)
         {
             @Override
