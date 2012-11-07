@@ -468,23 +468,23 @@ public class User
         user.close();
     }
 
-    public void sendTransferRequest(RemoteUser user, File file)
+    public void sendTransferRequest(RemoteUser user, String description)
     {
         SelectionKey key = user.getKey();
         if (key == null)
             throw new IllegalStateException("the input user has not been connected already.");
         Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_request", file });
+        key.attach(new Object[] { objs[0], "transfer_request", description });
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void replyTransferRequest(RemoteUser user, boolean allow, String path)
+    public void replyTransferRequest(RemoteUser user, boolean allow, String description)
     {
         SelectionKey key = user.getKey();
         if (key == null)
             throw new IllegalStateException("the input user has not been connected already.");
         Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_reply", allow, path });
+        key.attach(new Object[] { objs[0], "transfer_reply", allow, description });
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
