@@ -270,15 +270,14 @@ public abstract class RemoteCallback implements Runnable
                                     {
                                         if (remoteUser != null)
                                         {
-                                            final String path = contentArr[1];
-                                            final long size = Long.parseLong(contentArr[2]);
+                                            final String description = contentArr[1];
                                             handler.post(new Runnable()
                                             {
                                                 @Override
                                                 public void run()
                                                 {
                                                     // TODO Auto-generated method stub
-                                                    onTransferRequest(remoteUser, path, size);
+                                                    onTransferRequest(remoteUser, description);
                                                 }
                                             });
                                         }
@@ -288,14 +287,14 @@ public abstract class RemoteCallback implements Runnable
                                         if (remoteUser != null)
                                         {
                                             final boolean allow = Boolean.parseBoolean(contentArr[1]);
-                                            final String path = contentArr[2];
+                                            final String description = contentArr[2];
                                             handler.post(new Runnable()
                                             {
                                                 @Override
                                                 public void run()
                                                 {
                                                     // TODO Auto-generated method stub
-                                                    onTransferReply(remoteUser, allow, path);
+                                                    onTransferReply(remoteUser, allow, description);
                                                 }
                                             });
                                         }
@@ -338,7 +337,7 @@ public abstract class RemoteCallback implements Runnable
                                                 transfer.setExtraDescription(null);
                                             else
                                                 transfer.setExtraDescription(contentArr[3]);
-                                            transfer.setSavingPath(onGetSavingPathInBackground(queryUser, transfer.getSendPath(), transfer.getSize()));
+                                            transfer.setSavingPath(onGetSavingPathInBackground(queryUser, transfer.getSendPath(), transfer.getSize(), transfer.getExtraDescription()));
                                             transfer.setSelectionKey(key);
                                             queryUser.addTransfer(transfer);
                                             handler.post(new Runnable()
@@ -572,10 +571,8 @@ public abstract class RemoteCallback implements Runnable
                                     sendBuff = (ByteBuffer) objs[2];
                                 } else
                                 {
-                                    File file = (File) objs[2];
-                                    if (!file.isFile())
-                                        throw new IOException("the file for transfer request is invalid.");
-                                    String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", file.getAbsolutePath(), String.valueOf(file.length()) });
+                                    String description = String.valueOf(objs[2]);
+                                    String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", description });
                                     byte[] msgByte = msg.getBytes("UTF-8");
                                     sendBuff = ByteBuffer.allocate(4 + msgByte.length);
                                     sendBuff.putInt(msgByte.length);
@@ -814,11 +811,11 @@ public abstract class RemoteCallback implements Runnable
 
     public abstract void onRemoteDisconnected(RemoteUser user);
 
-    public abstract void onTransferRequest(RemoteUser user, String sendPath, long size);
+    public abstract void onTransferRequest(RemoteUser user, String description);
 
-    public abstract void onTransferReply(RemoteUser user, boolean allow, String sendPath);
+    public abstract void onTransferReply(RemoteUser user, boolean allow, String description);
 
-    public abstract String onGetSavingPathInBackground(RemoteUser user, String sendPath, long size);
+    public abstract String onGetSavingPathInBackground(RemoteUser user, String sendPath, long size, String extraDescription);
 
     /**
      * @param transfer 如果是发送文件的话，transfer.getSavingPath()返回的值为null
