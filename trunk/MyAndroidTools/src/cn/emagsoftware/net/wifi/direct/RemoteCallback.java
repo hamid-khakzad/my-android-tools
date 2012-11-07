@@ -334,6 +334,10 @@ public abstract class RemoteCallback implements Runnable
                                             transfer.setSendPath(contentArr[1]);
                                             transfer.setSize(Long.parseLong(contentArr[2]));
                                             transfer.setSender(false);
+                                            if (contentArr.length == 3)
+                                                transfer.setExtraDescription(null);
+                                            else
+                                                transfer.setExtraDescription(contentArr[3]);
                                             transfer.setSavingPath(onGetSavingPathInBackground(queryUser, transfer.getSendPath(), transfer.getSize()));
                                             transfer.setSelectionKey(key);
                                             queryUser.addTransfer(transfer);
@@ -638,7 +642,12 @@ public abstract class RemoteCallback implements Runnable
                                 } else
                                 {
                                     transfer = (TransferEntity) objs[2];
-                                    String msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()) });
+                                    String msg = null;
+                                    String extraDescription = transfer.getExtraDescription();
+                                    if (extraDescription == null)
+                                        msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()) });
+                                    else
+                                        msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()), extraDescription });
                                     byte[] msgByte = msg.getBytes("UTF-8");
                                     sendBuff = ByteBuffer.allocate(4 + msgByte.length);
                                     sendBuff.putInt(msgByte.length);

@@ -11,6 +11,7 @@ public class TransferEntity
     private String       savingPath;
     private long         size;
     private boolean      isSender;
+    private String       extraDescription;
     private SelectionKey transferKey;
 
     TransferEntity()
@@ -75,16 +76,26 @@ public class TransferEntity
         this.isSender = isSender;
     }
 
-    void setSelectionKey(SelectionKey transferKey)
+    public String getExtraDescription()
     {
-        if (transferKey == null)
-            throw new NullPointerException();
-        this.transferKey = transferKey;
+        return extraDescription;
+    }
+
+    void setExtraDescription(String extraDescription)
+    {
+        this.extraDescription = extraDescription;
     }
 
     SelectionKey getSelectionKey()
     {
         return transferKey;
+    }
+
+    void setSelectionKey(SelectionKey transferKey)
+    {
+        if (transferKey == null)
+            throw new NullPointerException();
+        this.transferKey = transferKey;
     }
 
     void close() throws IOException
