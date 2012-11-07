@@ -335,7 +335,7 @@ public class User
     public void scanUsers(Context context, final ScanUsersCallback callback)
     {
         WifiUtils wifiUtils = new WifiUtils(context);
-        boolean isWifiApEnabled = false;
+        /*boolean isWifiApEnabled = false;
         try
         {
             isWifiApEnabled = wifiUtils.isWifiApEnabled();
@@ -346,7 +346,7 @@ public class User
         {
             scanUsersImpl(context, callback);
         } else
-        {
+        {*/
             wifiUtils.setWifiEnabled(true, new WifiCallback(context)
             {
                 @Override
@@ -373,7 +373,7 @@ public class User
                     callback.onError();
                 }
             }, WIFI_TIMEOUT);
-        }
+        //}
     }
 
     private void scanUsersImpl(Context context, final ScanUsersCallback callback)
