@@ -78,10 +78,11 @@ public class RemoteUser
         transfers.remove(transfer);
     }
 
+    @SuppressWarnings("unchecked")
     void close() throws IOException
     {
-        LinkedList<TransferEntity> transfersClone = (LinkedList<TransferEntity>) transfers.clone();
         IOException firstExcep = null;
+        LinkedList<TransferEntity> transfersClone = (LinkedList<TransferEntity>) transfers.clone();
         for (TransferEntity transfer : transfersClone)
         {
             try
@@ -93,15 +94,22 @@ public class RemoteUser
                     firstExcep = e;
             }
         }
-        if (firstExcep != null)
-            throw firstExcep;
         if (key != null)
         {
-            SocketChannel sc = (SocketChannel) key.channel();
-            sc.close();
-            key.cancel();
-            key = null;
+            try
+            {
+                key.cancel();
+                SocketChannel sc = (SocketChannel) key.channel();
+                sc.close();
+                key = null;
+            } catch (IOException e)
+            {
+                if (firstExcep == null)
+                    firstExcep = e;
+            }
         }
+        if (firstExcep != null)
+            throw firstExcep;
     }
 
 }
