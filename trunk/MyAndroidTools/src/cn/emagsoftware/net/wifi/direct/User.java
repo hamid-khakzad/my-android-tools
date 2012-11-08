@@ -334,89 +334,62 @@ public class User
 
     public void scanUsers(Context context, final ScanUsersCallback callback)
     {
-        WifiUtils wifiUtils = new WifiUtils(context);
-        /*boolean isWifiApEnabled = false;
-        try
-        {
-            isWifiApEnabled = wifiUtils.isWifiApEnabled();
-        } catch (ReflectHiddenFuncException e)
-        {
-        }
-        if (isWifiApEnabled)
-        {
-            scanUsersImpl(context, callback);
-        } else
-        {*/
-            wifiUtils.setWifiEnabled(true, new WifiCallback(context)
-            {
-                @Override
-                public void onWifiEnabled()
-                {
-                    // TODO Auto-generated method stub
-                    super.onWifiEnabled();
-                    scanUsersImpl(context, callback);
-                }
-
-                @Override
-                public void onError()
-                {
-                    // TODO Auto-generated method stub
-                    super.onError();
-                    callback.onError();
-                }
-
-                @Override
-                public void onTimeout()
-                {
-                    // TODO Auto-generated method stub
-                    super.onTimeout();
-                    callback.onError();
-                }
-            }, WIFI_TIMEOUT);
-        //}
-    }
-
-    private void scanUsersImpl(Context context, final ScanUsersCallback callback)
-    {
-        WifiUtils wifiUtils = new WifiUtils(context);
-        wifiUtils.startScan(new WifiCallback(context)
+        final WifiUtils wifiUtils = new WifiUtils(context);
+        wifiUtils.setWifiEnabled(true, new WifiCallback(context)
         {
             @Override
-            public void onScanResults(List<ScanResult> scanResults)
+            public void onWifiEnabled()
             {
                 // TODO Auto-generated method stub
-                super.onScanResults(scanResults);
-                List<RemoteUser> callbackVal = new ArrayList<RemoteUser>();
-                for (ScanResult result : scanResults)
+                super.onWifiEnabled();
+                wifiUtils.startScan(new WifiCallback(context)
                 {
-                    String ssid = result.SSID;
-                    if (ssid.startsWith("GHFY_"))
+                    @Override
+                    public void onScanResults(List<ScanResult> scanResults)
                     {
-                        String[] ssidInfo = ssid.split("_");
-                        if (ssidInfo.length == 3)
+                        // TODO Auto-generated method stub
+                        super.onScanResults(scanResults);
+                        List<RemoteUser> callbackVal = new ArrayList<RemoteUser>();
+                        for (ScanResult result : scanResults)
                         {
-                            RemoteUser user = null;
-                            try
+                            String ssid = result.SSID;
+                            if (ssid.startsWith("GHFY_"))
                             {
-                                user = new RemoteUser(new String(Base64.decode(ssidInfo[1]), ACTION_CHARSET));
-                            } catch (UnsupportedEncodingException e)
-                            {
-                                throw new RuntimeException(e);
+                                String[] ssidInfo = ssid.split("_");
+                                if (ssidInfo.length == 3)
+                                {
+                                    RemoteUser user = null;
+                                    try
+                                    {
+                                        user = new RemoteUser(new String(Base64.decode(ssidInfo[1]), ACTION_CHARSET));
+                                    } catch (UnsupportedEncodingException e)
+                                    {
+                                        throw new RuntimeException(e);
+                                    }
+                                    user.setScanResult(result);
+                                    callbackVal.add(user);
+                                }
                             }
-                            user.setScanResult(result);
-                            callbackVal.add(user);
                         }
+                        callback.onScanned(callbackVal);
                     }
-                }
-                callback.onScanned(callbackVal);
-            }
 
-            @Override
-            public void onTimeout()
-            {
-                // TODO Auto-generated method stub
-                super.onTimeout();
-                callback.onError();
+                    @Override
+                    public void onTimeout()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onTimeout();
+                        callback.onError();
+                    }
+
+                    @Override
+                    public void onError()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onError();
+                        callback.onError();
+                    }
+                }, WIFI_TIMEOUT);
             }
 
             @Override
@@ -424,6 +397,14 @@ public class User
             {
                 // TODO Auto-generated method stub
                 super.onError();
+                callback.onError();
+            }
+
+            @Override
+            public void onTimeout()
+            {
+                // TODO Auto-generated method stub
+                super.onTimeout();
                 callback.onError();
             }
         }, WIFI_TIMEOUT);
@@ -431,29 +412,46 @@ public class User
 
     public void connectToRemoteAp(Context context, final RemoteUser user, final ConnectToRemoteApCallback callback)
     {
-        ScanResult result = user.getScanResult();
+        final ScanResult result = user.getScanResult();
         if (result == null)
             throw new IllegalStateException("can only connect to ap which has been found by scanning.");
         final WifiUtils wifiUtils = new WifiUtils(context);
-        wifiUtils.connect(result, null, new WifiCallback(context)
+        wifiUtils.setWifiEnabled(true, new WifiCallback(context)
         {
             @Override
-            public void onNetworkConnected(WifiInfo wifiInfo)
+            public void onWifiEnabled()
             {
                 // TODO Auto-generated method stub
-                super.onNetworkConnected(wifiInfo);
-                int apIp = wifiUtils.getWifiManager().getDhcpInfo().serverAddress;
-                String apIpStr = String.format("%d.%d.%d.%d", (apIp & 0xff), (apIp >> 8 & 0xff), (apIp >> 16 & 0xff), (apIp >> 24 & 0xff));
-                user.setIp(apIpStr);
-                callback.onConnected(user);
-            }
+                super.onWifiEnabled();
+                wifiUtils.connect(result, null, new WifiCallback(context)
+                {
+                    @Override
+                    public void onNetworkConnected(WifiInfo wifiInfo)
+                    {
+                        // TODO Auto-generated method stub
+                        super.onNetworkConnected(wifiInfo);
+                        int apIp = wifiUtils.getWifiManager().getDhcpInfo().serverAddress;
+                        String apIpStr = String.format("%d.%d.%d.%d", (apIp & 0xff), (apIp >> 8 & 0xff), (apIp >> 16 & 0xff), (apIp >> 24 & 0xff));
+                        user.setIp(apIpStr);
+                        callback.onConnected(user);
+                    }
 
-            @Override
-            public void onTimeout()
-            {
-                // TODO Auto-generated method stub
-                super.onTimeout();
-                callback.onError(user);
+                    @Override
+                    public void onTimeout()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onTimeout();
+                        callback.onError(user);
+                    }
+
+                    @Override
+                    public void onError()
+                    {
+                        // TODO Auto-generated method stub
+                        super.onError();
+                        callback.onError(user);
+                    }
+                }, WIFI_TIMEOUT);
             }
 
             @Override
@@ -461,6 +459,14 @@ public class User
             {
                 // TODO Auto-generated method stub
                 super.onError();
+                callback.onError(user);
+            }
+
+            @Override
+            public void onTimeout()
+            {
+                // TODO Auto-generated method stub
+                super.onTimeout();
                 callback.onError(user);
             }
         }, WIFI_TIMEOUT);
