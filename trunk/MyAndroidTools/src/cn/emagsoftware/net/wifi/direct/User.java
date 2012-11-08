@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -595,7 +596,16 @@ public class User
 
     public void close(Context context, final CloseCallback callback)
     {
-        IOException firstExcep = null;
+        Exception firstExcep = null;
+        Set<SelectionKey> skeys = null;
+        try
+        {
+            skeys = selector.keys();
+        } catch (ClosedSelectorException e)
+        {
+            if (firstExcep == null)
+                firstExcep = e;
+        }
         try
         {
             selector.close();
@@ -604,24 +614,26 @@ public class User
             if (firstExcep == null)
                 firstExcep = e;
         }
-        Set<SelectionKey> skeys = selector.keys();
-        for (SelectionKey curKey : skeys)
+        if (skeys != null)
         {
-            try
+            for (SelectionKey curKey : skeys)
             {
-                Object obj = curKey.channel();
-                if (obj instanceof SocketChannel) // ServerSocketChannel将由finishListening方法关闭
+                try
                 {
-                    curKey.cancel();
-                    ((SocketChannel) obj).close();
+                    Object obj = curKey.channel();
+                    if (obj instanceof SocketChannel) // ServerSocketChannel将由finishListening方法关闭
+                    {
+                        curKey.cancel();
+                        ((SocketChannel) obj).close();
+                    }
+                } catch (IOException e)
+                {
+                    if (firstExcep == null)
+                        firstExcep = e;
                 }
-            } catch (IOException e)
-            {
-                if (firstExcep == null)
-                    firstExcep = e;
             }
         }
-        final IOException firstExcepPoint = firstExcep;
+        final Exception firstExcepPoint = firstExcep;
         finishListening(context, new FinishListeningCallback()
         {
             @Override
