@@ -11,6 +11,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;
@@ -605,37 +606,54 @@ public class User
 
     public void close(Context context, final CloseCallback callback)
     {
+        IOException firstExcep = null;
         try
         {
             selector.close();
-            finishListening(context, new FinishListeningCallback()
-            {
-                @Override
-                public void onFinished()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onClosed();
-                }
-
-                @Override
-                public void onError(Exception e)
-                {
-                    // TODO Auto-generated method stub
-                    callback.onError(e);
-                }
-            });
-        } catch (final IOException e)
+        } catch (IOException e)
         {
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onError(e);
-                }
-            });
+            firstExcep = e;
         }
+        Set<SelectionKey> skeys = selector.keys();
+        for (SelectionKey curKey : skeys)
+        {
+            try
+            {
+                Object obj = curKey.channel();
+                if (obj instanceof SocketChannel) // ServerSocketChannel将由finishListening方法关闭
+                {
+                    curKey.cancel();
+                    ((SocketChannel) obj).close();
+                }
+            } catch (IOException e)
+            {
+                if (firstExcep == null)
+                    firstExcep = e;
+            }
+        }
+        final IOException firstExcepPoint = firstExcep;
+        finishListening(context, new FinishListeningCallback()
+        {
+            @Override
+            public void onFinished()
+            {
+                // TODO Auto-generated method stub
+                if (firstExcepPoint == null)
+                    callback.onClosed();
+                else
+                    callback.onError(firstExcepPoint);
+            }
+
+            @Override
+            public void onError(Exception e)
+            {
+                // TODO Auto-generated method stub
+                if (firstExcepPoint == null)
+                    callback.onError(e);
+                else
+                    callback.onError(firstExcepPoint);
+            }
+        });
     }
 
 }

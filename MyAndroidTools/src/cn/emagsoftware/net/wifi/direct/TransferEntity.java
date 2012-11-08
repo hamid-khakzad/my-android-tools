@@ -118,9 +118,9 @@ public class TransferEntity
             remoteUser.removeTransfer(this);
             return;
         }
+        transferKey.cancel();
         SocketChannel sc = (SocketChannel) transferKey.channel();
         sc.close();
-        transferKey.cancel();
         remoteUser.removeTransfer(this);
         transferKey = null;
     }
