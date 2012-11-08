@@ -600,7 +600,14 @@ public class User
         Set<SelectionKey> skeys = null;
         try
         {
-            skeys = selector.keys();
+            this.callback.setSleepForRegister(true);
+            try
+            {
+                skeys = selector.keys();
+            } finally
+            {
+                this.callback.setSleepForRegister(false);
+            }
         } catch (ClosedSelectorException e)
         {
             if (firstExcep == null)
