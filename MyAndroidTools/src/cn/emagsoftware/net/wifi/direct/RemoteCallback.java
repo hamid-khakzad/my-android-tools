@@ -77,7 +77,15 @@ public abstract class RemoteCallback implements Runnable
             }
             if (readyCount <= 0)
                 continue;
-            Set<SelectionKey> keys = selector.selectedKeys();
+            Set<SelectionKey> keys = null;
+            try
+            {
+                keys = selector.selectedKeys();
+            } catch (ClosedSelectorException e)
+            {
+                LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
+                return;
+            }
             Iterator<SelectionKey> iter = keys.iterator();
             while (iter.hasNext())
             {
