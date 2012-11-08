@@ -181,13 +181,13 @@ public class User
             serverChannel = ServerSocketChannel.open();
             serverChannel.configureBlocking(false);
             serverChannel.socket().bind(new InetSocketAddress(LISTENING_PORT));
-            callback.setSleepForRegister(true);
+            callback.setSleepForConflict(true);
             try
             {
                 listeningKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
             } finally
             {
-                callback.setSleepForRegister(false);
+                callback.setSleepForConflict(false);
             }
         } catch (IOException e)
         {
@@ -474,13 +474,13 @@ public class User
             sc = SocketChannel.open();
             sc.configureBlocking(false);
             sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
-            callback.setSleepForRegister(true);
+            callback.setSleepForConflict(true);
             try
             {
                 sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
             } finally
             {
-                callback.setSleepForRegister(false);
+                callback.setSleepForConflict(false);
             }
         } catch (final IOException e)
         {
@@ -559,13 +559,13 @@ public class User
             sc.configureBlocking(false);
             sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
             sc.socket().setSoTimeout(SOCKET_TIMEOUT);
-            callback.setSleepForRegister(true);
+            callback.setSleepForConflict(true);
             try
             {
                 sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
             } finally
             {
-                callback.setSleepForRegister(false);
+                callback.setSleepForConflict(false);
             }
         } catch (final IOException e)
         {
@@ -600,13 +600,13 @@ public class User
         Set<SelectionKey> skeys = null;
         try
         {
-            this.callback.setSleepForRegister(true);
+            this.callback.setSleepForConflict(true);
             try
             {
                 skeys = selector.keys();
             } finally
             {
-                this.callback.setSleepForRegister(false);
+                this.callback.setSleepForConflict(false);
             }
         } catch (ClosedSelectorException e)
         {
