@@ -27,7 +27,7 @@ public abstract class RemoteCallback implements Runnable
 {
 
     private Selector selector         = null;
-    private boolean  sleepForRegister = false;
+    private boolean  sleepForConflict = false;
     private Handler  handler          = new Handler(Looper.getMainLooper());
 
     void bindSelector(Selector selector)
@@ -39,9 +39,9 @@ public abstract class RemoteCallback implements Runnable
         this.selector = selector;
     }
 
-    void setSleepForRegister(boolean sleepForRegister)
+    void setSleepForConflict(boolean sleepForConflict)
     {
-        this.sleepForRegister = sleepForRegister;
+        this.sleepForConflict = sleepForConflict;
     }
 
     @Override
@@ -65,7 +65,7 @@ public abstract class RemoteCallback implements Runnable
                 LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
                 return;
             }
-            if (sleepForRegister)
+            if (sleepForConflict)
             {
                 try
                 {
