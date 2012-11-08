@@ -81,32 +81,9 @@ public class User
                     {
                         acceptIfNecessary();
                         callback.onListening();
-                    } catch (final IOException e)
+                    } catch (IOException e)
                     {
-                        try
-                        {
-                            closeAp(context, new CloseApCallback()
-                            {
-                                @Override
-                                public void onClosed()
-                                {
-                                    // TODO Auto-generated method stub
-                                    callback.onError(e);
-                                }
-
-                                @Override
-                                public void onError()
-                                {
-                                    // TODO Auto-generated method stub
-                                    LogManager.logE(User.class, "close ap failed by 'CloseApCallback.onError()'.");
-                                    callback.onError(e);
-                                }
-                            });
-                        } catch (ReflectHiddenFuncException e1)
-                        {
-                            LogManager.logE(User.class, "close ap failed.", e1);
-                            callback.onError(e);
-                        }
+                        callback.onError(e);
                     }
                 }
 
