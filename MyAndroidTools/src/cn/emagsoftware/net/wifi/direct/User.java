@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -627,12 +628,10 @@ public class User
             {
                 try
                 {
-                    Object obj = curKey.channel();
-                    if (obj instanceof SocketChannel) // ServerSocketChannel将由finishListening方法关闭
-                    {
-                        curKey.cancel();
-                        ((SocketChannel) obj).close();
-                    }
+                    curKey.cancel();
+                    SelectableChannel curChannel = curKey.channel();
+                    if (curChannel instanceof SocketChannel) // ServerSocketChannel将由finishListening方法关闭
+                        ((SocketChannel) curChannel).close();
                 } catch (IOException e)
                 {
                     if (firstExcep == null)
