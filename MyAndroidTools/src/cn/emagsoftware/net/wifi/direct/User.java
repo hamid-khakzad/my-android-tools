@@ -282,55 +282,67 @@ public class User
 
     public void finishListening(Context context, final FinishListeningCallback callback)
     {
-        try
+        Exception firstExcep = null;
+        if (listeningKey != null)
         {
-            if (listeningKey != null)
+            try
             {
                 listeningKey.cancel();
                 ((ServerSocketChannel) listeningKey.channel()).close();
                 listeningKey = null;
-            }
-            if (preApConfig != null)
+            } catch (IOException e)
             {
+                if (firstExcep == null)
+                    firstExcep = e;
+            }
+        }
+        if (preApConfig != null)
+        {
+            try
+            {
+                final Exception firstExcepPoint = firstExcep;
                 closeAp(context, new CloseApCallback()
                 {
                     @Override
                     public void onClosed()
                     {
                         // TODO Auto-generated method stub
-                        callback.onFinished();
+                        if (firstExcepPoint == null)
+                            callback.onFinished();
+                        else
+                            callback.onError(firstExcepPoint);
                     }
 
                     @Override
                     public void onError()
                     {
                         // TODO Auto-generated method stub
-                        callback.onError(new RuntimeException("close ap failed by 'CloseApCallback.onError()'."));
+                        if (firstExcepPoint == null)
+                            callback.onError(new RuntimeException("close ap failed by 'CloseApCallback.onError()'."));
+                        else
+                            callback.onError(firstExcepPoint);
                     }
                 });
                 return;
+            } catch (ReflectHiddenFuncException e)
+            {
+                if (firstExcep == null)
+                    firstExcep = e;
             }
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onFinished();
-                }
-            });
-        } catch (final Exception e)
-        {
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onError(e);
-                }
-            });
         }
+        final Exception firstExcepPoint = firstExcep;
+        handler.post(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                // TODO Auto-generated method stub
+                if (firstExcepPoint == null)
+                    callback.onFinished();
+                else
+                    callback.onError(firstExcepPoint);
+            }
+        });
     }
 
     public void scanUsers(Context context, final ScanUsersCallback callback)
@@ -612,7 +624,8 @@ public class User
             selector.close();
         } catch (IOException e)
         {
-            firstExcep = e;
+            if (firstExcep == null)
+                firstExcep = e;
         }
         Set<SelectionKey> skeys = selector.keys();
         for (SelectionKey curKey : skeys)
