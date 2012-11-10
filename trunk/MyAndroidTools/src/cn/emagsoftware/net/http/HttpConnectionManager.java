@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -36,7 +38,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.5
+ * @version 4.6
  */
 public final class HttpConnectionManager
 {
@@ -58,30 +60,30 @@ public final class HttpConnectionManager
     public static final int            REDIRECT_MAX_COUNT             = 10;
     public static final int            CMWAP_CHARGEPAGE_MAX_COUNT     = 3;
 
-    private static boolean             isKeepSession                  = true;
+    private static boolean             keepSession                    = true;
     private static Map<String, String> sessions                       = new Hashtable<String, String>();
 
-    private static boolean             isUseCMWap                     = false;
-
-    private static boolean             ignoreCMWapChargePage          = false;
+    private static boolean             useCMWap                       = false;
+    private static boolean             useProxyModeWhenCMWap          = false;
+    private static boolean             ignoreChargePageWhenCMWap      = false;
 
     private HttpConnectionManager()
     {
     }
 
-    public static void setKeepSession(boolean isKeepSession)
+    public static void setKeepSession(boolean keepSession)
     {
-        HttpConnectionManager.isKeepSession = isKeepSession;
+        HttpConnectionManager.keepSession = keepSession;
     }
 
     /**
-     * <p>设置是否使用了中国移动CMWap接入
+     * <p>设置是否使用中国移动CMWap接入
      * 
-     * @param isUseCMWap
+     * @param useCMWap
      */
-    public static void setUseCMWap(boolean isUseCMWap)
+    public static void setUseCMWap(boolean useCMWap)
     {
-        HttpConnectionManager.isUseCMWap = isUseCMWap;
+        HttpConnectionManager.useCMWap = useCMWap;
     }
 
     /**
@@ -91,17 +93,27 @@ public final class HttpConnectionManager
      */
     public static boolean isUseCMWap()
     {
-        return isUseCMWap;
+        return useCMWap;
     }
 
     /**
-     * <p>设置在进行CMWap请求时是否忽略CMWap的资费页面
+     * <p>设置在使用中国移动CMWap时是否使用Proxy API模式
+     * 
+     * @param useProxyModeWhenCMWap
+     */
+    public static void setUseProxyModeWhenCMWap(boolean useProxyModeWhenCMWap)
+    {
+        HttpConnectionManager.useProxyModeWhenCMWap = useProxyModeWhenCMWap;
+    }
+
+    /**
+     * <p>设置在使用中国移动CMWap时是否忽略CMWap的资费页面
      * 
      * @param ignore
      */
-    public static void ignoreCMWapChargePage(boolean ignore)
+    public static void ignoreChargePageWhenCMWap(boolean ignore)
     {
-        HttpConnectionManager.ignoreCMWapChargePage = ignore;
+        HttpConnectionManager.ignoreChargePageWhenCMWap = ignore;
     }
 
     /**
@@ -311,15 +323,21 @@ public final class HttpConnectionManager
         URL originalUrl = new URL(packUrl);
         URL myUrl = originalUrl;
         String prefix = null;
-        boolean useCMWap = isUseCMWap;
+        Proxy proxy = null;
         if (useCMWap)
         {
-            prefix = myUrl.getAuthority();
-            String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
-            String query = myUrl.getQuery();
-            if (query != null)
-                myUrlStr = myUrlStr.concat("?").concat(query);
-            myUrl = new URL(myUrlStr);
+            if (useProxyModeWhenCMWap)
+            {
+                proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("10.0.0.172", 80));
+            } else
+            {
+                prefix = myUrl.getAuthority();
+                String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
+                String query = myUrl.getQuery();
+                if (query != null)
+                    myUrlStr = myUrlStr.concat("?").concat(query);
+                myUrl = new URL(myUrlStr);
+            }
         }
         boolean isSSL = myUrl.toString().toLowerCase().startsWith(HTTPS_PREFIX);
         HttpURLConnection httpConn = null;
@@ -333,10 +351,16 @@ public final class HttpConnectionManager
                 sslCont.init(null, new TrustManager[] { new MyX509TrustManager() }, new SecureRandom());
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
                 HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(myUrl.getHost()));
-                httpConn = (HttpsURLConnection) myUrl.openConnection();
+                if (proxy == null)
+                    httpConn = (HttpsURLConnection) myUrl.openConnection();
+                else
+                    httpConn = (HttpsURLConnection) myUrl.openConnection(proxy);
             } else
             {
-                httpConn = (HttpURLConnection) myUrl.openConnection();
+                if (proxy == null)
+                    httpConn = (HttpURLConnection) myUrl.openConnection();
+                else
+                    httpConn = (HttpURLConnection) myUrl.openConnection(proxy);
             }
             httpConn.setRequestMethod(method);
             HttpURLConnection.setFollowRedirects(false);
@@ -348,7 +372,7 @@ public final class HttpConnectionManager
                 httpConn.setDoOutput(false); // 经测试，在Android 4.0且某些特殊的服务器实现下，如果不设置setDoOutput(false)可能收到405的http状态码
             httpConn.setReadTimeout(connOrReadTimeout);
             httpConn.setConnectTimeout(connOrReadTimeout);
-            if (isKeepSession)
+            if (keepSession)
             {
                 String session = querySession(originalUrl); // 需要使用原始URL查询session
                 if (session != null)
@@ -357,7 +381,7 @@ public final class HttpConnectionManager
                     httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
                 }
             }
-            if (useCMWap)
+            if (prefix != null)
             {
                 httpConn.addRequestProperty("X-Online-Host", prefix);
             }
@@ -401,7 +425,7 @@ public final class HttpConnectionManager
                 return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
             } else
             {
-                if (useCMWap && !ignoreCMWapChargePage)
+                if ((prefix != null || proxy != null) && !ignoreChargePageWhenCMWap)
                 {
                     String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
                     if (contentType != null && contentType.indexOf("vnd.wap.wml") != -1)
@@ -474,7 +498,7 @@ public final class HttpConnectionManager
                         }
                     }
                 }
-                if (isKeepSession)
+                if (keepSession)
                 {
                     Map<String, List<String>> headerFields = httpConn.getHeaderFields();
                     if (headerFields != null)
