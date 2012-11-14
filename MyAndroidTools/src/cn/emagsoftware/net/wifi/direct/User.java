@@ -505,9 +505,32 @@ public class User
         }
     }
 
-    public void disconnectUser(RemoteUser user) throws IOException
+    public void disconnectUser(final RemoteUser user)
     {
-        user.close();
+        try
+        {
+            user.close();
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onDisconnected(user);
+                }
+            });
+        } catch (final IOException e)
+        {
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onDisconnectedFailed(user, e);
+                }
+            });
+        }
     }
 
     public void sendTransferRequest(RemoteUser user, String description)
@@ -590,9 +613,15 @@ public class User
         }
     }
 
-    public void cancelTransfer(TransferEntity transfer) throws IOException
+    public void cancelTransfer(TransferEntity transfer)
     {
-        transfer.close();
+        try
+        {
+            transfer.close();
+        } catch (IOException e)
+        {
+            LogManager.logE(User.class, "cancel transfer failed.", e);
+        }
     }
 
     public void close(Context context, final CloseCallback callback)

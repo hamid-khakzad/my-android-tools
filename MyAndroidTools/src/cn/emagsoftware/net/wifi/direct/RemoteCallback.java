@@ -229,7 +229,7 @@ public abstract class RemoteCallback implements Runnable
                                                 public void run()
                                                 {
                                                     // TODO Auto-generated method stub
-                                                    onRemoteDisconnected(remoteUser);
+                                                    onDisconnected(remoteUser);
                                                 }
                                             });
                                         }
@@ -823,7 +823,9 @@ public abstract class RemoteCallback implements Runnable
 
     public abstract void onConnectedFailed(RemoteUser user, Exception e);
 
-    public abstract void onRemoteDisconnected(RemoteUser user);
+    public abstract void onDisconnected(RemoteUser user);
+
+    public abstract void onDisconnectedFailed(RemoteUser user, Exception e);
 
     public abstract void onTransferRequest(RemoteUser user, String description);
 
