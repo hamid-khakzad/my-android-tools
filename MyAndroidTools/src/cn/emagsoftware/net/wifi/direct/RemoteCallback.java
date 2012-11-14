@@ -370,6 +370,7 @@ public abstract class RemoteCallback implements Runnable
                                             {
                                                 try
                                                 {
+                                                    key.cancel();
                                                     transfer.close();
                                                 } catch (IOException e1)
                                                 {
@@ -410,6 +411,7 @@ public abstract class RemoteCallback implements Runnable
                                         }
                                         try
                                         {
+                                            key.cancel();
                                             transfer.close();
                                         } catch (IOException e)
                                         {
@@ -421,7 +423,7 @@ public abstract class RemoteCallback implements Runnable
                                             public void run()
                                             {
                                                 // TODO Auto-generated method stub
-                                                onRemoteTransferCancelled(transfer);
+                                                onTransferFailed(transfer, new RuntimeException("remote is closed."));
                                             }
                                         });
                                     } else
@@ -441,6 +443,7 @@ public abstract class RemoteCallback implements Runnable
                                             }
                                             try
                                             {
+                                                key.cancel();
                                                 transfer.close();
                                             } catch (IOException e)
                                             {
@@ -486,6 +489,7 @@ public abstract class RemoteCallback implements Runnable
                                     }
                                     try
                                     {
+                                        key.cancel();
                                         transfer.close();
                                     } catch (IOException e1)
                                     {
@@ -725,6 +729,7 @@ public abstract class RemoteCallback implements Runnable
                                     {
                                         try
                                         {
+                                            key.cancel();
                                             transfer.close();
                                         } catch (IOException e)
                                         {
@@ -780,6 +785,7 @@ public abstract class RemoteCallback implements Runnable
                             {
                                 try
                                 {
+                                    key.cancel();
                                     transfer.close();
                                 } catch (IOException e1)
                                 {
@@ -836,10 +842,5 @@ public abstract class RemoteCallback implements Runnable
      * @param e
      */
     public abstract void onTransferFailed(TransferEntity transfer, Exception e);
-
-    /**
-     * @param transfer 如果是发送文件的话，transfer.getSavingPath()返回的值为null
-     */
-    public abstract void onRemoteTransferCancelled(TransferEntity transfer);
 
 }

@@ -118,7 +118,7 @@ public class TransferEntity
             remoteUser.removeTransfer(this);
             return;
         }
-        transferKey.cancel();
+        // 对transferKey不能执行cancel()，这样才能保证RemoteCallback.onTransferFailed(TransferEntity,Exception)一定被回调，onTransferFailed(TransferEntity,Exception)被回调前会执行cancel()
         SocketChannel sc = (SocketChannel) transferKey.channel();
         sc.close();
         remoteUser.removeTransfer(this);
