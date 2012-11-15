@@ -3,18 +3,20 @@ package cn.emagsoftware.net.wifi.direct;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import android.net.wifi.ScanResult;
 
 public class RemoteUser
 {
 
-    private String                     name       = null;
-    private ScanResult                 scanResult = null;
-    private String                     ip         = null;
-    private SelectionKey               key        = null;
-    private LinkedList<TransferEntity> transfers  = new LinkedList<TransferEntity>();
+    private String               name       = null;
+    private ScanResult           scanResult = null;
+    private String               ip         = null;
+    private SelectionKey         key        = null;
+    private List<TransferEntity> transfers  = Collections.synchronizedList(new LinkedList<TransferEntity>());
 
     RemoteUser(String name)
     {
@@ -78,38 +80,19 @@ public class RemoteUser
         transfers.remove(transfer);
     }
 
-    @SuppressWarnings("unchecked")
     void close() throws IOException
     {
-        IOException firstExcep = null;
-        LinkedList<TransferEntity> transfersClone = (LinkedList<TransferEntity>) transfers.clone();
-        for (TransferEntity transfer : transfersClone)
+        Object[] transfersArr = transfers.toArray();
+        for (Object transfer : transfersArr)
         {
-            try
-            {
-                transfer.close();
-            } catch (IOException e)
-            {
-                if (firstExcep == null)
-                    firstExcep = e;
-            }
+            ((TransferEntity) transfer).setCancelFlag();
         }
         if (key != null)
         {
-            try
-            {
-                key.cancel();
-                SocketChannel sc = (SocketChannel) key.channel();
-                sc.close();
-                key = null;
-            } catch (IOException e)
-            {
-                if (firstExcep == null)
-                    firstExcep = e;
-            }
+            key.cancel();
+            SocketChannel sc = (SocketChannel) key.channel();
+            sc.close();
+            key = null;
         }
-        if (firstExcep != null)
-            throw firstExcep;
     }
-
 }

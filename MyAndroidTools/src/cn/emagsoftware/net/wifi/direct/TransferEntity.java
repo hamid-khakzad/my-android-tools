@@ -1,19 +1,15 @@
 package cn.emagsoftware.net.wifi.direct;
 
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-
 public class TransferEntity
 {
-    private RemoteUser   remoteUser;
-    private String       sendPath;
-    private String       savingPath;
-    private long         size;
-    private boolean      isSender;
-    private String       extraDescription;
-    private SelectionKey transferKey;
-    private Object       tag;
+    private RemoteUser remoteUser;
+    private String     sendPath;
+    private String     savingPath;
+    private long       size;
+    private boolean    isSender;
+    private String     extraDescription;
+    private Object     tag;
+    private boolean    isCancelled = false;
 
     TransferEntity()
     {
@@ -87,18 +83,6 @@ public class TransferEntity
         this.extraDescription = extraDescription;
     }
 
-    SelectionKey getSelectionKey()
-    {
-        return transferKey;
-    }
-
-    void setSelectionKey(SelectionKey transferKey)
-    {
-        if (transferKey == null)
-            throw new NullPointerException();
-        this.transferKey = transferKey;
-    }
-
     public Object getTag()
     {
         return tag;
@@ -111,18 +95,14 @@ public class TransferEntity
         this.tag = tag;
     }
 
-    void close() throws IOException
+    void setCancelFlag()
     {
-        if (transferKey == null)
-        {
-            remoteUser.removeTransfer(this);
-            return;
-        }
-        // 对transferKey不能执行cancel()，这样才能保证RemoteCallback.onTransferFailed(TransferEntity,Exception)一定被回调，onTransferFailed(TransferEntity,Exception)被回调前会执行cancel()
-        SocketChannel sc = (SocketChannel) transferKey.channel();
-        sc.close();
-        remoteUser.removeTransfer(this);
-        transferKey = null;
+        this.isCancelled = true;
+    }
+
+    boolean getCancelFlag()
+    {
+        return isCancelled;
     }
 
 }
