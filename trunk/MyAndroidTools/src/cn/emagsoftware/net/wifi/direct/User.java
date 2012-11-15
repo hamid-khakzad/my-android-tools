@@ -595,6 +595,7 @@ public class User
         {
             try
             {
+                user.removeTransfer(transfer);
                 if (sc != null)
                     sc.close();
             } catch (IOException e1)
@@ -615,13 +616,7 @@ public class User
 
     public void cancelTransfer(TransferEntity transfer)
     {
-        try
-        {
-            transfer.close();
-        } catch (IOException e)
-        {
-            LogManager.logE(User.class, "cancel transfer failed.", e);
-        }
+        transfer.setCancelFlag();
     }
 
     public void close(Context context, final CloseCallback callback)
