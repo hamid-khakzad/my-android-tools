@@ -171,65 +171,43 @@ public final class SimpleDomManager
     private static void parseDataImpl(XmlPullParser parser, Map<String, List<Element>> dom, boolean keepDomOrder) throws XmlPullParserException, IOException
     {
         int eventType = parser.getEventType();
-        String curTag = null;
-        boolean isCurTagPut = false;
+        Element curElement = null;
         while (eventType != XmlPullParser.END_DOCUMENT)
         {
-            boolean shouldNext = true;
             switch (eventType)
             {
                 case XmlPullParser.START_TAG:
-                    if (curTag == null)
+                    if (curElement == null)
                     {
-                        curTag = parser.getName();
-                    } else
-                    {
-                        Element element = new Element(keepDomOrder);
+                        curElement = new Element(keepDomOrder);
+                        String curTag = parser.getName();
                         List<Element> existedList = dom.get(curTag);
                         if (existedList == null)
                         {
                             existedList = new LinkedList<Element>();
                             dom.put(curTag, existedList);
                         }
-                        existedList.add(element);
-                        isCurTagPut = true;
-                        parseDataImpl(parser, element.getChildren(), keepDomOrder);
-                        // 递归会以父节点的END_TAG事件结束，此时需要执行父节点的END_TAG代码以保证逻辑一致性，故不能越过
-                        eventType = parser.getEventType();
-                        shouldNext = false;
+                        existedList.add(curElement);
+                    } else
+                    {
+                        parseDataImpl(parser, curElement.getChildren(), keepDomOrder);
+                        // 递归会以父节点的END_TAG事件结束，此时需要重置当前节点
+                        curElement = null;
                     }
                     break;
                 case XmlPullParser.TEXT:
-                    Element element = new Element(keepDomOrder);
-                    element.setText(parser.getText());
-                    List<Element> existedList = dom.get(curTag);
-                    if (existedList == null)
+                    if (curElement != null)
                     {
-                        existedList = new LinkedList<Element>();
-                        dom.put(curTag, existedList);
+                        curElement.setText(parser.getText());
                     }
-                    existedList.add(element);
-                    isCurTagPut = true;
                     break;
                 case XmlPullParser.END_TAG:
-                    if (curTag == null)
+                    if (curElement == null)
                         return;
-                    if (!isCurTagPut)
-                    {
-                        existedList = dom.get(curTag);
-                        if (existedList == null)
-                        {
-                            existedList = new LinkedList<Element>();
-                            dom.put(curTag, existedList);
-                        }
-                        existedList.add(new Element(keepDomOrder));
-                    }
-                    curTag = null;
-                    isCurTagPut = false;
+                    curElement = null;
                     break;
             }
-            if (shouldNext)
-                eventType = parser.next();
+            eventType = parser.next();
         }
     }
 
