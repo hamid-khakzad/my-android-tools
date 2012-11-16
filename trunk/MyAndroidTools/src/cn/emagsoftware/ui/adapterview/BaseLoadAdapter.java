@@ -21,14 +21,19 @@ public abstract class BaseLoadAdapter extends GenericAdapter
     /** 加载时的回调对象 */
     private LoadCallback mCallback     = null;
 
-    BaseLoadAdapter(Context context)
+    BaseLoadAdapter(Context context, int viewTypeCount)
     {
-        super(context);
+        super(context, viewTypeCount);
     }
 
     public BaseLoadAdapter(Context context, BaseLoadAdapter.LoadCallback callback)
     {
-        super(context);
+        this(context, callback, 1);
+    }
+
+    public BaseLoadAdapter(Context context, BaseLoadAdapter.LoadCallback callback, int viewTypeCount)
+    {
+        super(context, viewTypeCount);
         if (callback == null)
             throw new NullPointerException();
         mCallback = callback;

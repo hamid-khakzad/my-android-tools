@@ -25,7 +25,12 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
 
     public BaseLazyLoadAdapter(Context context, BaseLazyLoadAdapter.LazyLoadCallback callback)
     {
-        super(context);
+        this(context, callback, 1);
+    }
+
+    public BaseLazyLoadAdapter(Context context, BaseLazyLoadAdapter.LazyLoadCallback callback, int viewTypeCount)
+    {
+        super(context, viewTypeCount);
         if (callback == null)
             throw new NullPointerException();
         mCallback = callback;
