@@ -183,7 +183,7 @@ public final class TelephonyMgr
 
     public static long getFileStorageSize(File file)
     {
-        StatFs stat = new StatFs(file.getPath());
+        StatFs stat = new StatFs(file.getAbsolutePath());
         long blockSize = stat.getBlockSize();
         long totalBlocks = stat.getBlockCount();
         return blockSize * totalBlocks;
@@ -196,7 +196,7 @@ public final class TelephonyMgr
 
     public static long getFileStorageAvailableSize(File file)
     {
-        StatFs stat = new StatFs(file.getPath());
+        StatFs stat = new StatFs(file.getAbsolutePath());
         long blockSize = stat.getBlockSize();
         long availableBlocks = stat.getAvailableBlocks();
         return blockSize * (availableBlocks - 4);

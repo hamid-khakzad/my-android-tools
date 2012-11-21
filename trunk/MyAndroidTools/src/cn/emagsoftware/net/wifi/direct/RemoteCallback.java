@@ -378,11 +378,14 @@ public abstract class RemoteCallback implements Runnable
                                                 sc.socket().setSoTimeout(User.SOCKET_TIMEOUT);
                                                 File file = new File(transfer.getSavingPath());
                                                 File parentPath = file.getParentFile();
-                                                if (parentPath != null && !parentPath.exists())
-                                                    if (!parentPath.mkdirs())
-                                                        throw new IOException("can not create saving path.");
-                                                if (TelephonyMgr.getFileStorageAvailableSize(file) < transfer.getSize())
-                                                    throw new SpaceNotEnoughException();
+                                                if (parentPath != null)
+                                                {
+                                                    if (!parentPath.exists())
+                                                        if (!parentPath.mkdirs())
+                                                            throw new IOException("can not create saving path.");
+                                                    if (TelephonyMgr.getFileStorageAvailableSize(parentPath) < transfer.getSize())
+                                                        throw new SpaceNotEnoughException();
+                                                }
                                                 key.attach(new Object[] { queryUser, "transfer_progress", transfer, ByteBuffer.allocate(2 * 1024), new FileOutputStream(file).getChannel(), 0, 0 });
                                             } catch (final IOException e)
                                             {
