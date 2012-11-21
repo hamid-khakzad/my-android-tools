@@ -694,8 +694,49 @@ public final class WifiUtils
         }
     }
 
-    private void setWifiApEnabledImpl(Method method, WifiConfiguration apConfig, boolean enabled, final WifiCallback callback, int timeout) throws ReflectHiddenFuncException
+    private void setWifiApEnabledImpl(final Method method, final WifiConfiguration apConfig, final boolean enabled, final WifiCallback callback, final int timeout) throws ReflectHiddenFuncException
     {
+        if (isWifiApEnabled() && enabled && apConfig != null)
+        {
+            int thisTimeout = timeout;
+            if (callback == null)
+                thisTimeout = 20000;
+            setWifiApEnabledImpl(method, null, false, new WifiCallback(context)
+            {
+                @Override
+                public void onWifiApDisabled()
+                {
+                    // TODO Auto-generated method stub
+                    super.onWifiApDisabled();
+                    try
+                    {
+                        setWifiApEnabledImpl(method, apConfig, enabled, callback, timeout);
+                    } catch (ReflectHiddenFuncException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                @Override
+                public void onError()
+                {
+                    // TODO Auto-generated method stub
+                    super.onError();
+                    if (callback != null)
+                        callback.onError();
+                }
+
+                @Override
+                public void onTimeout()
+                {
+                    // TODO Auto-generated method stub
+                    super.onTimeout();
+                    if (callback != null)
+                        callback.onTimeout();
+                }
+            }, thisTimeout);
+            return;
+        }
         if (callback != null)
         {
             if (enabled)
