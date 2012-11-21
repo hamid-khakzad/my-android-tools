@@ -26,9 +26,9 @@ import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
 import cn.emagsoftware.net.wifi.WifiUtils;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
+import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.Base64;
 import cn.emagsoftware.util.LogManager;
-import cn.emagsoftware.util.MathUtilities;
 
 public class User
 {
@@ -140,10 +140,15 @@ public class User
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         WifiConfiguration apconfig = new WifiConfiguration();
+        String deviceId = TelephonyMgr.getDeviceId(context);
+        if (deviceId == null)
+            deviceId = wifiUtils.getConnectionInfo().getMacAddress();
+        if (deviceId == null)
+            deviceId = "000000000000000";
         String apName = null;
         try
         {
-            apName = "GHFY_" + Base64.encode(name.getBytes(ACTION_CHARSET)) + "_" + MathUtilities.Random(10000);
+            apName = "GHFY_" + Base64.encode(name.getBytes(ACTION_CHARSET)) + "_" + Base64.encode(deviceId.getBytes(ACTION_CHARSET));
         } catch (UnsupportedEncodingException e)
         {
             throw new RuntimeException(e);
