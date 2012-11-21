@@ -19,6 +19,7 @@ import java.util.Set;
 
 import android.os.Handler;
 import android.os.Looper;
+import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.MathUtilities;
 import cn.emagsoftware.util.StringUtilities;
@@ -380,6 +381,8 @@ public abstract class RemoteCallback implements Runnable
                                                 if (parentPath != null && !parentPath.exists())
                                                     if (!parentPath.mkdirs())
                                                         throw new IOException("can not create saving path.");
+                                                if (TelephonyMgr.getFileStorageAvailableSize(file) < transfer.getSize())
+                                                    throw new SpaceNotEnoughException();
                                                 key.attach(new Object[] { queryUser, "transfer_progress", transfer, ByteBuffer.allocate(2 * 1024), new FileOutputStream(file).getChannel(), 0, 0 });
                                             } catch (final IOException e)
                                             {

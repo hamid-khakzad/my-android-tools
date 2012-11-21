@@ -178,8 +178,11 @@ public final class TelephonyMgr
 
     public static long getExternalStorageSize()
     {
-        String path = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(path);
+        return getFileStorageSize(Environment.getExternalStorageDirectory());
+    }
+
+    public static long getFileStorageSize(File file)
+    {
         StatFs stat = new StatFs(file.getPath());
         long blockSize = stat.getBlockSize();
         long totalBlocks = stat.getBlockCount();
@@ -188,8 +191,11 @@ public final class TelephonyMgr
 
     public static long getExternalStorageAvailableSize()
     {
-        String path = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(path);
+        return getFileStorageAvailableSize(Environment.getExternalStorageDirectory());
+    }
+
+    public static long getFileStorageAvailableSize(File file)
+    {
         StatFs stat = new StatFs(file.getPath());
         long blockSize = stat.getBlockSize();
         long availableBlocks = stat.getAvailableBlocks();
