@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
+import java.net.Proxy.Type;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -32,19 +33,20 @@ import javax.net.ssl.X509TrustManager;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import cn.emagsoftware.net.NetManager;
 import cn.emagsoftware.util.LogManager;
 
 /**
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 4.6
+ * @version 5.0
  */
 public final class HttpConnectionManager
 {
-
-    public static final String         HTTPS_PREFIX                   = "https";
-
     public static final String         HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
     public static final String         HEADER_REQUEST_CONNECTION      = "Connection";
     public static final String         HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
@@ -60,15 +62,19 @@ public final class HttpConnectionManager
     public static final int            REDIRECT_MAX_COUNT             = 10;
     public static final int            CMWAP_CHARGEPAGE_MAX_COUNT     = 3;
 
+    private static Context             appContext                     = null;
     private static boolean             keepSession                    = true;
     private static Map<String, String> sessions                       = new Hashtable<String, String>();
-
-    private static boolean             useCMWap                       = false;
-    private static boolean             useProxyModeWhenCMWap          = false;
+    private static boolean             useConcatUrlModeWhenCMWap      = false;
     private static boolean             ignoreChargePageWhenCMWap      = false;
 
     private HttpConnectionManager()
     {
+    }
+
+    public static void bindAppCtxForCheckNetworkType(Context context)
+    {
+        HttpConnectionManager.appContext = context.getApplicationContext();
     }
 
     public static void setKeepSession(boolean keepSession)
@@ -77,33 +83,13 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>设置是否使用中国移动CMWap接入
+     * <p>设置在使用中国移动CMWap时是否使用拼接Url的模式
      * 
-     * @param useCMWap
+     * @param useConcatUrlModeWhenCMWap
      */
-    public static void setUseCMWap(boolean useCMWap)
+    public static void setUseConcatUrlModeWhenCMWap(boolean useConcatUrlModeWhenCMWap)
     {
-        HttpConnectionManager.useCMWap = useCMWap;
-    }
-
-    /**
-     * <p>获取是否使用了中国移动CMWap接入
-     * 
-     * @return
-     */
-    public static boolean isUseCMWap()
-    {
-        return useCMWap;
-    }
-
-    /**
-     * <p>设置在使用中国移动CMWap时是否使用Proxy API模式
-     * 
-     * @param useProxyModeWhenCMWap
-     */
-    public static void setUseProxyModeWhenCMWap(boolean useProxyModeWhenCMWap)
-    {
-        HttpConnectionManager.useProxyModeWhenCMWap = useProxyModeWhenCMWap;
+        HttpConnectionManager.useConcatUrlModeWhenCMWap = useConcatUrlModeWhenCMWap;
     }
 
     /**
@@ -322,30 +308,40 @@ public final class HttpConnectionManager
             packUrl = HttpManager.encodeURL(url, urlEnc);
         URL originalUrl = new URL(packUrl);
         URL myUrl = originalUrl;
-        String prefix = null;
+        String concatHost = null;
         Proxy proxy = null;
-        if (useCMWap)
+        if (appContext != null)
         {
-            if (useProxyModeWhenCMWap)
+            NetworkInfo curNetwork = NetManager.getActiveNetworkInfo(appContext);
+            if (curNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
             {
-                proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("10.0.0.172", 80));
-            } else
-            {
-                prefix = myUrl.getAuthority();
-                String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
-                String query = myUrl.getQuery();
-                if (query != null)
-                    myUrlStr = myUrlStr.concat("?").concat(query);
-                myUrl = new URL(myUrlStr);
+                if (useConcatUrlModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
+                {
+                    concatHost = myUrl.getAuthority();
+                    String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
+                    String query = myUrl.getQuery();
+                    if (query != null)
+                        myUrlStr = myUrlStr.concat("?").concat(query);
+                    myUrl = new URL(myUrlStr);
+                } else
+                {
+                    String host = android.net.Proxy.getDefaultHost();
+                    int port = android.net.Proxy.getDefaultPort();
+                    if (host != null && port != -1)
+                    {
+                        InetSocketAddress inetAddress = new InetSocketAddress(host, port);
+                        Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                        proxy = new Proxy(proxyType, inetAddress);
+                    }
+                }
             }
         }
-        boolean isSSL = myUrl.toString().toLowerCase().startsWith(HTTPS_PREFIX);
         HttpURLConnection httpConn = null;
         OutputStream output = null;
         try
         {
             LogManager.logI(HttpConnectionManager.class, "request url '".concat(myUrl.toString()).concat("'..."));
-            if (isSSL)
+            if ("https".equals(myUrl.getProtocol()))
             {
                 SSLContext sslCont = SSLContext.getInstance("TLS");
                 sslCont.init(null, new TrustManager[] { new MyX509TrustManager() }, new SecureRandom());
@@ -381,9 +377,9 @@ public final class HttpConnectionManager
                     httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
                 }
             }
-            if (prefix != null)
+            if (concatHost != null)
             {
-                httpConn.addRequestProperty("X-Online-Host", prefix);
+                httpConn.addRequestProperty("X-Online-Host", concatHost);
             }
             if (requestHeaders != null)
             {
@@ -425,7 +421,7 @@ public final class HttpConnectionManager
                 return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
             } else
             {
-                if ((prefix != null || proxy != null) && !ignoreChargePageWhenCMWap)
+                if ((concatHost != null || proxy != null) && !ignoreChargePageWhenCMWap)
                 {
                     String contentType = httpConn.getHeaderField(HEADER_RESPONSE_CONTENT_TYPE);
                     if (contentType != null && contentType.indexOf("vnd.wap.wml") != -1)
