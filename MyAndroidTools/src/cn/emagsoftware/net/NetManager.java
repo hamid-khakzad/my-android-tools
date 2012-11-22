@@ -84,9 +84,9 @@ public final class NetManager
      * <p>以大写形式返回指定网络的详细类型
      * 
      * @param info
-     * @return WIFI、CMNET、CMWAP等，返回null表示网络类型未知
+     * @return WIFI、CMNET、CMWAP等
      */
-    public static String getNetworkInfoType(NetworkInfo info)
+    public static String getNetworkType(NetworkInfo info)
     {
         String type = info.getTypeName();
         if (type.equals("WIFI"))
@@ -103,10 +103,32 @@ public final class NetManager
                     return "CMNET"; // 有些机型返回的是不精确的类型，如CMNET:GSM
                 else if (extraInfo.indexOf("CMWAP") != -1)
                     return "CMWAP"; // 有些机型返回的是不精确的类型，如CMWAP:GSM
+                else if (extraInfo.indexOf("UNINET") != -1)
+                    return "UNINET";
+                else if (extraInfo.indexOf("UNIWAP") != -1)
+                    return "UNIWAP";
+                else if (extraInfo.indexOf("CTNET") != -1)
+                    return "CTNET";
+                else if (extraInfo.indexOf("CTWAP") != -1)
+                    return "CTWAP";
                 else
                     return extraInfo;
             }
         }
+    }
+
+    /**
+     * <p>以大写形式返回当前网络的详细类型
+     * 
+     * @param context
+     * @return WIFI、CMNET、CMWAP等，返回null表示当前网络类型未知
+     */
+    public static String getCurNetworkType(Context context)
+    {
+        NetworkInfo ni = getActiveNetworkInfo(context);
+        if (ni == null)
+            return null;
+        return getNetworkType(ni);
     }
 
     /**
