@@ -313,25 +313,28 @@ public final class HttpConnectionManager
         if (appContext != null)
         {
             NetworkInfo curNetwork = NetManager.getActiveNetworkInfo(appContext);
-            if (curNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
+            if (curNetwork != null)
             {
-                if (useConcatUrlModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
+                if (curNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
                 {
-                    concatHost = myUrl.getAuthority();
-                    String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
-                    String query = myUrl.getQuery();
-                    if (query != null)
-                        myUrlStr = myUrlStr.concat("?").concat(query);
-                    myUrl = new URL(myUrlStr);
-                } else
-                {
-                    String host = android.net.Proxy.getDefaultHost();
-                    int port = android.net.Proxy.getDefaultPort();
-                    if (host != null && port != -1)
+                    if (useConcatUrlModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
                     {
-                        InetSocketAddress inetAddress = new InetSocketAddress(host, port);
-                        Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
-                        proxy = new Proxy(proxyType, inetAddress);
+                        concatHost = myUrl.getAuthority();
+                        String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
+                        String query = myUrl.getQuery();
+                        if (query != null)
+                            myUrlStr = myUrlStr.concat("?").concat(query);
+                        myUrl = new URL(myUrlStr);
+                    } else
+                    {
+                        String host = android.net.Proxy.getDefaultHost();
+                        int port = android.net.Proxy.getDefaultPort();
+                        if (host != null && port != -1)
+                        {
+                            InetSocketAddress inetAddress = new InetSocketAddress(host, port);
+                            Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                            proxy = new Proxy(proxyType, inetAddress);
+                        }
                     }
                 }
             }
