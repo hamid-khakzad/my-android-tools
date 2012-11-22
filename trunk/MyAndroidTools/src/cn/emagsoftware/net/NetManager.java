@@ -86,49 +86,42 @@ public final class NetManager
      * @param info
      * @return WIFI、CMNET、CMWAP等
      */
-    public static String getNetworkType(NetworkInfo info)
+    public static String getNetworkDetailType(NetworkInfo info)
     {
-        String type = info.getTypeName();
-        if (type.equals("WIFI"))
+        if (info.getType() == ConnectivityManager.TYPE_WIFI)
             return "WIFI";
+        String extraInfo = info.getExtraInfo(); // 通常为当前选中的APN的名称
+        if (extraInfo == null)
+            return info.getTypeName().toUpperCase();
+        extraInfo = extraInfo.toUpperCase();
+        if (extraInfo.contains("CMNET"))
+            return "CMNET";
+        else if (extraInfo.contains("CMWAP"))
+            return "CMWAP";
+        else if (extraInfo.contains("UNINET"))
+            return "UNINET";
+        else if (extraInfo.contains("UNIWAP"))
+            return "UNIWAP";
+        else if (extraInfo.contains("CTNET"))
+            return "CTNET";
+        else if (extraInfo.contains("CTWAP"))
+            return "CTWAP";
         else
-        {
-            String extraInfo = info.getExtraInfo();
-            if (extraInfo == null)
-                return type;
-            else
-            {
-                extraInfo = extraInfo.toUpperCase();
-                if (extraInfo.indexOf("CMNET") != -1)
-                    return "CMNET"; // 有些机型返回的是不精确的类型，如CMNET:GSM
-                else if (extraInfo.indexOf("CMWAP") != -1)
-                    return "CMWAP"; // 有些机型返回的是不精确的类型，如CMWAP:GSM
-                else if (extraInfo.indexOf("UNINET") != -1)
-                    return "UNINET";
-                else if (extraInfo.indexOf("UNIWAP") != -1)
-                    return "UNIWAP";
-                else if (extraInfo.indexOf("CTNET") != -1)
-                    return "CTNET";
-                else if (extraInfo.indexOf("CTWAP") != -1)
-                    return "CTWAP";
-                else
-                    return extraInfo;
-            }
-        }
+            return extraInfo;
     }
 
     /**
      * <p>以大写形式返回当前网络的详细类型
      * 
      * @param context
-     * @return WIFI、CMNET、CMWAP等，返回null表示当前网络类型未知
+     * @return WIFI、CMNET、CMWAP等，返回null表示当前网络未知
      */
-    public static String getCurNetworkType(Context context)
+    public static String getCurNetworkDetailType(Context context)
     {
         NetworkInfo ni = getActiveNetworkInfo(context);
         if (ni == null)
             return null;
-        return getNetworkType(ni);
+        return getNetworkDetailType(ni);
     }
 
     /**
