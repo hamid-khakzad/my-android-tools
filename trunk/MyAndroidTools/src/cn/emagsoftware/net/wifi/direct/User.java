@@ -26,7 +26,6 @@ import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
 import cn.emagsoftware.net.wifi.WifiUtils;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
-import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.Base64;
 import cn.emagsoftware.util.LogManager;
 
@@ -56,6 +55,8 @@ public class User
     {
         if (name == null)
             throw new NullPointerException();
+        if (name.length() > 6)
+            throw new IOException("name length can not great than 6.");
         this.name = name;
         selector = Selector.open();
         callback.bindSelector(selector);
@@ -140,15 +141,10 @@ public class User
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         WifiConfiguration apconfig = new WifiConfiguration();
-        String deviceId = TelephonyMgr.getDeviceId(context);
-        if (deviceId == null)
-            deviceId = wifiUtils.getConnectionInfo().getMacAddress();
-        if (deviceId == null)
-            deviceId = "000000000000000";
         String apName = null;
         try
         {
-            apName = "GHFY_" + Base64.encode(name.getBytes(ACTION_CHARSET)) + "_" + Base64.encode(deviceId.getBytes(ACTION_CHARSET));
+            apName = "GHFY_" + Base64.encode(name.getBytes(ACTION_CHARSET));
         } catch (UnsupportedEncodingException e)
         {
             throw new RuntimeException(e);
@@ -352,20 +348,17 @@ public class User
                             String ssid = result.SSID;
                             if (ssid.startsWith("GHFY_"))
                             {
-                                String[] ssidInfo = ssid.split("_");
-                                if (ssidInfo.length == 3)
+                                String userStr = ssid.substring(ssid.indexOf("_") + 1);
+                                RemoteUser user = null;
+                                try
                                 {
-                                    RemoteUser user = null;
-                                    try
-                                    {
-                                        user = new RemoteUser(new String(Base64.decode(ssidInfo[1]), ACTION_CHARSET));
-                                    } catch (UnsupportedEncodingException e)
-                                    {
-                                        throw new RuntimeException(e);
-                                    }
-                                    user.setScanResult(result);
-                                    callbackVal.add(user);
+                                    user = new RemoteUser(new String(Base64.decode(userStr), ACTION_CHARSET));
+                                } catch (UnsupportedEncodingException e)
+                                {
+                                    throw new RuntimeException(e);
                                 }
+                                user.setScanResult(result);
+                                callbackVal.add(user);
                             }
                         }
                         callback.onScanned(callbackVal);
