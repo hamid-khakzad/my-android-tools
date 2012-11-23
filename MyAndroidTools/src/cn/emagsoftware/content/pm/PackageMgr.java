@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -94,6 +95,25 @@ public final class PackageMgr
     {
         PackageManager pm = context.getPackageManager();
         List<ResolveInfo> resolveInfos = pm.queryIntentActivities(intent, 0);
+        if (isSort)
+            Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(pm));
+        return resolveInfos;
+    }
+
+    /**
+     * <p>获取指定多个Intent的ResolveInfo列表
+     * 
+     * @param context
+     * @param caller
+     * @param specifics
+     * @param intent
+     * @param isSort
+     * @return
+     */
+    public static List<ResolveInfo> queryIntentActivityOptions(Context context, ComponentName caller, Intent[] specifics, Intent intent, boolean isSort)
+    {
+        PackageManager pm = context.getPackageManager();
+        List<ResolveInfo> resolveInfos = pm.queryIntentActivityOptions(caller, specifics, intent, 0);
         if (isSort)
             Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(pm));
         return resolveInfos;
