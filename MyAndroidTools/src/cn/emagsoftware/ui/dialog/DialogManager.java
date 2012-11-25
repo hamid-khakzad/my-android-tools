@@ -27,8 +27,8 @@ import android.view.View;
 public abstract class DialogManager
 {
 
-    public static final boolean IS_USING_NEW_BUTTON_PLACEMENT_STYLE = TelephonyMgr.isUsingNewButtonPlacementStyle();
-    public static boolean       IS_USING_NEW_INFLATING_THEME        = false;
+    public static boolean IS_USING_NEW_BUTTON_PLACEMENT_STYLE = TelephonyMgr.isUsingNewButtonPlacementStyle();
+    public static boolean IS_USING_NEW_INFLATING_THEME        = false;
 
     /**
      * <p>默认情况下，对话框利用了与当前方法相同的原理将程序定义的主题样式替换成自己的R.style.Theme_Dialog，这就是对话框没有显示程序定义样式的原因。 但若是外部创建了View（如通过AlertDialog.Builder或手工创建）再添加进对话框，则这些View将使用程序定义的样式，从而与对话框样式不一致。
