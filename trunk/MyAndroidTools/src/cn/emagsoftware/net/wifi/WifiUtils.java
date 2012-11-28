@@ -290,8 +290,7 @@ public final class WifiUtils
                     {
                         // TODO Auto-generated method stub
                         super.onError();
-                        if (callback != null)
-                            callback.onError();
+                        setWifiEnabledImpl(enabled, callback, timeout);
                     }
 
                     @Override
@@ -299,8 +298,7 @@ public final class WifiUtils
                     {
                         // TODO Auto-generated method stub
                         super.onTimeout();
-                        if (callback != null)
-                            callback.onTimeout();
+                        setWifiEnabledImpl(enabled, callback, timeout);
                     }
                 }, thisTimeout);
             } catch (ReflectHiddenFuncException e)
@@ -568,7 +566,7 @@ public final class WifiUtils
     {
         try
         {
-            Method method = wifiManager.getClass().getMethod("isWifiApEnabled", new Class[0]);
+            Method method = wifiManager.getClass().getDeclaredMethod("isWifiApEnabled", new Class[0]);
             method.setAccessible(true);
             return (Boolean) method.invoke(wifiManager, new Object[0]);
         } catch (NoSuchMethodException e)
@@ -587,7 +585,7 @@ public final class WifiUtils
     {
         try
         {
-            Method method = wifiManager.getClass().getMethod("getWifiApConfiguration", new Class[0]);
+            Method method = wifiManager.getClass().getDeclaredMethod("getWifiApConfiguration", new Class[0]);
             method.setAccessible(true);
             return (WifiConfiguration) method.invoke(wifiManager, new Object[0]);
         } catch (NoSuchMethodException e)
@@ -609,12 +607,12 @@ public final class WifiUtils
             try
             {
                 // ¼æÈÝhtcµÈ»úÆ÷
-                Method method = wifiManager.getClass().getMethod("setWifiApConfig", WifiConfiguration.class);
+                Method method = wifiManager.getClass().getDeclaredMethod("setWifiApConfig", WifiConfiguration.class);
                 method.setAccessible(true);
                 return (Integer) method.invoke(wifiManager, apConfig) > 0;
             } catch (NoSuchMethodException e)
             {
-                Method method = wifiManager.getClass().getMethod("setWifiApConfiguration", WifiConfiguration.class);
+                Method method = wifiManager.getClass().getDeclaredMethod("setWifiApConfiguration", WifiConfiguration.class);
                 method.setAccessible(true);
                 return (Boolean) method.invoke(wifiManager, apConfig);
             }
@@ -648,21 +646,11 @@ public final class WifiUtils
             }
             return;
         }
-        Method method = null;
-        try
-        {
-            method = wifiManager.getClass().getMethod("setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
-            method.setAccessible(true);
-        } catch (NoSuchMethodException e)
-        {
-            throw new ReflectHiddenFuncException(e);
-        }
         if (enabled)
         {
             int thisTimeout = timeout;
             if (callback == null)
                 thisTimeout = 20000;
-            final Method methodPoint = method;
             setWifiEnabled(false, new WifiCallback(context)
             {
                 @Override
@@ -672,10 +660,12 @@ public final class WifiUtils
                     super.onWifiDisabled();
                     try
                     {
-                        setWifiApEnabledImpl(methodPoint, apConfig, enabled, callback, timeout);
+                        setWifiApEnabledImpl(apConfig, enabled, callback, timeout);
                     } catch (ReflectHiddenFuncException e)
                     {
-                        throw new RuntimeException(e);
+                        LogManager.logE(WifiUtils.class, "set wifi ap enabled failed.", e);
+                        if (callback != null)
+                            callback.onError();
                     }
                 }
 
@@ -699,18 +689,18 @@ public final class WifiUtils
             }, thisTimeout);
         } else
         {
-            setWifiApEnabledImpl(method, apConfig, enabled, callback, timeout);
+            setWifiApEnabledImpl(apConfig, enabled, callback, timeout);
         }
     }
 
-    private void setWifiApEnabledImpl(final Method method, final WifiConfiguration apConfig, final boolean enabled, final WifiCallback callback, final int timeout) throws ReflectHiddenFuncException
+    private void setWifiApEnabledImpl(final WifiConfiguration apConfig, final boolean enabled, final WifiCallback callback, final int timeout) throws ReflectHiddenFuncException
     {
         if (isWifiApEnabled() && enabled && apConfig != null)
         {
             int thisTimeout = timeout;
             if (callback == null)
                 thisTimeout = 20000;
-            setWifiApEnabledImpl(method, null, false, new WifiCallback(context)
+            setWifiApEnabledImpl(null, false, new WifiCallback(context)
             {
                 @Override
                 public void onWifiApDisabled()
@@ -719,10 +709,12 @@ public final class WifiUtils
                     super.onWifiApDisabled();
                     try
                     {
-                        setWifiApEnabledImpl(method, apConfig, enabled, callback, timeout);
+                        setWifiApEnabledImpl(apConfig, enabled, callback, timeout);
                     } catch (ReflectHiddenFuncException e)
                     {
-                        throw new RuntimeException(e);
+                        LogManager.logE(WifiUtils.class, "set wifi ap enabled failed.", e);
+                        if (callback != null)
+                            callback.onError();
                     }
                 }
 
@@ -757,6 +749,8 @@ public final class WifiUtils
         }
         try
         {
+            Method method = wifiManager.getClass().getDeclaredMethod("setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
+            method.setAccessible(true);
             boolean circs = (Boolean) method.invoke(wifiManager, apConfig, enabled);
             if (!circs)
                 if (callback != null)
@@ -774,6 +768,11 @@ public final class WifiUtils
                         });
                     }
                 }
+        } catch (NoSuchMethodException e)
+        {
+            if (callback != null)
+                callback.unregisterMe();
+            throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
             if (callback != null)
