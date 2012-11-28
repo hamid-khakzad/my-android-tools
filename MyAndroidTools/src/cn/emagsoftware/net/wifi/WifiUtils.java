@@ -606,9 +606,18 @@ public final class WifiUtils
     {
         try
         {
-            Method method = wifiManager.getClass().getMethod("setWifiApConfiguration", WifiConfiguration.class);
-            method.setAccessible(true);
-            return (Boolean) method.invoke(wifiManager, apConfig);
+            try
+            {
+                // ¼æÈÝhtcµÈ»úÆ÷
+                Method method = wifiManager.getClass().getMethod("setWifiApConfig", WifiConfiguration.class);
+                method.setAccessible(true);
+                return (Integer) method.invoke(wifiManager, apConfig) > 0;
+            } catch (NoSuchMethodException e)
+            {
+                Method method = wifiManager.getClass().getMethod("setWifiApConfiguration", WifiConfiguration.class);
+                method.setAccessible(true);
+                return (Boolean) method.invoke(wifiManager, apConfig);
+            }
         } catch (NoSuchMethodException e)
         {
             throw new ReflectHiddenFuncException(e);
