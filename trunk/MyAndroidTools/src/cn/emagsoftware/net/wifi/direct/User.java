@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -137,7 +138,7 @@ public class User
         wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, callback, timeout);
     }
 
-    private WifiConfiguration createDirectApConfig(Context context)
+    private WifiConfiguration createDirectApConfig(Context context) throws ReflectHiddenFuncException
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         WifiConfiguration apconfig = new WifiConfiguration();
@@ -170,6 +171,42 @@ public class User
         apconfig.allowedGroupCiphers.set(3);
         apconfig.allowedGroupCiphers.set(2);
         apconfig.hiddenSSID = false;
+        Field apProfileField = null;
+        try
+        {
+            apProfileField = apconfig.getClass().getDeclaredField("mWifiApProfile");
+        } catch (NoSuchFieldException e)
+        {
+        }
+        if (apProfileField != null)
+        {
+            try
+            {
+                apProfileField.setAccessible(true);
+                Object apProfile = apProfileField.get(apconfig);
+                if (apProfile != null)
+                {
+                    Field ssidField = apProfile.getClass().getField("SSID");
+                    ssidField.setAccessible(true);
+                    ssidField.set(apProfile, apconfig.SSID);
+                    Field bssidField = apProfile.getClass().getField("BSSID");
+                    bssidField.setAccessible(true);
+                    bssidField.set(apProfile, apconfig.BSSID);
+                    Field typeField = apProfile.getClass().getField("secureType");
+                    typeField.setAccessible(true);
+                    typeField.set(apProfile, "open");
+                    Field dhcpField = apProfile.getClass().getField("dhcpEnable");
+                    dhcpField.setAccessible(true);
+                    dhcpField.set(apProfile, 1);
+                }
+            } catch (IllegalAccessException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            } catch (NoSuchFieldException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            }
+        }
         return apconfig;
     }
 
