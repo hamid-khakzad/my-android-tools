@@ -20,52 +20,359 @@ import android.os.Looper;
 import cn.emagsoftware.util.LogManager;
 
 /**
- * <p>Wifi操作的广播接收类，注意，该类实例是非线程安全的 <p>该类可独立使用，也可与WifiUtils类配合作为回调类使用。 <p>作为回调类使用时，若在不同的回调中使用同一实例，要确保上一个回调已结束，即已经自动反注册
+ * <p>Wifi操作的广播接收类 <p>该类可独立使用，也可与WifiUtils类配合作为方法回调类使用
  * 
  * @author Wendell
- * @version 3.1
+ * @version 4.0
  */
-public abstract class WifiCallback extends BroadcastReceiver
+public abstract class WifiCallback
 {
 
-    public static final int             ACTION_WIFI_ENABLED            = 0;
-    public static final int             ACTION_WIFI_ENABLING           = 1;
-    public static final int             ACTION_WIFI_DISABLED           = 2;
-    public static final int             ACTION_WIFI_DISABLING          = 3;
-    public static final int             ACTION_ERROR                   = 4;
-    public static final int             ACTION_SCAN_RESULTS            = 5;
-    public static final int             ACTION_NETWORK_SCANNING        = 6;
-    public static final int             ACTION_NETWORK_OBTAININGIP     = 7;
-    public static final int             ACTION_NETWORK_DISCONNECTED    = 8;
-    public static final int             ACTION_NETWORK_CONNECTED       = 9;
-    public static final int             ACTION_WIFI_AP_ENABLED         = 10;
-    public static final int             ACTION_WIFI_AP_ENABLING        = 11;
-    public static final int             ACTION_WIFI_AP_DISABLED        = 12;
-    public static final int             ACTION_WIFI_AP_DISABLING       = 13;
+    public static final int           ACTION_WIFI_ENABLED            = 0;
+    public static final int           ACTION_WIFI_ENABLING           = 1;
+    public static final int           ACTION_WIFI_DISABLED           = 2;
+    public static final int           ACTION_WIFI_DISABLING          = 3;
+    public static final int           ACTION_WIFI_FAILED             = 4;
+    public static final int           ACTION_SCAN_RESULTS            = 5;
+    public static final int           ACTION_NETWORK_IDLE            = 6;
+    public static final int           ACTION_NETWORK_SCANNING        = 7;
+    public static final int           ACTION_NETWORK_OBTAININGIP     = 8;
+    public static final int           ACTION_NETWORK_DISCONNECTED    = 9;
+    public static final int           ACTION_NETWORK_CONNECTED       = 10;
+    public static final int           ACTION_NETWORK_FAILED          = 11;
+    public static final int           ACTION_WIFI_AP_ENABLED         = 12;
+    public static final int           ACTION_WIFI_AP_ENABLING        = 13;
+    public static final int           ACTION_WIFI_AP_DISABLED        = 14;
+    public static final int           ACTION_WIFI_AP_DISABLING       = 15;
+    public static final int           ACTION_WIFI_AP_FAILED          = 16;
 
-    private static String               WIFI_AP_STATE_CHANGED_ACTION   = null;
-    private static String               EXTRA_WIFI_AP_STATE            = null;
-    private static int                  WIFI_AP_STATE_DISABLING        = -1;
-    private static int                  WIFI_AP_STATE_DISABLED         = -1;
-    private static int                  WIFI_AP_STATE_ENABLING         = -1;
-    private static int                  WIFI_AP_STATE_ENABLED          = -1;
-    private static int                  WIFI_AP_STATE_FAILED           = -1;
+    private static String             WIFI_AP_STATE_CHANGED_ACTION   = null;
+    private static String             EXTRA_WIFI_AP_STATE            = null;
+    private static int                WIFI_AP_STATE_DISABLING        = -1;
+    private static int                WIFI_AP_STATE_DISABLED         = -1;
+    private static int                WIFI_AP_STATE_ENABLING         = -1;
+    private static int                WIFI_AP_STATE_ENABLED          = -1;
+    private static int                WIFI_AP_STATE_FAILED           = -1;
 
-    protected Context                   context                        = null;
-    protected Handler                   handler                        = new Handler(Looper.getMainLooper());
-    protected boolean                   isNetCallbackUntilNew          = false;
-    protected boolean                   isBeginForNetCallbackUntilNew  = false;
-    protected NetworkInfo.DetailedState lastDetailed                   = null;
-    protected int[]                     autoUnregisterActions          = new int[] {};
-    protected int                       timeouts                       = 0;
-    protected boolean                   isDoneForAutoUnregisterActions = false;
-    protected boolean                   isUnregistered                 = true;
+    private Context                   context                        = null;
+    private BroadcastReceiver         receiver                       = null;
+    private boolean                   isInitialNetworkBroadcast      = true;
+    private NetworkInfo.DetailedState prevNetworkDetailed            = null;
+    private int[]                     autoUnregisterActions          = new int[] {};
+    private boolean                   isDoneForAutoUnregisterActions = false;
+    private Handler                   handler                        = new Handler(Looper.getMainLooper());
+    private boolean                   isUnregistered                 = true;
 
-    public WifiCallback(Context context)
+    public WifiCallback(Context ctx)
     {
-        if (context == null)
+        if (ctx == null)
             throw new NullPointerException();
-        this.context = context;
+        context = ctx;
+        receiver = new BroadcastReceiver()
+        {
+            @Override
+            public void onReceive(Context context, Intent intent)
+            {
+                // TODO Auto-generated method stub
+                if (isUnregistered)
+                    return; // 如果已经反注册，将直接返回
+                String action = intent.getAction();
+                if (isInitialStickyBroadcast() && autoUnregisterActions.length > 0)
+                {
+                    if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION))
+                    {
+                        NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                        if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                        {
+                            prevNetworkDetailed = networkInfo.getDetailedState();
+                        }
+                    }
+                    LogManager.logD(WifiCallback.class, "give up initial sticky state");
+                    return;
+                }
+                WifiUtils wifiUtils = new WifiUtils(context);
+                if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION))
+                {
+                    int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
+                    if (state == WifiManager.WIFI_STATE_ENABLED)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_ENABLED");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiEnabled();
+                    } else if (state == WifiManager.WIFI_STATE_ENABLING)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_ENABLING");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiEnabling();
+                    } else if (state == WifiManager.WIFI_STATE_DISABLED)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_DISABLED");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiDisabled();
+                    } else if (state == WifiManager.WIFI_STATE_DISABLING)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_DISABLING");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiDisabling();
+                    } else if (state == WifiManager.WIFI_STATE_UNKNOWN)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_UNKNOWN");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_FAILED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiFailed();
+                    }
+                } else if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+                {
+                    LogManager.logD(WifiCallback.class, "receive scan state -> SCAN_RESULTS_AVAILABLE");
+                    if (Arrays.binarySearch(autoUnregisterActions, ACTION_SCAN_RESULTS) > -1)
+                    {
+                        isDoneForAutoUnregisterActions = true;
+                        if (!unregisterMe())
+                            return;
+                    }
+                    List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
+                    if (results != null)
+                    {
+                        // 使WLAN热点按信号由强到弱排序(采用冒泡排序算法)
+                        for (int i = 0; i < results.size(); i++)
+                        {
+                            ScanResult curr = results.get(i);
+                            for (int j = i - 1; j >= 0; j--)
+                            {
+                                ScanResult pre = results.get(j);
+                                if (curr.level <= pre.level)
+                                { // 当前的WLAN热点已经不能再向前排了
+                                    if (i != j + 1)
+                                    {
+                                        results.remove(i);
+                                        results.add(j + 1, curr);
+                                    }
+                                    break;
+                                } else if (j == 0)
+                                { // 当前的WLAN热点信号是最强的，已经排到了第一位
+                                    if (i != 0)
+                                    {
+                                        results.remove(i);
+                                        results.add(0, curr);
+                                    }
+                                }
+                            }
+                        }
+                        // 移除搜索到的相同WLAN热点
+                        for (int i = 0; i < results.size(); i++)
+                        {
+                            ScanResult curr = results.get(i);
+                            for (int j = 0; j < i; j++)
+                            {
+                                ScanResult pre = results.get(j);
+                                if (curr.SSID.equals(pre.SSID) && wifiUtils.getScanResultSecurity(curr).equals(wifiUtils.getScanResultSecurity(pre)))
+                                {
+                                    results.remove(i);
+                                    i--;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    onScanResults(results);
+                } else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION))
+                {
+                    NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
+                    if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                    {
+                        NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
+                        if (autoUnregisterActions.length > 0)
+                        {
+                            if (isInitialNetworkBroadcast)
+                            {
+                                if (detailed == NetworkInfo.DetailedState.IDLE)
+                                {
+                                    // 该状态直接认为有效
+                                    isInitialNetworkBroadcast = false;
+                                } else if (detailed == NetworkInfo.DetailedState.SCANNING)
+                                {
+                                    // 只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
+                                    if (prevNetworkDetailed == null || prevNetworkDetailed == NetworkInfo.DetailedState.SCANNING)
+                                    {
+                                        prevNetworkDetailed = detailed;
+                                        LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_SCANNING");
+                                        return;
+                                    }
+                                    isInitialNetworkBroadcast = false;
+                                } else if (detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
+                                {
+                                    // 只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
+                                    if (prevNetworkDetailed == null || prevNetworkDetailed == NetworkInfo.DetailedState.SCANNING || prevNetworkDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
+                                    {
+                                        prevNetworkDetailed = detailed;
+                                        LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_OBTAININGIP");
+                                        return;
+                                    }
+                                    isInitialNetworkBroadcast = false;
+                                } else if (detailed == NetworkInfo.DetailedState.DISCONNECTED)
+                                {
+                                    // 由于已经舍弃了初始粘性状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
+                                    isInitialNetworkBroadcast = false;
+                                    LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_DISCONNECTED");
+                                    return;
+                                } else if (detailed == NetworkInfo.DetailedState.CONNECTED)
+                                {
+                                    // 由于已经舍弃了初始粘性状态，该状态直接认为有效
+                                    isInitialNetworkBroadcast = false;
+                                } else if (detailed == NetworkInfo.DetailedState.FAILED)
+                                {
+                                    // 由于已经舍弃了初始粘性状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
+                                    isInitialNetworkBroadcast = false;
+                                    LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_FAILED");
+                                    return;
+                                }
+                            }
+                        }
+                        if (detailed == NetworkInfo.DetailedState.IDLE)
+                        {
+                            LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_IDLE");
+                            if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_IDLE) > -1)
+                            {
+                                isDoneForAutoUnregisterActions = true;
+                                if (!unregisterMe())
+                                    return;
+                            }
+                            onNetworkIdle(wifiUtils.getConnectionInfo());
+                        } else if (detailed == NetworkInfo.DetailedState.SCANNING)
+                        {
+                            LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_SCANNING");
+                            if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_SCANNING) > -1)
+                            {
+                                isDoneForAutoUnregisterActions = true;
+                                if (!unregisterMe())
+                                    return;
+                            }
+                            onNetworkScanning(wifiUtils.getConnectionInfo());
+                        } else if (detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
+                        {
+                            LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_OBTAININGIP");
+                            if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1)
+                            {
+                                isDoneForAutoUnregisterActions = true;
+                                if (!unregisterMe())
+                                    return;
+                            }
+                            onNetworkObtainingIp(wifiUtils.getConnectionInfo());
+                        } else if (detailed == NetworkInfo.DetailedState.DISCONNECTED)
+                        {
+                            LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_DISCONNECTED");
+                            if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1)
+                            {
+                                isDoneForAutoUnregisterActions = true;
+                                if (!unregisterMe())
+                                    return;
+                            }
+                            onNetworkDisconnected(wifiUtils.getConnectionInfo());
+                        } else if (detailed == NetworkInfo.DetailedState.CONNECTED)
+                        {
+                            LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_CONNECTED");
+                            if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1)
+                            {
+                                isDoneForAutoUnregisterActions = true;
+                                if (!unregisterMe())
+                                    return;
+                            }
+                            onNetworkConnected(wifiUtils.getConnectionInfo());
+                        } else if (detailed == NetworkInfo.DetailedState.FAILED)
+                        {
+                            LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_FAILED");
+                            if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_FAILED) > -1)
+                            {
+                                isDoneForAutoUnregisterActions = true;
+                                if (!unregisterMe())
+                                    return;
+                            }
+                            onNetworkFailed(wifiUtils.getConnectionInfo());
+                        }
+                    }
+                } else if (action.equals(WIFI_AP_STATE_CHANGED_ACTION))
+                {
+                    if (EXTRA_WIFI_AP_STATE == null)
+                        return;
+                    int state = intent.getIntExtra(EXTRA_WIFI_AP_STATE, 0);
+                    if (state == WIFI_AP_STATE_ENABLED)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLED");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_ENABLED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiApEnabled();
+                    } else if (state == WIFI_AP_STATE_ENABLING)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLING");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_ENABLING) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiApEnabling();
+                    } else if (state == WIFI_AP_STATE_DISABLED)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLED");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_DISABLED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiApDisabled();
+                    } else if (state == WIFI_AP_STATE_DISABLING)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLING");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_DISABLING) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiApDisabling();
+                    } else if (state == WIFI_AP_STATE_FAILED)
+                    {
+                        LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_FAILED");
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_FAILED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        onWifiApFailed();
+                    }
+                }
+            }
+        };
         Arrays.sort(autoUnregisterActions);
         // 以下参数在不同Android版本中的值不一致，故需要通过反射来获取
         try
@@ -100,295 +407,12 @@ public abstract class WifiCallback extends BroadcastReceiver
         }
     }
 
-    public void setNetCallbackUntilNew(boolean isUntilNew)
+    public void onCheckWifiExist()
     {
-        this.isNetCallbackUntilNew = isUntilNew;
     }
 
-    @Override
-    public final void onReceive(Context arg0, Intent arg1)
+    public void onCheckWifiNotExist()
     {
-        // TODO Auto-generated method stub
-        if (isUnregistered)
-            return; // 如果已经反注册，将直接返回
-        String action = arg1.getAction();
-        WifiUtils wifiUtils = new WifiUtils(arg0);
-        if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION))
-        {
-            int state = arg1.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
-            if (state == WifiManager.WIFI_STATE_ENABLED)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_ENABLED");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLED) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiEnabled();
-            } else if (state == WifiManager.WIFI_STATE_ENABLING)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_ENABLING");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_ENABLING) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiEnabling();
-            } else if (state == WifiManager.WIFI_STATE_DISABLED)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_DISABLED");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLED) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiDisabled();
-            } else if (state == WifiManager.WIFI_STATE_DISABLING)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_DISABLING");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_DISABLING) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiDisabling();
-            } else if (state == WifiManager.WIFI_STATE_UNKNOWN)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_UNKNOWN");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onError();
-            }
-        } else if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
-        {
-            LogManager.logD(WifiCallback.class, "receive wifi state -> SCAN_RESULTS_AVAILABLE");
-            if (Arrays.binarySearch(autoUnregisterActions, ACTION_SCAN_RESULTS) > -1)
-            {
-                isDoneForAutoUnregisterActions = true;
-                if (!unregisterMe())
-                    return;
-            }
-            List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
-            if (results != null)
-            {
-                // 使WLAN热点按信号由强到弱排序(采用冒泡排序算法)
-                for (int i = 0; i < results.size(); i++)
-                {
-                    ScanResult curr = results.get(i);
-                    for (int j = i - 1; j >= 0; j--)
-                    {
-                        ScanResult pre = results.get(j);
-                        if (curr.level <= pre.level)
-                        { // 当前的WLAN热点已经不能再向前排了
-                            if (i != j + 1)
-                            {
-                                results.remove(i);
-                                results.add(j + 1, curr);
-                            }
-                            break;
-                        } else if (j == 0)
-                        { // 当前的WLAN热点信号是最强的，已经排到了第一位
-                            if (i != 0)
-                            {
-                                results.remove(i);
-                                results.add(0, curr);
-                            }
-                        }
-                    }
-                }
-                // 移除搜索到的相同WLAN热点
-                for (int i = 0; i < results.size(); i++)
-                {
-                    ScanResult curr = results.get(i);
-                    for (int j = 0; j < i; j++)
-                    {
-                        ScanResult pre = results.get(j);
-                        if (curr.SSID.equals(pre.SSID) && wifiUtils.getScanResultSecurity(curr).equals(wifiUtils.getScanResultSecurity(pre)))
-                        {
-                            results.remove(i);
-                            i--;
-                            break;
-                        }
-                    }
-                }
-            }
-            onScanResults(results);
-        } else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION))
-        {
-            NetworkInfo networkInfo = arg1.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-            if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI)
-            {
-                NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-                if (isNetCallbackUntilNew)
-                {
-                    if (!isBeginForNetCallbackUntilNew)
-                    {
-                        if (lastDetailed == null)
-                        {
-                            // 初始状态将直接舍弃
-                            lastDetailed = detailed;
-                            LogManager.logD(WifiCallback.class, "give up wifi state -> " + detailed);
-                            return;
-                        } else if (detailed == NetworkInfo.DetailedState.IDLE)
-                        {
-                            // 该状态直接认为有效
-                        } else if (detailed == NetworkInfo.DetailedState.SCANNING)
-                        {
-                            // 只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
-                            if (lastDetailed == NetworkInfo.DetailedState.SCANNING)
-                            {
-                                lastDetailed = detailed;
-                                LogManager.logD(WifiCallback.class, "give up wifi state -> " + detailed);
-                                return;
-                            }
-                        } else if (detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
-                        {
-                            // 只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
-                            if (lastDetailed == NetworkInfo.DetailedState.SCANNING || lastDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
-                            {
-                                lastDetailed = detailed;
-                                LogManager.logD(WifiCallback.class, "give up wifi state -> " + detailed);
-                                return;
-                            }
-                        } else if (detailed == NetworkInfo.DetailedState.DISCONNECTED)
-                        {
-                            // 由于已经舍弃了初始状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
-                            isBeginForNetCallbackUntilNew = true;
-                            LogManager.logD(WifiCallback.class, "give up wifi state -> " + detailed);
-                            return;
-                        } else if (detailed == NetworkInfo.DetailedState.FAILED)
-                        {
-                            // 由于已经舍弃了初始状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
-                            isBeginForNetCallbackUntilNew = true;
-                            LogManager.logD(WifiCallback.class, "give up wifi state -> " + detailed);
-                            return;
-                        } else if (detailed == NetworkInfo.DetailedState.CONNECTED)
-                        {
-                            // 由于已经舍弃了初始状态，该状态直接认为有效
-                        }
-                        isBeginForNetCallbackUntilNew = true;
-                    }
-                }
-                if (detailed == NetworkInfo.DetailedState.IDLE)
-                {
-                    LogManager.logD(WifiCallback.class, "receive wifi state -> " + detailed);
-                } else if (detailed == NetworkInfo.DetailedState.SCANNING)
-                {
-                    LogManager.logD(WifiCallback.class, "receive wifi state -> " + detailed);
-                    if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_SCANNING) > -1)
-                    {
-                        isDoneForAutoUnregisterActions = true;
-                        if (!unregisterMe())
-                            return;
-                    }
-                    onNetworkScanning(wifiUtils.getConnectionInfo());
-                } else if (detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
-                {
-                    LogManager.logD(WifiCallback.class, "receive wifi state -> " + detailed);
-                    if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_OBTAININGIP) > -1)
-                    {
-                        isDoneForAutoUnregisterActions = true;
-                        if (!unregisterMe())
-                            return;
-                    }
-                    onNetworkObtainingIp(wifiUtils.getConnectionInfo());
-                } else if (detailed == NetworkInfo.DetailedState.DISCONNECTED)
-                {
-                    LogManager.logD(WifiCallback.class, "receive wifi state -> " + detailed);
-                    if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_DISCONNECTED) > -1)
-                    {
-                        isDoneForAutoUnregisterActions = true;
-                        if (!unregisterMe())
-                            return;
-                    }
-                    onNetworkDisconnected(wifiUtils.getConnectionInfo());
-                } else if (detailed == NetworkInfo.DetailedState.FAILED)
-                {
-                    LogManager.logD(WifiCallback.class, "receive wifi state -> " + detailed);
-                    if (Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1)
-                    {
-                        isDoneForAutoUnregisterActions = true;
-                        if (!unregisterMe())
-                            return;
-                    }
-                    onError();
-                } else if (detailed == NetworkInfo.DetailedState.CONNECTED)
-                {
-                    LogManager.logD(WifiCallback.class, "receive wifi state -> " + detailed);
-                    if (Arrays.binarySearch(autoUnregisterActions, ACTION_NETWORK_CONNECTED) > -1)
-                    {
-                        isDoneForAutoUnregisterActions = true;
-                        if (!unregisterMe())
-                            return;
-                    }
-                    onNetworkConnected(wifiUtils.getConnectionInfo());
-                }
-            }
-        } else if (action.equals(WIFI_AP_STATE_CHANGED_ACTION))
-        {
-            if (EXTRA_WIFI_AP_STATE == null)
-                return;
-            int state = arg1.getIntExtra(EXTRA_WIFI_AP_STATE, 0);
-            if (state == WIFI_AP_STATE_ENABLED)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLED");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_ENABLED) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiApEnabled();
-            } else if (state == WIFI_AP_STATE_ENABLING)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLING");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_ENABLING) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiApEnabling();
-            } else if (state == WIFI_AP_STATE_DISABLED)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLED");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_DISABLED) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiApDisabled();
-            } else if (state == WIFI_AP_STATE_DISABLING)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLING");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_WIFI_AP_DISABLING) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onWifiApDisabling();
-            } else if (state == WIFI_AP_STATE_FAILED)
-            {
-                LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_FAILED");
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_ERROR) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                onError();
-            }
-        }
     }
 
     public void onWifiEnabled()
@@ -407,11 +431,15 @@ public abstract class WifiCallback extends BroadcastReceiver
     {
     }
 
-    public void onError()
+    public void onWifiFailed()
     {
     }
 
     public void onScanResults(List<ScanResult> scanResults)
+    {
+    }
+
+    public void onNetworkIdle(WifiInfo wifiInfo)
     {
     }
 
@@ -431,11 +459,7 @@ public abstract class WifiCallback extends BroadcastReceiver
     {
     }
 
-    public void onWifiExist()
-    {
-    }
-
-    public void onWifiNotExist()
+    public void onNetworkFailed(WifiInfo wifiInfo)
     {
     }
 
@@ -455,11 +479,23 @@ public abstract class WifiCallback extends BroadcastReceiver
     {
     }
 
-    public void onTimeout()
+    public void onWifiApFailed()
     {
     }
 
-    public void registerMe()
+    public void onTimeout()
+    {
+    }
+    
+    public void setAutoUnregisterActions(int[] actions)
+    {
+        if (actions == null)
+            throw new NullPointerException();
+        this.autoUnregisterActions = actions.clone();
+        Arrays.sort(autoUnregisterActions);
+    }
+    
+    public void registerMe(int timeout)
     {
         IntentFilter wifiIntentFilter = new IntentFilter();
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
@@ -507,7 +543,6 @@ public abstract class WifiCallback extends BroadcastReceiver
 
     public boolean unregisterMe()
     {
-        isBeginForNetCallbackUntilNew = false;
         lastDetailed = null;
         isDoneForAutoUnregisterActions = true; // 在反注册时置为true，使计时器能够尽快退出
         isUnregistered = true;
@@ -522,15 +557,7 @@ public abstract class WifiCallback extends BroadcastReceiver
             return false;
         }
     }
-
-    public void setAutoUnregisterActions(int[] actions)
-    {
-        if (actions == null)
-            throw new NullPointerException();
-        Arrays.sort(actions);
-        this.autoUnregisterActions = actions;
-    }
-
+    
     /**
      * <p>设置接收Wifi消息的超时时间，超时时将回调onTimeout方法并自动反注册 <p>若设置了自动反注册action，在该action触发时，超时计时器将随之退出而不再计时
      * 
