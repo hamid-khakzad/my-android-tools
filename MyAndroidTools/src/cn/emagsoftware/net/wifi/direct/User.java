@@ -464,6 +464,14 @@ public class User
                     }
 
                     @Override
+                    public void onNetworkDisconnected(WifiInfo wifiInfo)
+                    {
+                        // TODO Auto-generated method stub
+                        super.onNetworkDisconnected(wifiInfo);
+                        callback.onError(user);
+                    }
+
+                    @Override
                     public void onTimeout()
                     {
                         // TODO Auto-generated method stub
