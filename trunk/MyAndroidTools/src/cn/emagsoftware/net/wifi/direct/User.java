@@ -100,11 +100,11 @@ public class User
                 }
 
                 @Override
-                public void onError()
+                public void onWifiApFailed()
                 {
                     // TODO Auto-generated method stub
-                    super.onError();
-                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onError()'."));
+                    super.onWifiApFailed();
+                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onWifiApFailed()'."));
                 }
             }, WIFI_TIMEOUT);
         } catch (final ReflectHiddenFuncException e)
@@ -242,7 +242,7 @@ public class User
         }
     }
 
-    private void closeAp(Context context, final CloseApCallback callback) throws ReflectHiddenFuncException
+    private void closeAp(final Context context, final CloseApCallback callback) throws ReflectHiddenFuncException
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.setWifiApEnabled(null, false, new WifiCallback(context)
@@ -281,10 +281,10 @@ public class User
             }
 
             @Override
-            public void onError()
+            public void onWifiApFailed()
             {
                 // TODO Auto-generated method stub
-                super.onError();
+                super.onWifiApFailed();
                 callback.onError();
             }
         }, WIFI_TIMEOUT);
@@ -362,7 +362,7 @@ public class User
         });
     }
 
-    public void scanUsers(Context context, final ScanUsersCallback callback)
+    public void scanUsers(final Context context, final ScanUsersCallback callback)
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.setWifiEnabled(true, new WifiCallback(context)
@@ -410,20 +410,20 @@ public class User
                     }
 
                     @Override
-                    public void onError()
+                    public void onScanFailed()
                     {
                         // TODO Auto-generated method stub
-                        super.onError();
+                        super.onScanFailed();
                         callback.onError();
                     }
                 }, WIFI_TIMEOUT);
             }
 
             @Override
-            public void onError()
+            public void onWifiFailed()
             {
                 // TODO Auto-generated method stub
-                super.onError();
+                super.onWifiFailed();
                 callback.onError();
             }
 
@@ -437,7 +437,7 @@ public class User
         }, WIFI_TIMEOUT);
     }
 
-    public void connectToRemoteAp(Context context, final RemoteUser user, final ConnectToRemoteApCallback callback)
+    public void connectToRemoteAp(final Context context, final RemoteUser user, final ConnectToRemoteApCallback callback)
     {
         final ScanResult result = user.getScanResult();
         if (result == null)
@@ -472,20 +472,20 @@ public class User
                     }
 
                     @Override
-                    public void onError()
+                    public void onNetworkFailed(WifiInfo wifiInfo)
                     {
                         // TODO Auto-generated method stub
-                        super.onError();
+                        super.onNetworkFailed(wifiInfo);
                         callback.onError(user);
                     }
                 }, WIFI_TIMEOUT);
             }
 
             @Override
-            public void onError()
+            public void onWifiFailed()
             {
                 // TODO Auto-generated method stub
-                super.onError();
+                super.onWifiFailed();
                 callback.onError(user);
             }
 
