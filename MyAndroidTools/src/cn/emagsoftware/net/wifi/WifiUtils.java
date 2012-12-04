@@ -632,23 +632,26 @@ public final class WifiUtils
     {
         if (isWifiApEnabled() == enabled)
         {
-            // 这种情况下不会广播到Receiver，所以统一在外部回调
-            if (callback != null)
+            if (!enabled || apConfig == null)
             {
-                handler.post(new Runnable()
+                // 这种情况下不会广播到Receiver，所以统一在外部回调
+                if (callback != null)
                 {
-                    @Override
-                    public void run()
+                    handler.post(new Runnable()
                     {
-                        // TODO Auto-generated method stub
-                        if (enabled)
-                            callback.onWifiApEnabled();
-                        else
-                            callback.onWifiApDisabled();
-                    }
-                });
+                        @Override
+                        public void run()
+                        {
+                            // TODO Auto-generated method stub
+                            if (enabled)
+                                callback.onWifiApEnabled();
+                            else
+                                callback.onWifiApDisabled();
+                        }
+                    });
+                }
+                return;
             }
-            return;
         }
         if (enabled)
         {
