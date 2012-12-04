@@ -578,6 +578,10 @@ public abstract class WifiCallback
     {
     }
 
+    public void onScanFailed()
+    {
+    }
+
     public void onNetworkIdle(WifiInfo wifiInfo)
     {
     }
