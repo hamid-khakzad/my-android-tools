@@ -444,6 +444,7 @@ public final class WifiUtils
         if (callback != null)
         {
             callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_NETWORK_FAILED, WifiCallback.ACTION_NETWORK_CONNECTED, WifiCallback.ACTION_NETWORK_DISCONNECTED });
+            callback.ignoreInitialNetworkActions(true);
             callback.registerMe(timeout);
         }
         boolean circs = Wifi.connectToConfiguredNetwork(context, wifiManager, wc, true);
@@ -541,6 +542,7 @@ public final class WifiUtils
         if (callback != null)
         {
             callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_NETWORK_FAILED, WifiCallback.ACTION_NETWORK_CONNECTED, WifiCallback.ACTION_NETWORK_DISCONNECTED });
+            callback.ignoreInitialNetworkActions(true);
             callback.registerMe(timeout);
         }
         boolean circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);

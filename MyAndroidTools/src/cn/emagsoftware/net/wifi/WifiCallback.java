@@ -56,7 +56,8 @@ public abstract class WifiCallback
 
     private Context                   context                        = null;
     private BroadcastReceiver         receiver                       = null;
-    private boolean                   isInitialNetworkBroadcast      = true;
+    private boolean                   ignoreInitialNetworkActions    = false;
+    private boolean                   isInitialNetworkAction         = true;
     private NetworkInfo.DetailedState prevNetworkDetailed            = null;
     private int[]                     autoUnregisterActions          = new int[] {};
     private boolean                   isDoneForAutoUnregisterActions = false;
@@ -90,7 +91,7 @@ public abstract class WifiCallback
                             prevNetworkDetailed = networkInfo.getDetailedState();
                         }
                     }
-                    LogManager.logD(WifiCallback.class, "give up initial sticky state");
+                    LogManager.logD(WifiCallback.class, "ignore initial sticky state");
                     return;
                 }
                 final WifiUtils wifiUtils = new WifiUtils(context);
@@ -256,49 +257,49 @@ public abstract class WifiCallback
                     if (networkInfo.getType() == ConnectivityManager.TYPE_WIFI)
                     {
                         NetworkInfo.DetailedState detailed = networkInfo.getDetailedState();
-                        if (autoUnregisterActions.length > 0)
+                        if (ignoreInitialNetworkActions)
                         {
-                            if (isInitialNetworkBroadcast)
+                            if (isInitialNetworkAction)
                             {
                                 if (detailed == NetworkInfo.DetailedState.IDLE)
                                 {
                                     // 该状态直接认为有效
-                                    isInitialNetworkBroadcast = false;
+                                    isInitialNetworkAction = false;
                                 } else if (detailed == NetworkInfo.DetailedState.SCANNING)
                                 {
                                     // 只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
                                     if (prevNetworkDetailed == null || prevNetworkDetailed == NetworkInfo.DetailedState.SCANNING)
                                     {
                                         prevNetworkDetailed = detailed;
-                                        LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_SCANNING");
+                                        LogManager.logD(WifiCallback.class, "ignore initial network state -> NETWORK_STATE_SCANNING");
                                         return;
                                     }
-                                    isInitialNetworkBroadcast = false;
+                                    isInitialNetworkAction = false;
                                 } else if (detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
                                 {
                                     // 只有当上一个状态为IDLE或该状态的后续状态时，才表明新的连接已经发起，才认为该状态有效
                                     if (prevNetworkDetailed == null || prevNetworkDetailed == NetworkInfo.DetailedState.SCANNING || prevNetworkDetailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
                                     {
                                         prevNetworkDetailed = detailed;
-                                        LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_OBTAININGIP");
+                                        LogManager.logD(WifiCallback.class, "ignore initial network state -> NETWORK_STATE_OBTAININGIP");
                                         return;
                                     }
-                                    isInitialNetworkBroadcast = false;
+                                    isInitialNetworkAction = false;
                                 } else if (detailed == NetworkInfo.DetailedState.DISCONNECTED)
                                 {
                                     // 由于已经舍弃了初始粘性状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
-                                    isInitialNetworkBroadcast = false;
-                                    LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_DISCONNECTED");
+                                    isInitialNetworkAction = false;
+                                    LogManager.logD(WifiCallback.class, "ignore initial network state -> NETWORK_STATE_DISCONNECTED");
                                     return;
                                 } else if (detailed == NetworkInfo.DetailedState.CONNECTED)
                                 {
                                     // 由于已经舍弃了初始粘性状态，该状态直接认为有效
-                                    isInitialNetworkBroadcast = false;
+                                    isInitialNetworkAction = false;
                                 } else if (detailed == NetworkInfo.DetailedState.FAILED)
                                 {
                                     // 由于已经舍弃了初始粘性状态，该状态的发生表明旧的连接已经结束，将认为之后的状态有效
-                                    isInitialNetworkBroadcast = false;
-                                    LogManager.logD(WifiCallback.class, "give up initial network state -> NETWORK_STATE_FAILED");
+                                    isInitialNetworkAction = false;
+                                    LogManager.logD(WifiCallback.class, "ignore initial network state -> NETWORK_STATE_FAILED");
                                     return;
                                 }
                             }
@@ -640,6 +641,13 @@ public abstract class WifiCallback
         Arrays.sort(autoUnregisterActions);
     }
 
+    public void ignoreInitialNetworkActions(boolean ignore)
+    {
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
+        this.ignoreInitialNetworkActions = ignore;
+    }
+
     /**
      * <p>注册并指定等待超时时间，超时时将回调onTimeout方法并自动反注册 <p>若在超时之前已经反注册，则将不再计算超时
      * 
@@ -717,7 +725,7 @@ public abstract class WifiCallback
 
     public boolean unregisterMe()
     {
-        isInitialNetworkBroadcast = true;
+        isInitialNetworkAction = true;
         prevNetworkDetailed = null;
         if (curTimeout > 0)
             isDoneForAutoUnregisterActions = true; // 置该值为true，使超时计时器能够尽快退出
