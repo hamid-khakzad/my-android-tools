@@ -20,7 +20,7 @@ import android.os.Looper;
 import cn.emagsoftware.util.LogManager;
 
 /**
- * <p>Wifi操作的广播接收类 <p>该类可独立使用，也可与WifiUtils类配合作为方法回调类使用
+ * <p>Wifi操作的广播回调类，该类实例是非线程安全的 <p>该类可独立使用，也可与WifiUtils类配合作为方法回调类使用 <p>所有的回调方法都将在UI线程被回调
  * 
  * @author Wendell
  * @version 4.0
@@ -60,8 +60,11 @@ public abstract class WifiCallback
     private NetworkInfo.DetailedState prevNetworkDetailed            = null;
     private int[]                     autoUnregisterActions          = new int[] {};
     private boolean                   isDoneForAutoUnregisterActions = false;
-    private Handler                   handler                        = new Handler(Looper.getMainLooper());
+    private Handler                   mainHandler                    = new Handler(Looper.getMainLooper());
+    private Handler                   handler                        = new Handler();
     private boolean                   isUnregistered                 = true;
+    private boolean                   isUnregisteredCompletely       = true;
+    private int                       curTimeout                     = -1;
 
     public WifiCallback(Context ctx)
     {
@@ -90,7 +93,7 @@ public abstract class WifiCallback
                     LogManager.logD(WifiCallback.class, "give up initial sticky state");
                     return;
                 }
-                WifiUtils wifiUtils = new WifiUtils(context);
+                final WifiUtils wifiUtils = new WifiUtils(context);
                 if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION))
                 {
                     int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, 0);
@@ -103,7 +106,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiEnabled();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiEnabled();
+                            }
+                        });
                     } else if (state == WifiManager.WIFI_STATE_ENABLING)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_ENABLING");
@@ -113,7 +124,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiEnabling();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiEnabling();
+                            }
+                        });
                     } else if (state == WifiManager.WIFI_STATE_DISABLED)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_DISABLED");
@@ -123,7 +142,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiDisabled();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiDisabled();
+                            }
+                        });
                     } else if (state == WifiManager.WIFI_STATE_DISABLING)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_DISABLING");
@@ -133,7 +160,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiDisabling();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiDisabling();
+                            }
+                        });
                     } else if (state == WifiManager.WIFI_STATE_UNKNOWN)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi state -> WIFI_STATE_UNKNOWN");
@@ -143,7 +178,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiFailed();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiFailed();
+                            }
+                        });
                     }
                 } else if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
                 {
@@ -154,7 +197,7 @@ public abstract class WifiCallback
                         if (!unregisterMe())
                             return;
                     }
-                    List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
+                    final List<ScanResult> results = wifiUtils.getWifiManager().getScanResults();
                     if (results != null)
                     {
                         // 使WLAN热点按信号由强到弱排序(采用冒泡排序算法)
@@ -198,7 +241,15 @@ public abstract class WifiCallback
                             }
                         }
                     }
-                    onScanResults(results);
+                    mainHandler.post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            // TODO Auto-generated method stub
+                            onScanResults(results);
+                        }
+                    });
                 } else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION))
                 {
                     NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
@@ -261,7 +312,15 @@ public abstract class WifiCallback
                                 if (!unregisterMe())
                                     return;
                             }
-                            onNetworkIdle(wifiUtils.getConnectionInfo());
+                            mainHandler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onNetworkIdle(wifiUtils.getConnectionInfo());
+                                }
+                            });
                         } else if (detailed == NetworkInfo.DetailedState.SCANNING)
                         {
                             LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_SCANNING");
@@ -271,7 +330,15 @@ public abstract class WifiCallback
                                 if (!unregisterMe())
                                     return;
                             }
-                            onNetworkScanning(wifiUtils.getConnectionInfo());
+                            mainHandler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onNetworkScanning(wifiUtils.getConnectionInfo());
+                                }
+                            });
                         } else if (detailed == NetworkInfo.DetailedState.OBTAINING_IPADDR)
                         {
                             LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_OBTAININGIP");
@@ -281,7 +348,15 @@ public abstract class WifiCallback
                                 if (!unregisterMe())
                                     return;
                             }
-                            onNetworkObtainingIp(wifiUtils.getConnectionInfo());
+                            mainHandler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onNetworkObtainingIp(wifiUtils.getConnectionInfo());
+                                }
+                            });
                         } else if (detailed == NetworkInfo.DetailedState.DISCONNECTED)
                         {
                             LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_DISCONNECTED");
@@ -291,7 +366,15 @@ public abstract class WifiCallback
                                 if (!unregisterMe())
                                     return;
                             }
-                            onNetworkDisconnected(wifiUtils.getConnectionInfo());
+                            mainHandler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onNetworkDisconnected(wifiUtils.getConnectionInfo());
+                                }
+                            });
                         } else if (detailed == NetworkInfo.DetailedState.CONNECTED)
                         {
                             LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_CONNECTED");
@@ -301,7 +384,15 @@ public abstract class WifiCallback
                                 if (!unregisterMe())
                                     return;
                             }
-                            onNetworkConnected(wifiUtils.getConnectionInfo());
+                            mainHandler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onNetworkConnected(wifiUtils.getConnectionInfo());
+                                }
+                            });
                         } else if (detailed == NetworkInfo.DetailedState.FAILED)
                         {
                             LogManager.logD(WifiCallback.class, "receive network state -> NETWORK_STATE_FAILED");
@@ -311,7 +402,15 @@ public abstract class WifiCallback
                                 if (!unregisterMe())
                                     return;
                             }
-                            onNetworkFailed(wifiUtils.getConnectionInfo());
+                            mainHandler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    onNetworkFailed(wifiUtils.getConnectionInfo());
+                                }
+                            });
                         }
                     }
                 } else if (action.equals(WIFI_AP_STATE_CHANGED_ACTION))
@@ -328,7 +427,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiApEnabled();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiApEnabled();
+                            }
+                        });
                     } else if (state == WIFI_AP_STATE_ENABLING)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_ENABLING");
@@ -338,7 +445,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiApEnabling();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiApEnabling();
+                            }
+                        });
                     } else if (state == WIFI_AP_STATE_DISABLED)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLED");
@@ -348,7 +463,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiApDisabled();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiApDisabled();
+                            }
+                        });
                     } else if (state == WIFI_AP_STATE_DISABLING)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_DISABLING");
@@ -358,7 +481,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiApDisabling();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiApDisabling();
+                            }
+                        });
                     } else if (state == WIFI_AP_STATE_FAILED)
                     {
                         LogManager.logD(WifiCallback.class, "receive wifi ap state -> WIFI_AP_STATE_FAILED");
@@ -368,7 +499,15 @@ public abstract class WifiCallback
                             if (!unregisterMe())
                                 return;
                         }
-                        onWifiApFailed();
+                        mainHandler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                onWifiApFailed();
+                            }
+                        });
                     }
                 }
             }
@@ -486,17 +625,28 @@ public abstract class WifiCallback
     public void onTimeout()
     {
     }
-    
+
     public void setAutoUnregisterActions(int[] actions)
     {
         if (actions == null)
             throw new NullPointerException();
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
         this.autoUnregisterActions = actions.clone();
         Arrays.sort(autoUnregisterActions);
     }
-    
+
+    /**
+     * <p>注册并指定等待超时时间，超时时将回调onTimeout方法并自动反注册 <p>若在超时之前已经反注册，则将不再计算超时
+     * 
+     * @param timeout 单位为毫秒，设为0将永不超时
+     */
     public void registerMe(int timeout)
     {
+        if (timeout < 0)
+            throw new IllegalArgumentException("timeout could not be below zero.");
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
         IntentFilter wifiIntentFilter = new IntentFilter();
         wifiIntentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         wifiIntentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -505,8 +655,10 @@ public abstract class WifiCallback
             wifiIntentFilter.addAction(WIFI_AP_STATE_CHANGED_ACTION);
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
-        context.registerReceiver(this, wifiIntentFilter);
-        if (timeouts > 0)
+        isUnregisteredCompletely = false;
+        context.registerReceiver(receiver, wifiIntentFilter, null, handler);
+        curTimeout = timeout;
+        if (curTimeout > 0)
         { // 为0时将永不超时
             new Timer().schedule(new TimerTask()
             {
@@ -520,21 +672,39 @@ public abstract class WifiCallback
                     if (isDoneForAutoUnregisterActions)
                     {
                         cancel();
-                    } else if (timeCount >= timeouts)
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                isUnregisteredCompletely = true;
+                            }
+                        });
+                    } else if (timeCount >= curTimeout)
                     { // 已超时
                         cancel();
-                        if (unregisterMe())
+                        handler.post(new Runnable()
                         {
-                            handler.post(new Runnable()
+                            @Override
+                            public void run()
                             {
-                                @Override
-                                public void run()
+                                // TODO Auto-generated method stub
+                                if (unregisterMe())
                                 {
-                                    // TODO Auto-generated method stub
-                                    onTimeout();
+                                    mainHandler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            // TODO Auto-generated method stub
+                                            onTimeout();
+                                        }
+                                    });
                                 }
-                            });
-                        }
+                                isUnregisteredCompletely = true;
+                            }
+                        });
                     }
                 }
             }, 100, 100);
@@ -543,12 +713,16 @@ public abstract class WifiCallback
 
     public boolean unregisterMe()
     {
-        lastDetailed = null;
-        isDoneForAutoUnregisterActions = true; // 在反注册时置为true，使计时器能够尽快退出
+        isInitialNetworkBroadcast = true;
+        prevNetworkDetailed = null;
+        if (curTimeout > 0)
+            isDoneForAutoUnregisterActions = true; // 置该值为true，使超时计时器能够尽快退出
+        else
+            isUnregisteredCompletely = true;
         isUnregistered = true;
         try
         {
-            context.unregisterReceiver(this);
+            context.unregisterReceiver(receiver);
             return true;
         } catch (IllegalArgumentException e)
         {
@@ -556,18 +730,6 @@ public abstract class WifiCallback
             LogManager.logW(WifiCallback.class, "unregister receiver failed.", e);
             return false;
         }
-    }
-    
-    /**
-     * <p>设置接收Wifi消息的超时时间，超时时将回调onTimeout方法并自动反注册 <p>若设置了自动反注册action，在该action触发时，超时计时器将随之退出而不再计时
-     * 
-     * @param timeout 单位为毫秒，设为0将永不超时
-     */
-    public void setTimeout(int timeout)
-    {
-        if (timeout < 0)
-            throw new IllegalArgumentException("timeout could not be below zero.");
-        this.timeouts = timeout;
     }
 
 }
