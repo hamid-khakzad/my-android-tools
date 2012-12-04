@@ -161,7 +161,7 @@ public final class WifiUtils
                 public void run()
                 {
                     // TODO Auto-generated method stub
-                    callback.onWifiExist();
+                    callback.onCheckWifiExist();
                 }
             });
             return;
@@ -180,15 +180,15 @@ public final class WifiUtils
                     {
                         // TODO Auto-generated method stub
                         LogManager.logD(WifiUtils.class, "revert to previous wifi state successfully.");
-                        callback.onWifiExist();
+                        callback.onCheckWifiExist();
                     }
 
                     @Override
-                    public void onError()
+                    public void onWifiFailed()
                     {
                         // TODO Auto-generated method stub
                         LogManager.logD(WifiUtils.class, "revert to previous wifi state unsuccessfully.");
-                        callback.onWifiExist();
+                        callback.onCheckWifiExist();
                     }
 
                     @Override
@@ -196,16 +196,16 @@ public final class WifiUtils
                     {
                         // TODO Auto-generated method stub
                         LogManager.logD(WifiUtils.class, "revert to previous wifi state time out.");
-                        callback.onWifiExist();
+                        callback.onCheckWifiExist();
                     }
                 }, timeout);
             }
 
             @Override
-            public void onError()
+            public void onWifiFailed()
             {
                 // TODO Auto-generated method stub
-                callback.onWifiNotExist();
+                callback.onCheckWifiNotExist();
             }
 
             @Override
@@ -224,7 +224,7 @@ public final class WifiUtils
                     }
 
                     @Override
-                    public void onError()
+                    public void onWifiFailed()
                     {
                         // TODO Auto-generated method stub
                         LogManager.logD(WifiUtils.class, "revert to previous wifi state unsuccessfully.");
@@ -286,10 +286,10 @@ public final class WifiUtils
                     }
 
                     @Override
-                    public void onError()
+                    public void onWifiApFailed()
                     {
                         // TODO Auto-generated method stub
-                        super.onError();
+                        super.onWifiApFailed();
                         setWifiEnabledImpl(enabled, callback, timeout);
                     }
 
@@ -317,11 +317,10 @@ public final class WifiUtils
         if (callback != null)
         {
             if (enabled)
-                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_ENABLED, WifiCallback.ACTION_ERROR });
+                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_ENABLED, WifiCallback.ACTION_WIFI_FAILED });
             else
-                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_DISABLED, WifiCallback.ACTION_ERROR });
-            callback.setTimeout(timeout);
-            callback.registerMe();
+                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_DISABLED, WifiCallback.ACTION_WIFI_FAILED });
+            callback.registerMe(timeout);
         }
         boolean circs = wifiManager.setWifiEnabled(enabled);
         if (!circs)
@@ -335,7 +334,7 @@ public final class WifiUtils
                         public void run()
                         {
                             // TODO Auto-generated method stub
-                            callback.onError();
+                            callback.onWifiFailed();
                         }
                     });
                 }
@@ -360,7 +359,7 @@ public final class WifiUtils
                     public void run()
                     {
                         // TODO Auto-generated method stub
-                        callback.onError();
+                        callback.onScanFailed();
                     }
                 });
             }
@@ -368,9 +367,8 @@ public final class WifiUtils
         }
         if (callback != null)
         {
-            callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_ERROR, WifiCallback.ACTION_SCAN_RESULTS });
-            callback.setTimeout(timeout);
-            callback.registerMe();
+            callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_SCAN_RESULTS });
+            callback.registerMe(timeout);
         }
         boolean circs = wifiManager.startScan();
         if (!circs)
@@ -384,7 +382,7 @@ public final class WifiUtils
                         public void run()
                         {
                             // TODO Auto-generated method stub
-                            callback.onError();
+                            callback.onScanFailed();
                         }
                     });
                 }
@@ -400,6 +398,7 @@ public final class WifiUtils
      */
     public void connect(WifiConfiguration wc, final WifiCallback callback, int timeout)
     {
+        final WifiInfo info = getConnectionInfo();
         if (!isWifiEnabled())
         { // 如果Wifi不存在或已关闭
             if (callback != null)
@@ -410,7 +409,7 @@ public final class WifiUtils
                     public void run()
                     {
                         // TODO Auto-generated method stub
-                        callback.onError();
+                        callback.onNetworkFailed(info);
                     }
                 });
             }
@@ -418,7 +417,6 @@ public final class WifiUtils
         }
         if (isWifiConnected())
         { // 如果要连接的Wifi热点已经连接，将直接回调onNetworkConnected方法，因为某些设备在指定热点已连接的情况下重新连接将不起作用，如SAMSUNG GT-I9008L
-            final WifiInfo info = getConnectionInfo();
             String ssid = info == null ? null : info.getSSID();
             String bssid = info == null ? null : info.getBSSID();
             if (info != null && ssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && bssid != null && (wc.BSSID == null || bssid.equals(wc.BSSID)))
@@ -440,10 +438,8 @@ public final class WifiUtils
         }
         if (callback != null)
         {
-            callback.setNetCallbackUntilNew(true);
-            callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_ERROR, WifiCallback.ACTION_NETWORK_CONNECTED, WifiCallback.ACTION_NETWORK_DISCONNECTED });
-            callback.setTimeout(timeout);
-            callback.registerMe();
+            callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_NETWORK_FAILED, WifiCallback.ACTION_NETWORK_CONNECTED, WifiCallback.ACTION_NETWORK_DISCONNECTED });
+            callback.registerMe(timeout);
         }
         boolean circs = Wifi.connectToConfiguredNetwork(context, wifiManager, wc, true);
         if (!circs)
@@ -457,7 +453,7 @@ public final class WifiUtils
                         public void run()
                         {
                             // TODO Auto-generated method stub
-                            callback.onError();
+                            callback.onNetworkFailed(info);
                         }
                     });
                 }
@@ -474,6 +470,7 @@ public final class WifiUtils
      */
     public void connect(ScanResult sr, String password, final WifiCallback callback, int timeout)
     {
+        final WifiInfo info = getConnectionInfo();
         if (!isWifiEnabled())
         { // 如果Wifi不存在或已关闭
             if (callback != null)
@@ -484,7 +481,7 @@ public final class WifiUtils
                     public void run()
                     {
                         // TODO Auto-generated method stub
-                        callback.onError();
+                        callback.onNetworkFailed(info);
                     }
                 });
             }
@@ -492,7 +489,6 @@ public final class WifiUtils
         }
         if (isWifiConnected())
         { // 如果要连接的Wifi热点已经连接，将直接回调onNetworkConnected方法，因为某些设备在指定热点已连接的情况下重新连接将不起作用，如SAMSUNG GT-I9008L
-            final WifiInfo info = getConnectionInfo();
             String ssid = info == null ? null : info.getSSID();
             String bssid = info == null ? null : info.getBSSID();
             if (info != null && ssid != null && ssid.equals(sr.SSID) && bssid != null && bssid.equals(sr.BSSID))
@@ -527,7 +523,7 @@ public final class WifiUtils
                         public void run()
                         {
                             // TODO Auto-generated method stub
-                            callback.onError();
+                            callback.onNetworkFailed(info);
                         }
                     });
                 }
@@ -538,10 +534,8 @@ public final class WifiUtils
         }
         if (callback != null)
         {
-            callback.setNetCallbackUntilNew(true);
-            callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_ERROR, WifiCallback.ACTION_NETWORK_CONNECTED, WifiCallback.ACTION_NETWORK_DISCONNECTED });
-            callback.setTimeout(timeout);
-            callback.registerMe();
+            callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_NETWORK_FAILED, WifiCallback.ACTION_NETWORK_CONNECTED, WifiCallback.ACTION_NETWORK_DISCONNECTED });
+            callback.registerMe(timeout);
         }
         boolean circs = Wifi.connectToNewNetwork(context, wifiManager, sr, password, Integer.MAX_VALUE);
         if (!circs)
@@ -555,7 +549,7 @@ public final class WifiUtils
                         public void run()
                         {
                             // TODO Auto-generated method stub
-                            callback.onError();
+                            callback.onNetworkFailed(info);
                         }
                     });
                 }
@@ -665,17 +659,17 @@ public final class WifiUtils
                     {
                         LogManager.logE(WifiUtils.class, "set wifi ap enabled failed.", e);
                         if (callback != null)
-                            callback.onError();
+                            callback.onWifiApFailed();
                     }
                 }
 
                 @Override
-                public void onError()
+                public void onWifiFailed()
                 {
                     // TODO Auto-generated method stub
-                    super.onError();
+                    super.onWifiFailed();
                     if (callback != null)
-                        callback.onError();
+                        callback.onWifiApFailed();
                 }
 
                 @Override
@@ -714,17 +708,17 @@ public final class WifiUtils
                     {
                         LogManager.logE(WifiUtils.class, "set wifi ap enabled failed.", e);
                         if (callback != null)
-                            callback.onError();
+                            callback.onWifiApFailed();
                     }
                 }
 
                 @Override
-                public void onError()
+                public void onWifiApFailed()
                 {
                     // TODO Auto-generated method stub
-                    super.onError();
+                    super.onWifiApFailed();
                     if (callback != null)
-                        callback.onError();
+                        callback.onWifiApFailed();
                 }
 
                 @Override
@@ -741,11 +735,10 @@ public final class WifiUtils
         if (callback != null)
         {
             if (enabled)
-                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_AP_ENABLED, WifiCallback.ACTION_ERROR });
+                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_AP_ENABLED, WifiCallback.ACTION_WIFI_AP_FAILED });
             else
-                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_AP_DISABLED, WifiCallback.ACTION_ERROR });
-            callback.setTimeout(timeout);
-            callback.registerMe();
+                callback.setAutoUnregisterActions(new int[] { WifiCallback.ACTION_WIFI_AP_DISABLED, WifiCallback.ACTION_WIFI_AP_FAILED });
+            callback.registerMe(timeout);
         }
         try
         {
@@ -763,7 +756,7 @@ public final class WifiUtils
                             public void run()
                             {
                                 // TODO Auto-generated method stub
-                                callback.onError();
+                                callback.onWifiApFailed();
                             }
                         });
                     }
