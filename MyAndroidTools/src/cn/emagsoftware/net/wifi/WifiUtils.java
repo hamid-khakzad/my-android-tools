@@ -252,8 +252,9 @@ public final class WifiUtils
      */
     public void setWifiEnabled(final boolean enabled, final WifiCallback callback, final int timeout)
     {
-        if (!isWifiEnabled() && !enabled)
-        { // 如果Wifi不存在或已关闭时执行关闭Wifi，在开机第一次调用将不会广播到Receiver，所以这里统一在外部回调
+        if (isWifiEnabled() == enabled)
+        {
+            // 这种情况下不会广播到Receiver，所以统一在外部回调
             if (callback != null)
             {
                 handler.post(new Runnable()
@@ -262,7 +263,10 @@ public final class WifiUtils
                     public void run()
                     {
                         // TODO Auto-generated method stub
-                        callback.onWifiDisabled(); // 尽管如果Wifi不存在时，应回调onError，但判断Wifi是否存在比较耗时，所以这里统一回调onWifiDisabled
+                        if (enabled)
+                            callback.onWifiEnabled();
+                        else
+                            callback.onWifiDisabled();
                     }
                 });
             }
@@ -416,11 +420,12 @@ public final class WifiUtils
             return;
         }
         if (isWifiConnected())
-        { // 如果要连接的Wifi热点已经连接，将直接回调onNetworkConnected方法，因为某些设备在指定热点已连接的情况下重新连接将不起作用，如SAMSUNG GT-I9008L
+        {
             String ssid = info == null ? null : info.getSSID();
             String bssid = info == null ? null : info.getBSSID();
             if (info != null && ssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && bssid != null && (wc.BSSID == null || bssid.equals(wc.BSSID)))
             {
+                // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
                 if (callback != null)
                 {
                     handler.post(new Runnable()
@@ -488,11 +493,12 @@ public final class WifiUtils
             return;
         }
         if (isWifiConnected())
-        { // 如果要连接的Wifi热点已经连接，将直接回调onNetworkConnected方法，因为某些设备在指定热点已连接的情况下重新连接将不起作用，如SAMSUNG GT-I9008L
+        {
             String ssid = info == null ? null : info.getSSID();
             String bssid = info == null ? null : info.getBSSID();
             if (info != null && ssid != null && ssid.equals(sr.SSID) && bssid != null && bssid.equals(sr.BSSID))
             {
+                // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
                 if (callback != null)
                 {
                     handler.post(new Runnable()
@@ -624,8 +630,9 @@ public final class WifiUtils
 
     public void setWifiApEnabled(final WifiConfiguration apConfig, final boolean enabled, final WifiCallback callback, final int timeout) throws ReflectHiddenFuncException
     {
-        if (!isWifiApEnabled() && !enabled)
-        { // 如果Wifi Ap不存在或已关闭时执行关闭Wifi Ap，在开机第一次调用将不会广播到Receiver，所以这里统一在外部回调
+        if (isWifiApEnabled() == enabled)
+        {
+            // 这种情况下不会广播到Receiver，所以统一在外部回调
             if (callback != null)
             {
                 handler.post(new Runnable()
@@ -634,7 +641,10 @@ public final class WifiUtils
                     public void run()
                     {
                         // TODO Auto-generated method stub
-                        callback.onWifiApDisabled(); // 尽管如果Wifi Ap不存在时，应回调onError，但判断Wifi Ap是否存在比较麻烦，所以这里统一回调onWifiApDisabled
+                        if (enabled)
+                            callback.onWifiApEnabled();
+                        else
+                            callback.onWifiApDisabled();
                     }
                 });
             }
