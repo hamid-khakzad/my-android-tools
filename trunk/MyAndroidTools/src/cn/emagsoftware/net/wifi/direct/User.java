@@ -29,28 +29,28 @@ import cn.emagsoftware.net.wifi.WifiUtils;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
 import cn.emagsoftware.util.Base64;
 import cn.emagsoftware.util.LogManager;
+import cn.emagsoftware.util.StringUtilities;
 
 public class User
 {
 
-    private static final int    WIFI_TIMEOUT    = 20000;
-    static final int            SOCKET_TIMEOUT  = 20000;
+    private static final int  WIFI_TIMEOUT    = 20000;
+    static final int          SOCKET_TIMEOUT  = 20000;
 
-    private static final String ACTION_CHARSET  = "UTF-8";
-    private static final int    LISTENING_PORT  = 7001;
+    private static final int  LISTENING_PORT  = 7001;
 
-    private String              name            = null;
+    private String            name            = null;
 
-    private WifiConfiguration   preApConfig     = null;
-    private int                 preWifiStaticIp = -1;
-    private boolean             preWifiEnabled  = false;
+    private WifiConfiguration preApConfig     = null;
+    private int               preWifiStaticIp = -1;
+    private boolean           preWifiEnabled  = false;
 
-    private Selector            selector        = null;
-    private RemoteCallback      callback        = null;
+    private Selector          selector        = null;
+    private RemoteCallback    callback        = null;
 
-    private SelectionKey        listeningKey    = null;
+    private SelectionKey      listeningKey    = null;
 
-    private Handler             handler         = new Handler(Looper.getMainLooper());
+    private Handler           handler         = new Handler(Looper.getMainLooper());
 
     public User(String name, RemoteCallback callback) throws IOException
     {
@@ -145,7 +145,7 @@ public class User
         String apName = null;
         try
         {
-            apName = "GHFY_" + Base64.encode(name.getBytes(ACTION_CHARSET));
+            apName = "GHFY" + StringUtilities.bytesToHexString(name.getBytes("UTF-16"));
         } catch (UnsupportedEncodingException e)
         {
             throw new RuntimeException(e);
@@ -383,17 +383,31 @@ public class User
                         for (ScanResult result : scanResults)
                         {
                             String ssid = result.SSID;
-                            if (ssid.startsWith("GHFY_"))
+                            String name = null;
+                            if (ssid.startsWith("GHFY_")) // ºÊ»›æ…∞Ê
                             {
-                                String userStr = ssid.substring(ssid.indexOf("_") + 1);
-                                RemoteUser user = null;
+                                String userStr = ssid.substring(5);
                                 try
                                 {
-                                    user = new RemoteUser(new String(Base64.decode(userStr), ACTION_CHARSET));
-                                } catch (UnsupportedEncodingException e)
+                                    name = new String(Base64.decode(userStr), "UTF-8");
+                                } catch (Exception e)
                                 {
-                                    throw new RuntimeException(e);
+                                    LogManager.logW(User.class, "decode scanned user name failed.", e);
                                 }
+                            } else if (ssid.startsWith("GHFY"))
+                            {
+                                String userStr = ssid.substring(4);
+                                try
+                                {
+                                    name = new String(StringUtilities.hexStringToBytes(userStr), "UTF-16");
+                                } catch (Exception e)
+                                {
+                                    LogManager.logW(User.class, "decode scanned user name failed.", e);
+                                }
+                            }
+                            if (name != null)
+                            {
+                                RemoteUser user = new RemoteUser(name);
                                 user.setScanResult(result);
                                 callbackVal.add(user);
                             }
