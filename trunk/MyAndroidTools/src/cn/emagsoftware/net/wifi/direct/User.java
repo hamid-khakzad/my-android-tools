@@ -562,22 +562,22 @@ public class User
         }
     }
 
-    public void disconnectUser(Context context, final RemoteUser user)
+    public void disconnectUser(final Context context, final RemoteUser user)
     {
         try
         {
             user.close();
-            WifiUtils wifiUtils = new WifiUtils(context);
-            wifiUtils.disconnect();
-            handler.post(new Runnable()
+            handler.postDelayed(new Runnable()
             {
                 @Override
                 public void run()
                 {
                     // TODO Auto-generated method stub
+                    WifiUtils wifiUtils = new WifiUtils(context);
+                    wifiUtils.disconnect();
                     callback.onDisconnected(user);
                 }
-            });
+            }, 3000);
         } catch (final IOException e)
         {
             handler.post(new Runnable()
