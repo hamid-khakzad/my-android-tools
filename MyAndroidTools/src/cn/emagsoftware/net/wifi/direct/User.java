@@ -562,11 +562,13 @@ public class User
         }
     }
 
-    public void disconnectUser(final RemoteUser user)
+    public void disconnectUser(Context context, final RemoteUser user)
     {
         try
         {
             user.close();
+            WifiUtils wifiUtils = new WifiUtils(context);
+            wifiUtils.disconnect();
             handler.post(new Runnable()
             {
                 @Override
