@@ -419,27 +419,24 @@ public final class WifiUtils
             }
             return;
         }
-        if (isWifiConnected())
+        String ssid = info.getSSID();
+        String bssid = info.getBSSID();
+        if (ssid != null && bssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && (wc.BSSID == null || bssid.equals(wc.BSSID)))
         {
-            String ssid = info == null ? null : info.getSSID();
-            String bssid = info == null ? null : info.getBSSID();
-            if (info != null && ssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && bssid != null && (wc.BSSID == null || bssid.equals(wc.BSSID)))
+            // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
+            if (callback != null)
             {
-                // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
-                if (callback != null)
+                handler.post(new Runnable()
                 {
-                    handler.post(new Runnable()
+                    @Override
+                    public void run()
                     {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onNetworkConnected(info);
-                        }
-                    });
-                }
-                return;
+                        // TODO Auto-generated method stub
+                        callback.onNetworkConnected(info);
+                    }
+                });
             }
+            return;
         }
         if (callback != null)
         {
@@ -493,27 +490,24 @@ public final class WifiUtils
             }
             return;
         }
-        if (isWifiConnected())
+        String ssid = info.getSSID();
+        String bssid = info.getBSSID();
+        if (ssid != null && bssid != null && ssid.equals(sr.SSID) && bssid.equals(sr.BSSID))
         {
-            String ssid = info == null ? null : info.getSSID();
-            String bssid = info == null ? null : info.getBSSID();
-            if (info != null && ssid != null && ssid.equals(sr.SSID) && bssid != null && bssid.equals(sr.BSSID))
+            // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
+            if (callback != null)
             {
-                // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
-                if (callback != null)
+                handler.post(new Runnable()
                 {
-                    handler.post(new Runnable()
+                    @Override
+                    public void run()
                     {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onNetworkConnected(info);
-                        }
-                    });
-                }
-                return;
+                        // TODO Auto-generated method stub
+                        callback.onNetworkConnected(info);
+                    }
+                });
             }
+            return;
         }
         WifiConfiguration old = getConfiguration(sr, false);
         if (old != null)
