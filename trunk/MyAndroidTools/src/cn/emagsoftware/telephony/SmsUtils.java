@@ -72,8 +72,7 @@ public final class SmsUtils
         {
             ssc.setToken(sendMessageToken);
             ssc.setAutoUnregisterActions(new int[] { SmsSendCallback.ACTION_SENT });
-            ssc.setTimeout(timeout);
-            ssc.registerMe();
+            ssc.registerMe(timeout);
         }
         try
         {
@@ -133,8 +132,7 @@ public final class SmsUtils
         if (sr == null)
             throw new NullPointerException();
         sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
-        sr.setTimeout(timeout);
-        sr.registerMe();
+        sr.registerMe(timeout);
     }
 
     /**
@@ -149,8 +147,7 @@ public final class SmsUtils
         if (si == null)
             throw new NullPointerException();
         si.setAutoUnregisterWhenIntercept(interruptWhenIntercept);
-        si.setTimeout(timeout);
-        si.registerMe(1000);
+        si.registerMe(1000, timeout);
     }
 
 }
