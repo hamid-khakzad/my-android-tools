@@ -18,9 +18,11 @@ import java.util.Iterator;
 import java.util.Set;
 
 import android.content.Context;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
-import android.os.Looper;
+import cn.emagsoftware.net.wifi.support.Wifi;
 import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.MathUtilities;
@@ -32,7 +34,7 @@ public abstract class RemoteCallback implements Runnable
     private WifiManager wifiManager      = null;
     private Selector    selector         = null;
     private boolean     sleepForConflict = false;
-    private Handler     handler          = new Handler(Looper.getMainLooper());
+    private Handler     handler          = new Handler();
 
     public RemoteCallback(Context context)
     {
@@ -254,7 +256,16 @@ public abstract class RemoteCallback implements Runnable
                                                 public void run()
                                                 {
                                                     // TODO Auto-generated method stub
-                                                    wifiManager.disconnect();
+                                                    ScanResult sr = remoteUser.getScanResult();
+                                                    if (sr != null)
+                                                    {
+                                                        WifiConfiguration wc = Wifi.getWifiConfiguration(wifiManager, sr, true);
+                                                        if (wc != null)
+                                                        {
+                                                            wifiManager.removeNetwork(wc.networkId);
+                                                            wifiManager.saveConfiguration();
+                                                        }
+                                                    }
                                                     onDisconnected(remoteUser);
                                                 }
                                             });
