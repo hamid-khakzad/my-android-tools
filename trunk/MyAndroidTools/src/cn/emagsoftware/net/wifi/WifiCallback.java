@@ -60,6 +60,7 @@ public abstract class WifiCallback
     private NetworkInfo.DetailedState prevNetworkDetailed            = null;
     private int[]                     autoUnregisterActions          = new int[] {};
     private boolean                   isDoneForAutoUnregisterActions = false;
+    private Handler                   handler                        = new Handler();
     private boolean                   isUnregistered                 = true;
     private boolean                   isUnregisteredCompletely       = true;
     private int                       curTimeout                     = -1;
@@ -529,7 +530,6 @@ public abstract class WifiCallback
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
         isUnregisteredCompletely = false;
-        final Handler handler = new Handler();
         context.registerReceiver(receiver, wifiIntentFilter, null, handler);
         curTimeout = timeout;
         if (curTimeout > 0)
