@@ -23,7 +23,7 @@ import cn.emagsoftware.util.LogManager;
  * <p>Wifi操作的广播回调类，该类实例是非线程安全的 <p>该类可独立使用，也可与WifiUtils类配合作为方法回调类使用 <p>所有的回调方法都将在UI线程被回调
  * 
  * @author Wendell
- * @version 4.0
+ * @version 4.1
  */
 public abstract class WifiCallback
 {
@@ -62,7 +62,6 @@ public abstract class WifiCallback
     private int[]                     autoUnregisterActions          = new int[] {};
     private boolean                   isDoneForAutoUnregisterActions = false;
     private Handler                   mainHandler                    = new Handler(Looper.getMainLooper());
-    private Handler                   handler                        = new Handler();
     private boolean                   isUnregistered                 = true;
     private boolean                   isUnregisteredCompletely       = true;
     private int                       curTimeout                     = -1;
@@ -668,6 +667,7 @@ public abstract class WifiCallback
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
         isUnregisteredCompletely = false;
+        final Handler handler = new Handler();
         context.registerReceiver(receiver, wifiIntentFilter, null, handler);
         curTimeout = timeout;
         if (curTimeout > 0)
