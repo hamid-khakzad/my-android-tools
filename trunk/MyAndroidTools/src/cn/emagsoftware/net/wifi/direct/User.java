@@ -22,7 +22,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
@@ -51,7 +50,7 @@ public class User
 
     private SelectionKey      listeningKey    = null;
 
-    private Handler           handler         = new Handler(Looper.getMainLooper());
+    private Handler           handler         = new Handler();
 
     public User(String name, RemoteCallback callback) throws IOException
     {
@@ -110,15 +109,7 @@ public class User
             }, WIFI_TIMEOUT);
         } catch (final ReflectHiddenFuncException e)
         {
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onError(e);
-                }
-            });
+            callback.onError(e);
         }
     }
 
@@ -349,18 +340,10 @@ public class User
             }
         }
         final Exception firstExcepPoint = firstExcep;
-        handler.post(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                // TODO Auto-generated method stub
-                if (firstExcepPoint == null)
-                    callback.onFinished();
-                else
-                    callback.onError(firstExcepPoint);
-            }
-        });
+        if (firstExcepPoint == null)
+            callback.onFinished();
+        else
+            callback.onError(firstExcepPoint);
     }
 
     public void scanUsers(final Context context, final ScanUsersCallback callback)
@@ -551,15 +534,7 @@ public class User
             {
                 LogManager.logE(User.class, "close socket channel failed.", e1);
             }
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onConnectedFailed(user, e);
-                }
-            });
+            callback.onConnectedFailed(user, e);
         }
     }
 
@@ -575,7 +550,7 @@ public class User
                 final WifiConfiguration wc = wifiUtils.getConfiguration(sr, true);
                 if (wc != null)
                 {
-                    new Handler().postDelayed(new Runnable()
+                    handler.postDelayed(new Runnable()
                     {
                         @Override
                         public void run()
@@ -584,40 +559,16 @@ public class User
                             WifiManager wm = wifiUtils.getWifiManager();
                             wm.removeNetwork(wc.networkId);
                             wm.saveConfiguration();
-                            handler.post(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    // TODO Auto-generated method stub
-                                    callback.onDisconnected(user);
-                                }
-                            });
+                            callback.onDisconnected(user);
                         }
                     }, 1000);
                     return;
                 }
             }
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onDisconnected(user);
-                }
-            });
+            callback.onDisconnected(user);
         } catch (final IOException e)
         {
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onDisconnectedFailed(user, e);
-                }
-            });
+            callback.onDisconnectedFailed(user, e);
         }
     }
 
@@ -652,15 +603,7 @@ public class User
         transfer.setSender(true);
         transfer.setExtraDescription(extraDescription);
         user.addTransfer(transfer);
-        handler.post(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                // TODO Auto-generated method stub
-                callback.onTransferProgress(transfer, 0);
-            }
-        });
+        callback.onTransferProgress(transfer, 0);
         String ip = user.getIp();
         SocketChannel sc = null;
         try
@@ -690,15 +633,7 @@ public class User
             {
                 LogManager.logE(User.class, "close socket channel failed.", e1);
             }
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onTransferFailed(transfer, e);
-                }
-            });
+            callback.onTransferFailed(transfer, e);
         }
     }
 
@@ -752,7 +687,7 @@ public class User
             }
         }
         final Exception firstExcepPoint = firstExcep;
-        new Handler().postDelayed(new Runnable()
+        handler.postDelayed(new Runnable()
         {
             @Override
             public void run()
@@ -764,7 +699,7 @@ public class User
                 for (WifiConfiguration wc : wcs)
                 {
                     String ssid = wc.SSID;
-                    if (ssid != null && ssid.startsWith("GHFY"))
+                    if (ssid != null && ssid.startsWith("\"GHFY"))
                     {
                         wm.removeNetwork(wc.networkId);
                     }
