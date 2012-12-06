@@ -2,21 +2,20 @@ package cn.emagsoftware.ui;
 
 import android.content.Context;
 import android.os.Handler;
-import android.os.Looper;
 
 /**
- * <p>该类的功能实现类似于AsyncTask类 <p>该类支持在非UI-Thread中创建并启动
+ * <p>该类的功能实现类似于AsyncTask类
  * 
  * @author Wendell
- * @version 2.0
- * @deprecated 由于该类在整个线程生命周期内缓存Context且不支持线程池，故舍弃该类，可使用AsyncTask或AsyncWeakTask代替
+ * @version 2.1
+ * @deprecated 由于该类命名不合理（也可在非UI线程运行和回调）、在整个线程生命周期内缓存Context且不支持线程池，故舍弃该类，可使用AsyncTask或AsyncWeakTask代替
  */
 public class UIThread extends Thread
 {
 
     protected Context context     = null;
     protected boolean isCancelled = false;
-    protected Handler handler     = new Handler(Looper.getMainLooper());
+    protected Handler handler     = new Handler();
 
     public UIThread(Context context)
     {
@@ -100,7 +99,7 @@ public class UIThread extends Thread
     }
 
     /**
-     * <p>onBeginUI是在当前线程真正运行之后才会调用，会使UI线程产生空隙 若要使UI线程衔接一致，避免出现外部的不同步，可在启动当前线程之前执行相关UI操作
+     * <p>onBeginUI是在当前线程真正运行之后才会调用，会使调用线程产生空隙，若要使调用线程衔接一致，避免出现外部的不同步，可在启动当前线程之前执行相关调用线程的逻辑而不是在onBeginUI中
      * 
      * @param context
      */
