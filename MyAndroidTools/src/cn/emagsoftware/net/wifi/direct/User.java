@@ -20,6 +20,7 @@ import android.content.Context;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
@@ -562,30 +563,50 @@ public class User
         }
     }
 
-    public void disconnectUser(final Context context, final RemoteUser user)
+    public void disconnectUser(Context context, final RemoteUser user)
     {
         try
         {
             user.close();
-            new Handler().postDelayed(new Runnable()
+            ScanResult sr = user.getScanResult();
+            if (sr != null)
             {
-                @Override
-                public void run()
+                final WifiUtils wifiUtils = new WifiUtils(context);
+                final WifiConfiguration wc = wifiUtils.getConfiguration(sr, true);
+                if (wc != null)
                 {
-                    // TODO Auto-generated method stub
-                    WifiUtils wifiUtils = new WifiUtils(context);
-                    wifiUtils.disconnect();
-                    handler.post(new Runnable()
+                    new Handler().postDelayed(new Runnable()
                     {
                         @Override
                         public void run()
                         {
                             // TODO Auto-generated method stub
-                            callback.onDisconnected(user);
+                            WifiManager wm = wifiUtils.getWifiManager();
+                            wm.removeNetwork(wc.networkId);
+                            wm.saveConfiguration();
+                            handler.post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    callback.onDisconnected(user);
+                                }
+                            });
                         }
-                    });
+                    }, 1000);
+                    return;
                 }
-            }, 1000);
+            }
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onDisconnected(user);
+                }
+            });
         } catch (final IOException e)
         {
             handler.post(new Runnable()
@@ -738,7 +759,17 @@ public class User
             {
                 // TODO Auto-generated method stub
                 WifiUtils wifiUtils = new WifiUtils(context);
-                wifiUtils.disconnect();
+                WifiManager wm = wifiUtils.getWifiManager();
+                List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
+                for (WifiConfiguration wc : wcs)
+                {
+                    String ssid = wc.SSID;
+                    if (ssid != null && ssid.startsWith("GHFY"))
+                    {
+                        wm.removeNetwork(wc.networkId);
+                    }
+                }
+                wm.saveConfiguration();
                 finishListening(context, new FinishListeningCallback()
                 {
                     @Override
