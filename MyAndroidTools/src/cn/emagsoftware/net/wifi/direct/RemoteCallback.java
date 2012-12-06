@@ -17,6 +17,8 @@ import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Set;
 
+import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Looper;
 import cn.emagsoftware.telephony.TelephonyMgr;
@@ -27,9 +29,15 @@ import cn.emagsoftware.util.StringUtilities;
 public abstract class RemoteCallback implements Runnable
 {
 
-    private Selector selector         = null;
-    private boolean  sleepForConflict = false;
-    private Handler  handler          = new Handler(Looper.getMainLooper());
+    private WifiManager wifiManager      = null;
+    private Selector    selector         = null;
+    private boolean     sleepForConflict = false;
+    private Handler     handler          = new Handler(Looper.getMainLooper());
+
+    public RemoteCallback(Context context)
+    {
+        wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+    }
 
     void bindSelector(Selector selector)
     {
@@ -246,6 +254,7 @@ public abstract class RemoteCallback implements Runnable
                                                 public void run()
                                                 {
                                                     // TODO Auto-generated method stub
+                                                    wifiManager.disconnect();
                                                     onDisconnected(remoteUser);
                                                 }
                                             });
