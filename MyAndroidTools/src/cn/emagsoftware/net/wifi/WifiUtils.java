@@ -11,8 +11,6 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiManager.WifiLock;
-import android.os.Handler;
-import android.os.Looper;
 import cn.emagsoftware.net.NetManager;
 import cn.emagsoftware.net.wifi.support.Wifi;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
@@ -24,7 +22,6 @@ public final class WifiUtils
     private Context     context     = null;
     private WifiManager wifiManager = null;
     private WifiLock    wifiLock    = null;
-    private Handler     handler     = new Handler(Looper.getMainLooper());
 
     public WifiUtils(Context context)
     {
@@ -155,15 +152,7 @@ public final class WifiUtils
             return;
         if (isWifiEnabled())
         {
-            handler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    callback.onCheckWifiExist();
-                }
-            });
+            callback.onCheckWifiExist();
             return;
         }
         setWifiEnabled(true, new WifiCallback(context)
@@ -257,18 +246,10 @@ public final class WifiUtils
             // 这种情况下不会广播到Receiver，所以统一在外部回调
             if (callback != null)
             {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        if (enabled)
-                            callback.onWifiEnabled();
-                        else
-                            callback.onWifiDisabled();
-                    }
-                });
+                if (enabled)
+                    callback.onWifiEnabled();
+                else
+                    callback.onWifiDisabled();
             }
             return;
         }
@@ -332,15 +313,7 @@ public final class WifiUtils
             {
                 if (callback.unregisterMe())
                 {
-                    handler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onWifiFailed();
-                        }
-                    });
+                    callback.onWifiFailed();
                 }
             }
     }
@@ -357,15 +330,7 @@ public final class WifiUtils
         { // 如果Wifi不存在或已关闭
             if (callback != null)
             {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        callback.onScanFailed();
-                    }
-                });
+                callback.onScanFailed();
             }
             return;
         }
@@ -380,15 +345,7 @@ public final class WifiUtils
             {
                 if (callback.unregisterMe())
                 {
-                    handler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onScanFailed();
-                        }
-                    });
+                    callback.onScanFailed();
                 }
             }
     }
@@ -407,15 +364,7 @@ public final class WifiUtils
         { // 如果Wifi不存在或已关闭
             if (callback != null)
             {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        callback.onNetworkFailed(info);
-                    }
-                });
+                callback.onNetworkFailed(info);
             }
             return;
         }
@@ -426,15 +375,7 @@ public final class WifiUtils
             // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
             if (callback != null)
             {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        callback.onNetworkConnected(info);
-                    }
-                });
+                callback.onNetworkConnected(info);
             }
             return;
         }
@@ -450,15 +391,7 @@ public final class WifiUtils
             {
                 if (callback.unregisterMe())
                 {
-                    handler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onNetworkFailed(info);
-                        }
-                    });
+                    callback.onNetworkFailed(info);
                 }
             }
     }
@@ -478,15 +411,7 @@ public final class WifiUtils
         { // 如果Wifi不存在或已关闭
             if (callback != null)
             {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        callback.onNetworkFailed(info);
-                    }
-                });
+                callback.onNetworkFailed(info);
             }
             return;
         }
@@ -497,15 +422,7 @@ public final class WifiUtils
             // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
             if (callback != null)
             {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        callback.onNetworkConnected(info);
-                    }
-                });
+                callback.onNetworkConnected(info);
             }
             return;
         }
@@ -518,15 +435,7 @@ public final class WifiUtils
             {
                 if (callback != null)
                 {
-                    handler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onNetworkFailed(info);
-                        }
-                    });
+                    callback.onNetworkFailed(info);
                 }
                 return;
             }
@@ -545,15 +454,7 @@ public final class WifiUtils
             {
                 if (callback.unregisterMe())
                 {
-                    handler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            callback.onNetworkFailed(info);
-                        }
-                    });
+                    callback.onNetworkFailed(info);
                 }
             }
     }
@@ -633,18 +534,10 @@ public final class WifiUtils
                 // 这种情况下不会广播到Receiver，所以统一在外部回调
                 if (callback != null)
                 {
-                    handler.post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            if (enabled)
-                                callback.onWifiApEnabled();
-                            else
-                                callback.onWifiApDisabled();
-                        }
-                    });
+                    if (enabled)
+                        callback.onWifiApEnabled();
+                    else
+                        callback.onWifiApDisabled();
                 }
                 return;
             }
@@ -759,15 +652,7 @@ public final class WifiUtils
                 {
                     if (callback.unregisterMe())
                     {
-                        handler.post(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                // TODO Auto-generated method stub
-                                callback.onWifiApFailed();
-                            }
-                        });
+                        callback.onWifiApFailed();
                     }
                 }
         } catch (NoSuchMethodException e)
