@@ -3,80 +3,82 @@ package cn.emagsoftware.telephony.receiver;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import cn.emagsoftware.telephony.SmsFilter;
-import cn.emagsoftware.util.LogManager;
-
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.telephony.SmsMessage;
+import cn.emagsoftware.telephony.SmsFilter;
+import cn.emagsoftware.util.LogManager;
 
-public abstract class SmsReceiver extends BroadcastReceiver
+public abstract class SmsReceiver
 {
 
-    protected Context   context                            = null;
-    protected SmsFilter receiveFilter                      = new SmsFilter()
-                                                           {
-                                                               @Override
-                                                               public boolean accept(SmsMessage msg)
-                                                               {
-                                                                   // TODO Auto-generated method stub
-                                                                   return true;
-                                                               }
-                                                           };
-    protected Handler   handler                            = new Handler(Looper.getMainLooper());
-    protected boolean   autoUnregisterWhenReceive          = false;
-    protected int       timeout                            = 0;
-    protected boolean   isDoneForAutoUnregisterWhenReceive = false;
-    protected boolean   isUnregistered                     = true;
+    private Context           context                            = null;
+    private BroadcastReceiver receiver                           = null;
+    private boolean           autoUnregisterWhenReceive          = false;
+    private boolean           isDoneForAutoUnregisterWhenReceive = false;
+    private Handler           handler                            = new Handler();
+    private boolean           isUnregistered                     = true;
+    private boolean           isUnregisteredCompletely           = true;
+    private int               curTimeout                         = -1;
 
-    public SmsReceiver(Context context, SmsFilter receiveFilter)
+    public SmsReceiver(Context ctx, SmsFilter receiveFilter)
     {
-        if (context == null)
+        if (ctx == null)
             throw new NullPointerException();
-        this.context = context;
-        if (receiveFilter != null)
-            this.receiveFilter = receiveFilter; // 传null时默认接收所有
-    }
-
-    @Override
-    public final void onReceive(Context arg0, Intent arg1)
-    {
-        // TODO Auto-generated method stub
-        if (isUnregistered)
-            return; // 如果已经反注册，将直接返回
-        Bundle bundle = arg1.getExtras();
-        Object[] messages = (Object[]) bundle.get("pdus");
-        SmsMessage[] smsMessages = new SmsMessage[messages.length];
-        int smsMessagesIndex = 0;
-        for (int i = 0; i < messages.length; i++)
-        {
-            SmsMessage msg = SmsMessage.createFromPdu((byte[]) messages[i]);
-            if (receiveFilter.accept(msg))
+        context = ctx;
+        if (receiveFilter == null) // 传null时默认接收所有
+            receiveFilter = new SmsFilter()
             {
-                smsMessages[smsMessagesIndex] = msg;
-                smsMessagesIndex = smsMessagesIndex + 1;
-            }
-        }
-        SmsMessage[] returnSmsMessages = new SmsMessage[smsMessagesIndex];
-        for (int i = 0; i < returnSmsMessages.length; i++)
+                @Override
+                public boolean accept(SmsMessage msg)
+                {
+                    // TODO Auto-generated method stub
+                    return true;
+                }
+            };
+        final SmsFilter receiveFilterPoint = receiveFilter;
+        receiver = new BroadcastReceiver()
         {
-            returnSmsMessages[i] = smsMessages[i];
-        }
-        if (returnSmsMessages.length > 0)
-        {
-            if (autoUnregisterWhenReceive)
+            @Override
+            public void onReceive(Context context, final Intent intent)
             {
-                isDoneForAutoUnregisterWhenReceive = true;
-                if (!unregisterMe())
-                    return;
+                // TODO Auto-generated method stub
+                if (isUnregistered)
+                    return; // 如果已经反注册，将直接返回
+                Bundle bundle = intent.getExtras();
+                Object[] messages = (Object[]) bundle.get("pdus");
+                SmsMessage[] smsMessages = new SmsMessage[messages.length];
+                int smsMessagesIndex = 0;
+                for (int i = 0; i < messages.length; i++)
+                {
+                    SmsMessage msg = SmsMessage.createFromPdu((byte[]) messages[i]);
+                    if (receiveFilterPoint.accept(msg))
+                    {
+                        smsMessages[smsMessagesIndex] = msg;
+                        smsMessagesIndex = smsMessagesIndex + 1;
+                    }
+                }
+                SmsMessage[] returnSmsMessages = new SmsMessage[smsMessagesIndex];
+                for (int i = 0; i < returnSmsMessages.length; i++)
+                {
+                    returnSmsMessages[i] = smsMessages[i];
+                }
+                if (returnSmsMessages.length > 0)
+                {
+                    if (autoUnregisterWhenReceive)
+                    {
+                        isDoneForAutoUnregisterWhenReceive = true;
+                        if (!unregisterMe())
+                            return;
+                    }
+                    SmsReceiver.this.onReceive(returnSmsMessages);
+                }
             }
-            onReceive(returnSmsMessages);
-        }
+        };
     }
 
     public void onReceive(SmsMessage[] msg)
@@ -87,14 +89,34 @@ public abstract class SmsReceiver extends BroadcastReceiver
     {
     }
 
-    public void registerMe()
+    public void setAutoUnregisterWhenReceive(boolean auto)
     {
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
+        this.autoUnregisterWhenReceive = auto;
+    }
+
+    /**
+     * <p>注册并指定等待超时时间，超时时将回调onTimeout方法并自动反注册 <p>若在超时之前已经反注册，则将不再计算超时
+     * 
+     * @param timeout 单位为毫秒，设为0将永不超时
+     */
+    public void registerMe(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("timeout could not be below zero.");
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
+
         IntentFilter smsIntentFilter = new IntentFilter();
         smsIntentFilter.addAction("android.provider.Telephony.SMS_RECEIVED");
+
         isDoneForAutoUnregisterWhenReceive = false;
         isUnregistered = false;
-        context.registerReceiver(this, smsIntentFilter);
-        if (timeout > 0)
+        isUnregisteredCompletely = false;
+        context.registerReceiver(receiver, smsIntentFilter, null, handler);
+        curTimeout = timeout;
+        if (curTimeout > 0)
         { // 为0时将永不超时
             new Timer().schedule(new TimerTask()
             {
@@ -108,21 +130,31 @@ public abstract class SmsReceiver extends BroadcastReceiver
                     if (isDoneForAutoUnregisterWhenReceive)
                     {
                         cancel();
-                    } else if (timeCount >= timeout)
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                isUnregisteredCompletely = true;
+                            }
+                        });
+                    } else if (timeCount >= curTimeout)
                     { // 已超时
                         cancel();
-                        if (unregisterMe())
+                        handler.post(new Runnable()
                         {
-                            handler.post(new Runnable()
+                            @Override
+                            public void run()
                             {
-                                @Override
-                                public void run()
+                                // TODO Auto-generated method stub
+                                if (unregisterMe())
                                 {
-                                    // TODO Auto-generated method stub
                                     onTimeout();
                                 }
-                            });
-                        }
+                                isUnregisteredCompletely = true;
+                            }
+                        });
                     }
                 }
             }, 100, 100);
@@ -131,35 +163,21 @@ public abstract class SmsReceiver extends BroadcastReceiver
 
     public boolean unregisterMe()
     {
-        isDoneForAutoUnregisterWhenReceive = true; // 在反注册时置为true，使计时器能够尽快退出
+        if (curTimeout > 0)
+            isDoneForAutoUnregisterWhenReceive = true; // 置该值为true，使超时计时器能够尽快退出
+        else
+            isUnregisteredCompletely = true;
         isUnregistered = true;
         try
         {
-            context.unregisterReceiver(this);
+            context.unregisterReceiver(receiver);
             return true;
         } catch (IllegalArgumentException e)
         {
             // 重复反注册会抛出该异常，如通过代码注册的receiver在当前activity销毁时会自动反注册，若再反注册，即会抛出该异常
-            LogManager.logE(SmsReceiver.class, "unregister receiver failed.", e);
+            LogManager.logW(SmsReceiver.class, "unregister receiver failed.", e);
             return false;
         }
-    }
-
-    public void setAutoUnregisterWhenReceive(boolean auto)
-    {
-        this.autoUnregisterWhenReceive = auto;
-    }
-
-    /**
-     * <p>设置接收短信的超时时间，超时时将回调onTimeout方法并自动反注册 <p>若设置了接收到短信时自动反注册，在接收到短信时，超时计时器将随之退出而不再计时
-     * 
-     * @param timeout 单位为毫秒，设为0将永不超时
-     */
-    public void setTimeout(int timeout)
-    {
-        if (timeout < 0)
-            throw new IllegalArgumentException("timeout could not be below zero.");
-        this.timeout = timeout;
     }
 
 }
