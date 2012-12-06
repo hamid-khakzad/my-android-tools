@@ -577,7 +577,7 @@ public class User
                     wifiUtils.disconnect();
                     callback.onDisconnected(user);
                 }
-            }, 3000);
+            }, 1500);
         } catch (final IOException e)
         {
             handler.post(new Runnable()
