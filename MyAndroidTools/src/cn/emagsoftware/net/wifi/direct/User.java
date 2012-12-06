@@ -567,7 +567,7 @@ public class User
         try
         {
             user.close();
-            handler.postDelayed(new Runnable()
+            new Handler().postDelayed(new Runnable()
             {
                 @Override
                 public void run()
@@ -575,9 +575,17 @@ public class User
                     // TODO Auto-generated method stub
                     WifiUtils wifiUtils = new WifiUtils(context);
                     wifiUtils.disconnect();
-                    callback.onDisconnected(user);
+                    handler.post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            // TODO Auto-generated method stub
+                            callback.onDisconnected(user);
+                        }
+                    });
                 }
-            }, 1500);
+            }, 1000);
         } catch (final IOException e)
         {
             handler.post(new Runnable()
@@ -678,7 +686,7 @@ public class User
         transfer.setCancelFlag();
     }
 
-    public void close(Context context, final CloseCallback callback)
+    public void close(final Context context, final CloseCallback callback)
     {
         Exception firstExcep = null;
         Set<SelectionKey> skeys = null;
@@ -723,28 +731,38 @@ public class User
             }
         }
         final Exception firstExcepPoint = firstExcep;
-        finishListening(context, new FinishListeningCallback()
+        new Handler().postDelayed(new Runnable()
         {
             @Override
-            public void onFinished()
+            public void run()
             {
                 // TODO Auto-generated method stub
-                if (firstExcepPoint == null)
-                    callback.onClosed();
-                else
-                    callback.onError(firstExcepPoint);
-            }
+                WifiUtils wifiUtils = new WifiUtils(context);
+                wifiUtils.disconnect();
+                finishListening(context, new FinishListeningCallback()
+                {
+                    @Override
+                    public void onFinished()
+                    {
+                        // TODO Auto-generated method stub
+                        if (firstExcepPoint == null)
+                            callback.onClosed();
+                        else
+                            callback.onError(firstExcepPoint);
+                    }
 
-            @Override
-            public void onError(Exception e)
-            {
-                // TODO Auto-generated method stub
-                if (firstExcepPoint == null)
-                    callback.onError(e);
-                else
-                    callback.onError(firstExcepPoint);
+                    @Override
+                    public void onError(Exception e)
+                    {
+                        // TODO Auto-generated method stub
+                        if (firstExcepPoint == null)
+                            callback.onError(e);
+                        else
+                            callback.onError(firstExcepPoint);
+                    }
+                });
             }
-        });
+        }, 1000);
     }
 
 }
