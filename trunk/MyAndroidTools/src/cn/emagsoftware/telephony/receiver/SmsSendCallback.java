@@ -4,93 +4,86 @@ import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import cn.emagsoftware.telephony.SmsUtils;
-import cn.emagsoftware.util.LogManager;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
-import android.os.Looper;
+import cn.emagsoftware.telephony.SmsUtils;
+import cn.emagsoftware.util.LogManager;
 
-public abstract class SmsSendCallback extends BroadcastReceiver
+public abstract class SmsSendCallback
 {
 
-    public static final int ACTION_SENT                    = 0;
-    public static final int ACTION_DELIVERED               = 1;
+    public static final int   ACTION_SENT                    = 0;
+    public static final int   ACTION_DELIVERED               = 1;
 
-    protected Context       context                        = null;
-    protected Handler       handler                        = new Handler(Looper.getMainLooper());
-    protected int           token                          = -1;
-    protected int[]         autoUnregisterActions          = new int[] {};
-    protected int           timeout                        = 0;
-    protected boolean       isDoneForAutoUnregisterActions = false;
-    protected boolean       isUnregistered                 = true;
+    private Context           context                        = null;
+    private BroadcastReceiver receiver                       = null;
+    private int               token                          = -1;
+    private int[]             autoUnregisterActions          = new int[] {};
+    private boolean           isDoneForAutoUnregisterActions = false;
+    private Handler           handler                        = new Handler();
+    private boolean           isUnregistered                 = true;
+    private boolean           isUnregisteredCompletely       = true;
+    private int               curTimeout                     = -1;
 
-    public SmsSendCallback(Context context)
+    public SmsSendCallback(Context ctx)
     {
-        if (context == null)
+        if (ctx == null)
             throw new NullPointerException();
-        this.context = context;
-        Arrays.sort(autoUnregisterActions);
-    }
-
-    /**
-     * 若设为-1，将监听所有的短信发送
-     * 
-     * @param token
-     */
-    public void setToken(int token)
-    {
-        this.token = token;
-    }
-
-    @Override
-    public final void onReceive(Context arg0, Intent arg1)
-    {
-        // TODO Auto-generated method stub
-        if (isUnregistered)
-            return; // 如果已经反注册，将直接返回
-        String actionStr = arg1.getAction();
-        int code = getResultCode();
-        int srcToken = arg1.getIntExtra("SMS_TOKEN", -1);
-        String to = arg1.getStringExtra("SMS_TO");
-        String text = arg1.getStringExtra("SMS_TEXT");
-        if (token == -1 || token == srcToken)
-        { // 验证token
-            if (actionStr.equals(SmsUtils.SMS_SENT_ACTION))
+        context = ctx;
+        receiver = new BroadcastReceiver()
+        {
+            @Override
+            public void onReceive(Context context, Intent intent)
             {
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_SENT) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                if (code == Activity.RESULT_OK)
-                {
-                    onSendSuccess(to, text);
-                } else
-                {
-                    onSendFailure(to, text);
-                }
-            } else if (actionStr.equals(SmsUtils.SMS_DELIVERED_ACTION))
-            {
-                if (Arrays.binarySearch(autoUnregisterActions, ACTION_DELIVERED) > -1)
-                {
-                    isDoneForAutoUnregisterActions = true;
-                    if (!unregisterMe())
-                        return;
-                }
-                if (code == Activity.RESULT_OK)
-                {
-                    onDeliverSuccess(to, text);
-                } else
-                {
-                    onDeliverFailure(to, text);
+                // TODO Auto-generated method stub
+                if (isUnregistered)
+                    return; // 如果已经反注册，将直接返回
+                String actionStr = intent.getAction();
+                int code = getResultCode();
+                int srcToken = intent.getIntExtra("SMS_TOKEN", -1);
+                String to = intent.getStringExtra("SMS_TO");
+                String text = intent.getStringExtra("SMS_TEXT");
+                if (token == -1 || token == srcToken)
+                { // 验证token
+                    if (actionStr.equals(SmsUtils.SMS_SENT_ACTION))
+                    {
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_SENT) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        if (code == Activity.RESULT_OK)
+                        {
+                            onSendSuccess(to, text);
+                        } else
+                        {
+                            onSendFailure(to, text);
+                        }
+                    } else if (actionStr.equals(SmsUtils.SMS_DELIVERED_ACTION))
+                    {
+                        if (Arrays.binarySearch(autoUnregisterActions, ACTION_DELIVERED) > -1)
+                        {
+                            isDoneForAutoUnregisterActions = true;
+                            if (!unregisterMe())
+                                return;
+                        }
+                        if (code == Activity.RESULT_OK)
+                        {
+                            onDeliverSuccess(to, text);
+                        } else
+                        {
+                            onDeliverFailure(to, text);
+                        }
+                    }
                 }
             }
-        }
+        };
+        Arrays.sort(autoUnregisterActions);
     }
 
     public void onDeliverSuccess(String to, String text)
@@ -113,15 +106,48 @@ public abstract class SmsSendCallback extends BroadcastReceiver
     {
     }
 
-    public void registerMe()
+    /**
+     * 若设为-1，将监听所有的短信发送
+     * 
+     * @param token
+     */
+    public void setToken(int token)
     {
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
+        this.token = token;
+    }
+
+    public void setAutoUnregisterActions(int[] actions)
+    {
+        if (actions == null)
+            throw new NullPointerException();
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
+        this.autoUnregisterActions = actions.clone();
+        Arrays.sort(autoUnregisterActions);
+    }
+
+    /**
+     * <p>注册并指定等待超时时间，超时时将回调onTimeout方法并自动反注册 <p>若在超时之前已经反注册，则将不再计算超时
+     * 
+     * @param timeout 单位为毫秒，设为0将永不超时
+     */
+    public void registerMe(int timeout)
+    {
+        if (timeout < 0)
+            throw new IllegalArgumentException("timeout could not be below zero.");
+        if (!isUnregisteredCompletely)
+            throw new IllegalStateException("please call this method after it has been unregistered completely.");
         IntentFilter smsIntentFilter = new IntentFilter();
         smsIntentFilter.addAction(SmsUtils.SMS_SENT_ACTION);
         smsIntentFilter.addAction(SmsUtils.SMS_DELIVERED_ACTION);
         isDoneForAutoUnregisterActions = false;
         isUnregistered = false;
-        context.registerReceiver(this, smsIntentFilter);
-        if (timeout > 0)
+        isUnregisteredCompletely = false;
+        context.registerReceiver(receiver, smsIntentFilter, null, handler);
+        curTimeout = timeout;
+        if (curTimeout > 0)
         { // 为0时将永不超时
             new Timer().schedule(new TimerTask()
             {
@@ -135,21 +161,31 @@ public abstract class SmsSendCallback extends BroadcastReceiver
                     if (isDoneForAutoUnregisterActions)
                     {
                         cancel();
-                    } else if (timeCount >= timeout)
+                        handler.post(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                // TODO Auto-generated method stub
+                                isUnregisteredCompletely = true;
+                            }
+                        });
+                    } else if (timeCount >= curTimeout)
                     { // 已超时
                         cancel();
-                        if (unregisterMe())
+                        handler.post(new Runnable()
                         {
-                            handler.post(new Runnable()
+                            @Override
+                            public void run()
                             {
-                                @Override
-                                public void run()
+                                // TODO Auto-generated method stub
+                                if (unregisterMe())
                                 {
-                                    // TODO Auto-generated method stub
                                     onTimeout();
                                 }
-                            });
-                        }
+                                isUnregisteredCompletely = true;
+                            }
+                        });
                     }
                 }
             }, 100, 100);
@@ -158,11 +194,14 @@ public abstract class SmsSendCallback extends BroadcastReceiver
 
     public boolean unregisterMe()
     {
-        isDoneForAutoUnregisterActions = true; // 在反注册时置为true，使计时器能够尽快退出
+        if (curTimeout > 0)
+            isDoneForAutoUnregisterActions = true; // 置该值为true，使超时计时器能够尽快退出
+        else
+            isUnregisteredCompletely = true;
         isUnregistered = true;
         try
         {
-            context.unregisterReceiver(this);
+            context.unregisterReceiver(receiver);
             return true;
         } catch (IllegalArgumentException e)
         {
@@ -170,26 +209,6 @@ public abstract class SmsSendCallback extends BroadcastReceiver
             LogManager.logW(SmsSendCallback.class, "unregister receiver failed.", e);
             return false;
         }
-    }
-
-    public void setAutoUnregisterActions(int[] actions)
-    {
-        if (actions == null)
-            throw new NullPointerException();
-        Arrays.sort(actions);
-        this.autoUnregisterActions = actions;
-    }
-
-    /**
-     * <p>设置接收短信发送完毕消息的超时时间，超时时将回调onTimeout方法并自动反注册 <p>若设置了自动反注册action，在该action触发时，超时计时器将随之退出而不再计时
-     * 
-     * @param timeout 单位为毫秒，设为0将永不超时
-     */
-    public void setTimeout(int timeout)
-    {
-        if (timeout < 0)
-            throw new IllegalArgumentException("timeout could not be below zero.");
-        this.timeout = timeout;
     }
 
 }
