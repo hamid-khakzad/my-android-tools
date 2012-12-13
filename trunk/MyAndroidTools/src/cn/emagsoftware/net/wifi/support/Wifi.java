@@ -134,10 +134,19 @@ public class Wifi
     {
         int oldPri = config.priority;
         // Make it the highest priority.
-        int newPri = getMaxPriority(wifiMgr) + 1;
+        int newPri = getMaxPriority(wifiMgr);
+        if(newPri == -1)
+        {
+            return false;
+        }
+        newPri = newPri + 1;
         if (newPri > MAX_PRIORITY)
         {
             newPri = shiftPriorityAndSave(wifiMgr);
+            if(newPri == -1)
+            {
+                return false;
+            }
             config = getWifiConfiguration(wifiMgr, config, true);
             if (config == null)
             {
@@ -214,6 +223,7 @@ public class Wifi
     private static boolean checkForExcessOpenNetworkAndSave(final WifiManager wifiMgr, final int numOpenNetworksKept)
     {
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
+        if(configurations == null) return false;
         sortByPriority(configurations);
 
         boolean modified = false;
@@ -244,6 +254,7 @@ public class Wifi
     private static int shiftPriorityAndSave(final WifiManager wifiMgr)
     {
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
+        if(configurations == null) return -1;
         sortByPriority(configurations);
         final int size = configurations.size();
         for (int i = 0; i < size; i++)
@@ -259,6 +270,7 @@ public class Wifi
     private static int getMaxPriority(final WifiManager wifiManager)
     {
         final List<WifiConfiguration> configurations = wifiManager.getConfiguredNetworks();
+        if(configurations == null) return -1;
         int pri = 0;
         for (final WifiConfiguration config : configurations)
         {
@@ -341,6 +353,10 @@ public class Wifi
         String security = getWifiConfigurationSecurity(configToFind);
 
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
+        if(configurations == null)
+        {
+            return null;
+        }
 
         for (final WifiConfiguration config : configurations)
         {
