@@ -696,15 +696,18 @@ public class User
                 WifiUtils wifiUtils = new WifiUtils(context);
                 WifiManager wm = wifiUtils.getWifiManager();
                 List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
-                for (WifiConfiguration wc : wcs)
+                if (wcs != null)
                 {
-                    String ssid = wc.SSID;
-                    if (ssid != null && ssid.startsWith("\"GHFY"))
+                    for (WifiConfiguration wc : wcs)
                     {
-                        wm.removeNetwork(wc.networkId);
+                        String ssid = wc.SSID;
+                        if (ssid != null && ssid.startsWith("\"GHFY"))
+                        {
+                            wm.removeNetwork(wc.networkId);
+                        }
                     }
+                    wm.saveConfiguration();
                 }
-                wm.saveConfiguration();
                 finishListening(context, new FinishListeningCallback()
                 {
                     @Override
