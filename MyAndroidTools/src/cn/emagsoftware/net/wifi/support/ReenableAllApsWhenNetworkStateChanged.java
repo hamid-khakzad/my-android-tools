@@ -44,14 +44,16 @@ public class ReenableAllApsWhenNetworkStateChanged
         ctx.startService(new Intent(ctx, BackgroundService.class));
     }
 
-    private static void reenableAllAps(final Context ctx)
+    private static boolean reenableAllAps(final Context ctx)
     {
         final WifiManager wifiMgr = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
+        if(configurations == null) return false;
         for (final WifiConfiguration config : configurations)
         {
             wifiMgr.enableNetwork(config.networkId, false);
         }
+        return true;
     }
 
     public static class BackgroundService extends Service
