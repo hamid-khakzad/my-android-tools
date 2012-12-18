@@ -1,11 +1,12 @@
 package cn.emagsoftware.ui.fragment;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class ViewExistsInAttachFragment extends GenericFragment
+public class ViewExistsInAttachFragment extends Fragment
 {
 
     private View mViewPoint = null;
@@ -32,11 +33,7 @@ public class ViewExistsInAttachFragment extends GenericFragment
         // TODO Auto-generated method stub
         boolean isNone = mViewPoint == null;
         mViewPoint = view;
-        super.execSuperOnViewCreated(view, savedInstanceState);
-        if (isNone && mListener != null)
-        {
-            mListener.onCreateViewCallback(getActivity(), view, savedInstanceState);
-        }
+        super.onViewCreated(view, savedInstanceState);
         onViewCreatedImpl(view, savedInstanceState, isNone);
     }
 
