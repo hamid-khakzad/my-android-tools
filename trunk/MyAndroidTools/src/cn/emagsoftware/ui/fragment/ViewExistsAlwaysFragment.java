@@ -1,12 +1,12 @@
 package cn.emagsoftware.ui.fragment;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class ViewExistsAlwaysFragment extends GenericFragment
+public class ViewExistsAlwaysFragment extends Fragment
 {
 
     private View mViewPoint = null;
@@ -33,11 +33,7 @@ public class ViewExistsAlwaysFragment extends GenericFragment
         // TODO Auto-generated method stub
         boolean isNone = mViewPoint == null;
         mViewPoint = view;
-        super.execSuperOnViewCreated(view, savedInstanceState);
-        if (isNone && mListener != null)
-        {
-            mListener.onCreateViewCallback(getActivity(), view, savedInstanceState);
-        }
+        super.onViewCreated(view, savedInstanceState);
         onViewCreatedImpl(view, savedInstanceState, isNone);
     }
 
@@ -63,27 +59,6 @@ public class ViewExistsAlwaysFragment extends GenericFragment
         // TODO Auto-generated method stub
         super.getView();
         return mViewPoint;
-    }
-
-    @Override
-    public void setOnCreateViewCallbackListener(OnCreateViewCallbackListener listener)
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("current method is not supported for this class,use setOnCreateViewCallbackListener(Activity, OnCreateViewCallbackListener) instead");
-    }
-
-    public void setOnCreateViewCallbackListener(Activity activity, OnCreateViewCallbackListener listener)
-    {
-        // TODO Auto-generated method stub
-        if (activity == null)
-            throw new NullPointerException();
-        mListener = listener;
-        if (listener != null)
-        {
-            View view = getView();
-            if (view != null)
-                listener.onCreateViewCallback(activity, view, mSavedInstanceState);
-        }
     }
 
 }
