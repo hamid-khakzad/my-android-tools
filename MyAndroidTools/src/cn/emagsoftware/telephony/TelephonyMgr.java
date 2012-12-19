@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.StatFs;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import cn.emagsoftware.util.LogManager;
@@ -222,6 +223,36 @@ public final class TelephonyMgr
     public static boolean isAndroid4Above()
     {
         return getSDKVersion() >= 14;
+    }
+
+    public static boolean isOPhone()
+    {
+        Class<?> dclass[] = Settings.class.getClasses();
+        if (dclass != null)
+        {
+            for (int i = 0; i < dclass.length; i++)
+            {
+                Class<?> singleC = dclass[i];
+                String name = singleC.getName();
+                if (name.indexOf("Data_connection") != -1)
+                {
+                    return true; // omsver10
+                }
+            }
+        }
+        try
+        {
+            Class.forName("oms.dcm.DataConnectivityConstants");
+            return true; // omsver15 above
+        } catch (ClassNotFoundException e)
+        {
+            return false;
+        }
+    }
+
+    public static boolean isOPhone20()
+    {
+        return isOPhone() && getSDKVersion() == 7;
     }
 
     public static boolean isUsingNewButtonPlacementStyle()
