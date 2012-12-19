@@ -37,13 +37,14 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import cn.emagsoftware.net.NetManager;
+import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 
 /**
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 5.0
+ * @version 5.1
  */
 public final class HttpConnectionManager
 {
@@ -331,9 +332,21 @@ public final class HttpConnectionManager
                         int port = android.net.Proxy.getDefaultPort();
                         if (host != null && port != -1)
                         {
-                            InetSocketAddress inetAddress = new InetSocketAddress(host, port);
-                            Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
-                            proxy = new Proxy(proxyType, inetAddress);
+                            if (TelephonyMgr.isOPhone20()) // OPhone 2.0的特殊情况
+                            {
+                                String detailType = NetManager.getNetworkDetailType(curNetwork);
+                                if ("CMWAP".equals(detailType) || "UNIWAP".equals(detailType) || "CTWAP".equals(detailType))
+                                {
+                                    InetSocketAddress inetAddress = new InetSocketAddress(host, port);
+                                    Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                                    proxy = new Proxy(proxyType, inetAddress);
+                                }
+                            } else
+                            {
+                                InetSocketAddress inetAddress = new InetSocketAddress(host, port);
+                                Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                                proxy = new Proxy(proxyType, inetAddress);
+                            }
                         }
                     }
                 }
