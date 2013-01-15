@@ -370,7 +370,8 @@ public final class WifiUtils
         }
         String ssid = info.getSSID();
         String bssid = info.getBSSID();
-        if (ssid != null && bssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && (wc.BSSID == null || bssid.equals(wc.BSSID)))
+        // ssid从Android4.2开始包含引号，之前没有引号，而wc.SSID一直都包含引号，下面是兼容所有版本的写法
+        if (ssid != null && Wifi.convertToQuotedString(ssid).equals(wc.SSID) && (wc.BSSID == null || wc.BSSID.equals(bssid)))
         {
             // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
             if (callback != null)
@@ -417,7 +418,8 @@ public final class WifiUtils
         }
         String ssid = info.getSSID();
         String bssid = info.getBSSID();
-        if (ssid != null && bssid != null && ssid.equals(sr.SSID) && bssid.equals(sr.BSSID))
+        // ssid从Android4.2开始包含引号，之前没有引号，而sr.SSID一直都没有引号，下面是兼容所有版本的写法
+        if (ssid != null && sr.SSID != null && Wifi.convertToQuotedString(ssid).equals(Wifi.convertToQuotedString(sr.SSID)) && bssid != null && bssid.equals(sr.BSSID))
         {
             // 这种情况下某些设备不会广播到Receiver，如SAMSUNG GT-I9008L，所以统一在外部回调
             if (callback != null)
