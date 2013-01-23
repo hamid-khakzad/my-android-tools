@@ -15,12 +15,11 @@ import java.net.Proxy.Type;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -36,6 +35,8 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import cn.emagsoftware.net.NetManager;
 import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
@@ -44,43 +45,47 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 5.1
+ * @version 5.5
  */
 public final class HttpConnectionManager
 {
-    public static final String         HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
-    public static final String         HEADER_REQUEST_CONNECTION      = "Connection";
-    public static final String         HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
-    public static final String         HEADER_REQUEST_ACCEPT_CHARSET  = "Accept-Charset";
-    public static final String         HEADER_REQUEST_CONTENT_TYPE    = "Content-Type";
-    public static final String         HEADER_REQUEST_USER_AGENT      = "User-Agent";
-    public static final String         HEADER_REQUEST_COOKIE          = "Cookie";
+    public static final String HEADER_REQUEST_ACCEPT_LANGUAGE = "Accept-Language";
+    public static final String HEADER_REQUEST_CONNECTION      = "Connection";
+    public static final String HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
+    public static final String HEADER_REQUEST_ACCEPT_CHARSET  = "Accept-Charset";
+    public static final String HEADER_REQUEST_CONTENT_TYPE    = "Content-Type";
+    public static final String HEADER_REQUEST_USER_AGENT      = "User-Agent";
+    public static final String HEADER_REQUEST_COOKIE          = "Cookie";
 
-    public static final String         HEADER_RESPONSE_CONTENT_TYPE   = "Content-Type";
-    public static final String         HEADER_RESPONSE_LOCATION       = "Location";
-    public static final String         HEADER_RESPONSE_SET_COOKIE     = "Set-Cookie";
+    public static final String HEADER_RESPONSE_CONTENT_TYPE   = "Content-Type";
+    public static final String HEADER_RESPONSE_LOCATION       = "Location";
+    public static final String HEADER_RESPONSE_SET_COOKIE     = "Set-Cookie";
 
-    public static final int            REDIRECT_MAX_COUNT             = 10;
-    public static final int            CMWAP_CHARGEPAGE_MAX_COUNT     = 3;
+    public static final int    REDIRECT_MAX_COUNT             = 10;
+    public static final int    CMWAP_CHARGEPAGE_MAX_COUNT     = 3;
 
-    private static Context             appContext                     = null;
-    private static boolean             keepSession                    = true;
-    private static Map<String, String> sessions                       = new Hashtable<String, String>();
-    private static boolean             useConcatUrlModeWhenCMWap      = false;
-    private static boolean             ignoreChargePageWhenCMWap      = false;
+    private static Context     appContext                     = null;
+    private static boolean     acceptCookie                   = true;
+    private static boolean     useConcatUrlModeWhenCMWap      = false;
+    private static boolean     ignoreChargePageWhenCMWap      = false;
 
     private HttpConnectionManager()
     {
     }
 
-    public static void bindAppCtxForCheckNetworkType(Context context)
+    public static void bindApplicationContext(Context context)
     {
-        HttpConnectionManager.appContext = context.getApplicationContext();
+        context = context.getApplicationContext();
+        // 不会调用定时或即时同步cookie的方法，因为这种需求很少、影响效率，且从Android4.0开始，cookie操作通过JNI映射到底层的chromium_net来处理，会自动进行快速同步
+        CookieSyncManager.createInstance(context);
+        CookieManager.getInstance().setAcceptCookie(true);
+        HttpConnectionManager.appContext = context;
     }
 
-    public static void setKeepSession(boolean keepSession)
+    public static void setAcceptCookie(boolean accept)
     {
-        HttpConnectionManager.keepSession = keepSession;
+        // CookieManager的setAcceptCookie从Android4.0开始，不再能够在外部使用，所以这里统一使用外部参数控制
+        HttpConnectionManager.acceptCookie = accept;
     }
 
     /**
@@ -294,6 +299,8 @@ public final class HttpConnectionManager
     private static HttpURLConnection openConnection(String url, String urlEnc, String method, boolean followRedirects, int connOrReadTimeout, int currentRedirectCount,
             int currentCMWapChargePageCount, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
     {
+        if (appContext == null)
+            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
         if (currentRedirectCount < 0)
             throw new IllegalArgumentException("current redirect count can not set to below zero");
         if (currentRedirectCount > REDIRECT_MAX_COUNT)
@@ -311,42 +318,39 @@ public final class HttpConnectionManager
         URL myUrl = originalUrl;
         String concatHost = null;
         Proxy proxy = null;
-        if (appContext != null)
+        NetworkInfo curNetwork = NetManager.getActiveNetworkInfo(appContext);
+        if (curNetwork != null)
         {
-            NetworkInfo curNetwork = NetManager.getActiveNetworkInfo(appContext);
-            if (curNetwork != null)
+            if (curNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
             {
-                if (curNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
+                if (useConcatUrlModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
                 {
-                    if (useConcatUrlModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
+                    concatHost = myUrl.getAuthority();
+                    String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
+                    String query = myUrl.getQuery();
+                    if (query != null)
+                        myUrlStr = myUrlStr.concat("?").concat(query);
+                    myUrl = new URL(myUrlStr);
+                } else
+                {
+                    String host = android.net.Proxy.getDefaultHost();
+                    int port = android.net.Proxy.getDefaultPort();
+                    if (host != null && port != -1)
                     {
-                        concatHost = myUrl.getAuthority();
-                        String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
-                        String query = myUrl.getQuery();
-                        if (query != null)
-                            myUrlStr = myUrlStr.concat("?").concat(query);
-                        myUrl = new URL(myUrlStr);
-                    } else
-                    {
-                        String host = android.net.Proxy.getDefaultHost();
-                        int port = android.net.Proxy.getDefaultPort();
-                        if (host != null && port != -1)
+                        if (TelephonyMgr.isOPhone20()) // OPhone 2.0的特殊情况
                         {
-                            if (TelephonyMgr.isOPhone20()) // OPhone 2.0的特殊情况
-                            {
-                                String detailType = NetManager.getNetworkDetailType(curNetwork);
-                                if ("CMWAP".equals(detailType) || "UNIWAP".equals(detailType) || "CTWAP".equals(detailType))
-                                {
-                                    InetSocketAddress inetAddress = new InetSocketAddress(host, port);
-                                    Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
-                                    proxy = new Proxy(proxyType, inetAddress);
-                                }
-                            } else
+                            String detailType = NetManager.getNetworkDetailType(curNetwork);
+                            if ("CMWAP".equals(detailType) || "UNIWAP".equals(detailType) || "CTWAP".equals(detailType))
                             {
                                 InetSocketAddress inetAddress = new InetSocketAddress(host, port);
                                 Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
                                 proxy = new Proxy(proxyType, inetAddress);
                             }
+                        } else
+                        {
+                            InetSocketAddress inetAddress = new InetSocketAddress(host, port);
+                            Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                            proxy = new Proxy(proxyType, inetAddress);
                         }
                     }
                 }
@@ -384,15 +388,6 @@ public final class HttpConnectionManager
                 httpConn.setDoOutput(false); // 经测试，在Android 4.0且某些特殊的服务器实现下，如果不设置setDoOutput(false)可能收到405的http状态码
             httpConn.setReadTimeout(connOrReadTimeout);
             httpConn.setConnectTimeout(connOrReadTimeout);
-            if (keepSession)
-            {
-                String session = querySession(originalUrl); // 需要使用原始URL查询session
-                if (session != null)
-                {
-                    LogManager.logI(HttpConnectionManager.class, "queried session(" + session + ") for url " + originalUrl);
-                    httpConn.addRequestProperty(HEADER_REQUEST_COOKIE, session);
-                }
-            }
             if (concatHost != null)
             {
                 httpConn.addRequestProperty("X-Online-Host", concatHost);
@@ -410,6 +405,12 @@ public final class HttpConnectionManager
                     }
                 }
             }
+            String cookies = getCookies(packUrl); // 需要使用原始url获取cookies
+            if (cookies != null)
+            {
+                LogManager.logI(HttpConnectionManager.class, "queried cookies(" + cookies + ") for url " + packUrl);
+                httpConn.setRequestProperty(HEADER_REQUEST_COOKIE, cookies);
+            }
             if (method.equalsIgnoreCase("POST") && postData != null)
             {
                 output = httpConn.getOutputStream();
@@ -418,11 +419,14 @@ public final class HttpConnectionManager
                 buffOutput.flush();
                 output.close();
             }
-            int rspCode = httpConn.getResponseCode();
-            if (rspCode >= 400)
+            if (acceptCookie)
             {
-                throw new IOException("requesting returns error http code:" + rspCode);
-            } else if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
+                Map<String, List<String>> headerFields = httpConn.getHeaderFields();
+                if (headerFields != null)
+                    addCookies(packUrl, headerFields); // 需要使用原始url添加cookies
+            }
+            int rspCode = httpConn.getResponseCode();
+            if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
             {
                 if (!followRedirects)
                     return httpConn;
@@ -435,6 +439,9 @@ public final class HttpConnectionManager
                 httpConn.disconnect();
                 LogManager.logI(HttpConnectionManager.class, "follow redirects...");
                 return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
+            } else if (rspCode >= 400)
+            {
+                throw new IOException("requesting returns error http code:" + rspCode);
             } else
             {
                 if ((concatHost != null || proxy != null) && !ignoreChargePageWhenCMWap)
@@ -510,12 +517,6 @@ public final class HttpConnectionManager
                         }
                     }
                 }
-                if (keepSession)
-                {
-                    Map<String, List<String>> headerFields = httpConn.getHeaderFields();
-                    if (headerFields != null)
-                        saveSession(originalUrl, headerFields); // 需要使用原始URL保存session
-                }
                 return httpConn;
             }
         } catch (IOException e)
@@ -545,132 +546,77 @@ public final class HttpConnectionManager
         }
     }
 
-    public static void clearSessions()
+    /**
+     * <p>删除指定url的cookies <p>CookieManager的removeAllCookie在Android4.0以前是异步线程实现，故当前类不将其对外暴露
+     * 
+     * @param url
+     */
+    public static void removeCookies(String url)
     {
-        sessions.clear();
-    }
-
-    public static boolean clearSession(URL url)
-    {
-        String host = url.getHost().toLowerCase();
-        if (host.equals("localhost"))
-            host = "127.0.0.1";
-        int port = url.getPort();
-        if (port == -1)
-            port = url.getDefaultPort();
-        String authority = host.concat(":").concat(String.valueOf(port));
-        String path = url.getPath();
-        if (path.equals("") || path.equals("/"))
+        if (appContext == null)
+            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
+        CookieManager cookieManager = CookieManager.getInstance();
+        String cookies = cookieManager.getCookie(url);
+        if (cookies != null)
         {
-            return sessions.remove(authority) != null;
-        } else
-        {
-            int index = path.indexOf("/", 1);
-            if (index != -1)
-                path = path.substring(0, index);
-            return sessions.remove(authority.concat(path)) != null;
+            String[] cookieArr = cookies.split(";");
+            String expires = new Date(0).toGMTString();
+            for (String cookie : cookieArr)
+            {
+                cookieManager.setCookie(url, cookie.trim() + "; expires=" + expires);
+            }
         }
     }
 
     /**
-     * <p>根据url从缓存中查找能够维持session的cookie值。若未找到将返回null
+     * <p>根据url获取cookies
      * 
      * @param url
      * @return
      */
-    public static String querySession(URL url)
+    public static String getCookies(String url)
     {
-        String host = url.getHost().toLowerCase();
-        if (host.equals("localhost"))
-            host = "127.0.0.1";
-        int port = url.getPort();
-        if (port == -1)
-            port = url.getDefaultPort();
-        String authority = host.concat(":").concat(String.valueOf(port));
-        String path = url.getPath();
-        String sessionCookie = null;
-        if (path.equals("") || path.equals("/"))
-        {
-            sessionCookie = sessions.get(authority);
-        } else
-        {
-            int index = path.indexOf("/", 1);
-            if (index != -1)
-                path = path.substring(0, index);
-            sessionCookie = sessions.get(authority.concat(path));
-            if (sessionCookie == null) // 查找不到时将返回根url的session cookie
-            {
-                sessionCookie = sessions.get(authority);
-            }
-        }
-        return sessionCookie;
+        if (!acceptCookie)
+            return null;
+        if (appContext == null)
+            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
+        return CookieManager.getInstance().getCookie(url);
     }
 
     /**
-     * <p>保存当前响应头中用于维持session的cookie值
+     * <p>添加指定的cookie
+     * 
+     * @param url
+     * @param cookie
+     */
+    public static void addCookie(String url, String cookie)
+    {
+        if (!acceptCookie)
+            return;
+        if (appContext == null)
+            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
+        CookieManager.getInstance().setCookie(url, cookie);
+    }
+
+    /**
+     * <p>添加当前响应头中的cookies
      * 
      * @param url
      * @param responseHeaders
      */
-    private static void saveSession(URL url, Map<String, List<String>> responseHeaders)
+    private static void addCookies(String url, Map<String, List<String>> responseHeaders)
     {
         List<String> cookies = responseHeaders.get(HEADER_RESPONSE_SET_COOKIE.toLowerCase()); // 在Android平台的实现中必须以小写的key来获取以List形式返回的响应头
         if (cookies != null)
         {
-            String sessionCookie = null;
-            ListIterator<String> sessionCookies = cookies.listIterator(cookies.size());
-            a: while (sessionCookies.hasPrevious()) // 倒序，按惯例要取最后一个session cookie
+            CookieManager cookieManager = CookieManager.getInstance();
+            for (String cookie : cookies)
             {
-                String cookie = sessionCookies.previous();
                 if (cookie != null)
                 {
-                    String[] cookieArr = cookie.split(";");
-                    for (int i = cookieArr.length - 1; i >= 0; i--) // 倒序，按惯例要取最后一个session cookie
-                    {
-                        String perCookie = cookieArr[i].trim();
-                        if (perCookie.startsWith("JSESSIONID=") || perCookie.startsWith("PHPSESSID="))
-                        {
-                            sessionCookie = perCookie;
-                            break a;
-                        }
-                    }
+                    cookieManager.setCookie(url, cookie);
                 }
             }
-            if (sessionCookie != null) // 未找到session cookie时不能清除原来的值，服务器可能只会在session发生改变时才会向客户端发送新的session cookie
-            {
-                LogManager.logI(HttpConnectionManager.class, "prepare to save session(" + sessionCookie + ") for url " + url.toString() + "...");
-                saveSession(url, sessionCookie);
-            }
-        }
-    }
-
-    /**
-     * <p>保存用于维持session的cookie值
-     * 
-     * @param url
-     * @param sessionCookie
-     */
-    public static void saveSession(URL url, String sessionCookie)
-    {
-        if (sessionCookie == null)
-            throw new NullPointerException();
-        String host = url.getHost().toLowerCase();
-        if (host.equals("localhost"))
-            host = "127.0.0.1";
-        int port = url.getPort();
-        if (port == -1)
-            port = url.getDefaultPort();
-        String authority = host.concat(":").concat(String.valueOf(port));
-        String path = url.getPath();
-        if (path.equals("") || path.equals("/"))
-        {
-            sessions.put(authority, sessionCookie);
-        } else
-        {
-            int index = path.indexOf("/", 1);
-            if (index != -1)
-                path = path.substring(0, index);
-            sessions.put(authority.concat(path), sessionCookie);
         }
     }
 
