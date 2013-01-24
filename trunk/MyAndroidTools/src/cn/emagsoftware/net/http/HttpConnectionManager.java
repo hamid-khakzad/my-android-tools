@@ -360,7 +360,7 @@ public final class HttpConnectionManager
         OutputStream output = null;
         try
         {
-            LogManager.logI(HttpConnectionManager.class, "request url '".concat(myUrl.toString()).concat("'..."));
+            LogManager.logI(HttpConnectionManager.class, "request url ".concat(myUrl.toString()).concat("..."));
             if ("https".equals(myUrl.getProtocol()))
             {
                 SSLContext sslCont = SSLContext.getInstance("TLS");
@@ -408,7 +408,7 @@ public final class HttpConnectionManager
             String cookies = getCookies(packUrl); // 需要使用原始url获取cookies
             if (cookies != null)
             {
-                LogManager.logI(HttpConnectionManager.class, "queried cookies(" + cookies + ") for url " + packUrl);
+                LogManager.logI(HttpConnectionManager.class, "set cookies(" + cookies + ") to url " + packUrl);
                 httpConn.setRequestProperty(HEADER_REQUEST_COOKIE, cookies);
             }
             if (method.equalsIgnoreCase("POST") && postData != null)
@@ -614,6 +614,7 @@ public final class HttpConnectionManager
             {
                 if (cookie != null)
                 {
+                    LogManager.logI(HttpConnectionManager.class, "got cookie(" + cookie + ") from url " + url);
                     cookieManager.setCookie(url, cookie);
                 }
             }
