@@ -76,7 +76,7 @@ public final class HttpConnectionManager
     public static void bindApplicationContext(Context context)
     {
         context = context.getApplicationContext();
-        // 不会调用定时或即时同步cookie的方法，因为这种需求很少、影响效率，且从Android4.0开始，cookie操作通过JNI映射到底层的chromium_net来处理，会自动进行快速同步
+        // 不会调用定时或即时同步cookie的方法，因为这种需求很少、影响效率，且从Android4.0开始，cookie操作通过JNI映射到底层的chromium_net来处理，会自动进行快速同步(同步时遇到cookie名冲突，若需要更新的是当前进程，则当前进程的同名cookie不会被更新，以保证会话的一致性)
         CookieSyncManager.createInstance(context);
         CookieManager.getInstance().setAcceptCookie(true);
         HttpConnectionManager.appContext = context;
