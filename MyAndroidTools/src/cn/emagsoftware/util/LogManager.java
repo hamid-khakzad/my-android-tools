@@ -29,7 +29,7 @@ public final class LogManager
      */
     public static int       LOGGING_LEVEL = VERBOSE;
     /**
-     * <p>通过设置此变量来控制是否同步开启JLog日志
+     * <p>通过设置此变量来控制是否同步开启JLog日志，默认为false，以避免频繁的磁盘交互带来的性能损耗
      */
     public static boolean   ENABLED_JLOG  = false;
 
