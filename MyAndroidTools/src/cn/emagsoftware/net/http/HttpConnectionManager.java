@@ -547,23 +547,22 @@ public final class HttpConnectionManager
 
     /**
      * <p>移除所有的cookies <p>url在获取cookies时具有继承性，所以不可能针对某一个url单独移除其所有的cookies
+     * 
+     * @deprecated 该方法的依赖实现在Android4.0以下是异步的，在Android4.0以下，该方法只能阻塞一个固定时间来解决此问题，所以其结果有极小的错误概率，除非万不得已，否则不建议使用该方法
      */
     public static void removeAllCookies()
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        CookieManager cookieManager = CookieManager.getInstance();
-        // CookieManager的removeAllCookie在Android4.0以下是异步线程实现，所以这里使用堵塞等待的方式来兼容所有版本
-        while (true)
+        CookieManager.getInstance().removeAllCookie();
+        if (!TelephonyMgr.isAndroid4Above())
         {
-            cookieManager.removeAllCookie();
-            if (!cookieManager.hasCookies())
-                break;
             try
             {
-                Thread.sleep(100);
+                Thread.sleep(500);
             } catch (InterruptedException e)
             {
+                throw new RuntimeException(e);
             }
         }
     }
