@@ -15,7 +15,6 @@ import java.net.Proxy.Type;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,7 +44,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 5.5
+ * @version 5.6
  */
 public final class HttpConnectionManager
 {
@@ -547,29 +546,30 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>删除指定url的cookies <p>CookieManager的removeAllCookie在Android4.0以前是异步线程实现，故当前类不将其对外暴露
-     * 
-     * @param url
+     * <p>移除所有的cookies <p>url在获取cookies时具有继承性，所以不可能针对某一个url单独移除其所有的cookies
      */
-    public static void removeCookies(String url)
+    public static void removeAllCookies()
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
         CookieManager cookieManager = CookieManager.getInstance();
-        String cookies = cookieManager.getCookie(url);
-        if (cookies != null)
+        // CookieManager的removeAllCookie在Android4.0以下是异步线程实现，所以这里使用堵塞等待的方式来兼容所有版本
+        while (true)
         {
-            String[] cookieArr = cookies.split(";");
-            String expires = new Date(0).toGMTString();
-            for (String cookie : cookieArr)
+            cookieManager.removeAllCookie();
+            if (!cookieManager.hasCookies())
+                break;
+            try
             {
-                cookieManager.setCookie(url, cookie.trim() + "; expires=" + expires);
+                Thread.sleep(100);
+            } catch (InterruptedException e)
+            {
             }
         }
     }
 
     /**
-     * <p>根据url获取cookies
+     * <p>根据url获取cookies <p>不同cookie之间使用"分号+空格"的方式分隔
      * 
      * @param url
      * @return
@@ -584,7 +584,8 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加指定的cookie
+     * <p>添加指定的cookie <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
+     * <p>只有相同根url下的同名cookie才会被新的替换，因此不要存在添加一个cookie去替换对应url下能获取到的同名旧cookie的思路
      * 
      * @param url
      * @param cookie
@@ -599,7 +600,8 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加当前响应头中的cookies
+     * <p>添加当前响应头中的cookies <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
+     * <p>只有相同根url下的同名cookie才会被新的替换，因此不要存在添加一个cookie去替换对应url下能获取到的同名旧cookie的思路
      * 
      * @param url
      * @param responseHeaders
