@@ -14,7 +14,6 @@ import org.htmlparser.tags.InputTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 
-import cn.emagsoftware.net.http.HtmlManager;
 import cn.emagsoftware.net.http.HttpConnectionManager;
 import cn.emagsoftware.net.http.HttpResponseResult;
 import cn.emagsoftware.util.LogManager;
@@ -97,7 +96,7 @@ public class User
             doParseLoginPage(pageHtml);
         } else
         {
-            String formatHtml = HtmlManager.removeComment(pageHtml);
+            String formatHtml = removeComment(pageHtml);
             String location = extractPortalUrl(formatHtml);
             if (location == null)
             {
@@ -118,7 +117,7 @@ public class User
 
     protected void doParseLoginPage(String loginPageHtml) throws ParserException
     {
-        String formatHtml = HtmlManager.removeComment(loginPageHtml);
+        String formatHtml = removeComment(loginPageHtml);
         Parser mHtmlParser = Parser.createParser(formatHtml, "gb2312");
         FormFilter filter = new FormFilter(CMCC_LOGINPAGE_FORMNAME);
         NodeList formList = mHtmlParser.parse(filter);
@@ -149,6 +148,26 @@ public class User
                 cmccLoginPageFields.put(attrName.trim(), attrValue.trim());
             }
         }
+    }
+
+    protected String removeComment(String html)
+    {
+        String start = "<!--";
+        String end = "-->";
+        String[] cut1 = html.split(start);
+        StringBuffer sb = new StringBuffer();
+        for (String temp : cut1)
+        {
+            int index = temp.indexOf(end);
+            if (index >= 0 && index + end.length() < temp.length())
+            {
+                sb.append(temp.substring(index + end.length()));
+            } else
+            {
+                sb.append(temp);
+            }
+        }
+        return sb.toString();
     }
 
     protected String extractPortalUrl(String html)
