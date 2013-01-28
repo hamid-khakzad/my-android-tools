@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.Proxy.Type;
@@ -16,6 +17,7 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +39,7 @@ import android.net.NetworkInfo;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import cn.emagsoftware.net.NetManager;
+import cn.emagsoftware.net.URLManager;
 import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 
@@ -44,7 +47,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 5.6
+ * @version 5.7
  */
 public final class HttpConnectionManager
 {
@@ -111,20 +114,19 @@ public final class HttpConnectionManager
      * 进行http get请求
      * 
      * @param url 请求的url
-     * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
      * @param followRedirects 是否自动重定向
      * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
      * @param requestHeaders 请求头，不需要时可传null
      * @return HttpResponseResultStream实例
      * @throws IOException
      */
-    public static HttpResponseResultStream doGetForStream(String url, String urlEnc, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders) throws IOException
+    public static HttpResponseResultStream doGetForStream(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders) throws IOException
     {
         HttpURLConnection httpConn = null;
         InputStream input = null;
         try
         {
-            httpConn = openConnection(url, urlEnc, "GET", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, null);
+            httpConn = openConnection(url, "GET", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, null);
             HttpResponseResultStream result = new HttpResponseResultStream();
             result.setResponseURL(httpConn.getURL());
             int rspCode = httpConn.getResponseCode();
@@ -149,9 +151,9 @@ public final class HttpConnectionManager
         }
     }
 
-    public static HttpResponseResult doGet(String url, String urlEnc, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders) throws IOException
+    public static HttpResponseResult doGet(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders) throws IOException
     {
-        HttpResponseResultStream result = doGetForStream(url, urlEnc, followRedirects, connOrReadTimeout, requestHeaders);
+        HttpResponseResultStream result = doGetForStream(url, followRedirects, connOrReadTimeout, requestHeaders);
         result.generateData();
         return result;
     }
@@ -160,7 +162,6 @@ public final class HttpConnectionManager
      * 进行http post请求，将以值为application/x-www-form-urlencoded的Content-Type来提交键值对参数
      * 
      * @param url 请求的url
-     * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
      * @param followRedirects 是否自动重定向
      * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
      * @param requestHeaders 请求头，不需要时可传null
@@ -169,8 +170,8 @@ public final class HttpConnectionManager
      * @return HttpResponseResultStream实例
      * @throws IOException
      */
-    public static HttpResponseResultStream doPostForStream(String url, String urlEnc, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders,
-            Map<String, String> postParams, String postParamsEnc) throws IOException
+    public static HttpResponseResultStream doPostForStream(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, Map<String, String> postParams,
+            String postParamsEnc) throws IOException
     {
         HttpURLConnection httpConn = null;
         InputStream input = null;
@@ -184,12 +185,10 @@ public final class HttpConnectionManager
             byte[] paramsData = null;
             if (postParams != null)
             {
-                String postParamsStr = HttpManager.concatParams(postParams);
-                if (postParamsEnc != null)
-                    postParamsStr = HttpManager.encodeParams(postParamsStr, postParamsEnc); // post参数时，需对参数进行URL编码
+                String postParamsStr = URLManager.concatParams(postParams, postParamsEnc);
                 paramsData = postParamsStr.getBytes(); // 经过外部或内部URL编码之后的参数只含英文，可用任意字符集进行编码
             }
-            httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, paramsData);
+            httpConn = openConnection(url, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, paramsData);
             HttpResponseResultStream result = new HttpResponseResultStream();
             result.setResponseURL(httpConn.getURL());
             int rspCode = httpConn.getResponseCode();
@@ -214,10 +213,10 @@ public final class HttpConnectionManager
         }
     }
 
-    public static HttpResponseResult doPost(String url, String urlEnc, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, Map<String, String> postParams,
-            String postParamsEnc) throws IOException
+    public static HttpResponseResult doPost(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, Map<String, String> postParams, String postParamsEnc)
+            throws IOException
     {
-        HttpResponseResultStream result = doPostForStream(url, urlEnc, followRedirects, connOrReadTimeout, requestHeaders, postParams, postParamsEnc);
+        HttpResponseResultStream result = doPostForStream(url, followRedirects, connOrReadTimeout, requestHeaders, postParams, postParamsEnc);
         result.generateData();
         return result;
     }
@@ -226,7 +225,6 @@ public final class HttpConnectionManager
      * 进行http post请求，将以值为application/octet-stream的Content-Type来提交数据
      * 
      * @param url 请求的url
-     * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
      * @param followRedirects 是否自动重定向
      * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
      * @param requestHeaders 请求头，不需要时可传null
@@ -234,8 +232,7 @@ public final class HttpConnectionManager
      * @return HttpResponseResultStream实例
      * @throws IOException
      */
-    public static HttpResponseResultStream doPostForStream(String url, String urlEnc, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, byte[] postData)
-            throws IOException
+    public static HttpResponseResultStream doPostForStream(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
     {
         HttpURLConnection httpConn = null;
         InputStream input = null;
@@ -248,7 +245,7 @@ public final class HttpConnectionManager
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
             if (postData == null)
                 postData = new byte[] {}; // 貌似针对application/octet-stream的情况必须这样处理，否则会抛出FileNotFoundException，这可能是Android的底层实现有缺陷
-            httpConn = openConnection(url, urlEnc, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, postData);
+            httpConn = openConnection(url, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, postData);
             HttpResponseResultStream result = new HttpResponseResultStream();
             result.setResponseURL(httpConn.getURL());
             int rspCode = httpConn.getResponseCode();
@@ -273,9 +270,9 @@ public final class HttpConnectionManager
         }
     }
 
-    public static HttpResponseResult doPost(String url, String urlEnc, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
+    public static HttpResponseResult doPost(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
     {
-        HttpResponseResultStream result = doPostForStream(url, urlEnc, followRedirects, connOrReadTimeout, requestHeaders, postData);
+        HttpResponseResultStream result = doPostForStream(url, followRedirects, connOrReadTimeout, requestHeaders, postData);
         result.generateData();
         return result;
     }
@@ -284,7 +281,6 @@ public final class HttpConnectionManager
      * 返回HttpURLConnection实例
      * 
      * @param url 请求的url
-     * @param urlEnc 对url进行URL编码的字符集，不需要URL编码时可传null
      * @param method 请求的方式，如GET,POST
      * @param followRedirects 是否自动重定向
      * @param connOrReadTimeout 连接和读取的超时时间，以毫秒为单位，设为0表示永不超时
@@ -295,8 +291,8 @@ public final class HttpConnectionManager
      * @return HttpURLConnection实例
      * @throws IOException
      */
-    private static HttpURLConnection openConnection(String url, String urlEnc, String method, boolean followRedirects, int connOrReadTimeout, int currentRedirectCount,
-            int currentCMWapChargePageCount, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
+    private static HttpURLConnection openConnection(String url, String method, boolean followRedirects, int connOrReadTimeout, int currentRedirectCount, int currentCMWapChargePageCount,
+            Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
@@ -308,12 +304,7 @@ public final class HttpConnectionManager
             throw new IllegalArgumentException("current CMWap charge page count can not set to below zero");
         if (currentCMWapChargePageCount > CMWAP_CHARGEPAGE_MAX_COUNT)
             throw new IOException("too many showing CMWap charge page times");
-        String packUrl = null;
-        if (urlEnc == null)
-            packUrl = url;
-        else
-            packUrl = HttpManager.encodeURL(url, urlEnc);
-        URL originalUrl = new URL(packUrl);
+        URL originalUrl = new URL(url);
         URL myUrl = originalUrl;
         String concatHost = null;
         Proxy proxy = null;
@@ -404,10 +395,10 @@ public final class HttpConnectionManager
                     }
                 }
             }
-            String cookies = getCookies(packUrl); // 需要使用原始url获取cookies
+            String cookies = getCookies(url); // 需要使用原始url获取cookies
             if (cookies != null)
             {
-                LogManager.logI(HttpConnectionManager.class, "set cookies(" + cookies + ") to url " + packUrl);
+                LogManager.logI(HttpConnectionManager.class, "set cookies(" + cookies + ") to url " + url);
                 httpConn.setRequestProperty(HEADER_REQUEST_COOKIE, cookies);
             }
             if (method.equalsIgnoreCase("POST") && postData != null)
@@ -422,7 +413,7 @@ public final class HttpConnectionManager
             {
                 Map<String, List<String>> headerFields = httpConn.getHeaderFields();
                 if (headerFields != null)
-                    addCookies(packUrl, headerFields); // 需要使用原始url添加cookies
+                    addCookies(url, headerFields); // 需要使用原始url添加cookies
             }
             int rspCode = httpConn.getResponseCode();
             if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
@@ -437,7 +428,7 @@ public final class HttpConnectionManager
                     location = originalUrl.getProtocol() + "://" + originalUrl.getHost() + location;
                 httpConn.disconnect();
                 LogManager.logI(HttpConnectionManager.class, "follow redirects...");
-                return openConnection(location, urlEnc, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
+                return openConnection(location, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
             } else if (rspCode >= 400)
             {
                 throw new IOException("requesting returns error http code:" + rspCode);
@@ -502,7 +493,7 @@ public final class HttpConnectionManager
                                 LogManager.logW(HttpConnectionManager.class, "could not parse url from CMWap charge page,would use the original url to try again...");
                                 parseUrl = url;
                             }
-                            return openConnection(parseUrl, urlEnc, method, followRedirects, connOrReadTimeout, currentRedirectCount, ++currentCMWapChargePageCount, requestHeaders, postData);
+                            return openConnection(parseUrl, method, followRedirects, connOrReadTimeout, currentRedirectCount, ++currentCMWapChargePageCount, requestHeaders, postData);
                         } finally
                         {
                             try
@@ -546,24 +537,42 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>移除所有的cookies <p>url在获取cookies时具有继承性，所以不可能针对某一个url单独移除其所有的cookies
+     * <p>移除指定url的cookies <p>由于cookie具有继承性，该方法将会同时移除以当前url向上各层为根url的cookie <p>CookieManager的removeAllCookie由于在Android4.0以下是异步线程实现的，故当前类不将其对外暴露
      * 
-     * @deprecated 该方法的依赖实现在Android4.0以下是异步的，在Android4.0以下，该方法只能阻塞一个固定时间来解决此问题，所以其结果有极小的错误概率，除非万不得已，否则不建议使用该方法
+     * @param url
      */
-    public static void removeAllCookies()
+    public static void removeCookies(String url)
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        CookieManager.getInstance().removeAllCookie();
-        if (!TelephonyMgr.isAndroid4Above())
+        CookieManager cookieManager = CookieManager.getInstance();
+        String cookies = cookieManager.getCookie(url);
+        if (cookies == null)
+            return;
+        String[] cookieArr = cookies.split(";");
+        String expires = new Date(0).toGMTString();
+        URL curUrl = null;
+        try
         {
-            try
+            curUrl = new URL(url);
+        } catch (MalformedURLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        String main = curUrl.getProtocol() + "://" + curUrl.getAuthority();
+        String[] paths = curUrl.getPath().split("/");
+        for (int i = 1; i < paths.length; i++)
+        {
+            main = main + "/" + paths[i];
+            for (String cookie : cookieArr)
             {
-                Thread.sleep(500);
-            } catch (InterruptedException e)
-            {
-                throw new RuntimeException(e);
+                cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
             }
+        }
+        main = main + "/";
+        for (String cookie : cookieArr)
+        {
+            cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
         }
     }
 
@@ -583,7 +592,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加指定的cookie <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
+     * <p>添加指定的cookie <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(以"/"结尾时即为自己，否则为其直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
      * <p>只有相同根url下的同名cookie才会被新的替换，因此指望通过添加cookie能替换对应url下获取到的同名旧cookie时要格外注意
      * 
      * @param url
@@ -599,8 +608,8 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加当前响应头中的cookies <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
-     * <p>只有相同根url下的同名cookie才会被新的替换，因此指望通过添加cookie能替换对应url下获取到的同名旧cookie时要格外注意
+     * <p>添加当前响应头中的cookies <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(以"/"结尾时即为自己，否则为其直接上级)
+     * <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie <p>只有相同根url下的同名cookie才会被新的替换，因此指望通过添加cookie能替换对应url下获取到的同名旧cookie时要格外注意
      * 
      * @param url
      * @param responseHeaders
