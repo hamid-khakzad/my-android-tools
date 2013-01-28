@@ -339,7 +339,7 @@ public class User
         values = new ArrayList<String>();
         values.add("G3WLAN");
         requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-        return HttpConnectionManager.doGet(url, "gb2312", true, 15000, requestHeaders);
+        return HttpConnectionManager.doGet(url, true, 15000, requestHeaders);
     }
 
     protected HttpResponseResult doHttpPost(String url, Map<String, String> params) throws IOException
@@ -351,7 +351,7 @@ public class User
         values = new ArrayList<String>();
         values.add("G3WLAN");
         requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
-        return HttpConnectionManager.doPost(url, "gb2312", true, 15000, requestHeaders, params, "gb2312");
+        return HttpConnectionManager.doPost(url, true, 15000, requestHeaders, params, "gb2312");
     }
 
     /**

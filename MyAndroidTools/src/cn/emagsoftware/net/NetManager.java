@@ -36,7 +36,7 @@ public final class NetManager
         {
             try
             {
-                HttpResponseResult result = HttpConnectionManager.doGet("http://www.baidu.com", null, true, timeout, null);
+                HttpResponseResult result = HttpConnectionManager.doGet("http://www.baidu.com", true, timeout, null);
                 String host = result.getResponseURL().getHost();
                 String content = result.getDataString("utf-8");
                 if ("www.baidu.com".equalsIgnoreCase(host) && content.indexOf("baidu.com") >= 0)
