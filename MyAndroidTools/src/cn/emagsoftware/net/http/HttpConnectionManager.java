@@ -593,7 +593,7 @@ public final class HttpConnectionManager
 
     /**
      * <p>添加指定的cookie <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(以"/"结尾时即为自己，否则为其直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
-     * <p>只有相同根url下的同名cookie才会被新的替换，因此指望通过添加cookie能替换对应url下获取到的同名旧cookie时要格外注意
+     * <p>使用该方法时要格外小心，因为只有相同根url下的同名cookie才会被替换，这可能出现添加的cookie不能替换之前的同名cookie，或者通过网络请求自动添加的cookie不能替换该方法添加的同名cookie的情况，从而导致一个url对应多个同名cookie的现象
      * 
      * @param url
      * @param cookie
@@ -608,8 +608,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加当前响应头中的cookies <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(以"/"结尾时即为自己，否则为其直接上级)
-     * <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie <p>只有相同根url下的同名cookie才会被新的替换，因此指望通过添加cookie能替换对应url下获取到的同名旧cookie时要格外注意
+     * <p>添加当前响应头中的cookies
      * 
      * @param url
      * @param responseHeaders
