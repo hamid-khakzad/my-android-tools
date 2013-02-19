@@ -96,6 +96,7 @@ public abstract class AsyncDataExecutor
         return new AsyncTask<DataHolder, Object, Object>()
         {
             private DataHolder curHolder;
+            private boolean    shouldChangeSoftRefByPublish;
 
             @Override
             protected Object doInBackground(DataHolder... params)
@@ -110,10 +111,16 @@ public abstract class AsyncDataExecutor
                     } else
                     {
                         curHolder.mExecuteConfig.mIsExecuting = false;
-                        // 统一置为软引用时，可能由publishProgress导致的界面重构仍在继续，但数据被回收没有这么快，且此时mIsExecuting为false可使DataHolder被重新执行
-                        for (int i = 0; i < curHolder.getAsyncDataCount(); i++)
+                        if (shouldChangeSoftRefByPublish)
                         {
-                            curHolder.changeAsyncDataToSoftReference(i);
+                            // 统一置为软引用可能需要通过publish方式来进行，因为需要保证该操作发生在更新界面publishProgress可能导致的界面重构之后
+                            publishProgress(curHolder);
+                        } else
+                        {
+                            for (int i = 0; i < curHolder.getAsyncDataCount(); i++)
+                            {
+                                curHolder.changeAsyncDataToSoftReference(i);
+                            }
                         }
                         synchronized (mLockExecute)
                         {
@@ -125,8 +132,8 @@ public abstract class AsyncDataExecutor
                             }
                         }
                     }
-                    // publishProgress涉及的UI操作可能会导致界面重构，从而重复使用到异步数据，但DataHolder在执行过程中却不允许重复执行，所以执行时要遍历检查所有的异步项，并且先前已执行完的要升级为强引用
-                    // 当前线程会在DataHolder全部执行完后统一将所有异步数据置为软引用
+                    // 更新界面publishProgress可能导致界面重构，从而重复使用到异步数据，但DataHolder在执行过程中却不允许重复执行，所以执行时要遍历检查所有的异步项，并且先前已执行完的要升级为强引用
+                    shouldChangeSoftRefByPublish = false;
                     for (int i = 0; i < curHolder.getAsyncDataCount(); i++)
                     {
                         Object curAsyncData = curHolder.getAsyncData(i);
@@ -140,6 +147,7 @@ public abstract class AsyncDataExecutor
                                 curHolder.setAsyncData(i, asyncData);
                                 // 更新界面
                                 publishProgress(curHolder, asyncData, i);
+                                shouldChangeSoftRefByPublish = true;
                             } catch (Exception e)
                             {
                                 LogManager.logE(AsyncDataExecutor.class, "execute async data failed(position:" + curHolder.mExecuteConfig.mPosition + ",index:" + i + ")", e);
@@ -157,30 +165,44 @@ public abstract class AsyncDataExecutor
             {
                 // TODO Auto-generated method stub
                 super.onProgressUpdate(values);
-                GenericAdapter genericAdapter = mGenericAdapterRef.get();
-                if (genericAdapter == null)
-                    return;
-                if (mNotifyAsyncDataForAll)
+                if (values.length == 1)
                 {
-                    genericAdapter.notifyDataSetChanged();
+                    // 再次publish，这样才能保证统一置为软引用操作发生在更新界面publishProgress可能导致的界面重构之后
+                    publishProgress(values[0], 0);
+                } else if (values.length == 2)
+                {
+                    DataHolder holder = (DataHolder) values[0];
+                    for (int i = 0; i < holder.getAsyncDataCount(); i++)
+                    {
+                        holder.changeAsyncDataToSoftReference(i);
+                    }
                 } else
                 {
-                    AdapterView<? extends Adapter> adapterView = mAdapterViewRef.get();
-                    if (adapterView == null)
+                    GenericAdapter genericAdapter = mGenericAdapterRef.get();
+                    if (genericAdapter == null)
                         return;
-                    DataHolder holder = (DataHolder) values[0];
-                    int position = holder.mExecuteConfig.mPosition;
-                    if (position >= genericAdapter.getCount())
-                        return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                    if (!holder.equals(genericAdapter.queryDataHolder(position)))
-                        return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                    int wrapPosition = position;
-                    if (adapterView instanceof ListView)
-                        wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
-                    int first = adapterView.getFirstVisiblePosition();
-                    int last = adapterView.getLastVisiblePosition();
-                    if (wrapPosition >= first && wrapPosition <= last)
-                        holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wrapPosition - first), values[1], (Integer) values[2]);
+                    if (mNotifyAsyncDataForAll)
+                    {
+                        genericAdapter.notifyDataSetChanged();
+                    } else
+                    {
+                        AdapterView<? extends Adapter> adapterView = mAdapterViewRef.get();
+                        if (adapterView == null)
+                            return;
+                        DataHolder holder = (DataHolder) values[0];
+                        int position = holder.mExecuteConfig.mPosition;
+                        if (position >= genericAdapter.getCount())
+                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        if (!holder.equals(genericAdapter.queryDataHolder(position)))
+                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        int wrapPosition = position;
+                        if (adapterView instanceof ListView)
+                            wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
+                        int first = adapterView.getFirstVisiblePosition();
+                        int last = adapterView.getLastVisiblePosition();
+                        if (wrapPosition >= first && wrapPosition <= last)
+                            holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wrapPosition - first), values[1], (Integer) values[2]);
+                    }
                 }
             }
         };
