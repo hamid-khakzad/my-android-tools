@@ -56,7 +56,7 @@ public abstract class DataHolder
      * @param context
      * @param position
      * @param view
-     * @param asyncData 执行成功后的异步数据，只能直接使用该值而不能使用getAsyncData(asyncDataIndex)，因为异步数据在全部执行完后会修改为软引用，只有该值可以确保对异步数据的绝对引用
+     * @param asyncData
      * @param asyncDataIndex
      */
     public abstract void onAsyncDataExecuted(Context context, int position, View view, Object asyncData, int asyncDataIndex);
