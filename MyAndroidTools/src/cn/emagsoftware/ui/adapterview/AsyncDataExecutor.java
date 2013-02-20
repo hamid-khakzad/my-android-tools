@@ -209,7 +209,7 @@ public abstract class AsyncDataExecutor
     }
 
     /**
-     * <p>加载异步数据的回调方法，注意，该方法可能会在多线程的环境中执行，所以要保证该方法是线程安全的 <p>可抛出任何异常，抛出异常时，外部会认为当前的异步数据执行失败
+     * <p>加载异步数据的回调方法 <p>可抛出任何异常，抛出异常时，外部会认为当前的异步数据执行失败
      * 
      * @param position 所在AdapterView中的位置
      * @param dataHolder 用于AdapterView的DataHolder对象
