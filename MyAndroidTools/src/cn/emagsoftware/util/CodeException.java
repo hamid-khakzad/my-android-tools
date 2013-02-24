@@ -8,32 +8,40 @@ public class CodeException extends Exception
      */
     private static final long serialVersionUID = 1L;
 
-    private int               code             = -1;
+    private String            code             = null;
 
-    public CodeException(int code)
+    public CodeException(String code)
     {
+        if (code == null)
+            throw new NullPointerException();
         this.code = code;
     }
 
-    public CodeException(int code, String message)
+    public CodeException(String code, String detailMessage)
     {
-        super(message);
+        super(detailMessage);
+        if (code == null)
+            throw new NullPointerException();
         this.code = code;
     }
 
-    public CodeException(int code, Throwable throwable)
+    public CodeException(String code, Throwable throwable)
     {
         super(throwable);
+        if (code == null)
+            throw new NullPointerException();
         this.code = code;
     }
 
-    public CodeException(int code, String message, Throwable throwable)
+    public CodeException(String code, String detailMessage, Throwable throwable)
     {
-        super(message, throwable);
+        super(detailMessage, throwable);
+        if (code == null)
+            throw new NullPointerException();
         this.code = code;
     }
 
-    public int getCode()
+    public String getCode()
     {
         return code;
     }
