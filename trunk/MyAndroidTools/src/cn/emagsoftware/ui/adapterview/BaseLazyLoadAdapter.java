@@ -15,13 +15,13 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
 {
 
     /** 当前的页码 */
-    private int              mPage        = 0;
+    private int              mPage               = 0;
     /** 总页数 */
-    private int              mPages       = -1;
-    /** 是否已经加载了全部数据 */
-    private boolean          mIsLoadedAll = false;
+    private int              mPages              = -1;
+    /** 在没有设置Pages的模式下是否已经加载了全部数据 */
+    private boolean          mIsLoadedAllNoPages = false;
     /** 懒加载时的回调对象 */
-    private LazyLoadCallback mCallback    = null;
+    private LazyLoadCallback mCallback           = null;
 
     public BaseLazyLoadAdapter(Context context, BaseLazyLoadAdapter.LazyLoadCallback callback)
     {
@@ -125,15 +125,9 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 if (adapter.mPages == -1)
                 {
                     if (resultList == null || resultList.size() == 0)
-                        adapter.mIsLoadedAll = true;
+                        adapter.mIsLoadedAllNoPages = true;
                     else
-                        adapter.mIsLoadedAll = false;
-                } else
-                {
-                    if (adapter.mPage >= adapter.mPages)
-                        adapter.mIsLoadedAll = true;
-                    else
-                        adapter.mIsLoadedAll = false;
+                        adapter.mIsLoadedAllNoPages = false;
                 }
                 adapter.mIsException = false;
                 adapter.onAfterLoad(adapter.mContext, condition, null);
@@ -191,7 +185,13 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
      */
     public boolean isLoadedAll()
     {
-        return mIsLoadedAll;
+        if (mPages == -1)
+        {
+            return mIsLoadedAllNoPages;
+        } else
+        {
+            return mPage >= mPages;
+        }
     }
 
     /**
