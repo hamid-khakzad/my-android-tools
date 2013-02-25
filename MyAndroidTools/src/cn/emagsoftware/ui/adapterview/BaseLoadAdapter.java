@@ -11,13 +11,13 @@ public abstract class BaseLoadAdapter extends GenericAdapter
 {
 
     /** 是否正在加载 */
-    protected boolean    mIsLoading    = false;
+    boolean              mIsLoading    = false;
     /** 是否已经加载过 */
-    protected boolean    mIsLoaded     = false;
+    boolean              mIsLoaded     = false;
     /** 当前的加载是否发生了异常 */
-    protected boolean    mIsException  = false;
+    boolean              mIsException  = false;
     /** 当前的加载条件 */
-    protected Object     mCurCondition = null;
+    Object               mCurCondition = null;
     /** 加载时的回调对象 */
     private LoadCallback mCallback     = null;
 

@@ -13,7 +13,7 @@ import android.widget.BaseAdapter;
 public class GenericAdapter extends BaseAdapter
 {
 
-    protected Context         mContext       = null;
+    Context                   mContext       = null;
     private List<DataHolder>  mHolders       = null;
     /** 是否转换View以提高性能 */
     private boolean           mIsConvertView = true;
