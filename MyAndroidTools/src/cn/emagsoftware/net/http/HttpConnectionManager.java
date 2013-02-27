@@ -56,10 +56,12 @@ public final class HttpConnectionManager
     public static final String HEADER_REQUEST_CACHE_CONTROL   = "Cache-Control";
     public static final String HEADER_REQUEST_ACCEPT_CHARSET  = "Accept-Charset";
     public static final String HEADER_REQUEST_CONTENT_TYPE    = "Content-Type";
+    public static final String HEADER_REQUEST_CONTENT_LENGTH  = "Content-Length";
     public static final String HEADER_REQUEST_USER_AGENT      = "User-Agent";
     public static final String HEADER_REQUEST_COOKIE          = "Cookie";
 
     public static final String HEADER_RESPONSE_CONTENT_TYPE   = "Content-Type";
+    public static final String HEADER_RESPONSE_CONTENT_LENGTH = "Content-Length";
     public static final String HEADER_RESPONSE_LOCATION       = "Location";
     public static final String HEADER_RESPONSE_SET_COOKIE     = "Set-Cookie";
 
