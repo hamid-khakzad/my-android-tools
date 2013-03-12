@@ -465,7 +465,7 @@ public final class WifiUtils
     {
         try
         {
-            Method method = wifiManager.getClass().getDeclaredMethod("isWifiApEnabled", new Class[0]);
+            Method method = WifiManager.class.getDeclaredMethod("isWifiApEnabled", new Class[0]);
             method.setAccessible(true);
             return (Boolean) method.invoke(wifiManager, new Object[0]);
         } catch (NoSuchMethodException e)
@@ -484,7 +484,7 @@ public final class WifiUtils
     {
         try
         {
-            Method method = wifiManager.getClass().getDeclaredMethod("getWifiApConfiguration", new Class[0]);
+            Method method = WifiManager.class.getDeclaredMethod("getWifiApConfiguration", new Class[0]);
             method.setAccessible(true);
             return (WifiConfiguration) method.invoke(wifiManager, new Object[0]);
         } catch (NoSuchMethodException e)
@@ -506,12 +506,12 @@ public final class WifiUtils
             try
             {
                 // ¼æÈÝhtcµÈ»úÆ÷
-                Method method = wifiManager.getClass().getDeclaredMethod("setWifiApConfig", WifiConfiguration.class);
+                Method method = WifiManager.class.getDeclaredMethod("setWifiApConfig", WifiConfiguration.class);
                 method.setAccessible(true);
                 return (Integer) method.invoke(wifiManager, apConfig) > 0;
             } catch (NoSuchMethodException e)
             {
-                Method method = wifiManager.getClass().getDeclaredMethod("setWifiApConfiguration", WifiConfiguration.class);
+                Method method = WifiManager.class.getDeclaredMethod("setWifiApConfiguration", WifiConfiguration.class);
                 method.setAccessible(true);
                 return (Boolean) method.invoke(wifiManager, apConfig);
             }
@@ -646,7 +646,7 @@ public final class WifiUtils
         }
         try
         {
-            Method method = wifiManager.getClass().getDeclaredMethod("setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
+            Method method = WifiManager.class.getDeclaredMethod("setWifiApEnabled", WifiConfiguration.class, Boolean.TYPE);
             method.setAccessible(true);
             boolean circs = (Boolean) method.invoke(wifiManager, apConfig, enabled);
             if (!circs)

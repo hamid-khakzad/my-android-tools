@@ -166,7 +166,7 @@ public class User
         Field apProfileField = null;
         try
         {
-            apProfileField = apconfig.getClass().getDeclaredField("mWifiApProfile");
+            apProfileField = WifiConfiguration.class.getDeclaredField("mWifiApProfile");
         } catch (NoSuchFieldException e)
         {
         }
