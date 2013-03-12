@@ -15,6 +15,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
@@ -259,10 +260,10 @@ public abstract class RemoteCallback implements Runnable
                                                     ScanResult sr = remoteUser.getScanResult();
                                                     if (sr != null)
                                                     {
-                                                        WifiConfiguration wc = Wifi.getWifiConfiguration(wifiManager, sr, true);
-                                                        if (wc != null)
+                                                        List<WifiConfiguration> wcList = Wifi.getWifiConfiguration(wifiManager, sr, true);
+                                                        if (wcList != null && wcList.size() != 0)
                                                         {
-                                                            wifiManager.removeNetwork(wc.networkId);
+                                                            wifiManager.removeNetwork(wcList.get(0).networkId);
                                                             wifiManager.saveConfiguration();
                                                         }
                                                     }

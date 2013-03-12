@@ -6,6 +6,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+/**
+ * @deprecated Fragment的设计理念要求尽快释放View和在需要时重新创建View从而减少内存占用，该类与Fragment的设计初衷不符而被舍弃。ViewExistsInAttachFragment因为取得两者的平衡而提高了开发效率
+ */
 public class ViewExistsAlwaysFragment extends Fragment
 {
 

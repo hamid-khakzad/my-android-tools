@@ -85,17 +85,30 @@ public final class WifiUtils
         }
     }
 
+    /**
+     * @return Wifi未开启返回null，否则返回已配置的列表
+     */
     public List<WifiConfiguration> getConfigurations()
     {
         return wifiManager.getConfiguredNetworks();
     }
 
-    public WifiConfiguration getConfiguration(ScanResult sr, boolean compareSecurity)
+    /**
+     * @param sr
+     * @param compareSecurity
+     * @return Wifi未开启返回null，无匹配返回空列表，否则返回长度为1的列表
+     */
+    public List<WifiConfiguration> getConfiguration(ScanResult sr, boolean compareSecurity)
     {
         return Wifi.getWifiConfiguration(wifiManager, sr, compareSecurity);
     }
 
-    public WifiConfiguration getConfiguration(WifiConfiguration wc, boolean compareSecurity)
+    /**
+     * @param wc
+     * @param compareSecurity
+     * @return Wifi未开启返回null，无匹配返回空列表，否则返回长度为1的列表
+     */
+    public List<WifiConfiguration> getConfiguration(WifiConfiguration wc, boolean compareSecurity)
     {
         return Wifi.getWifiConfiguration(wifiManager, wc, compareSecurity);
     }
@@ -428,9 +441,10 @@ public final class WifiUtils
             }
             return;
         }
-        WifiConfiguration old = getConfiguration(sr, false);
-        if (old != null)
+        List<WifiConfiguration> oldList = getConfiguration(sr, false);
+        if (oldList != null && oldList.size() != 0)
         {
+            WifiConfiguration old = oldList.get(0);
             String security = getScanResultSecurity(sr);
             setupSecurity(old, security, password);
             if (!wifiManager.saveConfiguration())
