@@ -25,6 +25,7 @@
 
 package cn.emagsoftware.net.wifi.support;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -81,7 +82,7 @@ public class Wifi
     }
 
     /**
-     * Configure a network, and connect to it. Edited by Wendell on 2011.04.29,use the new 'getWifiConfiguration' method
+     * Configure a network, and connect to it.
      * 
      * @param wifiMgr
      * @param scanResult
@@ -113,17 +114,18 @@ public class Wifi
             return false;
         }
 
-        config = getWifiConfiguration(wifiMgr, config, true);
-        if (config == null)
+        List<WifiConfiguration> configList = getWifiConfiguration(wifiMgr, config, true);
+        if (configList == null || configList.size() == 0)
         {
             return false;
         }
+        config = configList.get(0);
 
         return connectToConfiguredNetwork(ctx, wifiMgr, config, true);
     }
 
     /**
-     * Connect to a configured network. Edited by Wendell on 2011.04.29,use the new 'getWifiConfiguration' method
+     * Connect to a configured network.
      * 
      * @param wifiManager
      * @param config
@@ -135,7 +137,7 @@ public class Wifi
         int oldPri = config.priority;
         // Make it the highest priority.
         int newPri = getMaxPriority(wifiMgr);
-        if(newPri == -1)
+        if (newPri == -1)
         {
             return false;
         }
@@ -143,15 +145,16 @@ public class Wifi
         if (newPri > MAX_PRIORITY)
         {
             newPri = shiftPriorityAndSave(wifiMgr);
-            if(newPri == -1)
+            if (newPri == -1)
             {
                 return false;
             }
-            config = getWifiConfiguration(wifiMgr, config, true);
-            if (config == null)
+            List<WifiConfiguration> configList = getWifiConfiguration(wifiMgr, config, true);
+            if (configList == null || configList.size() == 0)
             {
                 return false;
             }
+            config = configList.get(0);
         }
 
         // Set highest priority to this configured network
@@ -176,11 +179,12 @@ public class Wifi
         }
 
         // We have to retrieve the WifiConfiguration after save.
-        config = getWifiConfiguration(wifiMgr, config, true);
-        if (config == null)
+        List<WifiConfiguration> configList = getWifiConfiguration(wifiMgr, config, true);
+        if (configList == null || configList.size() == 0)
         {
             return false;
         }
+        config = configList.get(0);
 
         ReenableAllApsWhenNetworkStateChanged.schedule(ctx);
 
@@ -223,7 +227,8 @@ public class Wifi
     private static boolean checkForExcessOpenNetworkAndSave(final WifiManager wifiMgr, final int numOpenNetworksKept)
     {
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
-        if(configurations == null) return false;
+        if (configurations == null)
+            return false;
         sortByPriority(configurations);
 
         boolean modified = false;
@@ -254,7 +259,8 @@ public class Wifi
     private static int shiftPriorityAndSave(final WifiManager wifiMgr)
     {
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
-        if(configurations == null) return -1;
+        if (configurations == null)
+            return -1;
         sortByPriority(configurations);
         final int size = configurations.size();
         for (int i = 0; i < size; i++)
@@ -270,7 +276,8 @@ public class Wifi
     private static int getMaxPriority(final WifiManager wifiManager)
     {
         final List<WifiConfiguration> configurations = wifiManager.getConfiguredNetworks();
-        if(configurations == null) return -1;
+        if (configurations == null)
+            return -1;
         int pri = 0;
         for (final WifiConfiguration config : configurations)
         {
@@ -283,35 +290,31 @@ public class Wifi
     }
 
     /**
-     * Edited by Wendell on 2011.04.29,let the comparison do not necessarily contain security
-     * 
      * @param wifiMgr
      * @param hotsopt
      * @param compareSecurity
      * @return
      */
-    public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final ScanResult hotsopt, boolean compareSecurity)
+    public static List<WifiConfiguration> getWifiConfiguration(final WifiManager wifiMgr, final ScanResult hotsopt, boolean compareSecurity)
     {
-        final String ssid = convertToQuotedString(hotsopt.SSID);
-        if (ssid.length() == 0)
-        {
-            return null;
-        }
-
-        final String bssid = hotsopt.BSSID;
-        if (bssid == null)
-        {
-            return null;
-        }
-
-        String hotspotSecurity = getScanResultSecurity(hotsopt);
-
         final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
         if (configurations == null)
         {
             return null;
         }
 
+        List<WifiConfiguration> returnVal = new ArrayList<WifiConfiguration>();
+        final String ssid = convertToQuotedString(hotsopt.SSID);
+        if (ssid.length() == 0)
+        {
+            return returnVal;
+        }
+        final String bssid = hotsopt.BSSID;
+        if (bssid == null)
+        {
+            return returnVal;
+        }
+        String hotspotSecurity = getScanResultSecurity(hotsopt);
         for (final WifiConfiguration config : configurations)
         {
             if (config.SSID == null || !ssid.equals(config.SSID))
@@ -321,43 +324,43 @@ public class Wifi
             if (config.BSSID == null || bssid.equals(config.BSSID))
             {
                 if (!compareSecurity)
-                    return config;
+                {
+                    returnVal.add(config);
+                    break;
+                }
                 final String configSecurity = getWifiConfigurationSecurity(config);
                 if (hotspotSecurity.equals(configSecurity))
                 {
-                    return config;
+                    returnVal.add(config);
+                    break;
                 }
             }
         }
-        return null;
+        return returnVal;
     }
 
     /**
-     * Edited by Wendell on 2011.04.29,let the comparison do not necessarily contain security
-     * 
      * @param wifiMgr
      * @param configToFind
      * @param compareSecurity
      * @return
      */
-    public static WifiConfiguration getWifiConfiguration(final WifiManager wifiMgr, final WifiConfiguration configToFind, boolean compareSecurity)
+    public static List<WifiConfiguration> getWifiConfiguration(final WifiManager wifiMgr, final WifiConfiguration configToFind, boolean compareSecurity)
     {
+        final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
+        if (configurations == null)
+        {
+            return null;
+        }
+
+        List<WifiConfiguration> returnVal = new ArrayList<WifiConfiguration>();
         final String ssid = configToFind.SSID;
         if (ssid.length() == 0)
         {
-            return null;
+            return returnVal;
         }
-
         final String bssid = configToFind.BSSID;
-
         String security = getWifiConfigurationSecurity(configToFind);
-
-        final List<WifiConfiguration> configurations = wifiMgr.getConfiguredNetworks();
-        if(configurations == null)
-        {
-            return null;
-        }
-
         for (final WifiConfiguration config : configurations)
         {
             if (config.SSID == null || !ssid.equals(config.SSID))
@@ -367,15 +370,19 @@ public class Wifi
             if (config.BSSID == null || bssid == null || bssid.equals(config.BSSID))
             {
                 if (!compareSecurity)
-                    return config;
+                {
+                    returnVal.add(config);
+                    break;
+                }
                 final String configSecurity = getWifiConfigurationSecurity(config);
                 if (security.equals(configSecurity))
                 {
-                    return config;
+                    returnVal.add(config);
+                    break;
                 }
             }
         }
-        return null;
+        return returnVal;
     }
 
     /**
@@ -417,7 +424,7 @@ public class Wifi
     }
 
     /**
-     * Fill in the security fields of WifiConfiguration config. Edited by Wendell on 2011.04.01,changed the method field from private to public
+     * Fill in the security fields of WifiConfiguration config.
      * 
      * @param config The object to fill.
      * @param security If is OPEN, password is ignored.
@@ -543,8 +550,6 @@ public class Wifi
     }
 
     /**
-     * Edited by Wendell on 2011.05.31,changed the method field from private to public
-     * 
      * @param string
      * @return
      */

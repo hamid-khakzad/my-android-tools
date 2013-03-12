@@ -547,8 +547,8 @@ public class User
             if (sr != null)
             {
                 final WifiUtils wifiUtils = new WifiUtils(context);
-                final WifiConfiguration wc = wifiUtils.getConfiguration(sr, true);
-                if (wc != null)
+                final List<WifiConfiguration> wcList = wifiUtils.getConfiguration(sr, true);
+                if (wcList != null && wcList.size() != 0)
                 {
                     handler.postDelayed(new Runnable()
                     {
@@ -557,7 +557,7 @@ public class User
                         {
                             // TODO Auto-generated method stub
                             WifiManager wm = wifiUtils.getWifiManager();
-                            wm.removeNetwork(wc.networkId);
+                            wm.removeNetwork(wcList.get(0).networkId);
                             wm.saveConfiguration();
                             callback.onDisconnected(user);
                         }
