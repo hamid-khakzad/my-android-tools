@@ -46,7 +46,7 @@ public abstract class DialogManager
     {
         try
         {
-            Field field = dialog.getClass().getDeclaredField("mAlert");
+            Field field = AlertDialog.class.getDeclaredField("mAlert");
             field.setAccessible(true);
             // retrieve mAlert value
             Object obj = field.get(dialog);
