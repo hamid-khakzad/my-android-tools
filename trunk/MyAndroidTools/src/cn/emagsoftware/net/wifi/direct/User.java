@@ -52,12 +52,12 @@ public class User
 
     private Handler           handler         = new Handler();
 
-    public User(String name, RemoteCallback callback) throws IOException
+    public User(String name, RemoteCallback callback) throws NameOutOfRangeException, IOException
     {
         if (name == null)
             throw new NullPointerException();
         if (name.length() > 6)
-            throw new IOException("name length can not great than 6.");
+            throw new NameOutOfRangeException("name length can not great than 6.");
         this.name = name;
         selector = Selector.open();
         callback.bindSelector(selector);
@@ -70,17 +70,27 @@ public class User
         return name;
     }
 
+    public void setName(String name) throws NameOutOfRangeException, StateNotAllowException
+    {
+        if (name == null)
+            throw new NullPointerException();
+        if (name.length() > 6)
+            throw new NameOutOfRangeException("name length can not great than 6.");
+        if (preApConfig != null)
+            throw new StateNotAllowException("can not set name while listening.");
+        this.name = name;
+    }
+
     public void listening(Context context, final ListeningCallback callback)
     {
         try
         {
-            openAp(context, new WifiCallback(context)
+            openAp(context, new OpenApCallback()
             {
                 @Override
-                public void onWifiApEnabled()
+                public void onOpen()
                 {
                     // TODO Auto-generated method stub
-                    super.onWifiApEnabled();
                     try
                     {
                         acceptIfNecessary();
@@ -92,11 +102,57 @@ public class User
                 }
 
                 @Override
+                public void onError()
+                {
+                    // TODO Auto-generated method stub
+                    callback.onError(new RuntimeException("open ap failed by 'OpenApCallback.onError()'."));
+                }
+            });
+        } catch (ReflectHiddenFuncException e)
+        {
+            callback.onError(e);
+        }
+    }
+
+    private void openAp(Context context, final OpenApCallback callback) throws ReflectHiddenFuncException
+    {
+        WifiUtils wifiUtils = new WifiUtils(context);
+        final boolean isFirst = preApConfig == null;
+        try
+        {
+            if (isFirst)
+            {
+                preApConfig = wifiUtils.getWifiApConfiguration();
+                try
+                {
+                    preWifiStaticIp = Settings.System.getInt(context.getContentResolver(), "wifi_static_ip");
+                } catch (SettingNotFoundException e)
+                {
+                }
+                preWifiEnabled = wifiUtils.isWifiEnabled();
+            }
+            wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, new WifiCallback(context)
+            {
+                @Override
+                public void onWifiApEnabled()
+                {
+                    // TODO Auto-generated method stub
+                    super.onWifiApEnabled();
+                    callback.onOpen();
+                }
+
+                @Override
                 public void onTimeout()
                 {
                     // TODO Auto-generated method stub
                     super.onTimeout();
-                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onTimeout()'."));
+                    if (isFirst)
+                    {
+                        preApConfig = null;
+                        preWifiStaticIp = -1;
+                        preWifiEnabled = false;
+                    }
+                    callback.onError();
                 }
 
                 @Override
@@ -104,30 +160,32 @@ public class User
                 {
                     // TODO Auto-generated method stub
                     super.onWifiApFailed();
-                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onWifiApFailed()'."));
+                    if (isFirst)
+                    {
+                        preApConfig = null;
+                        preWifiStaticIp = -1;
+                        preWifiEnabled = false;
+                    }
+                    callback.onError();
                 }
             }, WIFI_TIMEOUT);
-        } catch (final ReflectHiddenFuncException e)
+        } catch (ReflectHiddenFuncException e)
         {
-            callback.onError(e);
+            if (isFirst)
+            {
+                preApConfig = null;
+                preWifiStaticIp = -1;
+                preWifiEnabled = false;
+            }
+            throw e;
         }
     }
 
-    private void openAp(Context context, WifiCallback callback, int timeout) throws ReflectHiddenFuncException
+    private interface OpenApCallback
     {
-        WifiUtils wifiUtils = new WifiUtils(context);
-        if (preApConfig == null)
-        {
-            preApConfig = wifiUtils.getWifiApConfiguration();
-            try
-            {
-                preWifiStaticIp = Settings.System.getInt(context.getContentResolver(), "wifi_static_ip");
-            } catch (SettingNotFoundException e)
-            {
-            }
-            preWifiEnabled = wifiUtils.isWifiEnabled();
-        }
-        wifiUtils.setWifiApEnabled(createDirectApConfig(context), true, callback, timeout);
+        public void onOpen();
+
+        public void onError();
     }
 
     private WifiConfiguration createDirectApConfig(Context context) throws ReflectHiddenFuncException
