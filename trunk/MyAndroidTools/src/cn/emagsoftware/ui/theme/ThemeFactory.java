@@ -1,4 +1,4 @@
-package cn.emagsoftware.ui.theme2;
+package cn.emagsoftware.ui.theme;
 
 import java.io.IOException;
 import java.util.HashMap;

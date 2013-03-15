@@ -1,4 +1,4 @@
-package cn.emagsoftware.ui.theme2;
+package cn.emagsoftware.ui.theme;
 
 import android.app.Activity;
 import android.content.Intent;
