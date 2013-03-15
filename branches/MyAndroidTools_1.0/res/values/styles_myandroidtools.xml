@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <style name="MenuWindow">  
+        <item name="android:windowEnterAnimation">@anim/menuwindow_fade_in</item>  
+        <item name="android:windowExitAnimation">@anim/menuwindow_fade_out</item>  
+    </style>
+</resources>
