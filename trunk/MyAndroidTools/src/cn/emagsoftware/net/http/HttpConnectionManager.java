@@ -1,7 +1,7 @@
 package cn.emagsoftware.net.http;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,13 +41,14 @@ import android.webkit.CookieSyncManager;
 import cn.emagsoftware.net.NetManager;
 import cn.emagsoftware.net.URLManager;
 import cn.emagsoftware.telephony.TelephonyMgr;
+import cn.emagsoftware.util.FileUtilities;
 import cn.emagsoftware.util.LogManager;
 
 /**
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 5.7
+ * @version 5.8
  */
 public final class HttpConnectionManager
 {
@@ -184,11 +185,11 @@ public final class HttpConnectionManager
             List<String> contentTypes = new ArrayList<String>(); // http规范规定Content-Type只能有一个
             contentTypes.add("application/x-www-form-urlencoded");
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
-            byte[] paramsData = null;
+            InputStream paramsData = null;
             if (postParams != null)
             {
                 String postParamsStr = URLManager.concatParams(postParams, postParamsEnc);
-                paramsData = postParamsStr.getBytes(); // 经过外部或内部URL编码之后的参数只含英文，可用任意字符集进行编码
+                paramsData = new ByteArrayInputStream(postParamsStr.getBytes()); // 经过外部或内部URL编码之后的参数只含英文，可用任意字符集进行解码
             }
             httpConn = openConnection(url, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, paramsData);
             HttpResponseResultStream result = new HttpResponseResultStream();
@@ -234,7 +235,8 @@ public final class HttpConnectionManager
      * @return HttpResponseResultStream实例
      * @throws IOException
      */
-    public static HttpResponseResultStream doPostForStream(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
+    public static HttpResponseResultStream doPostForStream(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, InputStream postData)
+            throws IOException
     {
         HttpURLConnection httpConn = null;
         InputStream input = null;
@@ -246,7 +248,7 @@ public final class HttpConnectionManager
             contentTypes.add("application/octet-stream");
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
             if (postData == null)
-                postData = new byte[] {}; // 貌似针对application/octet-stream的情况必须这样处理，否则会抛出FileNotFoundException，这可能是Android的底层实现有缺陷
+                postData = new ByteArrayInputStream(new byte[] {}); // 貌似针对application/octet-stream的情况必须这样处理，否则会抛出FileNotFoundException，这可能是Android的底层实现有缺陷
             httpConn = openConnection(url, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, postData);
             HttpResponseResultStream result = new HttpResponseResultStream();
             result.setResponseURL(httpConn.getURL());
@@ -272,7 +274,7 @@ public final class HttpConnectionManager
         }
     }
 
-    public static HttpResponseResult doPost(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
+    public static HttpResponseResult doPost(String url, boolean followRedirects, int connOrReadTimeout, Map<String, List<String>> requestHeaders, InputStream postData) throws IOException
     {
         HttpResponseResultStream result = doPostForStream(url, followRedirects, connOrReadTimeout, requestHeaders, postData);
         result.generateData();
@@ -294,7 +296,7 @@ public final class HttpConnectionManager
      * @throws IOException
      */
     private static HttpURLConnection openConnection(String url, String method, boolean followRedirects, int connOrReadTimeout, int currentRedirectCount, int currentCMWapChargePageCount,
-            Map<String, List<String>> requestHeaders, byte[] postData) throws IOException
+            Map<String, List<String>> requestHeaders, InputStream postData) throws IOException
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
@@ -406,9 +408,7 @@ public final class HttpConnectionManager
             if (method.equalsIgnoreCase("POST") && postData != null)
             {
                 output = httpConn.getOutputStream();
-                BufferedOutputStream buffOutput = new BufferedOutputStream(output);
-                buffOutput.write(postData);
-                buffOutput.flush();
+                FileUtilities.readAndWrite(postData, output, 1024 * 2);
                 output.close();
             }
             if (acceptCookie)
