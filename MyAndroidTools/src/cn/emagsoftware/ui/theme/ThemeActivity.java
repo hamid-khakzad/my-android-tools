@@ -7,16 +7,50 @@ import android.os.Bundle;
 public abstract class ThemeActivity extends Activity
 {
 
-    private boolean isAtFront              = false;
-    private boolean shouldRecreateNextTime = false;
+    private static final String EXTRA_THEMEACTIVITY_OUTSTATE = "android.intent.extra.THEMEACTIVITY_OUTSTATE";
+
+    private Bundle              outState                     = null;
+    private boolean             isAtFront                    = false;
+    private boolean             shouldRecreateNextTime       = false;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
+    protected final void onCreate(Bundle savedInstanceState)
     {
         // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         ThemeEngine.addThemeActivity(this);
         getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_GENERALTHEME_NAME));
+        Intent intent = getIntent();
+        outState = intent.getBundleExtra(EXTRA_THEMEACTIVITY_OUTSTATE);
+        if (outState == null)
+        {
+            onCreateImpl(savedInstanceState);
+        } else
+        {
+            intent.removeExtra(EXTRA_THEMEACTIVITY_OUTSTATE);
+            onCreateImpl(outState);
+        }
+    }
+
+    protected void onCreateImpl(Bundle savedInstanceState)
+    {
+    }
+
+    @Override
+    protected final void onStart()
+    {
+        // TODO Auto-generated method stub
+        super.onStart();
+        onStartImpl();
+        if (outState != null)
+        {
+            onRestoreInstanceState(outState);
+            outState = null;
+        }
+    }
+
+    protected void onStartImpl()
+    {
     }
 
     @Override
@@ -72,8 +106,11 @@ public abstract class ThemeActivity extends Activity
         Intent intent = getIntent();
         overridePendingTransition(0, 0);
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        Bundle outState = new Bundle();
+        onSaveInstanceState(outState);
         finish();
         overridePendingTransition(0, 0);
+        intent.putExtra(EXTRA_THEMEACTIVITY_OUTSTATE, outState);
         startActivity(intent);
     }
 
