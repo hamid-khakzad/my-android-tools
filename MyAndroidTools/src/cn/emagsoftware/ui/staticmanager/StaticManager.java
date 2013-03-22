@@ -7,8 +7,8 @@ import android.content.Intent;
 public final class StaticManager
 {
 
-    private static final String QUITINTENT_SIGN_KEY   = "QUITINTENT_SIGN_KEY";
-    private static final String QUITINTENT_SIGN_VALUE = "QUITINTENT_SIGN_VALUE";
+    private static final String EXTRA_QUIT_SIGN      = "android.intent.extra.QUIT_SIGN";
+    private static final String EXTRAVALUE_QUIT_SIGN = "EXTRAVALUE_QUIT_SIGN";
 
     private StaticManager()
     {
@@ -38,7 +38,7 @@ public final class StaticManager
     {
         Intent intent = new Intent(context, rootActivity);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        intent.putExtra(QUITINTENT_SIGN_KEY, QUITINTENT_SIGN_VALUE);
+        intent.putExtra(EXTRA_QUIT_SIGN, EXTRAVALUE_QUIT_SIGN);
         context.startActivity(intent);
     }
 
@@ -50,7 +50,7 @@ public final class StaticManager
      */
     public static boolean isQuitIntent(Intent intent)
     {
-        return QUITINTENT_SIGN_VALUE.equals(intent.getStringExtra(QUITINTENT_SIGN_KEY));
+        return EXTRAVALUE_QUIT_SIGN.equals(intent.getStringExtra(EXTRA_QUIT_SIGN));
     }
 
 }
