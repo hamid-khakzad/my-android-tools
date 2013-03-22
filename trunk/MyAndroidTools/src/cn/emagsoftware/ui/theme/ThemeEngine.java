@@ -13,12 +13,12 @@ import android.content.pm.ResolveInfo;
 public final class ThemeEngine
 {
 
-    static String                        CUR_PACKAGENAME       = null;
-    static String                        CUR_GENERALTHEME_NAME = null;
+    static String                        CUR_PACKAGENAME               = null;
+    static String                        CUR_GENERALTHEME_NAME         = null;
 
-    private static String                THEME_INTENT_ACTION   = "android.intent.action.MYANDROIDTOOLS_THEME";
-    private static String                THEME_INTENT_CATEGORY = "android.intent.category.MYANDROIDTOOLS_THEME";
-    private static Vector<ThemeActivity> mThemeActivities      = new Vector<ThemeActivity>();
+    private static String                ACTION_MYANDROIDTOOLS_THEME   = "android.intent.action.MYANDROIDTOOLS_THEME";
+    private static String                CATEGORY_MYANDROIDTOOLS_THEME = "android.intent.category.MYANDROIDTOOLS_THEME";
+    private static Vector<ThemeActivity> mThemeActivities              = new Vector<ThemeActivity>();
 
     private ThemeEngine()
     {
@@ -27,8 +27,8 @@ public final class ThemeEngine
     public static List<ResolveInfo> queryThemes(Context context)
     {
         Intent intent = new Intent();
-        intent.setAction(THEME_INTENT_ACTION);
-        intent.addCategory(THEME_INTENT_CATEGORY);
+        intent.setAction(ACTION_MYANDROIDTOOLS_THEME);
+        intent.addCategory(CATEGORY_MYANDROIDTOOLS_THEME);
         return PackageMgr.queryIntentActivities(context, intent, true);
     }
 
