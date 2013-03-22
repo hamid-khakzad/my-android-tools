@@ -16,8 +16,8 @@ public final class ThemeEngine
     static String                        CUR_PACKAGENAME               = null;
     static String                        CUR_GENERALTHEME_NAME         = null;
 
-    private static String                ACTION_MYANDROIDTOOLS_THEME   = "android.intent.action.MYANDROIDTOOLS_THEME";
-    private static String                CATEGORY_MYANDROIDTOOLS_THEME = "android.intent.category.MYANDROIDTOOLS_THEME";
+    private static final String          ACTION_MYANDROIDTOOLS_THEME   = "android.intent.action.MYANDROIDTOOLS_THEME";
+    private static final String          CATEGORY_MYANDROIDTOOLS_THEME = "android.intent.category.MYANDROIDTOOLS_THEME";
     private static Vector<ThemeActivity> mThemeActivities              = new Vector<ThemeActivity>();
 
     private ThemeEngine()
