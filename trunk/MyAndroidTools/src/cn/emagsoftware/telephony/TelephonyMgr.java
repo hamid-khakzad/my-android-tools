@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.os.StatFs;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 import cn.emagsoftware.util.LogManager;
 
 public final class TelephonyMgr
@@ -163,13 +162,13 @@ public final class TelephonyMgr
         return getSecondSimState() == TelephonyManager.SIM_STATE_READY;
     }
 
-    public static boolean isChinaMobileCard(int cardIndex) throws ReflectHiddenFuncException
+    public static boolean isChinaMobileCard(String subscriberId)
     {
-        String subscriberId = getSubscriberId(cardIndex);
-        if (!TextUtils.isEmpty(subscriberId) && (subscriberId.contains("46000") || subscriberId.contains("46002") || subscriberId.contains("46007")))
-            return true;
-        else
+        if (subscriberId == null)
             return false;
+        if (subscriberId.contains("46000") || subscriberId.contains("46002") || subscriberId.contains("46007"))
+            return true;
+        return false;
     }
 
     public static String getExternalStorageState()
