@@ -87,13 +87,6 @@ public final class HttpConnectionManager
         HttpConnectionManager.appContext = context;
     }
 
-    public static Context getApplicationContext()
-    {
-        if (appContext == null)
-            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        return appContext;
-    }
-
     public static void setAcceptCookie(boolean accept)
     {
         // CookieManager的setAcceptCookie从Android4.0开始，不再能够在外部使用，所以这里统一使用外部参数控制
