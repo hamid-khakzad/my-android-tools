@@ -1,10 +1,7 @@
 package cn.emagsoftware.xmlpull.simpledom;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>简单的xml元素类
@@ -15,15 +12,12 @@ import java.util.Map;
 public class Element
 {
 
-    private String                     text     = "";
-    private Map<String, List<Element>> children = null;
+    private String         text       = "";
+    private List<String[]> attributes = new ArrayList<String[]>();
+    private List<Element>  children   = new ArrayList<Element>();
 
-    public Element(boolean keepChildrenOrder)
+    public Element()
     {
-        if (keepChildrenOrder)
-            children = new LinkedHashMap<String, List<Element>>();
-        else
-            children = new HashMap<String, List<Element>>();
     }
 
     public String getText()
@@ -39,51 +33,24 @@ public class Element
         return this;
     }
 
-    public Map<String, List<Element>> getChildren()
+    /**
+     * <p>当前类的一个简单原则是对Attributes的增、删、改、查操作要求通过getAttributes()得到List进行处理 <p>对Attributes的查找操作（如getAttributes(String attrName)）较繁琐，理应提供相关方法，但由于是遍历查找，可能会在上层不清楚具体实现的情况下由于频繁调用导致效率降低，所以交由上层实现
+     * 
+     * @return
+     */
+    public List<String[]> getAttributes()
+    {
+        return attributes;
+    }
+
+    /**
+     * <p>当前类的一个简单原则是对Children的增、删、改、查操作要求通过getChildren()得到List进行处理 <p>对Children的查找操作（如getChildren(String tagName)）较繁琐，理应提供相关方法，但由于是遍历查找，可能会在上层不清楚具体实现的情况下由于频繁调用导致效率降低，所以交由上层实现
+     * 
+     * @return
+     */
+    public List<Element> getChildren()
     {
         return children;
-    }
-
-    /**
-     * <p>当前类的一个简单原则是对Children的操作要求通过getChildren()得到Map进行处理，但添加操作在代码编写上显示累赘，故提供此方法
-     * 
-     * @param tagName
-     * @param curChildren
-     * @return
-     */
-    public Element addChildren(String tagName, List<Element> curChildren)
-    {
-        if (tagName == null || curChildren == null)
-            throw new NullPointerException();
-        List<Element> tagChildren = children.get(tagName);
-        if (tagChildren == null)
-        {
-            tagChildren = new LinkedList<Element>();
-            children.put(tagName, tagChildren);
-        }
-        tagChildren.addAll(curChildren);
-        return this;
-    }
-
-    /**
-     * <p>当前类的一个简单原则是对Children的操作要求通过getChildren()得到Map进行处理，但添加操作在代码编写上显示累赘，故提供此方法
-     * 
-     * @param tagName
-     * @param curChild
-     * @return
-     */
-    public Element addChild(String tagName, Element curChild)
-    {
-        if (tagName == null || curChild == null)
-            throw new NullPointerException();
-        List<Element> tagChildren = children.get(tagName);
-        if (tagChildren == null)
-        {
-            tagChildren = new LinkedList<Element>();
-            children.put(tagName, tagChildren);
-        }
-        tagChildren.add(curChild);
-        return this;
     }
 
     public boolean isLeaf()
