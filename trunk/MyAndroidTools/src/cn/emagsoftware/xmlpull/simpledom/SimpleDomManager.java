@@ -5,13 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -26,34 +21,7 @@ public final class SimpleDomManager
     {
     }
 
-    public static String serializeSingleTagDom(Map<String, Element> dom, boolean containsXmlHead)
-    {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        String encoding = "utf-8";
-        try
-        {
-            serializeSingleTagDom(dom, containsXmlHead, output, encoding);
-            return new String(output.toByteArray(), encoding);
-        } catch (IOException e)
-        {
-            // 序列化到字符串一般不会出现IOException
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void serializeSingleTagDom(Map<String, Element> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
-    {
-        if (dom == null || output == null || encoding == null)
-            throw new NullPointerException();
-        XmlSerializer serializer = Xml.newSerializer();
-        serializer.setOutput(output, encoding);
-        if (containsXmlHead)
-            serializer.startDocument(encoding, true);
-        serializeSingleTagDomImpl(serializer, dom);
-        serializer.endDocument();
-    }
-
-    public static String serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead)
+    public static String serializeDom(List<Element> dom, boolean containsXmlHead)
     {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         String encoding = "utf-8";
@@ -68,7 +36,7 @@ public final class SimpleDomManager
         }
     }
 
-    public static void serializeDom(Map<String, List<Element>> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
+    public static void serializeDom(List<Element> dom, boolean containsXmlHead, OutputStream output, String encoding) throws IOException
     {
         if (dom == null || output == null || encoding == null)
             throw new NullPointerException();
@@ -80,17 +48,17 @@ public final class SimpleDomManager
         serializer.endDocument();
     }
 
-    private static void serializeSingleTagDomImpl(XmlSerializer serializer, Map<String, Element> dom) throws IOException
+    private static void serializeDomImpl(XmlSerializer serializer, List<Element> dom) throws IOException
     {
-        Iterator<Entry<String, Element>> maps = dom.entrySet().iterator();
-        while (maps.hasNext())
+        for (Element element : dom)
         {
-            Entry<String, Element> map = maps.next();
-            String key = map.getKey();
-            Element element = map.getValue();
-            if (key == null || element == null)
-                continue;
-            serializer.startTag(null, key);
+            String tag = element.getTag();
+            serializer.startTag(null, tag);
+            List<String[]> attrs = element.getAttributes();
+            for (String[] attr : attrs)
+            {
+                serializer.attribute(null, attr[0], attr[1]);
+            }
             if (element.isLeaf())
             {
                 serializer.text(element.getText());
@@ -98,53 +66,20 @@ public final class SimpleDomManager
             {
                 serializeDomImpl(serializer, element.getChildren());
             }
-            serializer.endTag(null, key);
+            serializer.endTag(null, tag);
         }
     }
 
-    private static void serializeDomImpl(XmlSerializer serializer, Map<String, List<Element>> dom) throws IOException
-    {
-        Iterator<Entry<String, List<Element>>> maps = dom.entrySet().iterator();
-        while (maps.hasNext())
-        {
-            Entry<String, List<Element>> map = maps.next();
-            String key = map.getKey();
-            List<Element> value = map.getValue();
-            if (key == null || value == null)
-                continue;
-            Iterator<Element> elements = value.iterator();
-            while (elements.hasNext())
-            {
-                Element element = elements.next();
-                if (element == null)
-                    continue;
-                serializer.startTag(null, key);
-                if (element.isLeaf())
-                {
-                    serializer.text(element.getText());
-                } else
-                {
-                    serializeDomImpl(serializer, element.getChildren());
-                }
-                serializer.endTag(null, key);
-            }
-        }
-    }
-
-    public static Map<String, List<Element>> parseData(String data, boolean keepDomOrder) throws XmlPullParserException
+    public static List<Element> parseData(String data) throws XmlPullParserException
     {
         if (data == null)
             throw new NullPointerException();
         XmlPullParser parser = Xml.newPullParser();
         parser.setInput(new StringReader(data));
-        Map<String, List<Element>> dom = null;
-        if (keepDomOrder)
-            dom = new LinkedHashMap<String, List<Element>>();
-        else
-            dom = new HashMap<String, List<Element>>();
+        List<Element> dom = new ArrayList<Element>();
         try
         {
-            parseDataImpl(parser, dom, keepDomOrder);
+            parseDataImpl(parser, dom);
         } catch (IOException e)
         {
             // 从字符串解析一般不会出现IOException
@@ -153,22 +88,18 @@ public final class SimpleDomManager
         return dom;
     }
 
-    public static Map<String, List<Element>> parseData(InputStream input, String encoding, boolean keepDomOrder) throws XmlPullParserException, IOException
+    public static List<Element> parseData(InputStream input, String encoding) throws XmlPullParserException, IOException
     {
         if (input == null || encoding == null)
             throw new NullPointerException();
         XmlPullParser parser = Xml.newPullParser();
         parser.setInput(input, encoding);
-        Map<String, List<Element>> dom = null;
-        if (keepDomOrder)
-            dom = new LinkedHashMap<String, List<Element>>();
-        else
-            dom = new HashMap<String, List<Element>>();
-        parseDataImpl(parser, dom, keepDomOrder);
+        List<Element> dom = new ArrayList<Element>();
+        parseDataImpl(parser, dom);
         return dom;
     }
 
-    private static void parseDataImpl(XmlPullParser parser, Map<String, List<Element>> dom, boolean keepDomOrder) throws XmlPullParserException, IOException
+    private static void parseDataImpl(XmlPullParser parser, List<Element> dom) throws XmlPullParserException, IOException
     {
         int eventType = parser.getEventType();
         Element curElement = null;
@@ -179,18 +110,17 @@ public final class SimpleDomManager
                 case XmlPullParser.START_TAG:
                     if (curElement == null)
                     {
-                        curElement = new Element(keepDomOrder);
-                        String curTag = parser.getName();
-                        List<Element> existedList = dom.get(curTag);
-                        if (existedList == null)
+                        curElement = new Element(parser.getName());
+                        List<String[]> attrs = curElement.getAttributes();
+                        int attrCount = parser.getAttributeCount();
+                        for (int i = 0; i < attrCount; i++)
                         {
-                            existedList = new LinkedList<Element>();
-                            dom.put(curTag, existedList);
+                            attrs.add(new String[] { parser.getAttributeName(i), parser.getAttributeValue(i) });
                         }
-                        existedList.add(curElement);
+                        dom.add(curElement);
                     } else
                     {
-                        parseDataImpl(parser, curElement.getChildren(), keepDomOrder);
+                        parseDataImpl(parser, curElement.getChildren());
                         // 递归会以父节点的END_TAG事件结束，此时需要重置当前节点
                         curElement = null;
                     }
