@@ -5,7 +5,6 @@ import java.util.List;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.app.ActivityManager.RunningAppProcessInfo;
-import android.content.Context;
 import android.os.Process;
 
 public abstract class BaseApplication extends Application
@@ -18,7 +17,7 @@ public abstract class BaseApplication extends Application
         super.onCreate();
         if (!isServiceReceiverProviderInOtherProcess())
             throw new UnsupportedOperationException("should set service,receiver and provider in other process when you use BaseApplication.");
-        ActivityManager aMgr = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager aMgr = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         List<RunningAppProcessInfo> apps = aMgr.getRunningAppProcesses();
         if (apps != null && apps.size() > 0)
         {
