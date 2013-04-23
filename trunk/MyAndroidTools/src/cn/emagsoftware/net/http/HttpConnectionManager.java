@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.Proxy.Type;
@@ -17,7 +16,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +46,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 5.8
+ * @version 6.0
  */
 public final class HttpConnectionManager
 {
@@ -71,7 +69,7 @@ public final class HttpConnectionManager
 
     private static Context     appContext                     = null;
     private static boolean     acceptCookie                   = true;
-    private static boolean     useConcatUrlModeWhenCMWap      = false;
+    private static boolean     useConcatURLModeWhenCMWap      = false;
     private static boolean     ignoreChargePageWhenCMWap      = false;
 
     private HttpConnectionManager()
@@ -81,9 +79,11 @@ public final class HttpConnectionManager
     public static void bindApplicationContext(Context context)
     {
         context = context.getApplicationContext();
-        // 不会调用定时或即时同步cookie的方法，因为这种需求很少、影响效率，且从Android4.0开始，cookie操作通过JNI映射到底层的chromium_net来处理，会自动进行快速同步(同步会按照时间先后来决定修改方，但若修改方为进程侧，则只会进行添加，不会进行修改和删除，以保证当前会话的一致性)
         CookieSyncManager.createInstance(context);
-        CookieManager.getInstance().setAcceptCookie(true);
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        // 删除过期的Cookie，尽管该方法在Android4.0以下是异步实现且bindApplicationContext方法执行不定期，但过期的Cookie是无法取出的，该方法的目的还是达到了。该方法无需同步
+        cookieManager.removeExpiredCookie();
         HttpConnectionManager.appContext = context;
     }
 
@@ -94,13 +94,13 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>设置在使用中国移动CMWap时是否使用拼接Url的模式
+     * <p>设置在使用中国移动CMWap时是否使用拼接URL的模式
      * 
-     * @param useConcatUrlModeWhenCMWap
+     * @param useConcatURLModeWhenCMWap
      */
-    public static void setUseConcatUrlModeWhenCMWap(boolean useConcatUrlModeWhenCMWap)
+    public static void setUseConcatURLModeWhenCMWap(boolean useConcatURLModeWhenCMWap)
     {
-        HttpConnectionManager.useConcatUrlModeWhenCMWap = useConcatUrlModeWhenCMWap;
+        HttpConnectionManager.useConcatURLModeWhenCMWap = useConcatURLModeWhenCMWap;
     }
 
     /**
@@ -114,7 +114,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * 进行http get请求
+     * 进行Http Get请求
      * 
      * @param url 请求的url
      * @param followRedirects 是否自动重定向
@@ -162,7 +162,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * 进行http post请求，将以值为application/x-www-form-urlencoded的Content-Type来提交键值对参数
+     * 进行Http Post请求，将以值为application/x-www-form-urlencoded的Content-Type来提交键值对参数
      * 
      * @param url 请求的url
      * @param followRedirects 是否自动重定向
@@ -182,7 +182,7 @@ public final class HttpConnectionManager
         {
             if (requestHeaders == null)
                 requestHeaders = new HashMap<String, List<String>>();
-            List<String> contentTypes = new ArrayList<String>(); // http规范规定Content-Type只能有一个
+            List<String> contentTypes = new ArrayList<String>(); // Http规范规定Content-Type只能有一个
             contentTypes.add("application/x-www-form-urlencoded");
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
             InputStream paramsData = null;
@@ -225,7 +225,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * 进行http post请求，将以值为application/octet-stream的Content-Type来提交数据
+     * 进行Http Post请求，将以值为application/octet-stream的Content-Type来提交数据
      * 
      * @param url 请求的url
      * @param followRedirects 是否自动重定向
@@ -244,7 +244,7 @@ public final class HttpConnectionManager
         {
             if (requestHeaders == null)
                 requestHeaders = new HashMap<String, List<String>>();
-            List<String> contentTypes = new ArrayList<String>(); // http规范规定Content-Type只能有一个
+            List<String> contentTypes = new ArrayList<String>(); // Http规范规定Content-Type只能有一个
             contentTypes.add("application/octet-stream");
             requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
             if (postData == null)
@@ -305,11 +305,11 @@ public final class HttpConnectionManager
         if (currentRedirectCount > REDIRECT_MAX_COUNT)
             throw new IOException("too many redirect times");
         if (currentCMWapChargePageCount < 0)
-            throw new IllegalArgumentException("current CMWap charge page count can not set to below zero");
+            throw new IllegalArgumentException("current cmwap charge page count can not set to below zero");
         if (currentCMWapChargePageCount > CMWAP_CHARGEPAGE_MAX_COUNT)
-            throw new IOException("too many showing CMWap charge page times");
-        URL originalUrl = new URL(url);
-        URL myUrl = originalUrl;
+            throw new IOException("too many showing cmwap charge page times");
+        URL originalURL = new URL(url);
+        URL myURL = originalURL;
         String concatHost = null;
         Proxy proxy = null;
         NetworkInfo curNetwork = NetManager.getActiveNetworkInfo(appContext);
@@ -317,33 +317,33 @@ public final class HttpConnectionManager
         {
             if (curNetwork.getType() == ConnectivityManager.TYPE_MOBILE)
             {
-                if (useConcatUrlModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
+                if (useConcatURLModeWhenCMWap && "CMWAP".equals(NetManager.getNetworkDetailType(curNetwork)))
                 {
-                    concatHost = myUrl.getAuthority();
-                    String myUrlStr = "http://10.0.0.172".concat(myUrl.getPath());
-                    String query = myUrl.getQuery();
+                    concatHost = myURL.getAuthority();
+                    String myURLStr = "http://10.0.0.172".concat(myURL.getPath());
+                    String query = myURL.getQuery();
                     if (query != null)
-                        myUrlStr = myUrlStr.concat("?").concat(query);
-                    myUrl = new URL(myUrlStr);
+                        myURLStr = myURLStr.concat("?").concat(query);
+                    myURL = new URL(myURLStr);
                 } else
                 {
                     String host = android.net.Proxy.getDefaultHost();
                     int port = android.net.Proxy.getDefaultPort();
                     if (host != null && port != -1)
                     {
-                        if (TelephonyMgr.isOPhone20()) // OPhone 2.0的特殊情况
+                        if (TelephonyMgr.isOPhone20()) // OPhone2.0的特殊情况
                         {
                             String detailType = NetManager.getNetworkDetailType(curNetwork);
                             if ("CMWAP".equals(detailType) || "UNIWAP".equals(detailType) || "CTWAP".equals(detailType))
                             {
                                 InetSocketAddress inetAddress = new InetSocketAddress(host, port);
-                                Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                                Type proxyType = Type.valueOf(myURL.getProtocol().toUpperCase());
                                 proxy = new Proxy(proxyType, inetAddress);
                             }
                         } else
                         {
                             InetSocketAddress inetAddress = new InetSocketAddress(host, port);
-                            Type proxyType = Type.valueOf(myUrl.getProtocol().toUpperCase());
+                            Type proxyType = Type.valueOf(myURL.getProtocol().toUpperCase());
                             proxy = new Proxy(proxyType, inetAddress);
                         }
                     }
@@ -354,32 +354,32 @@ public final class HttpConnectionManager
         OutputStream output = null;
         try
         {
-            LogManager.logI(HttpConnectionManager.class, "request url ".concat(myUrl.toString()).concat("..."));
-            if ("https".equals(myUrl.getProtocol()))
+            LogManager.logI(HttpConnectionManager.class, "request url ".concat(myURL.toString()).concat("..."));
+            if ("https".equals(myURL.getProtocol()))
             {
                 SSLContext sslCont = SSLContext.getInstance("TLS");
                 sslCont.init(null, new TrustManager[] { new MyX509TrustManager() }, new SecureRandom());
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslCont.getSocketFactory());
-                HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(myUrl.getHost()));
+                HttpsURLConnection.setDefaultHostnameVerifier(new MyHostnameVerifier(myURL.getHost()));
                 if (proxy == null)
-                    httpConn = (HttpsURLConnection) myUrl.openConnection();
+                    httpConn = (HttpsURLConnection) myURL.openConnection();
                 else
-                    httpConn = (HttpsURLConnection) myUrl.openConnection(proxy);
+                    httpConn = (HttpsURLConnection) myURL.openConnection(proxy);
             } else
             {
                 if (proxy == null)
-                    httpConn = (HttpURLConnection) myUrl.openConnection();
+                    httpConn = (HttpURLConnection) myURL.openConnection();
                 else
-                    httpConn = (HttpURLConnection) myUrl.openConnection(proxy);
+                    httpConn = (HttpURLConnection) myURL.openConnection(proxy);
             }
             httpConn.setRequestMethod(method);
             HttpURLConnection.setFollowRedirects(false);
             httpConn.setInstanceFollowRedirects(false);
             httpConn.setDoInput(true);
             if (method.equalsIgnoreCase("POST"))
-                httpConn.setDoOutput(true); // 经测试，在Android 4.0且某些特殊的服务器实现下，如果总是setDoOutput(true)可能收到405的http状态码
+                httpConn.setDoOutput(true); // 经测试，在Android4.0且某些特殊的服务器实现下，如果总是setDoOutput(true)可能收到405的Http状态码
             else
-                httpConn.setDoOutput(false); // 经测试，在Android 4.0且某些特殊的服务器实现下，如果不设置setDoOutput(false)可能收到405的http状态码
+                httpConn.setDoOutput(false); // 经测试，在Android4.0且某些特殊的服务器实现下，如果不设置setDoOutput(false)可能收到405的Http状态码
             httpConn.setReadTimeout(connOrReadTimeout);
             httpConn.setConnectTimeout(connOrReadTimeout);
             if (concatHost != null)
@@ -399,7 +399,7 @@ public final class HttpConnectionManager
                     }
                 }
             }
-            String cookies = getCookies(url); // 需要使用原始url获取cookies
+            String cookies = getCookies(url); // 需要使用原始URL获取Cookies
             if (cookies != null)
             {
                 LogManager.logI(HttpConnectionManager.class, "set cookies(" + cookies + ") to url " + url);
@@ -415,19 +415,19 @@ public final class HttpConnectionManager
             {
                 Map<String, List<String>> headerFields = httpConn.getHeaderFields();
                 if (headerFields != null)
-                    addCookies(url, headerFields); // 需要使用原始url添加cookies
+                    addCookies(url, headerFields); // 需要使用原始URL添加Cookies
             }
             int rspCode = httpConn.getResponseCode();
             if (rspCode == HttpURLConnection.HTTP_MOVED_PERM || rspCode == HttpURLConnection.HTTP_MOVED_TEMP || rspCode == HttpURLConnection.HTTP_SEE_OTHER)
             {
                 if (!followRedirects)
                     return httpConn;
-                // implements 'followRedirects' by myself,because the method of setFollowRedirects and setInstanceFollowRedirects have existed some problems.
+                // 自己实现Follow Redirects，自带的setFollowRedirects和setInstanceFollowRedirects方法存在一些问题
                 String location = httpConn.getHeaderField(HEADER_RESPONSE_LOCATION);
                 if (location == null)
                     throw new IOException("redirects failed:could not find the location header");
-                if (location.toLowerCase().indexOf(originalUrl.getProtocol() + "://") < 0)
-                    location = originalUrl.getProtocol() + "://" + originalUrl.getHost() + location;
+                if (location.toLowerCase().indexOf(originalURL.getProtocol() + "://") < 0)
+                    location = originalURL.getProtocol() + "://" + originalURL.getHost() + location;
                 httpConn.disconnect();
                 LogManager.logI(HttpConnectionManager.class, "follow redirects...");
                 return openConnection(location, "GET", followRedirects, connOrReadTimeout, ++currentRedirectCount, currentCMWapChargePageCount, requestHeaders, null);
@@ -454,9 +454,9 @@ public final class HttpConnectionManager
                                 tempOutput.write(b, 0, len);
                             }
                             String wmlStr = new String(tempOutput.toByteArray(), "UTF-8");
-                            LogManager.logI(HttpConnectionManager.class, "parse the CMWap charge page...(utf-8 content:".concat(wmlStr).concat(")"));
+                            LogManager.logI(HttpConnectionManager.class, "parse the cmwap charge page...(utf-8 content:".concat(wmlStr).concat(")"));
                             // 解析资费提示页面中的URL
-                            String parseUrl = null;
+                            String parseURL = null;
                             try
                             {
                                 XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -478,24 +478,24 @@ public final class HttpConnectionManager
                                             } else if ("go".equals(tagName))
                                             {
                                                 if (onEnterForward)
-                                                    parseUrl = xmlParser.getAttributeValue(null, "href");
+                                                    parseURL = xmlParser.getAttributeValue(null, "href");
                                             }
                                             break;
                                     }
-                                    if (parseUrl != null)
+                                    if (parseURL != null)
                                         break;
                                     eventType = xmlParser.next();
                                 }
                             } catch (Exception e)
                             {
-                                LogManager.logW(HttpConnectionManager.class, "parse CMWap charge page failed", e);
+                                LogManager.logW(HttpConnectionManager.class, "parse cmwap charge page failed", e);
                             }
-                            if (parseUrl == null || parseUrl.equals(""))
+                            if (parseURL == null || parseURL.equals(""))
                             {
-                                LogManager.logW(HttpConnectionManager.class, "could not parse url from CMWap charge page,would use the original url to try again...");
-                                parseUrl = url;
+                                LogManager.logW(HttpConnectionManager.class, "could not parse url from cmwap charge page,would use the original url to try again...");
+                                parseURL = url;
                             }
-                            return openConnection(parseUrl, method, followRedirects, connOrReadTimeout, currentRedirectCount, ++currentCMWapChargePageCount, requestHeaders, postData);
+                            return openConnection(parseURL, method, followRedirects, connOrReadTimeout, currentRedirectCount, ++currentCMWapChargePageCount, requestHeaders, postData);
                         } finally
                         {
                             try
@@ -539,47 +539,47 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>移除指定url的cookies <p>由于cookie具有继承性，该方法将会同时移除以当前url向上各层为根url的cookie <p>CookieManager的removeAllCookie由于在Android4.0以下是异步线程实现的，故当前类不将其对外暴露
-     * 
-     * @param url
+     * <p>删除所有的Cookies
      */
-    public static void removeCookies(String url)
+    public static void removeAllCookies()
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        CookieManager cookieManager = CookieManager.getInstance();
-        String cookies = cookieManager.getCookie(url);
-        if (cookies == null)
-            return;
-        String[] cookieArr = cookies.split(";");
-        String expires = new Date(0).toGMTString();
-        URL curUrl = null;
-        try
+        CookieManager.getInstance().removeAllCookie(); // 无需同步
+        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以下是异步实现，所以无奈只能等待
         {
-            curUrl = new URL(url);
-        } catch (MalformedURLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        String main = curUrl.getProtocol() + "://" + curUrl.getAuthority();
-        String[] paths = curUrl.getPath().split("/");
-        for (int i = 1; i < paths.length; i++)
-        {
-            main = main + "/" + paths[i];
-            for (String cookie : cookieArr)
+            try
             {
-                cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
+                Thread.sleep(200);
+            } catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
             }
-        }
-        main = main + "/";
-        for (String cookie : cookieArr)
-        {
-            cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
         }
     }
 
     /**
-     * <p>根据url获取cookies <p>不同cookie之间使用"分号+空格"的方式分隔
+     * <p>删除所有的Session Cookies，即没有expires的Cookies
+     */
+    public static void removeSessionCookies()
+    {
+        if (appContext == null)
+            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
+        CookieManager.getInstance().removeSessionCookie(); // 无需同步
+        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以下是异步实现，所以无奈只能等待
+        {
+            try
+            {
+                Thread.sleep(200);
+            } catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * <p>根据URL获取Cookies <p>不同Cookie之间使用"分号+空格"的方式分隔
      * 
      * @param url
      * @return
@@ -594,8 +594,8 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加指定的cookie <p>cookie的作用范围由其domain和path决定，无domain时默认为当前url的domain，path是一个相对于domain的路径，无path时默认为当前url的path(以"/"结尾时即为自己，否则为其直接上级) <p>domain和path形成一个根url，根url具有向下继承性，在该根url下任何子层级的url都继承该cookie
-     * <p>使用该方法时要格外小心，因为只有相同根url下的同名cookie才会被替换，这可能出现添加的cookie不能替换之前的同名cookie，或者通过网络请求自动添加的cookie不能替换该方法添加的同名cookie的情况，从而导致一个url对应多个同名cookie的现象
+     * <p>添加指定的Cookie <p>Cookie的作用范围由其domain和path决定，无domain时默认为当前URL的域，path是一个相对于domain的路径，无path时默认为当前URL的路径(以"/"结尾时即为自己，否则为其直接上级) <p>domain和path形成一个Base Domain，Base Domain具有向下继承性，在该Base
+     * Domain下任何子级的URL都继承该Cookie <p><b>使用该方法时要格外小心</b>，因为只有相同Base Domain下的同名Cookie才会被替换，这可能出现添加的Cookie不能替换之前的同名Cookie，或者通过网络请求自动添加的Cookie不能替换该方法添加的同名Cookie的情况，从而导致一个URL对应多个同名Cookie的现象
      * 
      * @param url
      * @param cookie
@@ -607,10 +607,12 @@ public final class HttpConnectionManager
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
         CookieManager.getInstance().setCookie(url, cookie);
+        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以上会通过JNI自动快速同步，为使行为一致，4.0以下版本将手工进行异步快速同步(Cookie同步是单向的，只会从Ram到Flash，从而保证了当前Cookie不受外部影响)
+            CookieSyncManager.getInstance().sync();
     }
 
     /**
-     * <p>添加当前响应头中的cookies
+     * <p>添加当前响应头中的Cookies
      * 
      * @param url
      * @param responseHeaders
@@ -621,14 +623,18 @@ public final class HttpConnectionManager
         if (cookies != null)
         {
             CookieManager cookieManager = CookieManager.getInstance();
+            boolean shouldSync = false;
             for (String cookie : cookies)
             {
                 if (cookie != null)
                 {
+                    shouldSync = true;
                     LogManager.logI(HttpConnectionManager.class, "got cookie(" + cookie + ") from url " + url);
                     cookieManager.setCookie(url, cookie);
                 }
             }
+            if (shouldSync && !TelephonyMgr.isAndroid4Above()) // Android4.0以上会通过JNI自动快速同步，为使行为一致，4.0以下版本将手工进行异步快速同步(Cookie同步是单向的，只会从Ram到Flash，从而保证了当前Cookie不受外部影响)
+                CookieSyncManager.getInstance().sync();
         }
     }
 
