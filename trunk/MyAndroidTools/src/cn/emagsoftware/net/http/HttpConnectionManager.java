@@ -594,8 +594,8 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加指定的Cookie <p>Cookie的作用范围由其domain和path决定，无domain时默认为当前URL的域，path是一个相对于domain的路径，无path时默认为当前URL的路径(以"/"结尾时即为自己，否则为其直接上级) <p>domain和path形成一个Base Domain，Base Domain具有向下继承性，在该Base
-     * Domain下任何子级的URL都继承该Cookie <p><b>使用该方法时要格外小心</b>，因为只有相同Base Domain下的同名Cookie才会被替换，这可能出现添加的Cookie不能替换之前的同名Cookie，或者通过网络请求自动添加的Cookie不能替换该方法添加的同名Cookie的情况，从而导致一个URL对应多个同名Cookie的现象
+     * <p>添加指定的Cookie <p>Cookie由name，domain和path联合唯一标识，无domain时默认为当前URL的域，path是一个相对于domain的路径，无path时默认为当前URL的路径(以"/"结尾时即为自己，否则为其直接上级) <p>Cookie具有继承性，相同domain下，URL的路径是path的子级，也能获取到该Cookie
+     * <p>综上，<b>使用该方法时要格外小心</b>，同名Cookie并不一定会被替换，又由于Cookie具有继承性，从而可能导致一个URL对应多个同名Cookie的现象
      * 
      * @param url
      * @param cookie
