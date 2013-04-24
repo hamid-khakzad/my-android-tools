@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.Proxy.Type;
@@ -16,6 +17,7 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -82,7 +84,9 @@ public final class HttpConnectionManager
         CookieSyncManager.createInstance(context);
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
-        // 删除过期的Cookie，尽管该方法在Android4.0以下是异步实现且bindApplicationContext方法执行不定期，但过期的Cookie是无法取出的，该方法的目的还是达到了。该方法无需同步
+        // 删除过期的Cookie，尽管该方法在Android4.0以下是异步实现且bindApplicationContext方法执行不定期，但过期的Cookie是无法取出的，调用的目的还是达到了
+        // 该方法无需同步
+        // 该方法不会删除Ram中的Cookie结构，从而使之后第一次调用getCookies或addCookie方法时不会重新从Flash获取数据，所以不会受其他进程的影响
         cookieManager.removeExpiredCookie();
         HttpConnectionManager.appContext = context;
     }
@@ -539,43 +543,46 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>删除所有的Cookies
+     * <p>删除指定URL的Cookies，该方法将会删除以当前URL路径以上各级为path的所有Cookies，以保证getCookies方法返回null <p>不暴露CookieManager的removeAllCookie和removeSessionCookie方法的原因有二： 1.这两者在Android4.0以下是异步实现，无法即时达到效果
+     * 2.这两者调用完成后，如果接下来是第一次调用getCookies或addCookie方法，则仍会从Flash获取Cookies，从而可能取到其他进程在这之后添加的Cookies，使得这两者的调用失去意义
+     * 
+     * @param url
      */
-    public static void removeAllCookies()
+    public static void removeCookies(String url)
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        CookieManager.getInstance().removeAllCookie(); // 无需同步
-        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以下是异步实现，所以无奈只能等待
+        CookieManager cookieManager = CookieManager.getInstance();
+        String cookies = cookieManager.getCookie(url);
+        if (cookies == null)
+            return;
+        String[] cookieArr = cookies.split(";");
+        String expires = new Date(0).toGMTString();
+        URL curUrl = null;
+        try
         {
-            try
+            curUrl = new URL(url);
+        } catch (MalformedURLException e)
+        {
+            throw new RuntimeException(e);
+        }
+        String main = curUrl.getProtocol() + "://" + curUrl.getAuthority();
+        String[] paths = curUrl.getPath().split("/");
+        for (int i = 1; i < paths.length; i++)
+        {
+            main = main + "/" + paths[i];
+            for (String cookie : cookieArr)
             {
-                Thread.sleep(200);
-            } catch (InterruptedException e)
-            {
-                throw new RuntimeException(e);
+                cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
             }
         }
-    }
-
-    /**
-     * <p>删除所有的Session Cookies，即没有expires的Cookies
-     */
-    public static void removeSessionCookies()
-    {
-        if (appContext == null)
-            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        CookieManager.getInstance().removeSessionCookie(); // 无需同步
-        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以下是异步实现，所以无奈只能等待
+        main = main + "/";
+        for (String cookie : cookieArr)
         {
-            try
-            {
-                Thread.sleep(200);
-            } catch (InterruptedException e)
-            {
-                throw new RuntimeException(e);
-            }
+            cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
         }
+        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以上会通过JNI自动快速同步，为使行为一致，4.0以下版本将手工进行异步快速同步(Cookie同步是单向的，只会从Ram到Flash，从而保证了当前Cookie不受外部影响)
+            CookieSyncManager.getInstance().sync();
     }
 
     /**
