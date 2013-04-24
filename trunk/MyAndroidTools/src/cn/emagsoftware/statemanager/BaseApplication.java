@@ -15,8 +15,8 @@ public abstract class BaseApplication extends Application
     {
         // TODO Auto-generated method stub
         super.onCreate();
-        if (!isServiceReceiverProviderInOtherProcess())
-            throw new UnsupportedOperationException("should set service,receiver and provider in other process when you use BaseApplication.");
+        if (!isServiceReceiverProviderNoOrInOtherProcess())
+            throw new UnsupportedOperationException("should not have service,receiver and provider or set them in other process when you use BaseApplication.");
         ActivityManager aMgr = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         List<RunningAppProcessInfo> apps = aMgr.getRunningAppProcesses();
         if (apps != null && apps.size() > 0)
@@ -35,7 +35,7 @@ public abstract class BaseApplication extends Application
         onInitGlobalState(null);
     }
 
-    protected abstract boolean isServiceReceiverProviderInOtherProcess();
+    protected abstract boolean isServiceReceiverProviderNoOrInOtherProcess();
 
     /**
      * <p>初始化全局状态的回调方法
