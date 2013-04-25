@@ -11,7 +11,7 @@ public class ThemeActivity extends RecreateActivity
     {
         // TODO Auto-generated method stub
         super.onCreateImpl(savedInstanceState);
-        getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeEngine.CUR_PACKAGENAME, ThemeEngine.CUR_GENERALTHEME_NAME));
+        getLayoutInflater().setFactory(ThemeFactory.createOrUpdateInstance(this, ThemeManager.CUR_PACKAGENAME, ThemeManager.CUR_GENERALTHEME_NAME));
     }
 
 }
