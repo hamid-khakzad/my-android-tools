@@ -1,4 +1,4 @@
-package cn.emagsoftware.statemanager;
+package cn.emagsoftware.staticstate;
 
 import java.util.List;
 
