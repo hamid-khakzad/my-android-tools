@@ -26,22 +26,22 @@ public abstract class BaseApplication extends Application
             if (expectId == myPid)
             {
                 // Pid相同时，表示进程创建是由Activity触发的，此时第一个Task肯定存在且是当前Task
-                onInitGlobalState(aMgr.getRunningTasks(1).get(0).topActivity.getClassName());
+                onInitStaticState(aMgr.getRunningTasks(1).get(0).topActivity.getClassName());
                 return;
             }
         }
-        // Pid不相同时，表示进程创建是由Service,Receiver或Provider触发的，此时，如果这三者与Activity处于不同的进程，将只需初始化入口的全局状态；
-        // 如果这三者与Activity处于相同的进程，将由于很难精确定位到topActivityName而无法初始化额外的全局状态，该情况一开始便通过抛出异常的方式以告知用户
-        onInitGlobalState(null);
+        // Pid不相同时，表示进程创建是由Service,Receiver或Provider触发的，此时，如果这三者与Activity处于不同的进程，将只需初始化入口的静态状态；
+        // 如果这三者与Activity处于相同的进程，将由于很难精确定位到topActivityName而无法初始化额外的静态状态，该情况一开始便通过抛出异常的方式以告知用户
+        onInitStaticState(null);
     }
 
     protected abstract boolean isServiceReceiverProviderNoOrInOtherProcess();
 
     /**
-     * <p>初始化全局状态的回调方法
+     * <p>初始化静态状态的回调方法
      * 
-     * @param topActivityName 当前Task最顶部的Activity。如果是由Service,Receiver或Provider触发的进程创建，该参数为null，由于已经约定与Activity处于不同的进程，此时只需初始化入口的全局状态
+     * @param topActivityName 当前Task最顶部的Activity。如果是由Service,Receiver或Provider触发的进程创建，该参数为null，由于已经约定与Activity处于不同的进程，此时只需初始化入口的静态状态
      */
-    protected abstract void onInitGlobalState(String topActivityName);
+    protected abstract void onInitStaticState(String topActivityName);
 
 }
