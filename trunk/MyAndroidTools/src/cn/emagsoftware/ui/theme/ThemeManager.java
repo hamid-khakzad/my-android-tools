@@ -10,7 +10,7 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ResolveInfo;
 
-public final class ThemeEngine
+public final class ThemeManager
 {
 
     static String                        CUR_PACKAGENAME               = null;
@@ -20,7 +20,7 @@ public final class ThemeEngine
     private static final String          CATEGORY_MYANDROIDTOOLS_THEME = "android.intent.category.MYANDROIDTOOLS_THEME";
     private static Vector<ThemeActivity> mThemeActivities              = new Vector<ThemeActivity>();
 
-    private ThemeEngine()
+    private ThemeManager()
     {
     }
 

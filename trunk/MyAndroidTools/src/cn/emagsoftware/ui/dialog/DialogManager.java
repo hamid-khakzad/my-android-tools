@@ -3,7 +3,7 @@ package cn.emagsoftware.ui.dialog;
 import java.lang.reflect.Field;
 
 import cn.emagsoftware.telephony.TelephonyMgr;
-import cn.emagsoftware.ui.theme.ThemeEngine;
+import cn.emagsoftware.ui.theme.ThemeManager;
 
 import android.R;
 import android.app.AlertDialog;
@@ -146,9 +146,9 @@ public abstract class DialogManager
 
     public static AlertDialog showAlertDialog(Context context, String title, String msg, String[] buttons, OnClickListener onClickListener, boolean cancelable, boolean isNotAutoDismiss)
     {
-        boolean applyTheme = ThemeEngine.getApplyTheme(context);
+        boolean applyTheme = ThemeManager.getApplyTheme(context);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, false);
+            ThemeManager.setApplyTheme(context, false);
         AlertDialog.Builder ab = createAlertDialogBuilder(context, title, buttons, onClickListener, cancelable);
         if (msg != null)
             ab.setMessage(msg);
@@ -156,7 +156,7 @@ public abstract class DialogManager
         if (isNotAutoDismiss)
             dialog = setNotAutoDismiss(dialog);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, applyTheme);
+            ThemeManager.setApplyTheme(context, applyTheme);
         return dialog;
     }
 
@@ -182,9 +182,9 @@ public abstract class DialogManager
 
     public static AlertDialog showAlertDialog(Context context, String title, View view, String[] buttons, OnClickListener onClickListener, boolean cancelable, boolean isNotAutoDismiss)
     {
-        boolean applyTheme = ThemeEngine.getApplyTheme(context);
+        boolean applyTheme = ThemeManager.getApplyTheme(context);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, false);
+            ThemeManager.setApplyTheme(context, false);
         AlertDialog.Builder ab = createAlertDialogBuilder(context, title, buttons, onClickListener, cancelable);
         if (view != null)
             ab.setView(view);
@@ -192,7 +192,7 @@ public abstract class DialogManager
         if (isNotAutoDismiss)
             dialog = setNotAutoDismiss(dialog);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, applyTheme);
+            ThemeManager.setApplyTheme(context, applyTheme);
         return dialog;
     }
 
@@ -241,9 +241,9 @@ public abstract class DialogManager
     public static ProgressDialog showProgressDialog(Context context, int theme, String title, String msg, String[] buttons, OnClickListener onClickListener, boolean cancelable,
             boolean isNotAutoDismiss)
     {
-        boolean applyTheme = ThemeEngine.getApplyTheme(context);
+        boolean applyTheme = ThemeManager.getApplyTheme(context);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, false);
+            ThemeManager.setApplyTheme(context, false);
         ProgressDialog pd = null;
         if (theme == -1)
             pd = new ProgressDialog(context);
@@ -279,7 +279,7 @@ public abstract class DialogManager
         if (isNotAutoDismiss)
             pd = (ProgressDialog) setNotAutoDismiss(pd);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, applyTheme);
+            ThemeManager.setApplyTheme(context, applyTheme);
         return pd;
     }
 
@@ -306,9 +306,9 @@ public abstract class DialogManager
     public static ThemeAlertDialog showThemeAlertDialog(Context context, int theme, String title, String msg, String[] buttons, OnClickListener onClickListener, boolean cancelable,
             boolean isNotAutoDismiss)
     {
-        boolean applyTheme = ThemeEngine.getApplyTheme(context);
+        boolean applyTheme = ThemeManager.getApplyTheme(context);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, false);
+            ThemeManager.setApplyTheme(context, false);
         ThemeAlertDialog tad = null;
         if (theme == -1)
             tad = new ThemeAlertDialog(context);
@@ -344,7 +344,7 @@ public abstract class DialogManager
         if (isNotAutoDismiss)
             tad = (ThemeAlertDialog) setNotAutoDismiss(tad);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, applyTheme);
+            ThemeManager.setApplyTheme(context, applyTheme);
         return tad;
     }
 
@@ -372,9 +372,9 @@ public abstract class DialogManager
     public static ThemeAlertDialog showThemeAlertDialog(Context context, int theme, String title, View view, String[] buttons, OnClickListener onClickListener, boolean cancelable,
             boolean isNotAutoDismiss)
     {
-        boolean applyTheme = ThemeEngine.getApplyTheme(context);
+        boolean applyTheme = ThemeManager.getApplyTheme(context);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, false);
+            ThemeManager.setApplyTheme(context, false);
         ThemeAlertDialog tad = null;
         if (theme == -1)
             tad = new ThemeAlertDialog(context);
@@ -410,7 +410,7 @@ public abstract class DialogManager
         if (isNotAutoDismiss)
             tad = (ThemeAlertDialog) setNotAutoDismiss(tad);
         if (!IS_USING_NEW_INFLATING_THEME)
-            ThemeEngine.setApplyTheme(context, applyTheme);
+            ThemeManager.setApplyTheme(context, applyTheme);
         return tad;
     }
 
