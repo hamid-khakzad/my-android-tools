@@ -7,11 +7,11 @@ import android.support.v4.app.FragmentActivity;
 public class RecreateFragmentActivity extends FragmentActivity
 {
 
-    private static final String EXTRA_RECREATEACTIVITY_OUTSTATE = "android.intent.extra.RECREATEACTIVITY_OUTSTATE";
+    private static final String EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE = "android.intent.extra.RECREATEFRAGMENTACTIVITY_OUTSTATE";
 
-    private Bundle              outState                        = null;
-    private boolean             isAtFront                       = false;
-    private boolean             shouldRecreateNextTime          = false;
+    private Bundle              outState                                = null;
+    private boolean             isAtFront                               = false;
+    private boolean             shouldRecreateNextTime                  = false;
 
     @Override
     protected final void onCreate(Bundle savedInstanceState)
@@ -20,13 +20,13 @@ public class RecreateFragmentActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         RecreateManager.addRecreateActivity(this);
         Intent intent = getIntent();
-        outState = intent.getBundleExtra(EXTRA_RECREATEACTIVITY_OUTSTATE);
+        outState = intent.getBundleExtra(EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE);
         if (outState == null)
         {
             onCreateImpl(savedInstanceState);
         } else
         {
-            intent.removeExtra(EXTRA_RECREATEACTIVITY_OUTSTATE);
+            intent.removeExtra(EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE);
             onCreateImpl(outState);
         }
     }
@@ -109,7 +109,7 @@ public class RecreateFragmentActivity extends FragmentActivity
         onSaveInstanceState(outState);
         finish();
         overridePendingTransition(0, 0);
-        intent.putExtra(EXTRA_RECREATEACTIVITY_OUTSTATE, outState);
+        intent.putExtra(EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE, outState);
         startActivity(intent);
     }
 
