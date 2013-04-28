@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +15,7 @@ import android.widget.FrameLayout;
  * Tab形式的布局类
  * 
  * @author Wendell
- * @version 4.1
+ * @version 4.2
  */
 public class TabLayout extends ViewGroup
 {
@@ -29,7 +28,7 @@ public class TabLayout extends ViewGroup
     protected Class<?>             tabClass              = Button.class;
     protected String               headPosition          = HEAD_POSITION_TOP;
     protected int                  selectedTabIndex      = -1;
-    protected boolean              mIsLayout             = false;
+    protected int                  tempSelectedTabIndex  = -1;
 
     protected ViewGroup            head                  = null;
     /** 之所以content使用FrameLayout，是因为只能使用setVisibility(View.INVISIBLE)来实现Tab切换，使用View.GONE会使界面重新layout而影响性能，且可能会给UI更新带来问题，如通过notifyDataSetChanged()更新为GONE的AdapterView时，可能会使Adapter和AdapterView的状态不同步 */
@@ -152,14 +151,8 @@ public class TabLayout extends ViewGroup
         }
     }
 
-    public void setSelectedTab(int index)
+    protected void changeToTab(int index, boolean isIndexChanged)
     {
-        if (!mIsLayout)
-            refreshLayout();
-        if (index < 0 || index >= tabs.size())
-            throw new IllegalArgumentException("index is out of range:" + index + "!");
-        if (index == selectedTabIndex)
-            return;
         for (int i = 0; i < tabs.size(); i++)
         {
             View tabView = tabs.get(i);
@@ -176,11 +169,24 @@ public class TabLayout extends ViewGroup
                 contentView.setVisibility(View.INVISIBLE);
             }
         }
-        this.selectedTabIndex = index;
-        if (mOnTabChangedListener != null)
+        if (isIndexChanged)
         {
-            mOnTabChangedListener.onTabChanged(tabs.get(index), content.getChildAt(index), index);
+            this.selectedTabIndex = index;
+            if (mOnTabChangedListener != null)
+            {
+                mOnTabChangedListener.onTabChanged(tabs.get(index), content.getChildAt(index), index);
+            }
         }
+    }
+
+    public void setSelectedTab(int index)
+    {
+        if (index < 0)
+            throw new IllegalArgumentException("index should equals or great than zero.");
+        if (index == selectedTabIndex)
+            return;
+        this.tempSelectedTabIndex = index;
+        requestLayout();
     }
 
     public int getSelectedTabIndex()
@@ -251,52 +257,23 @@ public class TabLayout extends ViewGroup
             }
         }
 
-        final int tabSize = tabs.size();
-        if (mIsLayout)
+        int tabSize = tabs.size();
+        if (tempSelectedTabIndex == -1)
         {
-            if (selectedTabIndex == -1 && tabSize > 0)
+            if (tabSize > 0)
             {
-                // setSelectedTab本身或其包含的事件，在非第一次布局的情况下可能会影响当前的递归布局，使状态不一致，故POST处理
-                new Handler().post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        setSelectedTab(0);
-                    }
-                });
-            } else if (selectedTabIndex >= tabSize)
-            {
-                // setSelectedTab本身或其包含的事件，在非第一次布局的情况下可能会影响当前的递归布局，使状态不一致，故POST处理
-                new Handler().post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        if (tabSize == 0)
-                        {
-                            selectedTabIndex = -1;
-                            if (mOnTabChangedListener != null)
-                                mOnTabChangedListener.onTabChanged(null, null, -1);
-                        } else
-                        {
-                            setSelectedTab(0);
-                        }
-                    }
-                });
+                tempSelectedTabIndex = 0;
+                changeToTab(tempSelectedTabIndex, true);
             }
         } else
         {
-            mIsLayout = true;
-            if (selectedTabIndex == -1 && tabSize > 0)
+            if (tempSelectedTabIndex >= tabSize)
             {
-                setSelectedTab(0);
-            } else if (selectedTabIndex >= tabSize)
-            {
-                throw new IllegalStateException("selectedTabIndex is out of range:" + selectedTabIndex + "!");
-            }
+                int tempSelectedTabIndexCopy = tempSelectedTabIndex;
+                tempSelectedTabIndex = selectedTabIndex;
+                throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
+            } else
+                changeToTab(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
         }
     }
 
