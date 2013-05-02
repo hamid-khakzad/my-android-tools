@@ -34,6 +34,7 @@ public class FlipLayout extends ViewGroup
     private int              mCurScreen                         = -1;
     private int              mTempCurScreen                     = -1;
     private boolean          mIsRequestScroll                   = false;
+    private boolean          mScrollWhenSameScreen              = false;
     /** 当前NO-GONE子View的列表 */
     private List<View>       mNoGoneChildren                    = new ArrayList<View>();
     /** 是否当次的OnFlingListener.onFlingOutOfRange事件回调已中断 */
@@ -87,6 +88,8 @@ public class FlipLayout extends ViewGroup
             childLeft += childWidth;
         }
 
+        boolean curScrollWhenSameScreen = mScrollWhenSameScreen;
+        mScrollWhenSameScreen = false;
         if (mTempCurScreen == -1)
         {
             mTempCurScreen = 0;
@@ -99,28 +102,42 @@ public class FlipLayout extends ViewGroup
             if (mTempCurScreen >= noGoneChildCount)
             {
                 mScroller.forceFinished(true);
-                mIsRequestScroll = false;
                 int mTempCurScreenCopy = mTempCurScreen;
                 mTempCurScreen = mCurScreen;
                 throw new IllegalStateException("cur screen is out of range:" + mTempCurScreenCopy + "!");
-            } else if (mTempCurScreen != mCurScreen)
+            } else
             {
-                mScroller.forceFinished(true);
-                if (mIsRequestScroll)
+                if (mTempCurScreen == mCurScreen)
                 {
-                    int scrollX = getScrollX();
-                    int delta = mTempCurScreen * getWidth() - scrollX;
-                    mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
-                    mTempCurScreen = mCurScreen;
-                    invalidate(); // 重绘
+                    if (changed)
+                    {
+                        mScroller.forceFinished(true);
+                        scrollTo(mTempCurScreen * getWidth(), 0);
+                    } else if (curScrollWhenSameScreen)
+                    {
+                        int scrollX = getScrollX();
+                        int delta = mTempCurScreen * getWidth() - scrollX;
+                        mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
+                        invalidate(); // 重绘
+                    }
                 } else
                 {
-                    scrollTo(mTempCurScreen * getWidth(), 0);
-                    mCurScreen = mTempCurScreen;
-                    if (listener != null)
-                        listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                    if (mIsRequestScroll)
+                    {
+                        int scrollX = getScrollX();
+                        int delta = mTempCurScreen * getWidth() - scrollX;
+                        mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
+                        mTempCurScreen = mCurScreen;
+                        invalidate(); // 重绘
+                    } else
+                    {
+                        mScroller.forceFinished(true);
+                        scrollTo(mTempCurScreen * getWidth(), 0);
+                        mCurScreen = mTempCurScreen;
+                        if (listener != null)
+                            listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                    }
                 }
-                mIsRequestScroll = false;
             }
         }
     }
@@ -268,7 +285,8 @@ public class FlipLayout extends ViewGroup
                     mIsFlingChangedWhenPressed = false;
                     mVelocityTracker.recycle();
                     mVelocityTracker = null;
-                    scrollToScreen(mCurScreen);
+                    mScrollWhenSameScreen = true;
+                    requestLayout();
                 } else
                 {
                     mVelocityTracker.computeCurrentVelocity(1000);
@@ -288,7 +306,8 @@ public class FlipLayout extends ViewGroup
                         scrollToScreen(mCurScreen + 1);
                     } else
                     {
-                        scrollToScreen(mCurScreen);
+                        mScrollWhenSameScreen = true;
+                        requestLayout();
                     }
                 }
                 return true;
