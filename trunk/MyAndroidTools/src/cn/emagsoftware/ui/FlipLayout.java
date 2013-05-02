@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
-import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -18,7 +17,7 @@ import cn.emagsoftware.util.LogManager;
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * 
  * @author Wendell
- * @version 4.6
+ * @version 4.7
  */
 public class FlipLayout extends ViewGroup
 {
@@ -33,12 +32,10 @@ public class FlipLayout extends ViewGroup
 
     /** 当前Screen的位置 */
     private int              mCurScreen                         = -1;
-    /** 是否已被布局过 */
-    private boolean          mIsLayout                          = false;
+    private int              mTempCurScreen                     = -1;
+    private boolean          mIsRequestScroll                   = false;
     /** 当前NO-GONE子View的列表 */
     private List<View>       mNoGoneChildren                    = new ArrayList<View>();
-    /** 手指是否按在上面 */
-    private boolean          mIsPressed                         = false;
     /** 是否当次的OnFlingListener.onFlingOutOfRange事件回调已中断 */
     private boolean          mIsFlingOutOfRangeBreak            = false;
     /** 是否需要重置mIsFlingOutOfRangeBreak的值 */
@@ -78,11 +75,11 @@ public class FlipLayout extends ViewGroup
     protected void onLayout(boolean changed, int l, int t, int r, int b)
     {
         // TODO Auto-generated method stub
-        // 不考虑changed参数，因为FlipLayout大小是固定的，但其可见子View的个数可能发生了变化，所以每次都要重新layout
+        // 重新layout子View是必须的，在changed为false的情况下也是如此，因为子View的状态可能发生了变化（如Child改变、GONE/VISIBLE切换等）
         int childLeft = 0;
         int childWidth = r - l;
         int childHeight = b - t;
-        final int noGoneChildCount = mNoGoneChildren.size();
+        int noGoneChildCount = mNoGoneChildren.size();
         for (int i = 0; i < noGoneChildCount; i++)
         {
             View noGonechildView = mNoGoneChildren.get(i);
@@ -90,42 +87,40 @@ public class FlipLayout extends ViewGroup
             childLeft += childWidth;
         }
 
-        if (mIsLayout)
+        if (mTempCurScreen == -1)
         {
-            if (mCurScreen >= noGoneChildCount)
-            {
-                // setToScreen包含的事件，在非第一次布局的情况下可能会影响当前的递归布局，使状态不一致，故POST处理
-                new Handler().post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        // TODO Auto-generated method stub
-                        mScroller.forceFinished(true);
-                        setToScreen(noGoneChildCount - 1);
-                    }
-                });
-            } else if (!mIsPressed)
-            {
-                // 手按在上面时不能定位位置，会影响滑动体验，手放开时会重新计算位置，包括大小改变（如横竖屏切换）的情况都能被准确定位
-                if (mScroller.isFinished())
-                {
-                    // 自动滚动时不能定位位置，会影响滚动体验，尽管在大小改变（如横竖屏切换）的情况下定位可能出现偏差，但前者更常见更需侧重考虑
-                    // 理论上不会回调事件，不会影响当前的递归布局，故不需要POST处理
-                    setToScreen(mCurScreen);
-                }
-            }
+            mTempCurScreen = 0;
+            scrollTo(mTempCurScreen * getWidth(), 0);
+            mCurScreen = mTempCurScreen;
+            if (listener != null)
+                listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
         } else
-        { // 如果是第一次布局
-            mIsLayout = true;
-            if (mCurScreen == -1)
-            { // 在没有选择Screen的情况下，将默认选择第一个
-                setToScreen(0);
-            } else
+        {
+            if (mTempCurScreen >= noGoneChildCount)
             {
-                if (mCurScreen < 0 || mCurScreen >= noGoneChildCount)
-                    throw new IllegalStateException("mCurScreen is out of range:" + mCurScreen + "!");
-                scrollTo(mCurScreen * childWidth, 0);
+                mScroller.forceFinished(true);
+                mIsRequestScroll = false;
+                int mTempCurScreenCopy = mTempCurScreen;
+                mTempCurScreen = mCurScreen;
+                throw new IllegalStateException("cur screen is out of range:" + mTempCurScreenCopy + "!");
+            } else if (mTempCurScreen != mCurScreen)
+            {
+                mScroller.forceFinished(true);
+                if (mIsRequestScroll)
+                {
+                    int scrollX = getScrollX();
+                    int delta = mTempCurScreen * getWidth() - scrollX;
+                    mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
+                    mTempCurScreen = mCurScreen;
+                    invalidate(); // 重绘
+                } else
+                {
+                    scrollTo(mTempCurScreen * getWidth(), 0);
+                    mCurScreen = mTempCurScreen;
+                    if (listener != null)
+                        listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                }
+                mIsRequestScroll = false;
             }
         }
     }
@@ -162,85 +157,24 @@ public class FlipLayout extends ViewGroup
 
     public void setToScreen(int whichScreen)
     {
-        if (mIsLayout)
-        {
-            if (whichScreen < 0 || whichScreen >= mNoGoneChildren.size())
-                throw new IllegalArgumentException("whichScreen is out of range:" + whichScreen + "!");
-            scrollTo(whichScreen * getWidth(), 0);
-            if (whichScreen != mCurScreen)
-            {
-                mCurScreen = whichScreen;
-                if (listener != null)
-                    listener.onFlingChanged(mNoGoneChildren.get(whichScreen), whichScreen);
-            }
-        } else
-        {
-            int noGoneChildIndex = -1;
-            View whichView = null;
-            int count = getChildCount();
-            for (int i = 0; i < count; i++)
-            {
-                View childView = getChildAt(i);
-                if (childView.getVisibility() != View.GONE)
-                {
-                    if (++noGoneChildIndex == whichScreen)
-                    {
-                        whichView = childView;
-                        break;
-                    }
-                }
-            }
-            if (noGoneChildIndex == -1)
-                throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
-            if (whichView == null)
-                throw new IllegalArgumentException("whichScreen is out of range:" + whichScreen + "!");
-            if (whichScreen != mCurScreen)
-            {
-                mCurScreen = whichScreen;
-                if (listener != null)
-                    listener.onFlingChanged(whichView, whichScreen);
-            }
-        }
+        if (whichScreen < 0)
+            throw new IllegalArgumentException("whichScreen should equals or great than zero.");
+        if (whichScreen == mCurScreen)
+            return;
+        this.mTempCurScreen = whichScreen;
+        this.mIsRequestScroll = false;
+        requestLayout();
     }
 
     public void scrollToScreen(int whichScreen)
     {
-        if (mIsLayout)
-        {
-            if (whichScreen < 0 || whichScreen >= mNoGoneChildren.size())
-                throw new IllegalArgumentException("whichScreen is out of range:" + whichScreen + "!");
-            int scrollX = getScrollX();
-            int delta = whichScreen * getWidth() - scrollX;
-            mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
-            invalidate(); // 重绘
-        } else
-        {
-            int noGoneChildIndex = -1;
-            View whichView = null;
-            int count = getChildCount();
-            for (int i = 0; i < count; i++)
-            {
-                View childView = getChildAt(i);
-                if (childView.getVisibility() != View.GONE)
-                {
-                    if (++noGoneChildIndex == whichScreen)
-                    {
-                        whichView = childView;
-                        break;
-                    }
-                }
-            }
-            if (noGoneChildIndex == -1)
-                throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
-            if (whichView == null)
-                throw new IllegalArgumentException("whichScreen is out of range:" + whichScreen + "!");
-            if (whichScreen != mCurScreen)
-            {
-                mCurScreen = whichScreen;
-                if (listener != null)
-                    listener.onFlingChanged(whichView, whichScreen);
-            }
-        }
+        if (whichScreen < 0)
+            throw new IllegalArgumentException("whichScreen should equals or great than zero.");
+        if (whichScreen == mCurScreen)
+            return;
+        this.mTempCurScreen = whichScreen;
+        this.mIsRequestScroll = true;
+        requestLayout();
     }
 
     public int getCurScreen()
@@ -271,7 +205,7 @@ public class FlipLayout extends ViewGroup
                 int destScreen = (scrollX + screenWidth / 2) / screenWidth;
                 if (destScreen != mCurScreen)
                 {
-                    mCurScreen = destScreen;
+                    mCurScreen = mTempCurScreen = destScreen;
                     if (listener != null)
                         listener.onFlingChanged(mNoGoneChildren.get(destScreen), destScreen);
                     return true;
@@ -315,8 +249,6 @@ public class FlipLayout extends ViewGroup
                 mLastMotionX = x;
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if (!mIsPressed)
-                    mIsPressed = true;
                 if (mShouldResetIsFlingOutOfRangeBreak)
                 {
                     mIsFlingOutOfRangeBreak = false;
@@ -330,7 +262,6 @@ public class FlipLayout extends ViewGroup
                 return true;
             case MotionEvent.ACTION_UP:
                 LogManager.logI(FlipLayout.class, "event up!");
-                mIsPressed = false;
                 mShouldResetIsFlingOutOfRangeBreak = true;
                 if (mIsFlingChangedWhenPressed)
                 { // 如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
