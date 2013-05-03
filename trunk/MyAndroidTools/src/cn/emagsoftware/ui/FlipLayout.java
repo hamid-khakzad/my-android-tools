@@ -278,7 +278,8 @@ public class FlipLayout extends ViewGroup
                     mIsFlingChangedWhenPressed = true;
                 return true;
             case MotionEvent.ACTION_UP:
-                LogManager.logI(FlipLayout.class, "event up!");
+            case MotionEvent.ACTION_CANCEL:
+                LogManager.logI(FlipLayout.class, "event up/cancel!");
                 mShouldResetIsFlingOutOfRangeBreak = true;
                 if (mIsFlingChangedWhenPressed)
                 { // 如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
@@ -310,8 +311,6 @@ public class FlipLayout extends ViewGroup
                         requestLayout();
                     }
                 }
-                return true;
-            case MotionEvent.ACTION_CANCEL:
                 return true;
             default:
                 return true;
