@@ -55,6 +55,7 @@ public class TabLayout extends ViewGroup
             // TabLayout支持以下定义属性
             String tabClassName = attrs.getAttributeValue(null, "tabClass");
             String headPosition = attrs.getAttributeValue(null, "headPosition");
+            String selectedTab = attrs.getAttributeValue(null, "selectedTab");
             try
             {
                 if (tabClassName != null)
@@ -65,6 +66,8 @@ public class TabLayout extends ViewGroup
             }
             if (headPosition != null)
                 setHeadPosition(headPosition);
+            if (selectedTab != null)
+                setSelectedTab(Integer.parseInt(selectedTab));
         }
     }
 
