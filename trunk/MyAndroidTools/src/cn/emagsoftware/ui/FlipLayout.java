@@ -361,6 +361,11 @@ public class FlipLayout extends ViewGroup
         mRequestTouchEvent = true;
     }
 
+    public void cancelRequestTouchEvent()
+    {
+        mRequestTouchEvent = false;
+    }
+
     public void setOnFlingListener(OnFlingListener listener)
     {
         this.listener = listener;
