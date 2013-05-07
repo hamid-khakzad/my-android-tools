@@ -43,8 +43,8 @@ public class FlipLayout extends ViewGroup
     private boolean          mShouldResetIsFlingOutOfRangeBreak = false;
     /** 是否在手指按在上面时发生了屏幕改变 */
     private boolean          mIsFlingChangedWhenPressed         = false;
-    /** 是否请求了进行水平的滑动 */
-    private boolean          mRequestHorizontalFlip             = false;
+    /** 是否请求了TouchEvent */
+    private boolean          mRequestTouchEvent                 = false;
 
     private OnFlingListener  listener;
 
@@ -331,10 +331,10 @@ public class FlipLayout extends ViewGroup
                 mLastMotionX = x;
                 mLastMotionY = y;
                 boolean isFinished = mScroller.isFinished();
-                mRequestHorizontalFlip = false;
+                mRequestTouchEvent = false;
                 return isFinished ? false : true; // 正在滚动时发生的事件将被拦截，并且后续事件也将被拦截
             case MotionEvent.ACTION_MOVE:
-                if (mRequestHorizontalFlip)
+                if (mRequestTouchEvent)
                     return false;
                 else
                 {
@@ -356,9 +356,9 @@ public class FlipLayout extends ViewGroup
         }
     }
 
-    public void requestHorizontalFlip()
+    public void requestTouchEvent()
     {
-        mRequestHorizontalFlip = true;
+        mRequestTouchEvent = true;
     }
 
     public void setOnFlingListener(OnFlingListener listener)
