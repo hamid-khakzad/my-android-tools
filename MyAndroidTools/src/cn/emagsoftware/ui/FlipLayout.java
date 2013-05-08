@@ -17,7 +17,7 @@ import cn.emagsoftware.util.LogManager;
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * 
  * @author Wendell
- * @version 4.7
+ * @version 4.8
  */
 public class FlipLayout extends ViewGroup
 {
@@ -29,6 +29,7 @@ public class FlipLayout extends ViewGroup
     private int              mTouchSlop;
     private float            mLastMotionX;
     private float            mLastMotionY;
+    private float            mInterceptedX;
 
     /** 当前Screen的位置 */
     private int              mCurScreen                         = -1;
@@ -45,6 +46,7 @@ public class FlipLayout extends ViewGroup
     private boolean          mIsFlingChangedWhenPressed         = false;
     /** 是否请求了TouchEvent */
     private boolean          mRequestTouchEvent                 = false;
+    private boolean          mIsIntercepted                     = false;
 
     private OnFlingListener  listener;
 
@@ -63,7 +65,7 @@ public class FlipLayout extends ViewGroup
         super(context, attrs, defStyle);
         // TODO Auto-generated constructor stub
         mScroller = new Scroller(context);
-        mTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
+        mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
 
     /**
@@ -248,6 +250,13 @@ public class FlipLayout extends ViewGroup
     public boolean onTouchEvent(MotionEvent event)
     {
         // TODO Auto-generated method stub
+        if (!mIsIntercepted)
+        {
+            onInterceptTouchEvent(event);
+            if (!mIsIntercepted)
+                return true;
+        }
+
         if (mVelocityTracker == null)
             mVelocityTracker = VelocityTracker.obtain();
         mVelocityTracker.addMovement(event);
@@ -259,11 +268,7 @@ public class FlipLayout extends ViewGroup
         {
             case MotionEvent.ACTION_DOWN:
                 LogManager.logI(FlipLayout.class, "event down!");
-                if (!mScroller.isFinished())
-                {
-                    mScroller.forceFinished(true);
-                }
-                mLastMotionX = x;
+                mScroller.forceFinished(true);
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (mShouldResetIsFlingOutOfRangeBreak)
@@ -271,8 +276,8 @@ public class FlipLayout extends ViewGroup
                     mIsFlingOutOfRangeBreak = false;
                     mShouldResetIsFlingOutOfRangeBreak = false;
                 }
-                int deltaX = (int) (mLastMotionX - x);
-                mLastMotionX = x;
+                int deltaX = (int) (mInterceptedX - x);
+                mInterceptedX = x;
                 scrollBy(deltaX, 0);
                 if (checkFlingWhenScroll())
                     mIsFlingChangedWhenPressed = true;
@@ -330,9 +335,19 @@ public class FlipLayout extends ViewGroup
             case MotionEvent.ACTION_DOWN:
                 mLastMotionX = x;
                 mLastMotionY = y;
-                boolean isFinished = mScroller.isFinished();
                 mRequestTouchEvent = false;
-                return isFinished ? false : true; // 正在滚动时发生的事件将被拦截，并且后续事件也将被拦截
+                mIsIntercepted = false;
+                boolean isFinished = mScroller.isFinished();
+                if (isFinished)
+                {
+                    return false;
+                } else
+                // 正在滚动时发生的事件将被拦截，并且后续事件也将被拦截
+                {
+                    mInterceptedX = x;
+                    mIsIntercepted = true;
+                    return true;
+                }
             case MotionEvent.ACTION_MOVE:
                 if (mRequestTouchEvent)
                     return false;
@@ -343,8 +358,12 @@ public class FlipLayout extends ViewGroup
                     if (xDistence > mTouchSlop)
                     {
                         double angle = Math.toDegrees(Math.atan(yDistence / xDistence));
-                        if (angle <= 45)
-                            return true; // 小于指定角度将被拦截，并且后续事件也将被拦截
+                        if (angle <= 45) // 小于指定角度将被拦截，并且后续事件也将被拦截
+                        {
+                            mInterceptedX = x;
+                            mIsIntercepted = true;
+                            return true;
+                        }
                     }
                     return false;
                 }
