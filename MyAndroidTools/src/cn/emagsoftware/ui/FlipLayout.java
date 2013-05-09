@@ -17,36 +17,32 @@ import cn.emagsoftware.util.LogManager;
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
  * 
  * @author Wendell
- * @version 4.8
+ * @version 4.9
  */
 public class FlipLayout extends ViewGroup
 {
 
-    private static final int SNAP_VELOCITY                      = 600;
+    private static final int SNAP_VELOCITY              = 600;
 
     private Scroller         mScroller;
     private VelocityTracker  mVelocityTracker;
     private int              mTouchSlop;
-    private float            mLastMotionX;
-    private float            mLastMotionY;
+    private float            mLastMotionX               = -1;
+    private float            mLastMotionY               = -1;
     private float            mInterceptedX;
 
     /** 当前Screen的位置 */
-    private int              mCurScreen                         = -1;
-    private int              mTempCurScreen                     = -1;
-    private boolean          mIsRequestScroll                   = false;
-    private boolean          mScrollWhenSameScreen              = false;
+    private int              mCurScreen                 = -1;
+    private int              mTempCurScreen             = -1;
+    private boolean          mIsRequestScroll           = false;
+    private boolean          mScrollWhenSameScreen      = false;
     /** 当前NO-GONE子View的列表 */
-    private List<View>       mNoGoneChildren                    = new ArrayList<View>();
+    private List<View>       mNoGoneChildren            = new ArrayList<View>();
     /** 是否当次的OnFlingListener.onFlingOutOfRange事件回调已中断 */
-    private boolean          mIsFlingOutOfRangeBreak            = false;
-    /** 是否需要重置mIsFlingOutOfRangeBreak的值 */
-    private boolean          mShouldResetIsFlingOutOfRangeBreak = false;
+    private boolean          mIsFlingOutOfRangeBreak    = false;
     /** 是否在手指按在上面时发生了屏幕改变 */
-    private boolean          mIsFlingChangedWhenPressed         = false;
-    /** 是否请求了TouchEvent */
-    private boolean          mRequestTouchEvent                 = false;
-    private boolean          mIsIntercepted                     = false;
+    private boolean          mIsFlingChangedWhenPressed = false;
+    private boolean          mIsIntercepted             = false;
 
     private OnFlingListener  listener;
 
@@ -263,7 +259,6 @@ public class FlipLayout extends ViewGroup
 
         int action = event.getAction();
         float x = event.getX();
-
         switch (action)
         {
             case MotionEvent.ACTION_DOWN:
@@ -271,11 +266,7 @@ public class FlipLayout extends ViewGroup
                 mScroller.forceFinished(true);
                 return true;
             case MotionEvent.ACTION_MOVE:
-                if (mShouldResetIsFlingOutOfRangeBreak)
-                {
-                    mIsFlingOutOfRangeBreak = false;
-                    mShouldResetIsFlingOutOfRangeBreak = false;
-                }
+                mScroller.forceFinished(true);
                 int deltaX = (int) (mInterceptedX - x);
                 mInterceptedX = x;
                 scrollBy(deltaX, 0);
@@ -285,7 +276,8 @@ public class FlipLayout extends ViewGroup
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 LogManager.logI(FlipLayout.class, "event up/cancel!");
-                mShouldResetIsFlingOutOfRangeBreak = true;
+                mIsIntercepted = false;
+                mIsFlingOutOfRangeBreak = false;
                 if (mIsFlingChangedWhenPressed)
                 { // 如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
                     mIsFlingChangedWhenPressed = false;
@@ -322,6 +314,14 @@ public class FlipLayout extends ViewGroup
         }
     }
 
+    /**
+     * <p>当MotionEvent为ACTION_DOWN时，会从上而下（ViewGroup->View）递归执行onInterceptTouchEvent，直到没有子View或onInterceptTouchEvent返回true时将停止递归，
+     * 此时将从当前View开始向上（View->ViewGroup）执行OnTouchListener和onTouchEvent，直到返回true将停止执行，并且当前返回true的View将会标记成一个target。需要注意的是，
+     * 如果此时设置了requestDisallowInterceptTouchEvent(true)，将不会执行onInterceptTouchEvent，而是直接从最下方的View开始向上（View->ViewGroup）执行OnTouchListener 和onTouchEvent来寻找target
+     * <p>当MotionEvent为非ACTION_DOWN时，如果没有target，将会执行顶层View的OnTouchListener和onTouchEvent；如果存在target，将只会执行target的OnTouchListener和onTouchEvent：
+     * 1.在requestDisallowInterceptTouchEvent(false)且递归执行onInterceptTouchEvent时返回了true，target执行的事件将会被修改为ACTION_CANCEL， 此后onInterceptTouchEvent返回true的View的会成为新的target，后续情况同上
+     * 2.否则，target会执行原始的非ACTION_DOWN事件 <p>当MotionEvent为非ACTION_DOWN时，OnTouchListener和onTouchEvent的返回值已经变得无关紧要
+     */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev)
     {
@@ -335,54 +335,42 @@ public class FlipLayout extends ViewGroup
             case MotionEvent.ACTION_DOWN:
                 mLastMotionX = x;
                 mLastMotionY = y;
-                mRequestTouchEvent = false;
-                mIsIntercepted = false;
                 boolean isFinished = mScroller.isFinished();
                 if (isFinished)
                 {
                     return false;
                 } else
-                // 正在滚动时发生的事件将被拦截，并且后续事件也将被拦截
+                // 正在滚动时将被拦截
                 {
                     mInterceptedX = x;
                     mIsIntercepted = true;
                     return true;
                 }
             case MotionEvent.ACTION_MOVE:
-                if (mRequestTouchEvent)
-                    return false;
-                else
-                {
-                    final float xDistence = Math.abs(x - mLastMotionX);
-                    final float yDistence = Math.abs(y - mLastMotionY);
-                    if (xDistence > mTouchSlop)
-                    {
-                        double angle = Math.toDegrees(Math.atan(yDistence / xDistence));
-                        if (angle <= 45) // 小于指定角度将被拦截，并且后续事件也将被拦截
-                        {
-                            mInterceptedX = x;
-                            mIsIntercepted = true;
-                            return true;
-                        }
-                    }
-                    return false;
+                if (mLastMotionX == -1 || mLastMotionY == -1)
+                { // 拦截从ACTION_MOVE才开始
+                    mLastMotionX = x;
+                    mLastMotionY = y;
                 }
+                final float xDistence = Math.abs(x - mLastMotionX);
+                final float yDistence = Math.abs(y - mLastMotionY);
+                if (xDistence > mTouchSlop)
+                {
+                    double angle = Math.toDegrees(Math.atan(yDistence / xDistence));
+                    if (angle <= 45) // 小于指定角度将被拦截
+                    {
+                        mInterceptedX = x;
+                        mIsIntercepted = true;
+                        return true;
+                    }
+                }
+                return false;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 return false;
             default:
                 return false;
         }
-    }
-
-    public void requestTouchEvent()
-    {
-        mRequestTouchEvent = true;
-    }
-
-    public void cancelRequestTouchEvent()
-    {
-        mRequestTouchEvent = false;
     }
 
     public void setOnFlingListener(OnFlingListener listener)
