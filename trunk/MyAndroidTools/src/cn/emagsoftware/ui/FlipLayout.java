@@ -22,27 +22,29 @@ import cn.emagsoftware.util.LogManager;
 public class FlipLayout extends ViewGroup
 {
 
-    private static final int SNAP_VELOCITY              = 600;
+    private static final int SNAP_VELOCITY                      = 600;
 
     private Scroller         mScroller;
     private VelocityTracker  mVelocityTracker;
     private int              mTouchSlop;
-    private float            mLastMotionX               = -1;
-    private float            mLastMotionY               = -1;
+    private float            mLastMotionX                       = -1;
+    private float            mLastMotionY                       = -1;
     private float            mInterceptedX;
 
     /** 当前Screen的位置 */
-    private int              mCurScreen                 = -1;
-    private int              mTempCurScreen             = -1;
-    private boolean          mIsRequestScroll           = false;
-    private boolean          mScrollWhenSameScreen      = false;
+    private int              mCurScreen                         = -1;
+    private int              mTempCurScreen                     = -1;
+    private boolean          mIsRequestScroll                   = false;
+    private boolean          mScrollWhenSameScreen              = false;
     /** 当前NO-GONE子View的列表 */
-    private List<View>       mNoGoneChildren            = new ArrayList<View>();
+    private List<View>       mNoGoneChildren                    = new ArrayList<View>();
     /** 是否当次的OnFlingListener.onFlingOutOfRange事件回调已中断 */
-    private boolean          mIsFlingOutOfRangeBreak    = false;
+    private boolean          mIsFlingOutOfRangeBreak            = false;
+    /** 是否需要重置mIsFlingOutOfRangeBreak的值 */
+    private boolean          mShouldResetIsFlingOutOfRangeBreak = true;
     /** 是否在手指按在上面时发生了屏幕改变 */
-    private boolean          mIsFlingChangedWhenPressed = false;
-    private boolean          mIsIntercepted             = false;
+    private boolean          mIsFlingChangedWhenPressed         = false;
+    private boolean          mIsIntercepted                     = false;
 
     private OnFlingListener  listener;
 
@@ -267,6 +269,11 @@ public class FlipLayout extends ViewGroup
                 return true;
             case MotionEvent.ACTION_MOVE:
                 mScroller.forceFinished(true);
+                if (mShouldResetIsFlingOutOfRangeBreak)
+                {
+                    mIsFlingOutOfRangeBreak = false;
+                    mShouldResetIsFlingOutOfRangeBreak = false;
+                }
                 int deltaX = (int) (mInterceptedX - x);
                 mInterceptedX = x;
                 scrollBy(deltaX, 0);
@@ -277,7 +284,7 @@ public class FlipLayout extends ViewGroup
             case MotionEvent.ACTION_CANCEL:
                 LogManager.logI(FlipLayout.class, "event up/cancel!");
                 mIsIntercepted = false;
-                mIsFlingOutOfRangeBreak = false;
+                mShouldResetIsFlingOutOfRangeBreak = true;
                 if (mIsFlingChangedWhenPressed)
                 { // 如果手指按在上面时已经发生了屏幕改变，则将不会继续触发屏幕改变
                     mIsFlingChangedWhenPressed = false;
