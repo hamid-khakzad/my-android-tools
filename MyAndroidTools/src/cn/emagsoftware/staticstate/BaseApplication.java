@@ -15,32 +15,55 @@ public abstract class BaseApplication extends Application
     {
         // TODO Auto-generated method stub
         super.onCreate();
-        if (!isServiceReceiverProviderNoOrInOtherProcess())
+        if (!isServiceReceiverProviderNoOrInOtherProcess()) // 如果在同一进程，则当前进程的创建不一定是由Activity触发的，此时任务列表中第一个Task不一定是当前Task，这种情况下即使遍历任务列表也很难获得当前Task，故暂不支持
             throw new UnsupportedOperationException("should not have service,receiver and provider or set them in other process when you use BaseApplication.");
-        ActivityManager aMgr = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        List<RunningAppProcessInfo> apps = aMgr.getRunningAppProcesses();
-        if (apps != null && apps.size() > 0)
+        String[] activityProcessNames = getActivityProcessNames();
+        if (activityProcessNames != null && activityProcessNames.length > 0)
         {
-            int expectId = apps.get(0).pid;
+            String curProcessName = null;
+            ActivityManager aMgr = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+            List<RunningAppProcessInfo> apps = aMgr.getRunningAppProcesses();
             int myPid = Process.myPid();
-            if (expectId == myPid)
+            for (RunningAppProcessInfo app : apps)
             {
-                // Pid相同时，表示进程创建是由Activity触发的，此时第一个Task肯定存在且是当前Task
+                if (app.pid == myPid)
+                {
+                    curProcessName = app.processName;
+                    break;
+                }
+            }
+            boolean isActivityProcess = false;
+            for (String processName : activityProcessNames)
+            {
+                if (curProcessName.equals(processName))
+                {
+                    isActivityProcess = true;
+                    break;
+                }
+            }
+            if (isActivityProcess)
+            {
+                // 如果当前进程的创建由Activity触发，则任务列表中第一个Task肯定存在且是当前Task
                 onInitStaticState(aMgr.getRunningTasks(1).get(0).topActivity.getClassName());
                 return;
             }
         }
-        // Pid不相同时，表示进程创建是由Service,Receiver或Provider触发的，此时，如果这三者与Activity处于不同的进程，将只需初始化入口的静态状态；
-        // 如果这三者与Activity处于相同的进程，将由于很难精确定位到topActivityName而无法初始化额外的静态状态，该情况一开始便通过抛出异常的方式以告知用户
         onInitStaticState(null);
     }
 
     protected abstract boolean isServiceReceiverProviderNoOrInOtherProcess();
 
     /**
-     * <p>初始化静态状态的回调方法
+     * <p>获取Activity所在进程的名称，如果没有Activity进程，可以返回null或一个长度为0的数组
      * 
-     * @param topActivityName 当前Task最顶部的Activity。如果是由Service,Receiver或Provider触发的进程创建，该参数为null，由于已经约定与Activity处于不同的进程，此时只需初始化入口的静态状态
+     * @return
+     */
+    protected abstract String[] getActivityProcessNames();
+
+    /**
+     * <p>初始化静态状态的方法
+     * 
+     * @param topActivityName 当前Task最顶部的Activity。如果进程创建是由Service,Receiver或Provider触发的，该参数为null
      */
     protected abstract void onInitStaticState(String topActivityName);
 
