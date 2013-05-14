@@ -88,12 +88,11 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
      * <p>覆盖了父类的同名方法，用来执行懒加载
      */
     @Override
-    public boolean load(final Object condition)
+    public boolean load()
     {
         if (mIsLoading)
             return false;
         mIsLoading = true;
-        mCurCondition = condition;
         final int start = getRealCount();
         final int page = mPage;
         new AsyncWeakTask<Object, Integer, Object>(this)
@@ -102,13 +101,13 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             protected void onPreExecute(Object[] objs)
             {
                 BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
-                adapter.onBeginLoad(adapter.mContext, condition);
+                adapter.onBeginLoad(adapter.mContext, mExtra);
             }
 
             @Override
             protected Object doInBackgroundImpl(Object... params) throws Exception
             {
-                return mCallback.onLoad(condition, start, page + 1);
+                return mCallback.onLoad(mExtra, start, page + 1);
             }
 
             @SuppressWarnings("unchecked")
@@ -130,7 +129,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                         adapter.mIsLoadedAllNoPages = false;
                 }
                 adapter.mIsException = false;
-                adapter.onAfterLoad(adapter.mContext, condition, null);
+                adapter.onAfterLoad(adapter.mContext, mExtra, null);
             }
 
             @Override
@@ -140,7 +139,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
                 adapter.mIsLoading = false;
                 adapter.mIsException = true;
-                adapter.onAfterLoad(adapter.mContext, condition, e);
+                adapter.onAfterLoad(adapter.mContext, mExtra, e);
             }
         }.execute("");
         return true;
@@ -210,13 +209,13 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
         /**
          * <p>加载的具体实现，通过传入的参数可以实现懒加载。该方法由非UI线程回调，所以可以执行耗时操作
          * 
-         * @param condition
+         * @param extra
          * @param start 要加载的开始序号，最小值为0
          * @param page 要加载的页码，最小值为1
          * @return
          * @throws Exception
          */
-        protected abstract List<DataHolder> onLoad(Object condition, int start, int page) throws Exception;
+        protected abstract List<DataHolder> onLoad(Object extra, int start, int page) throws Exception;
 
     }
 
@@ -247,7 +246,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 return;
             if (firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount && !isLoadedAll() && !isException())
             {
-                load(mCurCondition);
+                load();
             }
         }
 
