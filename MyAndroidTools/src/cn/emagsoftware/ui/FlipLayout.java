@@ -27,8 +27,8 @@ public class FlipLayout extends ViewGroup
     private Scroller         mScroller;
     private VelocityTracker  mVelocityTracker;
     private int              mTouchSlop;
-    private float            mLastMotionX                       = -1;
-    private float            mLastMotionY                       = -1;
+    private float            mLastMotionX;
+    private float            mLastMotionY;
     private float            mInterceptedX;
 
     /** 当前Screen的位置 */
@@ -250,7 +250,7 @@ public class FlipLayout extends ViewGroup
         // TODO Auto-generated method stub
         if (!mIsIntercepted)
         {
-            onInterceptTouchEvent(event);
+            onInterceptTouchEventImpl(event);
             if (!mIsIntercepted)
                 return true;
         }
@@ -333,13 +333,18 @@ public class FlipLayout extends ViewGroup
     public boolean onInterceptTouchEvent(MotionEvent ev)
     {
         // TODO Auto-generated method stub
+        return onInterceptTouchEventImpl(ev);
+    }
+
+    private boolean onInterceptTouchEventImpl(MotionEvent ev)
+    {
         int action = ev.getAction();
         float x = ev.getX();
         float y = ev.getY();
 
         switch (action)
         {
-            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_DOWN: // 尽管onInterceptTouchEvent可能会被requestDisallowInterceptTouchEvent(true)禁止，但其通常在onInterceptTouchEvent中调用，所以ACTION_DOWN时的onInterceptTouchEvent一般都会执行到
                 mLastMotionX = x;
                 mLastMotionY = y;
                 boolean isFinished = mScroller.isFinished();
@@ -354,11 +359,6 @@ public class FlipLayout extends ViewGroup
                     return true;
                 }
             case MotionEvent.ACTION_MOVE:
-                if (mLastMotionX == -1 || mLastMotionY == -1)
-                { // 拦截从ACTION_MOVE才开始
-                    mLastMotionX = x;
-                    mLastMotionY = y;
-                }
                 final float xDistence = Math.abs(x - mLastMotionX);
                 final float yDistence = Math.abs(y - mLastMotionY);
                 if (xDistence > mTouchSlop)
