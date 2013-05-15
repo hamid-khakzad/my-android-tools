@@ -199,6 +199,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     {
         super.clearDataHolders();
         mPage = 0;
+        mIsLoadedAllNoPages = false;
     }
 
     public static abstract class LazyLoadCallback extends BaseLoadAdapter.LoadCallback
