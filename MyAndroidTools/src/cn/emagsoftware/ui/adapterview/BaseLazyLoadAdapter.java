@@ -36,15 +36,13 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
         mCallback = callback;
     }
 
-    public LazyLoadCallback getLazyLoadCallback()
+    /**
+     * <p>覆盖父类的方法，以返回当前的LazyLoadCallback
+     */
+    @Override
+    public LazyLoadCallback getLoadCallback()
     {
         return mCallback;
-    }
-
-    @Override
-    public LoadCallback getLoadCallback()
-    {
-        throw new UnsupportedOperationException("Unsupported,use getLazyLoadCallback() instead");
     }
 
     /**
@@ -85,7 +83,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     }
 
     /**
-     * <p>覆盖了父类的同名方法，用来执行懒加载
+     * <p>覆盖父类的方法，用来执行懒加载
      */
     @Override
     public boolean load()
@@ -101,13 +99,13 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             protected void onPreExecute(Object[] objs)
             {
                 BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
-                adapter.onBeginLoad(adapter.mContext, mExtra);
+                adapter.onBeginLoad(adapter.mContext, mParam);
             }
 
             @Override
             protected Object doInBackgroundImpl(Object... params) throws Exception
             {
-                return mCallback.onLoad(mExtra, start, page + 1);
+                return mCallback.onLoad(mParam, start, page + 1);
             }
 
             @SuppressWarnings("unchecked")
@@ -129,7 +127,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                         adapter.mIsLoadedAllNoPages = false;
                 }
                 adapter.mIsException = false;
-                adapter.onAfterLoad(adapter.mContext, mExtra, null);
+                adapter.onAfterLoad(adapter.mContext, mParam, null);
             }
 
             @Override
@@ -139,7 +137,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 BaseLazyLoadAdapter adapter = (BaseLazyLoadAdapter) objs[0];
                 adapter.mIsLoading = false;
                 adapter.mIsException = true;
-                adapter.onAfterLoad(adapter.mContext, mExtra, e);
+                adapter.onAfterLoad(adapter.mContext, mParam, e);
             }
         }.execute("");
         return true;
@@ -203,19 +201,26 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
         mPage = 0;
     }
 
-    public static abstract class LazyLoadCallback
+    public static abstract class LazyLoadCallback extends BaseLoadAdapter.LoadCallback
     {
+
+        @Override
+        protected final List<DataHolder> onLoad(Object param) throws Exception
+        {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unsupported,use onLoad(param,start,page) instead");
+        }
 
         /**
          * <p>加载的具体实现，通过传入的参数可以实现懒加载。该方法由非UI线程回调，所以可以执行耗时操作
          * 
-         * @param extra
+         * @param param
          * @param start 要加载的开始序号，最小值为0
          * @param page 要加载的页码，最小值为1
          * @return
          * @throws Exception
          */
-        protected abstract List<DataHolder> onLoad(Object extra, int start, int page) throws Exception;
+        protected abstract List<DataHolder> onLoad(Object param, int start, int page) throws Exception;
 
     }
 

@@ -16,8 +16,8 @@ public abstract class BaseLoadAdapter extends GenericAdapter
     boolean              mIsLoaded    = false;
     /** 当前的加载是否发生了异常 */
     boolean              mIsException = false;
-    /** 额外数据 */
-    Object               mExtra       = null;
+    /** 参数数据 */
+    Object               mParam       = null;
     /** 加载时的回调对象 */
     private LoadCallback mCallback    = null;
 
@@ -60,13 +60,13 @@ public abstract class BaseLoadAdapter extends GenericAdapter
             protected void onPreExecute(Object[] objs)
             {
                 BaseLoadAdapter adapter = (BaseLoadAdapter) objs[0];
-                adapter.onBeginLoad(adapter.mContext, mExtra);
+                adapter.onBeginLoad(adapter.mContext, mParam);
             }
 
             @Override
             protected Object doInBackgroundImpl(Object... params) throws Exception
             {
-                return mCallback.onLoad(mExtra);
+                return mCallback.onLoad(mParam);
             }
 
             @SuppressWarnings("unchecked")
@@ -80,7 +80,7 @@ public abstract class BaseLoadAdapter extends GenericAdapter
                 adapter.mIsLoading = false;
                 adapter.mIsLoaded = true;
                 adapter.mIsException = false;
-                adapter.onAfterLoad(adapter.mContext, mExtra, null);
+                adapter.onAfterLoad(adapter.mContext, mParam, null);
             }
 
             @Override
@@ -90,22 +90,22 @@ public abstract class BaseLoadAdapter extends GenericAdapter
                 BaseLoadAdapter adapter = (BaseLoadAdapter) objs[0];
                 adapter.mIsLoading = false;
                 adapter.mIsException = true;
-                adapter.onAfterLoad(adapter.mContext, mExtra, e);
+                adapter.onAfterLoad(adapter.mContext, mParam, e);
             }
         }.execute("");
         return true;
     }
 
     /**
-     * <p>设置额外数据
+     * <p>设置参数数据
      * 
-     * @param extra
+     * @param param
      */
-    public void setExtra(Object extra)
+    public void setParam(Object param)
     {
-        if (extra == null)
+        if (param == null)
             throw new NullPointerException();
-        this.mExtra = extra;
+        this.mParam = param;
     }
 
     /**
@@ -142,30 +142,44 @@ public abstract class BaseLoadAdapter extends GenericAdapter
      * <p>在加载之前的回调方法，可以显示一些loading之类的字样。如对于ListView，可以通过addFooterView方法添加一个正在加载的提示
      * 
      * @param context
-     * @param extra
+     * @param param
      */
-    protected abstract void onBeginLoad(Context context, Object extra);
+    protected abstract void onBeginLoad(Context context, Object param);
 
     /**
      * <p>加载完成后的回调方法，可以通过判断exception是否为null来获悉加载成功与否，从而给用户一些提示
      * 
      * @param context
-     * @param extra
+     * @param param
      * @param exception
      */
-    protected abstract void onAfterLoad(Context context, Object extra, Exception exception);
+    protected abstract void onAfterLoad(Context context, Object param, Exception exception);
 
     public abstract static class LoadCallback
     {
 
+        private Object extra = null;
+
+        public void setExtra(Object extra)
+        {
+            if (extra == null)
+                throw new NullPointerException();
+            this.extra = extra;
+        }
+
+        public Object getExtra()
+        {
+            return extra;
+        }
+
         /**
          * <p>加载的具体实现，该方法将在非UI线程中执行，要注意不能执行UI的操作
          * 
-         * @param extra
+         * @param param
          * @return
          * @throws Exception
          */
-        protected abstract List<DataHolder> onLoad(Object extra) throws Exception;
+        protected abstract List<DataHolder> onLoad(Object param) throws Exception;
 
     }
 
