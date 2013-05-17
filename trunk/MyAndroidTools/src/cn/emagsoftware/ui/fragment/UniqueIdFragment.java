@@ -4,6 +4,12 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.View;
 
+/**
+ * <p>该类适合Fragment高度模块化、动态化的场景 <p>这种情况下，相同的布局可能会在并列或嵌套的情况下多次使用，甚至这种并列或嵌套是动态的，这就可能由于id重复导致Fragment操作发生错位，所以可以使用getNextUniqueId方法来严格区分id
+ * <p>getNextUniqueId方法的使用带来了Fragment状态恢复的问题，需要使用addUniqueId和getUniqueId方法来恢复id以解决该问题
+ * 
+ * @author Wendell
+ */
 public class UniqueIdFragment extends Fragment
 {
 
