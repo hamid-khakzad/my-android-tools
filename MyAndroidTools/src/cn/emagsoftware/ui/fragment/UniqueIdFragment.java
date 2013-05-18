@@ -5,8 +5,8 @@ import android.support.v4.app.Fragment;
 import android.view.View;
 
 /**
- * <p>该类适合Fragment高度模块化、动态化的场景 <p>这种情况下，相同的布局可能会在并列或嵌套的情况下多次使用，甚至这种并列或嵌套是动态的，这就可能由于id重复导致Fragment操作发生错位，所以可以使用getNextUniqueId方法来严格区分id
- * <p>getNextUniqueId方法的使用带来了Fragment状态恢复的问题，需要使用addUniqueId和getUniqueId方法来恢复id以解决该问题
+ * <p>该类适合Fragment高度模块化、动态化的场景 <p>这种情况下，相同的Fragment可能会在并列或嵌套的情况下多次使用，甚至这种并列或嵌套是动态的，这就可能由于包含了相同id的ViewGroup导致操作Fragment发生错位，所以可以使用getNextUniqueId方法来严格区分ViewGroup
+ * <p>getNextUniqueId方法的使用导致了Fragment在状态恢复时位置无法恢复，需要使用addUniqueId和getUniqueId方法来恢复ViewGroup的id以解决该问题 <p>状态恢复数据savedInstanceState由于会严格区分Fragment，所以并不会因为上面提到的并列或嵌套的原因导致恢复错位
  * 
  * @author Wendell
  */
