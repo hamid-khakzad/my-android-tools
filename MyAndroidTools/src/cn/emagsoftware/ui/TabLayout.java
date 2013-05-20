@@ -9,13 +9,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.FrameLayout;
 
 /**
  * Tab形式的布局类
  * 
  * @author Wendell
- * @version 4.2
+ * @version 4.3
  */
 public class TabLayout extends ViewGroup
 {
@@ -31,8 +30,7 @@ public class TabLayout extends ViewGroup
     protected int                  tempSelectedTabIndex  = -1;
 
     protected ViewGroup            head                  = null;
-    /** 之所以content使用FrameLayout，是因为只能使用setVisibility(View.INVISIBLE)来实现Tab切换，使用View.GONE会使界面重新layout而影响性能，且可能会给UI更新带来问题，如通过notifyDataSetChanged()更新为GONE的AdapterView时，可能会使Adapter和AdapterView的状态不同步 */
-    protected FrameLayout          content               = null;
+    protected ViewGroup            content               = null;
     protected List<View>           tabs                  = new ArrayList<View>();
 
     protected OnTabChangedListener mOnTabChangedListener = null;
@@ -100,18 +98,18 @@ public class TabLayout extends ViewGroup
         {
             if (!(child1 instanceof ViewGroup))
                 throw new IllegalStateException("TabLayout’s head child should be a ViewGroup!");
-            if (!(child2 instanceof FrameLayout))
-                throw new IllegalStateException("TabLayout’s content child should be a FrameLayout!");
+            if (!(child2 instanceof ViewGroup))
+                throw new IllegalStateException("TabLayout’s content child should be a ViewGroup!");
             head = (ViewGroup) child1;
-            content = (FrameLayout) child2;
+            content = (ViewGroup) child2;
         } else if (headPosition.equals(HEAD_POSITION_BOTTOM) || headPosition.equals(HEAD_POSITION_RIGHT))
         {
             if (!(child2 instanceof ViewGroup))
                 throw new IllegalStateException("TabLayout’s head child should be a ViewGroup!");
-            if (!(child1 instanceof FrameLayout))
-                throw new IllegalStateException("TabLayout’s content child should be a FrameLayout!");
+            if (!(child1 instanceof ViewGroup))
+                throw new IllegalStateException("TabLayout’s content child should be a ViewGroup!");
             head = (ViewGroup) child2;
-            content = (FrameLayout) child1;
+            content = (ViewGroup) child1;
         }
         tabs.clear();
         refreshTabs(head);
@@ -169,7 +167,7 @@ public class TabLayout extends ViewGroup
             {
                 if (tabView instanceof CompoundButton)
                     ((CompoundButton) tabView).setChecked(false);
-                contentView.setVisibility(View.INVISIBLE);
+                contentView.setVisibility(View.GONE);
             }
         }
         if (isIndexChanged)
@@ -202,7 +200,7 @@ public class TabLayout extends ViewGroup
         return head;
     }
 
-    public FrameLayout getContent()
+    public ViewGroup getContent()
     {
         return content;
     }
@@ -226,6 +224,25 @@ public class TabLayout extends ViewGroup
     protected void onLayout(boolean changed, int l, int t, int r, int b)
     {
         // TODO Auto-generated method stub
+        int tabSize = tabs.size();
+        if (tempSelectedTabIndex == -1)
+        {
+            if (tabSize > 0)
+            {
+                tempSelectedTabIndex = 0;
+                changeToTab(tempSelectedTabIndex, true);
+            }
+        } else
+        {
+            if (tempSelectedTabIndex >= tabSize)
+            {
+                int tempSelectedTabIndexCopy = tempSelectedTabIndex;
+                tempSelectedTabIndex = selectedTabIndex;
+                throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
+            } else
+                changeToTab(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+        }
+
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
         int paddingLeft = getPaddingLeft();
@@ -258,25 +275,6 @@ public class TabLayout extends ViewGroup
             {
                 child2.layout(paddingLeft + firstWidth, paddingTop, paddingLeft + firstWidth + child2.getMeasuredWidth(), paddingTop + child2.getMeasuredHeight());
             }
-        }
-
-        int tabSize = tabs.size();
-        if (tempSelectedTabIndex == -1)
-        {
-            if (tabSize > 0)
-            {
-                tempSelectedTabIndex = 0;
-                changeToTab(tempSelectedTabIndex, true);
-            }
-        } else
-        {
-            if (tempSelectedTabIndex >= tabSize)
-            {
-                int tempSelectedTabIndexCopy = tempSelectedTabIndex;
-                tempSelectedTabIndex = selectedTabIndex;
-                throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
-            } else
-                changeToTab(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
         }
     }
 
