@@ -36,8 +36,6 @@ public class TabLayout extends ViewGroup
 
     protected OnTabChangedListener mOnTabChangedListener = null;
 
-    protected boolean              couldLayout           = false;
-
     public TabLayout(Context context)
     {
         this(context, null, 0);
@@ -178,6 +176,7 @@ public class TabLayout extends ViewGroup
             this.selectedTabIndex = index;
             if (mOnTabChangedListener != null)
             {
+                // 在当前layout过程中onTabChanged回调方法如果导致了requestLayout()将无法执行，故post处理
                 new Handler().post(new Runnable()
                 {
                     @Override
@@ -235,40 +234,6 @@ public class TabLayout extends ViewGroup
     protected void onLayout(boolean changed, int l, int t, int r, int b)
     {
         // TODO Auto-generated method stub
-        if (!couldLayout)
-        {
-            new Handler().post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
-                    int tabSize = tabs.size();
-                    if (tempSelectedTabIndex == -1)
-                    {
-                        if (tabSize > 0)
-                        {
-                            tempSelectedTabIndex = 0;
-                            changeTabWhenLayout(tempSelectedTabIndex, true);
-                        }
-                    } else
-                    {
-                        if (tempSelectedTabIndex >= tabSize)
-                        {
-                            int tempSelectedTabIndexCopy = tempSelectedTabIndex;
-                            tempSelectedTabIndex = selectedTabIndex;
-                            throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
-                        } else
-                            changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
-                    }
-                    couldLayout = true;
-                    requestLayout();
-                }
-            });
-            return;
-        }
-
-        couldLayout = false;
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
         int paddingLeft = getPaddingLeft();
@@ -319,9 +284,29 @@ public class TabLayout extends ViewGroup
 
         // 刷新布局
         refreshLayout();
+
+        // 调整Tab(View.setVisibility(visibility))操作可能会影响子View的measure方法，故在当前onMeasure方法而不是onLayout中执行
+        int tabSize = tabs.size();
+        if (tempSelectedTabIndex == -1)
+        {
+            if (tabSize > 0)
+            {
+                tempSelectedTabIndex = 0;
+                changeTabWhenLayout(tempSelectedTabIndex, true);
+            }
+        } else
+        {
+            if (tempSelectedTabIndex >= tabSize)
+            {
+                int tempSelectedTabIndexCopy = tempSelectedTabIndex;
+                tempSelectedTabIndex = selectedTabIndex;
+                throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
+            } else
+                changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+        }
+
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
-
         if (headPosition.equals(HEAD_POSITION_TOP))
         {
             int remainHeight = heightSize;
