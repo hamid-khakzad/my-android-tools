@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -96,7 +97,16 @@ public class FlipLayout extends ViewGroup
             scrollTo(mTempCurScreen * getWidth(), 0);
             mCurScreen = mTempCurScreen;
             if (listener != null)
-                listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                // 在当前layout过程中onFlingChanged回调方法如果导致了requestLayout()将无法执行，故post处理
+                new Handler().post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        // TODO Auto-generated method stub
+                        listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                    }
+                });
         } else
         {
             if (mTempCurScreen >= noGoneChildCount)
@@ -135,7 +145,16 @@ public class FlipLayout extends ViewGroup
                         scrollTo(mTempCurScreen * getWidth(), 0);
                         mCurScreen = mTempCurScreen;
                         if (listener != null)
-                            listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                            // 在当前layout过程中onFlingChanged回调方法如果导致了requestLayout()将无法执行，故post处理
+                            new Handler().post(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    // TODO Auto-generated method stub
+                                    listener.onFlingChanged(mNoGoneChildren.get(mTempCurScreen), mTempCurScreen);
+                                }
+                            });
                     }
                 }
             }
