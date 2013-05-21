@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,8 @@ public class TabLayout extends ViewGroup
     protected List<View>           tabs                  = new ArrayList<View>();
 
     protected OnTabChangedListener mOnTabChangedListener = null;
+
+    protected boolean              couldLayout           = false;
 
     public TabLayout(Context context)
     {
@@ -152,7 +155,7 @@ public class TabLayout extends ViewGroup
         }
     }
 
-    protected void changeToTab(int index, boolean isIndexChanged)
+    protected void changeTabWhenLayout(final int index, boolean isIndexChanged)
     {
         for (int i = 0; i < tabs.size(); i++)
         {
@@ -175,7 +178,15 @@ public class TabLayout extends ViewGroup
             this.selectedTabIndex = index;
             if (mOnTabChangedListener != null)
             {
-                mOnTabChangedListener.onTabChanged(tabs.get(index), content.getChildAt(index), index);
+                new Handler().post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        // TODO Auto-generated method stub
+                        mOnTabChangedListener.onTabChanged(tabs.get(index), content.getChildAt(index), index);
+                    }
+                });
             }
         }
     }
@@ -224,25 +235,40 @@ public class TabLayout extends ViewGroup
     protected void onLayout(boolean changed, int l, int t, int r, int b)
     {
         // TODO Auto-generated method stub
-        int tabSize = tabs.size();
-        if (tempSelectedTabIndex == -1)
+        if (!couldLayout)
         {
-            if (tabSize > 0)
+            new Handler().post(new Runnable()
             {
-                tempSelectedTabIndex = 0;
-                changeToTab(tempSelectedTabIndex, true);
-            }
-        } else
-        {
-            if (tempSelectedTabIndex >= tabSize)
-            {
-                int tempSelectedTabIndexCopy = tempSelectedTabIndex;
-                tempSelectedTabIndex = selectedTabIndex;
-                throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
-            } else
-                changeToTab(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+                @Override
+                public void run()
+                {
+                    // TODO Auto-generated method stub
+                    int tabSize = tabs.size();
+                    if (tempSelectedTabIndex == -1)
+                    {
+                        if (tabSize > 0)
+                        {
+                            tempSelectedTabIndex = 0;
+                            changeTabWhenLayout(tempSelectedTabIndex, true);
+                        }
+                    } else
+                    {
+                        if (tempSelectedTabIndex >= tabSize)
+                        {
+                            int tempSelectedTabIndexCopy = tempSelectedTabIndex;
+                            tempSelectedTabIndex = selectedTabIndex;
+                            throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
+                        } else
+                            changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+                    }
+                    couldLayout = true;
+                    requestLayout();
+                }
+            });
+            return;
         }
 
+        couldLayout = false;
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
         int paddingLeft = getPaddingLeft();
