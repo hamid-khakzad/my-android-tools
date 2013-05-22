@@ -83,7 +83,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     }
 
     /**
-     * <p>覆盖父类的方法，用来执行懒加载 <p>如果调用bindLazyLoading方法绑定了AdapterView，则包括第一次在内该方法都会被自动调用
+     * <p>覆盖父类的方法，用来执行懒加载 <p>如果调用bindLazyLoading方法绑定了AdapterView，则该方法会被自动调用（第一次在layout时也会被自动调用）
      */
     @Override
     public boolean load()
