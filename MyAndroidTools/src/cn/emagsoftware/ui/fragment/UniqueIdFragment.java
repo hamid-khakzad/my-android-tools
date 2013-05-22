@@ -2,9 +2,7 @@ package cn.emagsoftware.ui.fragment;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 
 /**
  * <p>该类适合Fragment高度模块化、动态化的场景 <p>这种情况下，相同的Fragment可能会在并列或嵌套的情况下多次使用，甚至这种并列或嵌套是动态的，这就可能由于包含了相同id的ViewGroup导致操作Fragment发生错位，所以可以使用getNextUniqueId方法来严格区分ViewGroup
@@ -30,48 +28,15 @@ public class UniqueIdFragment extends Fragment
     {
         // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
-        initIds(savedInstanceState);
-    }
-
-    private void initIds(Bundle savedInstanceState)
-    {
-        if (!isIdsInit)
+        if (savedInstanceState != null)
         {
-            if (savedInstanceState != null)
-            {
-                Bundle oldIds = savedInstanceState.getBundle(KEY_BUNDLE_IDS);
-                if (oldIds == null)
-                    throw new IllegalStateException("please call super method when you override 'onSaveInstanceState'");
-                oldIds.putAll(ids);
-                this.ids = oldIds;
-            }
-            isIdsInit = true;
+            Bundle oldIds = savedInstanceState.getBundle(KEY_BUNDLE_IDS);
+            if (oldIds == null)
+                throw new IllegalStateException("please call super method when you override 'onSaveInstanceState'");
+            oldIds.putAll(ids);
+            this.ids = oldIds;
         }
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-    {
-        // TODO Auto-generated method stub
-        View returnVal = super.onCreateView(inflater, container, savedInstanceState);
-        initIds(savedInstanceState);
-        return returnVal;
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState)
-    {
-        // TODO Auto-generated method stub
-        super.onViewCreated(view, savedInstanceState);
-        initIds(savedInstanceState);
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState)
-    {
-        // TODO Auto-generated method stub
-        super.onActivityCreated(savedInstanceState);
-        initIds(savedInstanceState);
+        isIdsInit = true;
     }
 
     public void addUniqueId(String key, int id)
@@ -82,7 +47,7 @@ public class UniqueIdFragment extends Fragment
     public int getUniqueId(String key)
     {
         if (!isIdsInit)
-            throw new IllegalStateException("can not call this method before ids is initialized");
+            throw new IllegalStateException("can not call this method before 'onCreate'");
         return ids.getInt(key, View.NO_ID);
     }
 
@@ -92,7 +57,7 @@ public class UniqueIdFragment extends Fragment
         // TODO Auto-generated method stub
         super.onSaveInstanceState(outState);
         if (!isIdsInit)
-            throw new IllegalStateException("can not call this method before ids is initialized");
+            throw new IllegalStateException("can not call this method before 'onCreate'");
         outState.putBundle(KEY_BUNDLE_IDS, ids);
     }
 
