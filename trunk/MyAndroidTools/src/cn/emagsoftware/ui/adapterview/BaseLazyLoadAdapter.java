@@ -83,7 +83,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     }
 
     /**
-     * <p>覆盖父类的方法，用来执行懒加载
+     * <p>覆盖父类的方法，用来执行懒加载 <p>如果调用bindLazyLoading方法绑定了AdapterView，则包括第一次在内该方法都会被自动调用
      */
     @Override
     public boolean load()
@@ -244,11 +244,10 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
             // 执行原始监听器的逻辑
             if (mOriginalListener != null)
                 mOriginalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
-            if (view.getVisibility() != View.VISIBLE)
-                // 由于在执行layout并显示时总会触发该事件，所以在未显示时禁止不必要的触发（执行setOnScrollListener或修改AbsListView的Item个数时都会触发该事件）
-                // 注意，由INVISIBLE到VISIBLE（如TabLayout的实现），并不会重新layout，导致不会触发该事件，但之前可能已禁止过该事件的触发，所以这种情况下显示时，需要手工调用load方法
+            if (view.getVisibility() == View.GONE)
+                // 由于在执行layout并显示时总会触发该事件，所以在未layout时禁止不必要的触发（执行setOnScrollListener或修改AbsListView的Item个数时都会触发该事件）
                 return;
-            if (visibleItemCount == 0) // 通过visibleItemCount为0来判断从未layout的情况，该情况下可见状态也可能为View.VISIBLE，要排除之
+            if (visibleItemCount == 0) // 通过visibleItemCount为0来判断从未layout的情况，该情况下可见状态可能不是View.GONE，但要排除之
                 return;
             if (firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount && !isLoadedAll() && !isException())
             {
