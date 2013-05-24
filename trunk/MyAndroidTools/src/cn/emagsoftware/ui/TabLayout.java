@@ -1,7 +1,9 @@
 package cn.emagsoftware.ui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import android.content.Context;
 import android.os.Handler;
@@ -15,26 +17,26 @@ import android.widget.CompoundButton;
  * Tab形式的布局类
  * 
  * @author Wendell
- * @version 4.3
+ * @version 4.5
  */
 public class TabLayout extends ViewGroup
 {
 
-    public static final String     HEAD_POSITION_TOP     = "top";
-    public static final String     HEAD_POSITION_BOTTOM  = "bottom";
-    public static final String     HEAD_POSITION_LEFT    = "left";
-    public static final String     HEAD_POSITION_RIGHT   = "right";
+    public static final String      HEAD_POSITION_TOP      = "top";
+    public static final String      HEAD_POSITION_BOTTOM   = "bottom";
+    public static final String      HEAD_POSITION_LEFT     = "left";
+    public static final String      HEAD_POSITION_RIGHT    = "right";
 
-    protected Class<?>             tabClass              = Button.class;
-    protected String               headPosition          = HEAD_POSITION_TOP;
-    protected int                  selectedTabIndex      = -1;
-    protected int                  tempSelectedTabIndex  = -1;
+    protected Class<?>              tabClass               = Button.class;
+    protected String                headPosition           = HEAD_POSITION_TOP;
+    protected int                   selectedTabIndex       = -1;
+    protected int                   tempSelectedTabIndex   = -1;
 
-    protected ViewGroup            head                  = null;
-    protected ViewGroup            content               = null;
-    protected List<View>           tabs                  = new ArrayList<View>();
+    protected List<View>            tabs                   = new ArrayList<View>();
+    protected Map<Integer, View>    items                  = new HashMap<Integer, View>();
 
-    protected OnTabChangedListener mOnTabChangedListener = null;
+    protected OnTabChangedListener  mOnTabChangedListener  = null;
+    protected OnAddFragmentListener mOnAddFragmentListener = null;
 
     public TabLayout(Context context)
     {
@@ -89,26 +91,24 @@ public class TabLayout extends ViewGroup
     /**
      * <p>刷新布局
      */
-    protected void refreshLayout()
+    protected ViewGroup refreshLayout()
     {
         if (getChildCount() != 2)
             throw new IllegalStateException("TabLayout can only contains two children(head and content)!");
         View child1 = getChildAt(0);
         View child2 = getChildAt(1);
+        if (!(child1 instanceof ViewGroup))
+            throw new IllegalStateException("TabLayout’s all children should be a ViewGroup!");
+        if (!(child2 instanceof ViewGroup))
+            throw new IllegalStateException("TabLayout’s all children should be a ViewGroup!");
+        ViewGroup head = null;
+        ViewGroup content = null;
         if (headPosition.equals(HEAD_POSITION_TOP) || headPosition.equals(HEAD_POSITION_LEFT))
         {
-            if (!(child1 instanceof ViewGroup))
-                throw new IllegalStateException("TabLayout’s head child should be a ViewGroup!");
-            if (!(child2 instanceof ViewGroup))
-                throw new IllegalStateException("TabLayout’s content child should be a ViewGroup!");
             head = (ViewGroup) child1;
             content = (ViewGroup) child2;
         } else if (headPosition.equals(HEAD_POSITION_BOTTOM) || headPosition.equals(HEAD_POSITION_RIGHT))
         {
-            if (!(child2 instanceof ViewGroup))
-                throw new IllegalStateException("TabLayout’s head child should be a ViewGroup!");
-            if (!(child1 instanceof ViewGroup))
-                throw new IllegalStateException("TabLayout’s content child should be a ViewGroup!");
             head = (ViewGroup) child2;
             content = (ViewGroup) child1;
         }
@@ -116,11 +116,35 @@ public class TabLayout extends ViewGroup
         refreshTabs(head);
         int tabSize = tabs.size();
         int contentSize = content.getChildCount();
-        while (tabSize > contentSize)
+        if (mOnAddFragmentListener == null)
         {
-            tabs.remove(tabSize - 1).setOnClickListener(null);
-            tabSize = tabs.size();
+            while (tabSize > contentSize)
+            {
+                tabs.remove(tabSize - 1).setOnClickListener(null);
+                tabSize = tabs.size();
+            }
+            items.clear();
+            for (int i = 0; i < contentSize; i++)
+            {
+                items.put(i, content.getChildAt(i));
+            }
+        } else
+        {
+            items.clear();
+            for (int i = 0; i < contentSize; i++)
+            {
+                View child = content.getChildAt(i);
+                Object indexObj = child.getTag();
+                if (!(indexObj instanceof Integer))
+                    throw new IllegalStateException(
+                            "in fragment mode,you should use setTag(tag) to set tab index in Fragment’s onCreateView(inflater,container,savedInstanceState) when onAddFragment is called back");
+                int index = (Integer) indexObj;
+                if (index >= tabSize)
+                    throw new IllegalStateException("the tab index setting by setTag(tag) is out of tab size");
+                items.put(index, child);
+            }
         }
+        return content;
     }
 
     /**
@@ -158,7 +182,7 @@ public class TabLayout extends ViewGroup
         for (int i = 0; i < tabs.size(); i++)
         {
             View tabView = tabs.get(i);
-            View contentView = content.getChildAt(i);
+            View contentView = items.get(i);
             if (index == i)
             {
                 if (tabView instanceof CompoundButton)
@@ -183,7 +207,7 @@ public class TabLayout extends ViewGroup
                     public void run()
                     {
                         // TODO Auto-generated method stub
-                        mOnTabChangedListener.onTabChanged(tabs.get(index), content.getChildAt(index), index);
+                        mOnTabChangedListener.onTabChanged(tabs.get(index), items.get(index), index);
                     }
                 });
             }
@@ -203,16 +227,6 @@ public class TabLayout extends ViewGroup
     public int getSelectedTabIndex()
     {
         return selectedTabIndex;
-    }
-
-    public ViewGroup getHead()
-    {
-        return head;
-    }
-
-    public ViewGroup getContent()
-    {
-        return content;
     }
 
     public List<View> getTabs()
@@ -283,7 +297,7 @@ public class TabLayout extends ViewGroup
         int heightSize = wrapHeightSize - getPaddingTop() - getPaddingBottom();
 
         // 刷新布局
-        refreshLayout();
+        final ViewGroup content = refreshLayout();
 
         // 调整Tab(View.setVisibility(visibility))操作可能会影响子View的measure方法，故在当前onMeasure方法而不是onLayout中执行
         int tabSize = tabs.size();
@@ -291,8 +305,22 @@ public class TabLayout extends ViewGroup
         {
             if (tabSize > 0)
             {
-                tempSelectedTabIndex = 0;
-                changeTabWhenLayout(tempSelectedTabIndex, true);
+                if (items.containsKey(0))
+                {
+                    tempSelectedTabIndex = 0;
+                    changeTabWhenLayout(tempSelectedTabIndex, true);
+                } else
+                {
+                    new Handler().post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            // TODO Auto-generated method stub
+                            mOnAddFragmentListener.onAddFragment(0, content);
+                        }
+                    });
+                }
             }
         } else
         {
@@ -302,7 +330,23 @@ public class TabLayout extends ViewGroup
                 tempSelectedTabIndex = selectedTabIndex;
                 throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
             } else
-                changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+            {
+                if (items.containsKey(tempSelectedTabIndex))
+                {
+                    changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+                } else
+                {
+                    new Handler().post(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            // TODO Auto-generated method stub
+                            mOnAddFragmentListener.onAddFragment(tempSelectedTabIndex, content);
+                        }
+                    });
+                }
+            }
         }
 
         View child1 = getChildAt(0);
@@ -400,9 +444,25 @@ public class TabLayout extends ViewGroup
         this.mOnTabChangedListener = mOnTabChangedListener;
     }
 
+    public void setUseFragmentMode(OnAddFragmentListener mOnAddFragmentListener)
+    {
+        this.mOnAddFragmentListener = mOnAddFragmentListener;
+    }
+
     public interface OnTabChangedListener
     {
         public void onTabChanged(View tab, View contentItem, int index);
+    }
+
+    public interface OnAddFragmentListener
+    {
+        /**
+         * <p>在Fragment状态恢复或指定Tab Index的Fragment已添加的情况下，该方法将不再被调用 <p><b>一定要注意</b>，添加的Fragment其onCreateView方法返回的View需要通过setTag方法来设置当前的Tab Index
+         * 
+         * @param index
+         * @param container
+         */
+        public void onAddFragment(int index, ViewGroup container);
     }
 
 }
