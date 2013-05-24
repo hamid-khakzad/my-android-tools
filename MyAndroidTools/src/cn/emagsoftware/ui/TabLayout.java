@@ -303,7 +303,7 @@ public class TabLayout extends ViewGroup
         int heightSize = wrapHeightSize - getPaddingTop() - getPaddingBottom();
 
         // 刷新布局
-        final ViewGroup content = refreshLayout();
+        ViewGroup content = refreshLayout();
 
         // 调整Tab(View.setVisibility(visibility))操作可能会影响子View的measure方法，故在当前onMeasure方法而不是onLayout中执行
         int tabSize = tabs.size();
@@ -317,15 +317,8 @@ public class TabLayout extends ViewGroup
                     changeTabWhenLayout(tempSelectedTabIndex, true);
                 } else
                 {
-                    new Handler().post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            mOnAddFragmentListener.onAddFragment(0, content);
-                        }
-                    });
+                    // 添加Fragment的操作在layout过程中执行同样能请求到新的layout，故无需post处理
+                    mOnAddFragmentListener.onAddFragment(0, content);
                 }
             }
         } else
@@ -342,15 +335,8 @@ public class TabLayout extends ViewGroup
                     changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
                 } else
                 {
-                    new Handler().post(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            mOnAddFragmentListener.onAddFragment(tempSelectedTabIndex, content);
-                        }
-                    });
+                    // 添加Fragment的操作在layout过程中执行同样能请求到新的layout，故无需post处理
+                    mOnAddFragmentListener.onAddFragment(tempSelectedTabIndex, content);
                 }
             }
         }
