@@ -197,7 +197,8 @@ public class TabLayout extends ViewGroup
             {
                 if (tabView instanceof CompoundButton)
                     ((CompoundButton) tabView).setChecked(false);
-                contentView.setVisibility(View.GONE);
+                if (contentView != null)
+                    contentView.setVisibility(View.GONE);
             }
         }
         if (isIndexChanged)
