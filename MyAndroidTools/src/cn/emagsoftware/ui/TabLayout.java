@@ -134,7 +134,12 @@ public class TabLayout extends ViewGroup
             for (int i = 0; i < contentSize; i++)
             {
                 View child = content.getChildAt(i);
-                Object indexObj = child.getTag();
+                if (!(child instanceof ViewGroup))
+                    throw new IllegalStateException("in fragment mode,content children can only be created by Fragment");
+                ViewGroup childGroup = (ViewGroup) child;
+                if (childGroup.getChildCount() != 1)
+                    throw new IllegalStateException("in fragment mode,content children can only be created by Fragment");
+                Object indexObj = childGroup.getChildAt(0).getTag();
                 if (!(indexObj instanceof Integer))
                     throw new IllegalStateException(
                             "in fragment mode,you should use setTag(tag) to set tab index in Fragment¡¯s onCreateView(inflater,container,savedInstanceState) when onAddFragment is called back");
