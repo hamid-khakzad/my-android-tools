@@ -146,6 +146,8 @@ public class TabLayout extends ViewGroup
                 int index = (Integer) indexObj;
                 if (index < 0 || index >= tabSize)
                     throw new IllegalStateException("the tab index setting by setTag(tag) is out of tab size");
+                if (items.containsKey(index))
+                    throw new IllegalStateException("the tab index setting by setTag(tag) already exists");
                 items.put(index, child);
             }
         }
