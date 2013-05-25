@@ -256,7 +256,7 @@ public class TabLayout extends ViewGroup
 
     public int getTabCount()
     {
-        return getTabs().size();
+        return tabs.size();
     }
 
     @Override
