@@ -2,10 +2,9 @@ package cn.emagsoftware.ui;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import android.content.Context;
 import android.os.Handler;
@@ -132,11 +131,12 @@ public class TabLayout extends ViewGroup
             }
         } else
         {
-            Set<Entry<Integer, View>> entrys = items.entrySet();
-            for (Entry<Integer, View> entry : entrys)
+            Iterator<View> entrys = items.values().iterator();
+            while (entrys.hasNext())
             {
-                if (entry.getValue() != null)
-                    items.remove(entry.getKey());
+                View entry = entrys.next();
+                if (entry != null)
+                    entrys.remove();
             }
             for (int i = 0; i < contentSize; i++)
             {
