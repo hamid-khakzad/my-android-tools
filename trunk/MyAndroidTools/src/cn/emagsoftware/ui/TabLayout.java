@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import android.content.Context;
 import android.os.Handler;
@@ -130,7 +132,12 @@ public class TabLayout extends ViewGroup
             }
         } else
         {
-            items.clear();
+            Set<Entry<Integer, View>> entrys = items.entrySet();
+            for (Entry<Integer, View> entry : entrys)
+            {
+                if (entry.getValue() != null)
+                    items.remove(entry.getKey());
+            }
             for (int i = 0; i < contentSize; i++)
             {
                 View child = content.getChildAt(i);
@@ -146,7 +153,7 @@ public class TabLayout extends ViewGroup
                 int index = (Integer) indexObj;
                 if (index < 0 || index >= tabSize)
                     throw new IllegalStateException("the tab index setting by setTag(tag) is out of tab size");
-                if (items.containsKey(index))
+                if (items.get(index) != null)
                     throw new IllegalStateException("the tab index setting by setTag(tag) already exists");
                 items.put(index, child);
             }
@@ -313,14 +320,19 @@ public class TabLayout extends ViewGroup
         {
             if (tabSize > 0)
             {
-                if (items.containsKey(0))
+                View view = items.get(0);
+                if (view == null)
+                {
+                    if (!items.containsKey(0))
+                    {
+                        // 添加Fragment的操作在layout过程中执行同样能请求到新的layout，故无需post处理
+                        mOnAddFragmentListener.onAddFragment(0, content);
+                        items.put(0, null);
+                    }
+                } else
                 {
                     tempSelectedTabIndex = 0;
                     changeTabWhenLayout(tempSelectedTabIndex, true);
-                } else
-                {
-                    // 添加Fragment的操作在layout过程中执行同样能请求到新的layout，故无需post处理
-                    mOnAddFragmentListener.onAddFragment(0, content);
                 }
             }
         } else
@@ -332,13 +344,18 @@ public class TabLayout extends ViewGroup
                 throw new IllegalStateException("tab index is out of range:" + tempSelectedTabIndexCopy + "!");
             } else
             {
-                if (items.containsKey(tempSelectedTabIndex))
+                View view = items.get(tempSelectedTabIndex);
+                if (view == null)
                 {
-                    changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
+                    if (!items.containsKey(tempSelectedTabIndex))
+                    {
+                        // 添加Fragment的操作在layout过程中执行同样能请求到新的layout，故无需post处理
+                        mOnAddFragmentListener.onAddFragment(tempSelectedTabIndex, content);
+                        items.put(tempSelectedTabIndex, null);
+                    }
                 } else
                 {
-                    // 添加Fragment的操作在layout过程中执行同样能请求到新的layout，故无需post处理
-                    mOnAddFragmentListener.onAddFragment(tempSelectedTabIndex, content);
+                    changeTabWhenLayout(tempSelectedTabIndex, tempSelectedTabIndex != selectedTabIndex);
                 }
             }
         }
