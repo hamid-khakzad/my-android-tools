@@ -144,7 +144,7 @@ public class TabLayout extends ViewGroup
                     throw new IllegalStateException(
                             "in fragment mode,you should use setTag(tag) to set tab index in Fragment¡¯s onCreateView(inflater,container,savedInstanceState) when onAddFragment is called back");
                 int index = (Integer) indexObj;
-                if (index >= tabSize)
+                if (index < 0 || index >= tabSize)
                     throw new IllegalStateException("the tab index setting by setTag(tag) is out of tab size");
                 items.put(index, child);
             }
