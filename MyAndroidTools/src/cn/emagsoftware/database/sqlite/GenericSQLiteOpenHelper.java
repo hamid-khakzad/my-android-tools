@@ -14,7 +14,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  * generic sqlite open helper
  * 
  * @author Wendell
- * @version 1.1
+ * @version 1.2
  */
 public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
 {
@@ -55,8 +55,6 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
                 {
                     String name = cursor.getColumnName(i);
                     String value = cursor.getString(i);
-                    if (value == null)
-                        value = "";
                     row.put(name, value);
                 }
                 returnVal.add(row);
@@ -99,8 +97,6 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
             {
                 String name = cursor.getColumnName(i);
                 String value = cursor.getString(i);
-                if (value == null)
-                    value = "";
                 row.put(name, value);
             }
             return row;
@@ -140,8 +136,6 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
                 if (!cursor.moveToNext())
                     return returnVal;
                 String value = cursor.getString(0);
-                if (value == null)
-                    value = "";
                 returnVal.add(value);
             }
         } finally
