@@ -51,7 +51,7 @@ public class CodeException extends Exception
     {
         // TODO Auto-generated method stub
         String str = StringUtilities.toStringWhenNull(super.toString(), "");
-        return str + "(code:" + code + ")";
+        return "[code:" + code + "]" + str;
     }
 
 }
