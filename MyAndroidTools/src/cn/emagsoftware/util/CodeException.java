@@ -50,8 +50,9 @@ public class CodeException extends Exception
     public String toString()
     {
         // TODO Auto-generated method stub
-        String str = StringUtilities.toStringWhenNull(super.toString(), "");
-        return "[code:" + code + "]" + str;
+        String name = getClass().getName();
+        String msg = StringUtilities.toStringWhenNull(getLocalizedMessage(), "");
+        return name + ": [code:" + code + "]" + msg;
     }
 
 }
