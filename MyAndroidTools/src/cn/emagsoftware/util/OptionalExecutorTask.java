@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,9 @@ import android.os.Process;
 
 /**
  * ### I delete this comments as it make the answer too long to submit ###
+ * 引入该类是为了辅助而不是替换AsyncTask，一般情况下的异步任务还是使用AsyncTask，但AsyncTask的线程池实现最多线程数只有5个，
+ * 这会导致不能使用AsyncTask运行长时间任务和多并发任务，该类为这两种情况提供了解决方案，长时间任务可以直接调用execute方法，
+ * 多并发任务可以调用executeOnExecutor方法来提供自己的线程池实现
  */
 public abstract class OptionalExecutorTask<Params, Progress, Result> {
     private static final String LOG_TAG = "AsyncTask";
@@ -75,7 +79,7 @@ public abstract class OptionalExecutorTask<Params, Progress, Result> {
     private static final InternalHandler sHandler = new InternalHandler();
 
     //    private static volatile Executor sDefaultExecutor = SERIAL_EXECUTOR;
-    private static volatile Executor sDefaultExecutor = THREAD_POOL_EXECUTOR;
+    private static volatile Executor sDefaultExecutor = new ThreadPoolExecutor(0,Integer.MAX_VALUE,0L,TimeUnit.MILLISECONDS,new SynchronousQueue<Runnable>());
     private final WorkerRunnable<Params, Result> mWorker;
     private final FutureTask<Result> mFuture;
 
