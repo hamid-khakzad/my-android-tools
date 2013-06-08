@@ -1,6 +1,7 @@
 package cn.emagsoftware.cmcc.wlan;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,8 +19,10 @@ import cn.emagsoftware.net.http.HttpConnectionManager;
 import cn.emagsoftware.net.http.HttpResponseResult;
 import cn.emagsoftware.util.LogManager;
 
-public class User
+public class User implements Serializable
 {
+
+    private static final long serialVersionUID = 1L;
 
     protected static final String KEYWORD_CMCCCS               = "cmcccs";
     protected static final String KEYWORD_LOGINREQ             = "login_req";
