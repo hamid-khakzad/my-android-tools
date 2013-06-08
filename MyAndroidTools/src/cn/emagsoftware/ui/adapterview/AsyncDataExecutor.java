@@ -4,25 +4,29 @@ import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import cn.emagsoftware.util.LogManager;
+import cn.emagsoftware.util.OptionalExecutorTask;
 
 public abstract class AsyncDataExecutor
 {
-
+    private static Executor EXECUTOR = new ThreadPoolExecutor(0,6,60, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
     private static PushTask                               PUSH_TASK              = new PushTask();
     static
     {
-        PUSH_TASK.execute("");
+        PUSH_TASK.executeOnExecutor(EXECUTOR,"");
     }
 
-    private int                                           mMaxTaskCount          = 5;
+    private int                                           mMaxTaskCount          = 2;
 
     private int                                           mMaxWaitCount          = 20;
     private WeakReference<AdapterView<? extends Adapter>> mAdapterViewRef        = null;
@@ -30,14 +34,14 @@ public abstract class AsyncDataExecutor
 
     private LinkedList<DataHolder>                        mPushedHolders         = new LinkedList<DataHolder>();
     private byte[]                                        mLockExecute           = new byte[0];
-    private Set<AsyncTask<DataHolder, Object, Object>>    mCurExecuteTasks       = new HashSet<AsyncTask<DataHolder, Object, Object>>();
+    private Set<OptionalExecutorTask<DataHolder, Object, Object>>    mCurExecuteTasks       = new HashSet<OptionalExecutorTask<DataHolder, Object, Object>>();
 
     private boolean                                       mNotifyAsyncDataForAll = false;
 
     public AsyncDataExecutor(int maxTaskCount)
     {
-        if (maxTaskCount <= 0)
-            throw new IllegalArgumentException("maxTaskCount should be great than zero.");
+        if (maxTaskCount < 1 || maxTaskCount > 5) // 需要给线程池留一个供PushTask长期占用
+            throw new IllegalArgumentException("maxTaskCount should be between 1 and 5.");
         this.mMaxTaskCount = maxTaskCount;
     }
 
@@ -69,7 +73,7 @@ public abstract class AsyncDataExecutor
         if (dataHolder.mExecuteConfig.mIsExecuting)
             return;
         dataHolder.mExecuteConfig.mIsExecuting = true;
-        AsyncTask<DataHolder, Object, Object> executeTask = null;
+        OptionalExecutorTask<DataHolder, Object, Object> executeTask = null;
         synchronized (mLockExecute)
         {
             if (mCurExecuteTasks.size() < mMaxTaskCount)
@@ -88,12 +92,12 @@ public abstract class AsyncDataExecutor
             }
         }
         if (executeTask != null)
-            executeTask.execute(dataHolder);
+            executeTask.executeOnExecutor(EXECUTOR,dataHolder);
     }
 
-    private AsyncTask<DataHolder, Object, Object> createExecuteTask()
+    private OptionalExecutorTask<DataHolder, Object, Object> createExecuteTask()
     {
-        return new AsyncTask<DataHolder, Object, Object>()
+        return new OptionalExecutorTask<DataHolder, Object, Object>()
         {
             private DataHolder curHolder;
             private boolean    shouldChangeSoftRefByPublish;
@@ -219,7 +223,7 @@ public abstract class AsyncDataExecutor
      */
     public abstract Object onExecute(int position, DataHolder dataHolder, int asyncDataIndex) throws Exception;
 
-    private static class PushTask extends AsyncTask<Object, Integer, Object>
+    private static class PushTask extends OptionalExecutorTask<Object, Integer, Object>
     {
         private Handler handler = null;
 
