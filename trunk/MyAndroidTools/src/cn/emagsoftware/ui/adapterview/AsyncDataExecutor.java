@@ -19,11 +19,11 @@ import cn.emagsoftware.util.OptionalExecutorTask;
 
 public abstract class AsyncDataExecutor
 {
-    private static Executor EXECUTOR = new ThreadPoolExecutor(0,6,60, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
+    private static Executor EXECUTOR = new ThreadPoolExecutor(0,5,60, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
     private static PushTask                               PUSH_TASK              = new PushTask();
     static
     {
-        PUSH_TASK.executeOnExecutor(EXECUTOR,"");
+        PUSH_TASK.execute("");
     }
 
     private int                                           mMaxTaskCount          = 2;
@@ -40,7 +40,7 @@ public abstract class AsyncDataExecutor
 
     public AsyncDataExecutor(int maxTaskCount)
     {
-        if (maxTaskCount < 1 || maxTaskCount > 5) // 需要给线程池留一个供PushTask长期占用
+        if (maxTaskCount < 1 || maxTaskCount > 5)
             throw new IllegalArgumentException("maxTaskCount should be between 1 and 5.");
         this.mMaxTaskCount = maxTaskCount;
     }
