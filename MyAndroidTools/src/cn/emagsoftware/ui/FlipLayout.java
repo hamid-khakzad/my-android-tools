@@ -1,6 +1,8 @@
 package cn.emagsoftware.ui;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import android.content.Context;
@@ -48,6 +50,8 @@ public class FlipLayout extends ViewGroup
     private boolean          mIsIntercepted                     = false;
 
     private OnFlingListener  listener;
+
+    private boolean mCheckIndexForFragment = false;
 
     public FlipLayout(Context context)
     {
@@ -186,7 +190,30 @@ public class FlipLayout extends ViewGroup
         }
         if (mNoGoneChildren.size() == 0)
             throw new IllegalStateException("FlipLayout must have one NO-GONE child at least!");
-
+        if(mCheckIndexForFragment)
+        {
+            Comparator<View> com = new Comparator<View>() {
+                @Override
+                public int compare(View view, View view2) {
+                    if(!(view instanceof ViewGroup) || !(view2 instanceof ViewGroup))
+                        throw new IllegalStateException("if you call setCheckIndexForFragment(true),the child should only be added by Fragment");
+                    ViewGroup viewWrap = (ViewGroup)view;
+                    ViewGroup viewWrap2 = (ViewGroup)view2;
+                    if(viewWrap.getChildCount() != 1 || viewWrap2.getChildCount() != 1)
+                        throw new IllegalStateException("if you call setCheckIndexForFragment(true),the child should only be added by Fragment");
+                    Object tag = viewWrap.getChildAt(0).getTag();
+                    Object tag2 = viewWrap2.getChildAt(0).getTag();
+                    if(!(tag instanceof Integer) || !(tag2 instanceof Integer))
+                        throw new IllegalStateException("if you call setCheckIndexForFragment(true),should use setTag(tag) to set index in Fragment’s onCreateView(inflater,container,savedInstanceState)");
+                    int index = (Integer)tag;
+                    int index2 = (Integer)tag2;
+                    if(index == index2)
+                        return 0;
+                    return index > index2 ? 1 : -1;
+                }
+            };
+            Collections.sort(mNoGoneChildren,com);
+        }
         // 计算自身大小
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
@@ -402,6 +429,15 @@ public class FlipLayout extends ViewGroup
     public void setOnFlingListener(OnFlingListener listener)
     {
         this.listener = listener;
+    }
+
+    /**
+     * <p>增加对通过Fragment添加child的额外支持，在该方法设置为true的情况下，可以通过View的setTag方法来指定添加进父容器的位置</>
+     * @param checkIndexForFragment
+     */
+    public void setCheckIndexForFragment(boolean checkIndexForFragment)
+    {
+        this.mCheckIndexForFragment = checkIndexForFragment;
     }
 
     public abstract static interface OnFlingListener
