@@ -5,12 +5,11 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -19,7 +18,7 @@ import cn.emagsoftware.util.OptionalExecutorTask;
 
 public abstract class AsyncDataExecutor
 {
-    private static Executor EXECUTOR = new ThreadPoolExecutor(0,5,60, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
+    private static Executor EXECUTOR = new ThreadPoolExecutor(0,5,30, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
     private static PushTask                               PUSH_TASK              = new PushTask();
     static
     {
@@ -64,8 +63,12 @@ public abstract class AsyncDataExecutor
 
     void pushAsync(DataHolder dataHolder)
     {
-        if (!PUSH_TASK.execPushingAsync(this, dataHolder))
-            push(dataHolder); // 异步执行不满足条件时，将在当前线程执行，这种情况只会在一开始调用时偶发
+        /**
+         * 使用这种实现策略主要有两点:
+         * 1.可减轻主线程压力,使AdapterView操作更流畅
+         * 2.异步数据执行采用了ThreadPoolExecutor.CallerRunsPolicy的线程池策略，该实现可确保不会在主线程堵塞
+         */
+        PUSH_TASK.execPushingAsync(this, dataHolder);
     }
 
     private void push(DataHolder dataHolder)
@@ -225,32 +228,30 @@ public abstract class AsyncDataExecutor
 
     private static class PushTask extends OptionalExecutorTask<Object, Integer, Object>
     {
-        private Handler handler = null;
+        private LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
 
         @Override
         protected Object doInBackground(Object... params)
         {
-            // TODO Auto-generated method stub
-            Looper.prepare();
-            handler = new Handler();
-            Looper.loop();
-            return null;
+            while(true)
+            {
+                try
+                {
+                    queue.poll(Long.MAX_VALUE,TimeUnit.SECONDS).run();
+                }catch(InterruptedException e)
+                {
+                }
+            }
         }
 
-        public boolean execPushingAsync(final AsyncDataExecutor executor, final DataHolder dataHolder)
+        public void execPushingAsync(final AsyncDataExecutor executor, final DataHolder dataHolder)
         {
-            if (handler == null)
-                return false;
-            handler.post(new Runnable()
-            {
+            queue.offer(new Runnable() {
                 @Override
-                public void run()
-                {
-                    // TODO Auto-generated method stub
+                public void run() {
                     executor.push(dataHolder);
                 }
             });
-            return true;
         }
     }
 
