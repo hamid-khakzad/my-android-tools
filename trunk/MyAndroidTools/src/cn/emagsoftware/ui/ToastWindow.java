@@ -24,6 +24,7 @@ public class ToastWindow
         setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
         setFocusable(false);
         text = new TextView(context);
+        text.setGravity(Gravity.CENTER);
         setContentView(text);
         setBackgroundDrawable(context.getResources().getDrawable(context.getResources().getIdentifier("bitmap_generic_toast_bg", "drawable", context.getPackageName())));
     }
