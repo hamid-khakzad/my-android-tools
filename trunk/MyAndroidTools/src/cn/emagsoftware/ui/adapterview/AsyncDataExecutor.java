@@ -237,6 +237,11 @@ public abstract class AsyncDataExecutor
             {
                 try
                 {
+                    /**
+                     * 异步数据线程可以在普通线程中初始化和启动的原因是：
+                     * 1.与异步数据线程同样使用OptionalExecutorTask的PushTask此时已经在主线程初始化了静态的Handler
+                     * 2.异步数据线程不存在onPreExecute()的逻辑，避免了在普通线程中执行可能导致的错误
+                     */
                     queue.poll(Long.MAX_VALUE,TimeUnit.SECONDS).run();
                 }catch(InterruptedException e)
                 {
