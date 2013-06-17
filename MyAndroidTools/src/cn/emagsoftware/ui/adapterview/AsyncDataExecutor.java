@@ -29,7 +29,7 @@ public abstract class AsyncDataExecutor
 
     private int                                           mMaxWaitCount          = 20;
     private WeakReference<AdapterView<? extends Adapter>> mAdapterViewRef        = null;
-    private WeakReference<GenericAdapter>                 mGenericAdapterRef     = null;
+    private WeakReference<Object>                 mGenericAdapterRef     = null;
 
     private LinkedList<DataHolder>                        mPushedHolders         = new LinkedList<DataHolder>();
     private byte[]                                        mLockExecute           = new byte[0];
@@ -54,11 +54,11 @@ public abstract class AsyncDataExecutor
         this.mNotifyAsyncDataForAll = notifyAsyncDataForAll;
     }
 
-    void refreshVariables(AdapterView<? extends Adapter> adapterView, GenericAdapter genericAdapter)
+    void refreshVariables(AdapterView<? extends Adapter> adapterView, Object genericAdapter)
     {
         mMaxWaitCount = adapterView.getLastVisiblePosition() - adapterView.getFirstVisiblePosition() + 2; // AdapterView在第一次布局显示时可能需要加2，所以这里统一加2
         mAdapterViewRef = new WeakReference<AdapterView<? extends Adapter>>(adapterView);
-        mGenericAdapterRef = new WeakReference<GenericAdapter>(genericAdapter);
+        mGenericAdapterRef = new WeakReference<Object>(genericAdapter);
     }
 
     void pushAsync(DataHolder dataHolder)
@@ -185,12 +185,15 @@ public abstract class AsyncDataExecutor
                     }
                 } else
                 {
-                    GenericAdapter genericAdapter = mGenericAdapterRef.get();
+                    Object genericAdapter = mGenericAdapterRef.get();
                     if (genericAdapter == null)
                         return;
                     if (mNotifyAsyncDataForAll)
                     {
-                        genericAdapter.notifyDataSetChanged();
+                        if(genericAdapter instanceof GenericAdapter)
+                            ((GenericAdapter)genericAdapter).notifyDataSetChanged();
+                        else if(genericAdapter instanceof GenericExpandableListAdapter)
+                            ((GenericExpandableListAdapter)genericAdapter).notifyDataSetChanged();
                     } else
                     {
                         AdapterView<? extends Adapter> adapterView = mAdapterViewRef.get();
@@ -198,10 +201,34 @@ public abstract class AsyncDataExecutor
                             return;
                         DataHolder holder = (DataHolder) values[0];
                         int position = holder.mExecuteConfig.mPosition;
-                        if (position >= genericAdapter.getCount())
-                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                        if (!holder.equals(genericAdapter.queryDataHolder(position)))
-                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        if(genericAdapter instanceof GenericAdapter)
+                        {
+                            GenericAdapter adapter = (GenericAdapter)genericAdapter;
+                            if (position >= adapter.getCount())
+                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                            if (!holder.equals(adapter.queryDataHolder(position)))
+                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        }else if(genericAdapter instanceof GenericExpandableListAdapter)
+                        {
+                            GenericExpandableListAdapter adapter = (GenericExpandableListAdapter)genericAdapter;
+                            int groupPos = holder.mExecuteConfig.mGroupPosition;
+                            if(groupPos == -1)
+                            {
+                                if (position >= adapter.getGroupCount())
+                                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                                if (!holder.equals(adapter.queryDataHolder(position)))
+                                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                            }else
+                            {
+                                if(groupPos >= adapter.getGroupCount())
+                                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                                GroupDataHolder group = adapter.queryDataHolder(groupPos);
+                                if (position >= group.getChildrenCount())
+                                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                                if (!holder.equals(group.queryChild(position)))
+                                    return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                            }
+                        }
                         int wrapPosition = position;
                         if (adapterView instanceof ListView)
                             wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();

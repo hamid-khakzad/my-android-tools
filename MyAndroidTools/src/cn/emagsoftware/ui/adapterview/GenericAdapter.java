@@ -15,8 +15,6 @@ public class GenericAdapter extends BaseAdapter
 
     Context                   mContext       = null;
     private List<DataHolder>  mHolders       = null;
-    /** 是否转换View以提高性能 */
-    private boolean           mIsConvertView = true;
     /** 是否循环显示View */
     private boolean           mIsLoopView    = false;
     /** 异步数据的执行对象 */
@@ -103,35 +101,6 @@ public class GenericAdapter extends BaseAdapter
         notifyDataSetChanged();
     }
 
-    public void removeDataHolders(List<DataHolder> holders)
-    {
-        mHolders.removeAll(holders);
-        notifyDataSetChanged();
-    }
-
-    public void updateDataHolder(int location, DataHolder holder)
-    {
-        if (mIsLoopView)
-            location = getRealPosition(location);
-        mHolders.remove(location);
-        mHolders.add(location, holder);
-        notifyDataSetChanged();
-    }
-
-    public void updateDataHolders(int location, List<DataHolder> holders)
-    {
-        if (mIsLoopView)
-            location = getRealPosition(location);
-        int oldSize = mHolders.size();
-        int tempSize = location + holders.size();
-        if (tempSize > oldSize)
-            tempSize = oldSize;
-        List<DataHolder> removeList = mHolders.subList(location, tempSize);
-        mHolders.removeAll(removeList);
-        mHolders.addAll(location, holders);
-        notifyDataSetChanged();
-    }
-
     public DataHolder queryDataHolder(int location)
     {
         if (mIsLoopView)
@@ -139,40 +108,10 @@ public class GenericAdapter extends BaseAdapter
         return mHolders.get(location);
     }
 
-    public int queryDataHolder(DataHolder holder)
-    {
-        return mHolders.indexOf(holder);
-    }
-
-    public List<DataHolder> queryDataHolders(int location, int end)
-    {
-        if (mIsLoopView)
-        {
-            location = getRealPosition(location);
-            end = (end - 1) % getRealCount() + 1;
-        }
-        return mHolders.subList(location, end);
-    }
-
-    public boolean queryDataHolders(List<DataHolder> holders)
-    {
-        return mHolders.containsAll(holders);
-    }
-
     public void clearDataHolders()
     {
         mHolders.clear();
         notifyDataSetChanged();
-    }
-
-    public void setConvertView(boolean isConvertView)
-    {
-        mIsConvertView = isConvertView;
-    }
-
-    public boolean isConvertView()
-    {
-        return mIsConvertView;
     }
 
     public void setLoopView(boolean isLoopView)
@@ -258,7 +197,7 @@ public class GenericAdapter extends BaseAdapter
         DataHolder holder = queryDataHolder(position);
         View returnVal;
         holder.mExecuteConfig.mShouldExecute = false;
-        if (convertView == null || !mIsConvertView)
+        if (convertView == null)
         {
             returnVal = holder.onCreateView(mContext, position, holder.getData());
         } else

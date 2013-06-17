@@ -140,6 +140,7 @@ public abstract class DataHolder
     {
         boolean mShouldExecute = false;
         boolean mIsExecuting   = false;
+        int     mGroupPosition = -1;
         int     mPosition      = -1;
     }
 
