@@ -121,7 +121,7 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     @Override
     public final boolean hasStableIds() {
-        return true;
+        return false;
     }
 
     @Override
