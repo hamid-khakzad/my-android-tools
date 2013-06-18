@@ -83,6 +83,11 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         return mHolders.get(location);
     }
 
+    public int queryDataHolder(GroupDataHolder holder)
+    {
+        return mHolders.indexOf(holder);
+    }
+
     public void clearDataHolders()
     {
         mHolders.clear();

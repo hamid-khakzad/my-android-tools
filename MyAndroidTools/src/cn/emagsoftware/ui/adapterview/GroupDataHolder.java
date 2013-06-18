@@ -97,6 +97,11 @@ public abstract class GroupDataHolder extends DataHolder
         return mChildren.get(location);
     }
 
+    public int queryChild(DataHolder holder)
+    {
+        return mChildren.indexOf(holder);
+    }
+
     /**
      * <p>需要手动刷新</>
      */

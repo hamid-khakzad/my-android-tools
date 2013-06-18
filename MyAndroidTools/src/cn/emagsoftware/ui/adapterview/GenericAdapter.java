@@ -108,6 +108,11 @@ public class GenericAdapter extends BaseAdapter
         return mHolders.get(location);
     }
 
+    public int queryDataHolder(DataHolder holder)
+    {
+        return mHolders.indexOf(holder);
+    }
+
     public void clearDataHolders()
     {
         mHolders.clear();
