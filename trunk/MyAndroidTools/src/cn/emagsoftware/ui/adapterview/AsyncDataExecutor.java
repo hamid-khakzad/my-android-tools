@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import android.widget.Adapter;
 import android.widget.AdapterView;
+import android.widget.ExpandableListView;
 import android.widget.ListView;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.OptionalExecutorTask;
@@ -201,7 +202,7 @@ public abstract class AsyncDataExecutor
                             return;
                         DataHolder holder = (DataHolder) values[0];
                         int position = holder.mExecuteConfig.mPosition;
-                        int wholePosition = position;
+                        int wholePosition = -1;
                         if(genericAdapter instanceof GenericAdapter)
                         {
                             GenericAdapter adapter = (GenericAdapter)genericAdapter;
@@ -209,17 +210,21 @@ public abstract class AsyncDataExecutor
                                 return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                             if (!holder.equals(adapter.queryDataHolder(position)))
                                 return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                            wholePosition = position;
+                            if (adapterView instanceof ListView)
+                                wholePosition = wholePosition + ((ListView) adapterView).getHeaderViewsCount();
                         }else if(genericAdapter instanceof GenericExpandableListAdapter)
                         {
                             GenericExpandableListAdapter adapter = (GenericExpandableListAdapter)genericAdapter;
                             int groupPos = holder.mExecuteConfig.mGroupPosition;
+                            long packedPosition = -1;
                             if(groupPos == -1)
                             {
                                 if (position >= adapter.getGroupCount())
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                                 if (!holder.equals(adapter.queryDataHolder(position)))
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                                wholePosition = (int)adapter.getCombinedGroupId(position);
+                                packedPosition = ExpandableListView.getPackedPositionForGroup(position);
                             }else
                             {
                                 if(groupPos >= adapter.getGroupCount())
@@ -229,11 +234,10 @@ public abstract class AsyncDataExecutor
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                                 if (!holder.equals(group.queryChild(position)))
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                                wholePosition = (int)adapter.getCombinedChildId(groupPos,position);
+                                packedPosition = ExpandableListView.getPackedPositionForChild(groupPos,position);
                             }
+                            wholePosition = ((ExpandableListView)adapterView).getFlatListPosition(packedPosition);
                         }
-                        if (adapterView instanceof ListView)
-                            wholePosition = wholePosition + ((ListView) adapterView).getHeaderViewsCount();
                         int first = adapterView.getFirstVisiblePosition();
                         int last = adapterView.getLastVisiblePosition();
                         if (wholePosition >= first && wholePosition <= last)
