@@ -201,6 +201,7 @@ public abstract class AsyncDataExecutor
                             return;
                         DataHolder holder = (DataHolder) values[0];
                         int position = holder.mExecuteConfig.mPosition;
+                        int wholePosition = position;
                         if(genericAdapter instanceof GenericAdapter)
                         {
                             GenericAdapter adapter = (GenericAdapter)genericAdapter;
@@ -218,6 +219,7 @@ public abstract class AsyncDataExecutor
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                                 if (!holder.equals(adapter.queryDataHolder(position)))
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                                wholePosition = (int)adapter.getCombinedGroupId(position);
                             }else
                             {
                                 if(groupPos >= adapter.getGroupCount())
@@ -227,15 +229,15 @@ public abstract class AsyncDataExecutor
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                                 if (!holder.equals(group.queryChild(position)))
                                     return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                                wholePosition = (int)adapter.getCombinedChildId(groupPos,position);
                             }
                         }
-                        int wrapPosition = position;
                         if (adapterView instanceof ListView)
-                            wrapPosition = wrapPosition + ((ListView) adapterView).getHeaderViewsCount();
+                            wholePosition = wholePosition + ((ListView) adapterView).getHeaderViewsCount();
                         int first = adapterView.getFirstVisiblePosition();
                         int last = adapterView.getLastVisiblePosition();
-                        if (wrapPosition >= first && wrapPosition <= last)
-                            holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wrapPosition - first), values[1], (Integer) values[2]);
+                        if (wholePosition >= first && wholePosition <= last)
+                            holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wholePosition - first), values[1], (Integer) values[2]);
                     }
                 }
             }
