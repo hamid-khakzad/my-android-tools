@@ -18,7 +18,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     Context mContext       = null;
     private List<GroupDataHolder> mHolders = null;
-    private boolean           mIsConvertView = true;
     /** 异步数据的执行对象 */
     private AsyncDataExecutor mExecutor      = null;
 
@@ -95,20 +94,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         notifyDataSetChanged();
     }
 
-    /**
-     * <p>Android 2.1及以前版本不支持多View Type，通过调用setConvertView(false)可以对老版本的多View Type情况提供一个稍欠理想的解决方案</>
-     * @param isConvertView
-     */
-    public void setConvertView(boolean isConvertView)
-    {
-        mIsConvertView = isConvertView;
-    }
-
-    public boolean isConvertView()
-    {
-        return mIsConvertView;
-    }
-
     @Override
     public final int getGroupCount() {
         return mHolders.size();
@@ -150,7 +135,7 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         View returnVal;
         holder.setExpanded(b);
         holder.mExecuteConfig.mShouldExecute = false;
-        if (view == null || !mIsConvertView)
+        if (view == null)
         {
             returnVal = holder.onCreateView(mContext, i, holder.getData());
         } else
@@ -174,7 +159,7 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         DataHolder holder = queryDataHolder(i).queryChild(i2);
         View returnVal;
         holder.mExecuteConfig.mShouldExecute = false;
-        if (view == null || !mIsConvertView)
+        if (view == null)
         {
             returnVal = holder.onCreateView(mContext, i2, holder.getData());
         } else
