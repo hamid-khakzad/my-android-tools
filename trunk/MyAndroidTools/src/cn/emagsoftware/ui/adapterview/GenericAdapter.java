@@ -195,7 +195,6 @@ public class GenericAdapter extends BaseAdapter
         return mViewTypeCount;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public final View getView(int position, View convertView, ViewGroup parent)
     {
