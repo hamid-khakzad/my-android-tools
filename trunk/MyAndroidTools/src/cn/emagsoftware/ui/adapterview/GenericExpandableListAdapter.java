@@ -79,11 +79,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         return mHolders.indexOf(holder);
     }
 
-    public List<GroupDataHolder> queryDataHolders(int location, int end)
-    {
-        return mHolders.subList(location, end);
-    }
-
     public void clearDataHolders()
     {
         mHolders.clear();
