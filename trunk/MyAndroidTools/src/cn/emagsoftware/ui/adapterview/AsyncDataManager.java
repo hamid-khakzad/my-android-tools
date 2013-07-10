@@ -66,10 +66,12 @@ public final class AsyncDataManager {
             if(firstPos < 0)
                 firstPos = 0;
             int count = adapterPoint.getCount();
-            if(++lastPos > count)
-                lastPos = count;
-            if(firstPos <= lastPos)
-                holders = adapterPoint.queryDataHolders(firstPos,lastPos);
+            if(lastPos >= count)
+                lastPos = count - 1;
+            for(int i = firstPos;i <= lastPos;i++)
+            {
+                holders.add(adapterPoint.queryDataHolder(i));
+            }
         }else if(adapter instanceof GenericExpandableListAdapter)
         {
             GenericExpandableListAdapter adapterPoint = (GenericExpandableListAdapter)adapter;
