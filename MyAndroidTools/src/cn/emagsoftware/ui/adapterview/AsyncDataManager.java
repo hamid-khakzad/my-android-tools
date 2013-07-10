@@ -23,6 +23,11 @@ import cn.emagsoftware.util.OptionalExecutorTask;
  */
 public final class AsyncDataManager {
 
+    private static PushTask PUSH_TASK = new PushTask();
+    static
+    {
+        PUSH_TASK.execute();
+    }
     private static Executor EXECUTOR = new ThreadPoolExecutor(0,5,30, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
 
     private AsyncDataManager(){}
@@ -31,6 +36,9 @@ public final class AsyncDataManager {
     {
         if(view == null || executor == null)
             throw new NullPointerException();
+        Object tag = view.getTag();
+        if(tag != null && !(tag instanceof ExecuteRunnable))
+            throw new IllegalStateException("can not use 'setTag(tag)' which is used internally.");
         Object adapter = null;
         if(view instanceof ExpandableListView)
         {
@@ -84,16 +92,11 @@ public final class AsyncDataManager {
         }
         if(holders.size() == 0)
             return;
-
-
-
-
-
-
-
-
-
-
+        if(tag != null)
+            ((ExecuteRunnable)tag).cancel();
+        ExecuteRunnable runnable = new ExecuteRunnable(view,adapter,holders,executor);
+        PUSH_TASK.push(runnable);
+        view.setTag(runnable);
     }
 
     private static class ExecuteRunnable implements Runnable
@@ -129,10 +132,12 @@ public final class AsyncDataManager {
                 if(holder.mExecuteConfig.mIsExecuting)
                     continue;
                 holder.mExecuteConfig.mIsExecuting = true;
+                // 由于线程池策略可能导致阻塞，所以当前操作会安排在子线程执行，由于同样使用OptionalExecutorTask的PushTask此时已经在主线程初始化了静态的Handler，所以ExecuteTask不会因为Handler报错，且能保证onProgressUpdate在主线程被执行
                 ExecuteTask task = new ExecuteTask(view,adapter,holder,executor);
+                // 提前置为null，因为下面可能会阻塞
                 view = null;
                 adapter = null;
-                // 采用的ThreadPoolExecutor.CallerRunsPolicy线程池策略可能会堵塞当前线程，故当前操作要在子线程执行，且view和adapter要提前置为null
+                // 未实现onPreExecute()，所以安排在子线程执行无影响
                 task.executeOnExecutor(EXECUTOR);
             }
         }
@@ -295,7 +300,12 @@ public final class AsyncDataManager {
                 }
                 if(curRunnable == null)
                 {
-
+                    try
+                    {
+                        Thread.sleep(100);
+                    }catch (InterruptedException e)
+                    {
+                    }
                 }else
                 {
                     curRunnable.run();
