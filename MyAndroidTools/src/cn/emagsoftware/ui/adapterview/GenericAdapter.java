@@ -104,16 +104,6 @@ public class GenericAdapter extends BaseAdapter
         return mHolders.indexOf(holder);
     }
 
-    public List<DataHolder> queryDataHolders(int location, int end)
-    {
-        if (mIsLoopView)
-        {
-            location = getRealPosition(location);
-            end = (end - 1) % getRealCount() + 1;
-        }
-        return mHolders.subList(location, end);
-    }
-
     public void clearDataHolders()
     {
         mHolders.clear();
