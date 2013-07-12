@@ -21,7 +21,7 @@ import cn.emagsoftware.util.OptionalExecutorTask;
 /**
  * Created by Wendell on 13-7-8.
  */
-public final class AsyncDataManager {
+final class AsyncDataManager {
 
     private static PushTask PUSH_TASK = new PushTask();
     static
