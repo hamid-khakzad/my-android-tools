@@ -6,6 +6,8 @@ import java.util.List;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 
 public class GenericAdapter extends BaseAdapter
@@ -15,6 +17,8 @@ public class GenericAdapter extends BaseAdapter
     private List<DataHolder>  mHolders       = null;
     /** 是否循环显示View */
     private boolean           mIsLoopView    = false;
+    /** 异步数据的执行对象 */
+    private AsyncDataExecutor mExecutor      = null;
     /** View类型的个数 */
     private int               mViewTypeCount = 1;
 
@@ -48,6 +52,11 @@ public class GenericAdapter extends BaseAdapter
         mContext = context;
         mHolders = new ArrayList<DataHolder>(holders);
         this.mViewTypeCount = viewTypeCount;
+    }
+
+    public void bindAsyncDataExecutor(AsyncDataExecutor executor)
+    {
+        mExecutor = executor;
     }
 
     public void addDataHolder(DataHolder holder)
@@ -192,7 +201,6 @@ public class GenericAdapter extends BaseAdapter
         DataHolder holder = queryDataHolder(position);
         View returnVal;
         holder.mExecuteConfig.mShouldExecute = false;
-        holder.mExecuteConfig.mPosition = position;
         if (convertView == null)
         {
             returnVal = holder.onCreateView(mContext, position, holder.getData());
@@ -200,6 +208,11 @@ public class GenericAdapter extends BaseAdapter
         {
             returnVal = convertView;
             holder.onUpdateView(mContext, position, convertView, holder.getData());
+        }
+        if (mExecutor != null)
+        {
+            holder.mExecuteConfig.mPosition = position;
+            AsyncDataManager.push((AdapterView<? extends Adapter>) parent,this,holder,mExecutor);
         }
         return returnVal;
     }
