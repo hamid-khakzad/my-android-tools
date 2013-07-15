@@ -60,23 +60,21 @@ final class AsyncDataManager {
             view.setTag(map);
         }else
         {
-            int firstPos = map.firstKey();
-            int lastPos = map.lastKey();
-            if(pos < firstPos)
+            if(pos < map.firstKey())
             {
                 map.put(pos,runnable);
-                int visibleCount = view.getLastVisiblePosition() - view.getFirstVisiblePosition() + 2; // AdapterView在第一次布局显示时可能需要加2，所以这里统一加2
-                int excessCount = lastPos - pos + 1 - visibleCount; // 不能使用map.size() - visibleCount，因为GridView向上滑动时position的变化可能是3,4,5->0,1,2
+                int visibleCount = view.getChildCount() + 1; // 当前的View没有包含，所以需要加1
+                int excessCount = map.size() - visibleCount;
                 while(excessCount > 0)
                 {
                     map.remove(map.lastKey()).cancel();
                     excessCount--;
                 }
-            }else if(pos > lastPos)
+            }else if(pos > map.lastKey())
             {
                 map.put(pos,runnable);
-                int visibleCount = view.getLastVisiblePosition() - view.getFirstVisiblePosition() + 2; // AdapterView在第一次布局显示时可能需要加2，所以这里统一加2
-                int excessCount = pos - firstPos + 1 - visibleCount; // 与上面保持一致的写法
+                int visibleCount = view.getChildCount() + 1; // 当前的View没有包含，所以需要加1
+                int excessCount = map.size() - visibleCount;
                 while(excessCount > 0)
                 {
                     map.remove(map.firstKey()).cancel();
@@ -84,8 +82,8 @@ final class AsyncDataManager {
                 }
             }else
             {
-                ExecuteRunnable oldRunnable = map.remove(pos);
-                if(oldRunnable != null) // 可能为null，因为GridView向上滑动时position的变化可能是3,4,5->0,1,2
+                ExecuteRunnable oldRunnable = map.get(pos);
+                if(oldRunnable != null) // 可能为null，因为GridView向上滑动时position的变化可能是3,4,5->0,1,2。忽略为null时需要移除ExecuteRunnable的操作
                     oldRunnable.cancel();
                 map.put(pos,runnable);
             }
