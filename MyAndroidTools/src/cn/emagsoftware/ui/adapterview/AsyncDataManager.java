@@ -32,14 +32,7 @@ final class AsyncDataManager {
 
     public static void push(AdapterView<? extends Adapter> view,Object adapter,DataHolder holder,AsyncDataExecutor executor)
     {
-        TreeMap<Integer,ExecuteRunnable> map = null;
-        try
-        {
-            map = (TreeMap<Integer,ExecuteRunnable>)view.getTag();
-        }catch (ClassCastException e)
-        {
-            throw new IllegalStateException("can not use 'AdapterView.setTag(tag)' outside when you call 'bindAsyncDataExecutor(executor)'");
-        }
+        TreeMap<Integer,ExecuteRunnable> map = executor.getExecuteMap();
         int pos;
         if(adapter instanceof GenericAdapter)
         {
@@ -57,7 +50,7 @@ final class AsyncDataManager {
         {
             map = new TreeMap<Integer, ExecuteRunnable>();
             map.put(pos,runnable);
-            view.setTag(map);
+            executor.setExecuteMap(map);
         }else
         {
             if(pos < map.firstKey())
@@ -93,7 +86,7 @@ final class AsyncDataManager {
         PUSH_TASK.push(runnable);
     }
 
-    private static class ExecuteRunnable implements Runnable
+    static class ExecuteRunnable implements Runnable
     {
 
         private WeakReference<AdapterView<? extends Adapter>> viewRef = null;
