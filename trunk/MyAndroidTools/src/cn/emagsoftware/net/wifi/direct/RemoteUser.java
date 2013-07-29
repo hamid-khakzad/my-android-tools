@@ -7,13 +7,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import android.net.wifi.ScanResult;
-
 public class RemoteUser
 {
 
     private String               name       = null;
-    private ScanResult           scanResult = null;
     private String               ip         = null;
     private SelectionKey         key        = null;
     private List<TransferEntity> transfers  = Collections.synchronizedList(new LinkedList<TransferEntity>());
@@ -28,18 +25,6 @@ public class RemoteUser
     public String getName()
     {
         return name;
-    }
-
-    void setScanResult(ScanResult scanResult)
-    {
-        if (scanResult == null)
-            throw new NullPointerException();
-        this.scanResult = scanResult;
-    }
-
-    ScanResult getScanResult()
-    {
-        return scanResult;
     }
 
     void setIp(String ip)
@@ -82,17 +67,34 @@ public class RemoteUser
 
     void close() throws IOException
     {
+        IOException firstExcep = null;
         Object[] transfersArr = transfers.toArray();
         for (Object transfer : transfersArr)
         {
-            ((TransferEntity) transfer).setCancelFlag();
+            try
+            {
+                ((TransferEntity) transfer).close();
+            }catch (IOException e)
+            {
+                if(firstExcep == null)
+                    firstExcep = e;
+            }
         }
         if (key != null)
         {
-            key.cancel();
-            SocketChannel sc = (SocketChannel) key.channel();
-            sc.close();
-            key = null;
+            try
+            {
+                key.cancel();
+                SocketChannel sc = (SocketChannel) key.channel();
+                sc.close();
+                key = null;
+            }catch (IOException e)
+            {
+                if(firstExcep == null)
+                    firstExcep = e;
+            }
         }
+        if(firstExcep != null)
+            throw firstExcep;
     }
 }
