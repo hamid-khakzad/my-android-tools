@@ -5,8 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -27,7 +29,6 @@ import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
 import cn.emagsoftware.net.wifi.WifiUtils;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
-import cn.emagsoftware.util.Base64;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.StringUtilities;
 
@@ -36,8 +37,10 @@ public class User
 
     private static final int  WIFI_TIMEOUT    = 20000;
     static final int          SOCKET_TIMEOUT  = 20000;
+    static final int MAX_NAME_LENGTH = 6;
 
     private static final int  LISTENING_PORT  = 7001;
+    private static final int  LISTENING_PORT_UDP  = 7002;
 
     private String            name            = null;
 
@@ -49,6 +52,7 @@ public class User
     private RemoteCallback    callback        = null;
 
     private SelectionKey      listeningKey    = null;
+    private SelectionKey      listeningKeyUDP    = null;
 
     private Handler           handler         = new Handler();
 
@@ -56,13 +60,32 @@ public class User
     {
         if (name == null)
             throw new NullPointerException();
-        if (name.length() > 6)
-            throw new NameOutOfRangeException("name length can not great than 6.");
+        if (name.length() > MAX_NAME_LENGTH)
+            throw new NameOutOfRangeException("name length can not great than " + MAX_NAME_LENGTH + ".");
         this.name = name;
         selector = Selector.open();
-        callback.bindSelector(selector);
-        this.callback = callback;
-        new Thread(callback).start();
+        DatagramChannel channel = null;
+        try
+        {
+            channel = DatagramChannel.open();
+            DatagramSocket socket = channel.socket();
+            channel.configureBlocking(false);
+            socket.bind(new InetSocketAddress(LISTENING_PORT_UDP));
+            listeningKeyUDP = channel.register(selector,SelectionKey.OP_READ,new Object[]{this});
+            callback.bindSelector(selector);
+            this.callback = callback;
+            new Thread(callback).start();
+        }finally
+        {
+            try
+            {
+                selector.close();
+            }finally
+            {
+                if(channel != null)
+                    channel.close();
+            }
+        }
     }
 
     public String getName()
@@ -195,7 +218,7 @@ public class User
         String apName = null;
         try
         {
-            apName = "GHFY" + StringUtilities.bytesToHexString(name.getBytes("UTF-16"));
+            apName = "MYFY" + StringUtilities.bytesToHexString(name.getBytes("UTF-16"));
         } catch (UnsupportedEncodingException e)
         {
             throw new RuntimeException(e);
@@ -404,7 +427,7 @@ public class User
             callback.onError(firstExcepPoint);
     }
 
-    public void scanUsers(final Context context, final ScanUsersCallback callback)
+    public void scanRemoteAps(final Context context, final ScanRemoteApsCallback callback)
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.setWifiEnabled(true, new WifiCallback(context)
@@ -412,31 +435,19 @@ public class User
             @Override
             public void onWifiEnabled()
             {
-                // TODO Auto-generated method stub
                 super.onWifiEnabled();
                 wifiUtils.startScan(new WifiCallback(context)
                 {
                     @Override
                     public void onScanResults(List<ScanResult> scanResults)
                     {
-                        // TODO Auto-generated method stub
                         super.onScanResults(scanResults);
-                        List<RemoteUser> callbackVal = new ArrayList<RemoteUser>();
+                        List<RemoteAp> callbackVal = new ArrayList<RemoteAp>();
                         for (ScanResult result : scanResults)
                         {
                             String ssid = result.SSID;
                             String name = null;
-                            if (ssid.startsWith("GHFY_")) // ¼æÈÝ¾É°æ
-                            {
-                                String userStr = ssid.substring(5);
-                                try
-                                {
-                                    name = new String(Base64.decode(userStr), "UTF-8");
-                                } catch (Exception e)
-                                {
-                                    LogManager.logW(User.class, "decode scanned user name failed.", e);
-                                }
-                            } else if (ssid.startsWith("GHFY"))
+                            if (ssid.startsWith("MYFY"))
                             {
                                 String userStr = ssid.substring(4);
                                 try
@@ -444,14 +455,14 @@ public class User
                                     name = new String(StringUtilities.hexStringToBytes(userStr), "UTF-16");
                                 } catch (Exception e)
                                 {
-                                    LogManager.logW(User.class, "decode scanned user name failed.", e);
+                                    LogManager.logW(User.class, "decode scanned ap name failed.", e);
                                 }
                             }
                             if (name != null)
                             {
-                                RemoteUser user = new RemoteUser(name);
-                                user.setScanResult(result);
-                                callbackVal.add(user);
+                                RemoteAp ap = new RemoteAp(name);
+                                ap.setScanResult(result);
+                                callbackVal.add(ap);
                             }
                         }
                         callback.onScanned(callbackVal);
@@ -460,7 +471,6 @@ public class User
                     @Override
                     public void onTimeout()
                     {
-                        // TODO Auto-generated method stub
                         super.onTimeout();
                         callback.onError();
                     }
@@ -468,7 +478,6 @@ public class User
                     @Override
                     public void onScanFailed()
                     {
-                        // TODO Auto-generated method stub
                         super.onScanFailed();
                         callback.onError();
                     }
@@ -478,7 +487,6 @@ public class User
             @Override
             public void onWifiFailed()
             {
-                // TODO Auto-generated method stub
                 super.onWifiFailed();
                 callback.onError();
             }
@@ -486,61 +494,49 @@ public class User
             @Override
             public void onTimeout()
             {
-                // TODO Auto-generated method stub
                 super.onTimeout();
                 callback.onError();
             }
         }, WIFI_TIMEOUT);
     }
 
-    public void connectToRemoteAp(final Context context, final RemoteUser user, final ConnectToRemoteApCallback callback)
+    public void connectToRemoteAp(final Context context, final RemoteAp ap, final ConnectToRemoteApCallback callback)
     {
-        final ScanResult result = user.getScanResult();
-        if (result == null)
-            throw new IllegalStateException("can only connect to ap which has been found by scanning.");
         final WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.setWifiEnabled(true, new WifiCallback(context)
         {
             @Override
             public void onWifiEnabled()
             {
-                // TODO Auto-generated method stub
                 super.onWifiEnabled();
-                wifiUtils.connect(result, null, new WifiCallback(context)
+                wifiUtils.connect(ap.getScanResult(), null, new WifiCallback(context)
                 {
                     @Override
                     public void onNetworkConnected(WifiInfo wifiInfo)
                     {
-                        // TODO Auto-generated method stub
                         super.onNetworkConnected(wifiInfo);
-                        int apIp = wifiUtils.getWifiManager().getDhcpInfo().serverAddress;
-                        String apIpStr = String.format("%d.%d.%d.%d", (apIp & 0xff), (apIp >> 8 & 0xff), (apIp >> 16 & 0xff), (apIp >> 24 & 0xff));
-                        user.setIp(apIpStr);
-                        callback.onConnected(user);
+                        callback.onConnected(ap);
                     }
 
                     @Override
                     public void onNetworkDisconnected(WifiInfo wifiInfo)
                     {
-                        // TODO Auto-generated method stub
                         super.onNetworkDisconnected(wifiInfo);
-                        callback.onError(user);
+                        callback.onError(ap);
                     }
 
                     @Override
                     public void onTimeout()
                     {
-                        // TODO Auto-generated method stub
                         super.onTimeout();
-                        callback.onError(user);
+                        callback.onError(ap);
                     }
 
                     @Override
                     public void onNetworkFailed(WifiInfo wifiInfo)
                     {
-                        // TODO Auto-generated method stub
                         super.onNetworkFailed(wifiInfo);
-                        callback.onError(user);
+                        callback.onError(ap);
                     }
                 }, WIFI_TIMEOUT);
             }
@@ -548,32 +544,53 @@ public class User
             @Override
             public void onWifiFailed()
             {
-                // TODO Auto-generated method stub
                 super.onWifiFailed();
-                callback.onError(user);
+                callback.onError(ap);
             }
 
             @Override
             public void onTimeout()
             {
-                // TODO Auto-generated method stub
                 super.onTimeout();
-                callback.onError(user);
+                callback.onError(ap);
             }
         }, WIFI_TIMEOUT);
     }
 
+    public void disconnectRemoteAp(Context context, RemoteAp ap, DisconnectRemoteApCallback callback)
+    {
+        try
+        {
+            ScanResult sr = ap.getScanResult();
+            WifiUtils wifiUtils = new WifiUtils(context);
+            List<WifiConfiguration> wcList = wifiUtils.getConfiguration(sr, true);
+            if (wcList != null && wcList.size() != 0)
+            {
+                WifiManager wm = wifiUtils.getWifiManager();
+                wm.removeNetwork(wcList.get(0).networkId);
+                wm.saveConfiguration();
+            }
+        }catch (RuntimeException e)
+        {
+            callback.onError(ap,e);
+            return;
+        }
+        callback.onDisconnected(ap);
+    }
+
+    public void scanUsers(final Context context, final ScanUsersCallback callback)
+    {
+        
+    }
+
     public void connectToUser(final RemoteUser user)
     {
-        String ip = user.getIp();
-        if (ip == null)
-            throw new IllegalStateException("ip not found,if the input user is found by scanning,call 'connectToRemoteAp(...)' first.");
         SocketChannel sc = null;
         try
         {
             sc = SocketChannel.open();
             sc.configureBlocking(false);
-            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+            sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
             callback.setSleepForConflict(true);
             try
             {
@@ -596,35 +613,13 @@ public class User
         }
     }
 
-    public void disconnectUser(Context context, final RemoteUser user)
+    public void disconnectUser(RemoteUser user)
     {
         try
         {
             user.close();
-            ScanResult sr = user.getScanResult();
-            if (sr != null)
-            {
-                final WifiUtils wifiUtils = new WifiUtils(context);
-                final List<WifiConfiguration> wcList = wifiUtils.getConfiguration(sr, true);
-                if (wcList != null && wcList.size() != 0)
-                {
-                    handler.postDelayed(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            // TODO Auto-generated method stub
-                            WifiManager wm = wifiUtils.getWifiManager();
-                            wm.removeNetwork(wcList.get(0).networkId);
-                            wm.saveConfiguration();
-                            callback.onDisconnected(user);
-                        }
-                    }, 1000);
-                    return;
-                }
-            }
             callback.onDisconnected(user);
-        } catch (final IOException e)
+        } catch (IOException e)
         {
             callback.onDisconnectedFailed(user, e);
         }
@@ -695,9 +690,9 @@ public class User
         }
     }
 
-    public void cancelTransfer(TransferEntity transfer)
+    public void cancelTransfer(TransferEntity transfer) throws IOException
     {
-        transfer.setCancelFlag();
+        transfer.close();
     }
 
     public void close(final Context context, final CloseCallback callback)
@@ -750,7 +745,6 @@ public class User
             @Override
             public void run()
             {
-                // TODO Auto-generated method stub
                 WifiUtils wifiUtils = new WifiUtils(context);
                 WifiManager wm = wifiUtils.getWifiManager();
                 List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
@@ -759,7 +753,7 @@ public class User
                     for (WifiConfiguration wc : wcs)
                     {
                         String ssid = wc.SSID;
-                        if (ssid != null && ssid.startsWith("\"GHFY"))
+                        if (ssid != null && ssid.startsWith("\"MYFY"))
                         {
                             wm.removeNetwork(wc.networkId);
                         }
@@ -771,7 +765,6 @@ public class User
                     @Override
                     public void onFinished()
                     {
-                        // TODO Auto-generated method stub
                         if (firstExcepPoint == null)
                             callback.onClosed();
                         else
@@ -781,7 +774,6 @@ public class User
                     @Override
                     public void onError(Exception e)
                     {
-                        // TODO Auto-generated method stub
                         if (firstExcepPoint == null)
                             callback.onError(e);
                         else

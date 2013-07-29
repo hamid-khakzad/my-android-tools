@@ -3,8 +3,8 @@ package cn.emagsoftware.net.wifi.direct;
 public interface ConnectToRemoteApCallback
 {
 
-    public void onConnected(RemoteUser user);
+    public void onConnected(RemoteAp ap);
 
-    public void onError(RemoteUser user);
+    public void onError(RemoteAp ap);
 
 }

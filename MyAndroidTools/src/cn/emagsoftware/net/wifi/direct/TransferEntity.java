@@ -1,5 +1,9 @@
 package cn.emagsoftware.net.wifi.direct;
 
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+
 public class TransferEntity
 {
     private RemoteUser remoteUser;
@@ -9,7 +13,7 @@ public class TransferEntity
     private boolean    isSender;
     private String     extraDescription;
     private Object     tag;
-    private boolean    isCancelled = false;
+    private SelectionKey transferKey;
 
     TransferEntity()
     {
@@ -95,14 +99,30 @@ public class TransferEntity
         this.tag = tag;
     }
 
-    void setCancelFlag()
+    void setSelectionKey(SelectionKey transferKey)
     {
-        this.isCancelled = true;
+        if (transferKey == null)
+            throw new NullPointerException();
+        this.transferKey = transferKey;
     }
 
-    boolean getCancelFlag()
+    SelectionKey getSelectionKey()
     {
-        return isCancelled;
+        return transferKey;
+    }
+
+    void close() throws IOException
+    {
+        if (transferKey == null)
+        {
+            remoteUser.removeTransfer(this);
+            return;
+        }
+        // 对transferKey不能执行cancel()，这样才能保证RemoteCallback.onTransferFailed(TransferEntity,Exception)一定被回调，onTransferFailed(TransferEntity,Exception)被回调前会执行cancel()
+        SocketChannel sc = (SocketChannel) transferKey.channel();
+        sc.close();
+        remoteUser.removeTransfer(this);
+        transferKey = null;
     }
 
 }
