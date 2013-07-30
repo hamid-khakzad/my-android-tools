@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
@@ -17,6 +19,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
@@ -210,35 +213,34 @@ public abstract class RemoteCallback implements Runnable
                             User user = null;
                             if(objs[0] instanceof User)
                             {
-                                buff = ByteBuffer.allocate(5 + 3 * User.MAX_NAME_LENGTH);
+                                buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
                                 user = (User)objs[0];
+                                key.attach(new Object[]{buff,user});
                             }else if(objs[0] instanceof ByteBuffer)
                             {
                                 buff = (ByteBuffer)objs[0];
                                 user = (User)objs[1];
                             }
+                            SocketAddress addr = null;
                             try
                             {
-                                dc.receive(buff);
+                                addr = dc.receive(buff);
                             }catch (IOException e)
                             {
                                 LogManager.logE(RemoteCallback.class, "receiving remote failed.", e);
+                                continue;
                             }
-                            if(buff.hasRemaining())
-                            {
-                                key.attach(new Object[]{buff,user});
-                            }else
+                            if(!buff.hasRemaining())
                             {
                                 buff.flip();
                                 byte sign = buff.get();
+                                int token = buff.getInt();
                                 if(sign == 0)
                                 {
-                                    key.attach(new Object[]{user});
+                                    key.attach(new Object[]{addr,token,user});
                                     key.interestOps(SelectionKey.OP_WRITE);
                                 }else
                                 {
-                                    int length = buff.getInt();
-                                    buff.limit(buff.position() + length);
                                     String name = null;
                                     try
                                     {
@@ -249,11 +251,15 @@ public abstract class RemoteCallback implements Runnable
                                         key.attach(new Object[] { user });
                                         continue;
                                     }
-                                    
-
-
-
-
+                                    RemoteUser curUser = new RemoteUser(name);
+                                    curUser.setIp(((InetSocketAddress)addr).getAddress().getHostAddress());
+                                    synchronized (user)
+                                    {
+                                        List<RemoteUser> scanList = user.scanUsers.get(token);
+                                        if(scanList != null) // Î´³¬Ê±
+                                            scanList.add(curUser);
+                                    }
+                                    key.attach(new Object[] { user });
                                 }
                             }
                         }else
@@ -572,298 +578,372 @@ public abstract class RemoteCallback implements Runnable
                         }
                     } else if (key.isWritable())
                     {
-                        Object[] objs = (Object[]) key.attachment();
-                        SocketChannel sc = (SocketChannel) key.channel();
-                        if (objs[1].equals("info_send"))
+                        SelectableChannel keyChannel = key.channel();
+                        if(keyChannel instanceof DatagramChannel)
                         {
-                            final RemoteUser remoteUser = (RemoteUser) objs[0];
-                            try
-                            {
-                                ByteBuffer sendBuff = null;
-                                User user = null;
-                                if (objs[2] instanceof ByteBuffer)
-                                {
-                                    sendBuff = (ByteBuffer) objs[2];
-                                    user = (User) objs[3];
-                                } else
-                                {
-                                    user = (User) objs[2];
-                                    String msg = StringUtilities.concatByCSV(new String[] { "info_send", user.getName() });
-                                    byte[] msgByte = msg.getBytes("UTF-8");
-                                    sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                                    sendBuff.putInt(msgByte.length);
-                                    sendBuff.put(msgByte);
-                                    sendBuff.flip();
-                                }
-                                sc.write(sendBuff);
-                                if (sendBuff.hasRemaining())
-                                {
-                                    key.attach(new Object[] { objs[0], "info_send", sendBuff, user });
-                                } else
-                                {
-                                    key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                                    key.interestOps(SelectionKey.OP_READ);
-                                    user.acceptIfNecessary();
-                                }
-                            } catch (final IOException e)
+                            DatagramChannel dc = (DatagramChannel)keyChannel;
+                            Object[] objs = (Object[]) key.attachment();
+                            if(objs[0] instanceof Integer)
                             {
                                 try
                                 {
-                                    key.cancel();
-                                    sc.close();
-                                } catch (IOException e1)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
-                                }
-                                handler.post(new Runnable()
-                                {
-                                    @Override
-                                    public void run()
+                                    ByteBuffer buff = null;
+                                    if(objs.length == 1)
                                     {
-                                        onConnectedFailed(remoteUser, e);
+                                        buff = ByteBuffer.allocate(1 + 4); // sign+token
+                                        buff.put((byte)0);
+                                        buff.putInt((Integer)objs[0]);
+                                        buff.flip();
+                                        key.attach(new Object[]{objs[0],buff});
+                                    }else
+                                    {
+                                        buff = (ByteBuffer)objs[1];
                                     }
-                                });
-                                continue;
-                            }
-                            remoteUser.setKey(key);
-                            handler.post(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    onConnected(remoteUser);
-                                }
-                            });
-                        } else if (objs[1].equals("transfer_request"))
-                        {
-                            try
-                            {
-                                ByteBuffer sendBuff = null;
-                                if (objs[2] instanceof ByteBuffer)
-                                {
-                                    sendBuff = (ByteBuffer) objs[2];
-                                } else
-                                {
-                                    String description = String.valueOf(objs[2]);
-                                    String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", description });
-                                    byte[] msgByte = msg.getBytes("UTF-8");
-                                    sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                                    sendBuff.putInt(msgByte.length);
-                                    sendBuff.put(msgByte);
-                                    sendBuff.flip();
-                                }
-                                sc.write(sendBuff);
-                                if (sendBuff.hasRemaining())
-                                {
-                                    key.attach(new Object[] { objs[0], "transfer_request", sendBuff });
-                                } else
-                                {
-                                    key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                                    key.interestOps(SelectionKey.OP_READ);
-                                }
-                            } catch (IOException e)
-                            {
-                                LogManager.logE(RemoteCallback.class, "transfer request failed.", e);
-                                key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                                key.interestOps(SelectionKey.OP_READ);
-                            }
-                        } else if (objs[1].equals("transfer_reply"))
-                        {
-                            try
-                            {
-                                ByteBuffer sendBuff = null;
-                                if (objs[2] instanceof ByteBuffer)
-                                {
-                                    sendBuff = (ByteBuffer) objs[2];
-                                } else
-                                {
-                                    String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]) });
-                                    byte[] msgByte = msg.getBytes("UTF-8");
-                                    sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                                    sendBuff.putInt(msgByte.length);
-                                    sendBuff.put(msgByte);
-                                    sendBuff.flip();
-                                }
-                                sc.write(sendBuff);
-                                if (sendBuff.hasRemaining())
-                                {
-                                    key.attach(new Object[] { objs[0], "transfer_reply", sendBuff });
-                                } else
-                                {
-                                    key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                                    key.interestOps(SelectionKey.OP_READ);
-                                }
-                            } catch (IOException e)
-                            {
-                                LogManager.logE(RemoteCallback.class, "transfer reply failed.", e);
-                                key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
-                                key.interestOps(SelectionKey.OP_READ);
-                            }
-                        } else if (objs[1].equals("transfer_send"))
-                        {
-                            TransferEntity transfer = null;
-                            try
-                            {
-                                ByteBuffer sendBuff = null;
-                                if (objs[2] instanceof ByteBuffer)
-                                {
-                                    sendBuff = (ByteBuffer) objs[2];
-                                    transfer = (TransferEntity) objs[3];
-                                } else
-                                {
-                                    transfer = (TransferEntity) objs[2];
-                                    String msg = null;
-                                    String extraDescription = transfer.getExtraDescription();
-                                    if (extraDescription == null)
-                                        msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()) });
-                                    else
-                                        msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()), extraDescription });
-                                    byte[] msgByte = msg.getBytes("UTF-8");
-                                    sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                                    sendBuff.putInt(msgByte.length);
-                                    sendBuff.put(msgByte);
-                                    sendBuff.flip();
-                                }
-                                sc.write(sendBuff);
-                                if (sendBuff.hasRemaining())
-                                {
-                                    key.attach(new Object[] { objs[0], "transfer_send", sendBuff, transfer });
-                                } else
-                                {
-                                    key.attach(new Object[] { objs[0], "transfer_progress", transfer, new FileInputStream(transfer.getSendPath()).getChannel(), 0, 0 });
-                                }
-                            } catch (final IOException e)
-                            {
-                                try
-                                {
-                                    key.cancel();
-                                    sc.close();
-                                } catch (IOException e1)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
-                                }
-                                try
-                                {
-                                    transfer.close();
-                                } catch (IOException e1)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
-                                }
-                                final TransferEntity transferPoint = transfer;
-                                handler.post(new Runnable()
-                                {
-                                    @Override
-                                    public void run()
+                                    dc.send(buff,new InetSocketAddress(InetAddress.getByAddress(new byte[]{(byte)255,(byte)255,(byte)255,(byte)255}),User.LISTENING_PORT_UDP));
+                                    if(!buff.hasRemaining())
                                     {
-                                        onTransferFailed(transferPoint, e);
+                                        key.cancel();
+                                        dc.close();
                                     }
-                                });
-                                continue;
-                            }
-                            transfer.setSelectionKey(key);
-                        } else if (objs[1].equals("transfer_progress"))
-                        {
-                            TransferEntity transfer = null;
-                            FileChannel channel = null;
-                            long curSize;
-                            int lastPublishProgress;
-                            try
-                            {
-                                ByteBuffer sendBuff = null;
-                                if (objs[2] instanceof ByteBuffer)
+                                }catch (IOException e)
                                 {
-                                    sendBuff = (ByteBuffer) objs[2];
-                                    transfer = (TransferEntity) objs[3];
-                                    channel = (FileChannel) objs[4];
-                                    curSize = Long.parseLong(String.valueOf(objs[5]));
-                                    lastPublishProgress = Integer.parseInt(String.valueOf(objs[6]));
-                                } else
-                                {
-                                    transfer = (TransferEntity) objs[2];
-                                    channel = (FileChannel) objs[3];
-                                    curSize = Long.parseLong(String.valueOf(objs[4]));
-                                    lastPublishProgress = Integer.parseInt(String.valueOf(objs[5]));
-                                    sendBuff = ByteBuffer.allocate(2 * 1024);
-                                    int len = channel.read(sendBuff);
-                                    if (len == -1)
+                                    try
                                     {
-                                        try
+                                        key.cancel();
+                                        dc.close();
+                                    } catch (IOException e1)
+                                    {
+                                        LogManager.logE(RemoteCallback.class, "close datagram channel failed.", e1);
+                                    }
+                                    LogManager.logE(RemoteCallback.class,"send udp request for scanning user failed.",e);
+                                }
+                            }else if(objs[0] instanceof SocketAddress)
+                            {
+                                SocketAddress addr = (SocketAddress)objs[0];
+                                User user = (User)objs[2];
+                                try
+                                {
+                                    ByteBuffer buff = null;
+                                    if(objs.length == 3)
+                                    {
+                                        buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
+                                        buff.put((byte)1);
+                                        buff.putInt((Integer)objs[1]);
+                                        buff.put(user.getName().getBytes("UTF-8"));
+                                        buff.flip();
+                                        key.attach(new Object[]{addr,objs[1],user,buff});
+                                    }else
+                                    {
+                                        buff = (ByteBuffer)objs[3];
+                                    }
+                                    dc.send(buff,addr);
+                                    if(!buff.hasRemaining())
+                                    {
+                                        key.attach(new Object[]{user});
+                                        key.interestOps(SelectionKey.OP_READ);
+                                    }
+                                }catch (IOException e)
+                                {
+                                    key.attach(new Object[]{user});
+                                    key.interestOps(SelectionKey.OP_READ);
+                                    LogManager.logE(RemoteCallback.class,"send udp response for scanning user failed.",e);
+                                }
+                            }
+                        }else
+                        {
+                            SocketChannel sc = (SocketChannel) keyChannel;
+                            Object[] objs = (Object[]) key.attachment();
+                            if (objs[1].equals("info_send"))
+                            {
+                                final RemoteUser remoteUser = (RemoteUser) objs[0];
+                                try
+                                {
+                                    ByteBuffer sendBuff = null;
+                                    User user = null;
+                                    if (objs[2] instanceof ByteBuffer)
+                                    {
+                                        sendBuff = (ByteBuffer) objs[2];
+                                        user = (User) objs[3];
+                                    } else
+                                    {
+                                        user = (User) objs[2];
+                                        String msg = StringUtilities.concatByCSV(new String[] { "info_send", user.getName() });
+                                        byte[] msgByte = msg.getBytes("UTF-8");
+                                        sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                        sendBuff.putInt(msgByte.length);
+                                        sendBuff.put(msgByte);
+                                        sendBuff.flip();
+                                    }
+                                    sc.write(sendBuff);
+                                    if (sendBuff.hasRemaining())
+                                    {
+                                        key.attach(new Object[] { objs[0], "info_send", sendBuff, user });
+                                    } else
+                                    {
+                                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                        key.interestOps(SelectionKey.OP_READ);
+                                        user.acceptIfNecessary();
+                                    }
+                                } catch (final IOException e)
+                                {
+                                    try
+                                    {
+                                        key.cancel();
+                                        sc.close();
+                                    } catch (IOException e1)
+                                    {
+                                        LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
+                                    }
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
                                         {
-                                            key.cancel();
-                                            transfer.close();
-                                        } catch (IOException e)
-                                        {
-                                            LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e);
+                                            onConnectedFailed(remoteUser, e);
                                         }
-                                        try
-                                        {
-                                            channel.close();
-                                        } catch (IOException e)
-                                        {
-                                            LogManager.logE(RemoteCallback.class, "close file channel failed.", e);
-                                        }
-                                        final TransferEntity transferPoint = transfer;
-                                        handler.post(new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                onTransferProgress(transferPoint, 100);
-                                            }
-                                        });
-                                        continue;
-                                    }
-                                    sendBuff.flip();
+                                    });
+                                    continue;
                                 }
-                                sc.write(sendBuff);
-                                if (sendBuff.hasRemaining())
-                                {
-                                    key.attach(new Object[] { objs[0], "transfer_progress", sendBuff, transfer, channel, curSize, lastPublishProgress });
-                                } else
-                                {
-                                    curSize = curSize + sendBuff.position();
-                                    final int curProgress = (int) MathUtilities.mul(MathUtilities.div(curSize, transfer.getSize(), 2), 100);
-                                    if (curProgress - lastPublishProgress >= 5)
-                                    {
-                                        lastPublishProgress = curProgress;
-                                        final TransferEntity transferPoint = transfer;
-                                        handler.post(new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                onTransferProgress(transferPoint, curProgress);
-                                            }
-                                        });
-                                    }
-                                    key.attach(new Object[] { objs[0], "transfer_progress", transfer, channel, curSize, lastPublishProgress });
-                                }
-                            } catch (final IOException e)
-                            {
-                                try
-                                {
-                                    key.cancel();
-                                    transfer.close();
-                                } catch (IOException e1)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
-                                }
-                                try
-                                {
-                                    channel.close();
-                                } catch (IOException e1)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "close file channel failed.", e1);
-                                }
-                                final TransferEntity transferPoint = transfer;
+                                remoteUser.setKey(key);
                                 handler.post(new Runnable()
                                 {
                                     @Override
                                     public void run()
                                     {
-                                        onTransferFailed(transferPoint, e);
+                                        onConnected(remoteUser);
                                     }
                                 });
+                            } else if (objs[1].equals("transfer_request"))
+                            {
+                                try
+                                {
+                                    ByteBuffer sendBuff = null;
+                                    if (objs[2] instanceof ByteBuffer)
+                                    {
+                                        sendBuff = (ByteBuffer) objs[2];
+                                    } else
+                                    {
+                                        String description = String.valueOf(objs[2]);
+                                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", description });
+                                        byte[] msgByte = msg.getBytes("UTF-8");
+                                        sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                        sendBuff.putInt(msgByte.length);
+                                        sendBuff.put(msgByte);
+                                        sendBuff.flip();
+                                    }
+                                    sc.write(sendBuff);
+                                    if (sendBuff.hasRemaining())
+                                    {
+                                        key.attach(new Object[] { objs[0], "transfer_request", sendBuff });
+                                    } else
+                                    {
+                                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                        key.interestOps(SelectionKey.OP_READ);
+                                    }
+                                } catch (IOException e)
+                                {
+                                    LogManager.logE(RemoteCallback.class, "transfer request failed.", e);
+                                    key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                    key.interestOps(SelectionKey.OP_READ);
+                                }
+                            } else if (objs[1].equals("transfer_reply"))
+                            {
+                                try
+                                {
+                                    ByteBuffer sendBuff = null;
+                                    if (objs[2] instanceof ByteBuffer)
+                                    {
+                                        sendBuff = (ByteBuffer) objs[2];
+                                    } else
+                                    {
+                                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]) });
+                                        byte[] msgByte = msg.getBytes("UTF-8");
+                                        sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                        sendBuff.putInt(msgByte.length);
+                                        sendBuff.put(msgByte);
+                                        sendBuff.flip();
+                                    }
+                                    sc.write(sendBuff);
+                                    if (sendBuff.hasRemaining())
+                                    {
+                                        key.attach(new Object[] { objs[0], "transfer_reply", sendBuff });
+                                    } else
+                                    {
+                                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                        key.interestOps(SelectionKey.OP_READ);
+                                    }
+                                } catch (IOException e)
+                                {
+                                    LogManager.logE(RemoteCallback.class, "transfer reply failed.", e);
+                                    key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
+                                    key.interestOps(SelectionKey.OP_READ);
+                                }
+                            } else if (objs[1].equals("transfer_send"))
+                            {
+                                TransferEntity transfer = null;
+                                try
+                                {
+                                    ByteBuffer sendBuff = null;
+                                    if (objs[2] instanceof ByteBuffer)
+                                    {
+                                        sendBuff = (ByteBuffer) objs[2];
+                                        transfer = (TransferEntity) objs[3];
+                                    } else
+                                    {
+                                        transfer = (TransferEntity) objs[2];
+                                        String msg = null;
+                                        String extraDescription = transfer.getExtraDescription();
+                                        if (extraDescription == null)
+                                            msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()) });
+                                        else
+                                            msg = StringUtilities.concatByCSV(new String[] { "transfer_send", transfer.getSendPath(), String.valueOf(transfer.getSize()), extraDescription });
+                                        byte[] msgByte = msg.getBytes("UTF-8");
+                                        sendBuff = ByteBuffer.allocate(4 + msgByte.length);
+                                        sendBuff.putInt(msgByte.length);
+                                        sendBuff.put(msgByte);
+                                        sendBuff.flip();
+                                    }
+                                    sc.write(sendBuff);
+                                    if (sendBuff.hasRemaining())
+                                    {
+                                        key.attach(new Object[] { objs[0], "transfer_send", sendBuff, transfer });
+                                    } else
+                                    {
+                                        key.attach(new Object[] { objs[0], "transfer_progress", transfer, new FileInputStream(transfer.getSendPath()).getChannel(), 0, 0 });
+                                    }
+                                } catch (final IOException e)
+                                {
+                                    try
+                                    {
+                                        key.cancel();
+                                        sc.close();
+                                    } catch (IOException e1)
+                                    {
+                                        LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
+                                    }
+                                    try
+                                    {
+                                        transfer.close();
+                                    } catch (IOException e1)
+                                    {
+                                        LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
+                                    }
+                                    final TransferEntity transferPoint = transfer;
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            onTransferFailed(transferPoint, e);
+                                        }
+                                    });
+                                    continue;
+                                }
+                                transfer.setSelectionKey(key);
+                            } else if (objs[1].equals("transfer_progress"))
+                            {
+                                TransferEntity transfer = null;
+                                FileChannel channel = null;
+                                long curSize;
+                                int lastPublishProgress;
+                                try
+                                {
+                                    ByteBuffer sendBuff = null;
+                                    if (objs[2] instanceof ByteBuffer)
+                                    {
+                                        sendBuff = (ByteBuffer) objs[2];
+                                        transfer = (TransferEntity) objs[3];
+                                        channel = (FileChannel) objs[4];
+                                        curSize = Long.parseLong(String.valueOf(objs[5]));
+                                        lastPublishProgress = Integer.parseInt(String.valueOf(objs[6]));
+                                    } else
+                                    {
+                                        transfer = (TransferEntity) objs[2];
+                                        channel = (FileChannel) objs[3];
+                                        curSize = Long.parseLong(String.valueOf(objs[4]));
+                                        lastPublishProgress = Integer.parseInt(String.valueOf(objs[5]));
+                                        sendBuff = ByteBuffer.allocate(2 * 1024);
+                                        int len = channel.read(sendBuff);
+                                        if (len == -1)
+                                        {
+                                            try
+                                            {
+                                                key.cancel();
+                                                transfer.close();
+                                            } catch (IOException e)
+                                            {
+                                                LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e);
+                                            }
+                                            try
+                                            {
+                                                channel.close();
+                                            } catch (IOException e)
+                                            {
+                                                LogManager.logE(RemoteCallback.class, "close file channel failed.", e);
+                                            }
+                                            final TransferEntity transferPoint = transfer;
+                                            handler.post(new Runnable()
+                                            {
+                                                @Override
+                                                public void run()
+                                                {
+                                                    onTransferProgress(transferPoint, 100);
+                                                }
+                                            });
+                                            continue;
+                                        }
+                                        sendBuff.flip();
+                                    }
+                                    sc.write(sendBuff);
+                                    if (sendBuff.hasRemaining())
+                                    {
+                                        key.attach(new Object[] { objs[0], "transfer_progress", sendBuff, transfer, channel, curSize, lastPublishProgress });
+                                    } else
+                                    {
+                                        curSize = curSize + sendBuff.position();
+                                        final int curProgress = (int) MathUtilities.mul(MathUtilities.div(curSize, transfer.getSize(), 2), 100);
+                                        if (curProgress - lastPublishProgress >= 5)
+                                        {
+                                            lastPublishProgress = curProgress;
+                                            final TransferEntity transferPoint = transfer;
+                                            handler.post(new Runnable()
+                                            {
+                                                @Override
+                                                public void run()
+                                                {
+                                                    onTransferProgress(transferPoint, curProgress);
+                                                }
+                                            });
+                                        }
+                                        key.attach(new Object[] { objs[0], "transfer_progress", transfer, channel, curSize, lastPublishProgress });
+                                    }
+                                } catch (final IOException e)
+                                {
+                                    try
+                                    {
+                                        key.cancel();
+                                        transfer.close();
+                                    } catch (IOException e1)
+                                    {
+                                        LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
+                                    }
+                                    try
+                                    {
+                                        channel.close();
+                                    } catch (IOException e1)
+                                    {
+                                        LogManager.logE(RemoteCallback.class, "close file channel failed.", e1);
+                                    }
+                                    final TransferEntity transferPoint = transfer;
+                                    handler.post(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            onTransferFailed(transferPoint, e);
+                                        }
+                                    });
+                                }
                             }
                         }
                     }

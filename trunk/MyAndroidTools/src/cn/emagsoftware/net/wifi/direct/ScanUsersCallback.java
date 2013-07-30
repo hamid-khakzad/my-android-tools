@@ -7,6 +7,6 @@ public interface ScanUsersCallback
 
     public void onScanned(List<RemoteUser> users);
 
-    public void onError();
+    public void onError(Exception e);
 
 }

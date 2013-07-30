@@ -15,7 +15,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import android.content.Context;
@@ -40,7 +43,7 @@ public class User
     static final int MAX_NAME_LENGTH = 6;
 
     private static final int  LISTENING_PORT  = 7001;
-    private static final int  LISTENING_PORT_UDP  = 7002;
+    static final int  LISTENING_PORT_UDP  = 7002;
 
     private String            name            = null;
 
@@ -53,6 +56,9 @@ public class User
 
     private SelectionKey      listeningKey    = null;
     private SelectionKey      listeningKeyUDP    = null;
+
+    private int scanToken = -1;
+    Map<Integer,List<RemoteUser>> scanUsers = new HashMap<Integer, List<RemoteUser>>();
 
     private Handler           handler         = new Handler();
 
@@ -113,7 +119,6 @@ public class User
                 @Override
                 public void onOpen()
                 {
-                    // TODO Auto-generated method stub
                     try
                     {
                         acceptIfNecessary();
@@ -127,7 +132,6 @@ public class User
                 @Override
                 public void onError()
                 {
-                    // TODO Auto-generated method stub
                     callback.onError(new RuntimeException("open ap failed by 'OpenApCallback.onError()'."));
                 }
             });
@@ -159,7 +163,6 @@ public class User
                 @Override
                 public void onWifiApEnabled()
                 {
-                    // TODO Auto-generated method stub
                     super.onWifiApEnabled();
                     callback.onOpen();
                 }
@@ -167,7 +170,6 @@ public class User
                 @Override
                 public void onTimeout()
                 {
-                    // TODO Auto-generated method stub
                     super.onTimeout();
                     if (isFirst)
                     {
@@ -181,7 +183,6 @@ public class User
                 @Override
                 public void onWifiApFailed()
                 {
-                    // TODO Auto-generated method stub
                     super.onWifiApFailed();
                     if (isFirst)
                     {
@@ -323,7 +324,6 @@ public class User
             @Override
             public void onWifiApDisabled()
             {
-                // TODO Auto-generated method stub
                 super.onWifiApDisabled();
                 if (preApConfig != null)
                 {
@@ -348,7 +348,6 @@ public class User
             @Override
             public void onTimeout()
             {
-                // TODO Auto-generated method stub
                 super.onTimeout();
                 callback.onError();
             }
@@ -356,7 +355,6 @@ public class User
             @Override
             public void onWifiApFailed()
             {
-                // TODO Auto-generated method stub
                 super.onWifiApFailed();
                 callback.onError();
             }
@@ -396,7 +394,6 @@ public class User
                     @Override
                     public void onClosed()
                     {
-                        // TODO Auto-generated method stub
                         if (firstExcepPoint == null)
                             callback.onFinished();
                         else
@@ -406,7 +403,6 @@ public class User
                     @Override
                     public void onError()
                     {
-                        // TODO Auto-generated method stub
                         if (firstExcepPoint == null)
                             callback.onError(new RuntimeException("close ap failed by 'CloseApCallback.onError()'."));
                         else
@@ -578,9 +574,52 @@ public class User
         callback.onDisconnected(ap);
     }
 
-    public void scanUsers(final Context context, final ScanUsersCallback callback)
+    public void scanUsers(Context context, final ScanUsersCallback scanCallback)
     {
-        
+        if(scanToken == Integer.MAX_VALUE)
+            scanToken = -1;
+        final int curToken = ++scanToken;
+        final LinkedList<RemoteUser> users = new LinkedList<RemoteUser>();
+        scanUsers.put(curToken,users);
+        DatagramChannel dc = null;
+        try
+        {
+            dc = DatagramChannel.open();
+            dc.configureBlocking(false);
+            callback.setSleepForConflict(true);
+            try
+            {
+                dc.register(selector, SelectionKey.OP_WRITE, new Object[] { curToken });
+            } finally
+            {
+                callback.setSleepForConflict(false);
+            }
+        }catch (IOException e)
+        {
+            try
+            {
+                if (dc != null)
+                    dc.close();
+            } catch (IOException e1)
+            {
+                LogManager.logE(User.class, "close datagram channel failed.", e1);
+            }
+            scanUsers.remove(curToken);
+            scanCallback.onError(e);
+            return;
+        }
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                LinkedList<RemoteUser> copy = null;
+                synchronized (User.this)
+                {
+                    scanUsers.remove(curToken);
+                    copy = (LinkedList<RemoteUser>)users.clone();
+                }
+                scanCallback.onScanned(copy);
+            }
+        },4000);
     }
 
     public void connectToUser(final RemoteUser user)
