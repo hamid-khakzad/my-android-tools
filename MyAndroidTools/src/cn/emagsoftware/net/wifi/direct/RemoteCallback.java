@@ -599,7 +599,7 @@ public abstract class RemoteCallback implements Runnable
                                     {
                                         buff = (ByteBuffer)objs[1];
                                     }
-                                    dc.send(buff,new InetSocketAddress(InetAddress.getByAddress(new byte[]{(byte)255,(byte)255,(byte)255,(byte)255}),User.LISTENING_PORT_UDP));
+                                    dc.send(buff,new InetSocketAddress(InetAddress.getByName("255.255.255.255"),User.LISTENING_PORT_UDP));
                                     if(!buff.hasRemaining())
                                     {
                                         key.cancel();
