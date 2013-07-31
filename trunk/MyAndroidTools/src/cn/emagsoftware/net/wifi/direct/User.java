@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;
@@ -72,13 +74,14 @@ public class User
             selector.close();
             throw e;
         }
+        SelectionKey serverKey = null;
         ServerSocketChannel serverChannel = null;
         try
         {
             serverChannel = ServerSocketChannel.open();
             serverChannel.configureBlocking(false);
             serverChannel.socket().bind(new InetSocketAddress(LISTENING_PORT));
-            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+            serverKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         }catch (IOException e)
         {
             try
@@ -102,11 +105,18 @@ public class User
         {
             try
             {
-                selector.close(); // 该操作包括了serverChannel的取消和关闭
+                selector.close();
             }finally
             {
-                if(channel != null)
-                    channel.close();
+                try
+                {
+                    serverKey.cancel();
+                    serverChannel.close();
+                }finally
+                {
+                    if(channel != null)
+                        channel.close();
+                }
             }
             throw e;
         }
@@ -630,6 +640,22 @@ public class User
     public void close(final Context context, final CloseCallback callback)
     {
         Exception firstExcep = null;
+        Set<SelectionKey> skeys = null;
+        try
+        {
+            this.callback.setSleepForConflict(true);
+            try
+            {
+                skeys = selector.keys();
+            } finally
+            {
+                this.callback.setSleepForConflict(false);
+            }
+        } catch (ClosedSelectorException e)
+        {
+            if (firstExcep == null)
+                firstExcep = e;
+        }
         try
         {
             selector.close();
@@ -637,6 +663,21 @@ public class User
         {
             if (firstExcep == null)
                 firstExcep = e;
+        }
+        if (skeys != null)
+        {
+            for (SelectionKey curKey : skeys)
+            {
+                try
+                {
+                    curKey.cancel();
+                    curKey.channel().close();
+                } catch (IOException e)
+                {
+                    if (firstExcep == null)
+                        firstExcep = e;
+                }
+            }
         }
         final Exception firstExcepPoint = firstExcep;
         handler.postDelayed(new Runnable()
