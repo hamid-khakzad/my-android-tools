@@ -230,6 +230,7 @@ public abstract class RemoteCallback implements Runnable
                                 LogManager.logE(RemoteCallback.class, "receiving remote failed.", e);
                                 continue;
                             }
+                            String ip = ((InetSocketAddress)addr).getAddress().getHostAddress();
                             if(!buff.hasRemaining())
                             {
                                 buff.flip();
@@ -237,7 +238,7 @@ public abstract class RemoteCallback implements Runnable
                                 int token = buff.getInt();
                                 if(sign == 0)
                                 {
-                                    key.attach(new Object[]{addr,token,user});
+                                    key.attach(new Object[]{ip,token,user});
                                     key.interestOps(SelectionKey.OP_WRITE);
                                 }else
                                 {
@@ -252,7 +253,7 @@ public abstract class RemoteCallback implements Runnable
                                         continue;
                                     }
                                     RemoteUser curUser = new RemoteUser(name);
-                                    curUser.setIp(((InetSocketAddress)addr).getAddress().getHostAddress());
+                                    curUser.setIp(ip);
                                     synchronized (user)
                                     {
                                         List<RemoteUser> scanList = user.scanUsers.get(token);
@@ -617,9 +618,9 @@ public abstract class RemoteCallback implements Runnable
                                     }
                                     LogManager.logE(RemoteCallback.class,"send udp request for scanning user failed.",e);
                                 }
-                            }else if(objs[0] instanceof SocketAddress)
+                            }else if(objs[0] instanceof String)
                             {
-                                SocketAddress addr = (SocketAddress)objs[0];
+                                String ip = (String)objs[0];
                                 User user = (User)objs[2];
                                 try
                                 {
@@ -631,12 +632,12 @@ public abstract class RemoteCallback implements Runnable
                                         buff.putInt((Integer)objs[1]);
                                         buff.put(user.getName().getBytes("UTF-8"));
                                         buff.flip();
-                                        key.attach(new Object[]{addr,objs[1],user,buff});
+                                        key.attach(new Object[]{ip,objs[1],user,buff});
                                     }else
                                     {
                                         buff = (ByteBuffer)objs[3];
                                     }
-                                    dc.send(buff,addr);
+                                    dc.send(buff,new InetSocketAddress(InetAddress.getByName(ip),User.LISTENING_PORT_UDP));
                                     if(!buff.hasRemaining())
                                     {
                                         key.attach(new Object[]{user});
