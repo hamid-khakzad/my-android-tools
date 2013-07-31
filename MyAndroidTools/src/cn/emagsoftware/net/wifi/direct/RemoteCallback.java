@@ -682,7 +682,6 @@ public abstract class RemoteCallback implements Runnable
                                     {
                                         key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4) });
                                         key.interestOps(SelectionKey.OP_READ);
-                                        user.acceptIfNecessary();
                                     }
                                 } catch (final IOException e)
                                 {

@@ -5,11 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -19,7 +16,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import android.content.Context;
 import android.net.wifi.ScanResult;
@@ -54,9 +50,6 @@ public class User
     private Selector          selector        = null;
     private RemoteCallback    callback        = null;
 
-    private SelectionKey      listeningKey    = null;
-    private SelectionKey      listeningKeyUDP    = null;
-
     private int scanToken = -1;
     Map<Integer,List<RemoteUser>> scanUsers = new HashMap<Integer, List<RemoteUser>>();
 
@@ -64,34 +57,60 @@ public class User
 
     public User(String name, RemoteCallback callback) throws NameOutOfRangeException, IOException
     {
-        if (name == null)
+        if (name == null || callback == null)
             throw new NullPointerException();
         if (name.length() > MAX_NAME_LENGTH)
             throw new NameOutOfRangeException("name length can not great than " + MAX_NAME_LENGTH + ".");
         this.name = name;
+        this.callback = callback;
         selector = Selector.open();
-        DatagramChannel channel = null;
         try
         {
-            channel = DatagramChannel.open();
-            DatagramSocket socket = channel.socket();
-            channel.configureBlocking(false);
-            socket.bind(new InetSocketAddress(LISTENING_PORT_UDP));
-            listeningKeyUDP = channel.register(selector,SelectionKey.OP_READ,new Object[]{this});
             callback.bindSelector(selector);
-            this.callback = callback;
-            new Thread(callback).start();
-        }finally
+        }catch (RuntimeException e)
+        {
+            selector.close();
+            throw e;
+        }
+        ServerSocketChannel serverChannel = null;
+        try
+        {
+            serverChannel = ServerSocketChannel.open();
+            serverChannel.configureBlocking(false);
+            serverChannel.socket().bind(new InetSocketAddress(LISTENING_PORT));
+            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+        }catch (IOException e)
         {
             try
             {
                 selector.close();
             }finally
             {
+                if(serverChannel != null)
+                    serverChannel.close();
+            }
+            throw e;
+        }
+        DatagramChannel channel = null;
+        try
+        {
+            channel = DatagramChannel.open();
+            channel.configureBlocking(false);
+            channel.socket().bind(new InetSocketAddress(LISTENING_PORT_UDP));
+            channel.register(selector,SelectionKey.OP_READ,new Object[]{this});
+        }catch (IOException e)
+        {
+            try
+            {
+                selector.close(); // 该操作包括了serverChannel的取消和关闭
+            }finally
+            {
                 if(channel != null)
                     channel.close();
             }
+            throw e;
         }
+        new Thread(callback).start();
     }
 
     public String getName()
@@ -110,38 +129,7 @@ public class User
         this.name = name;
     }
 
-    public void listening(Context context, final ListeningCallback callback)
-    {
-        try
-        {
-            openAp(context, new OpenApCallback()
-            {
-                @Override
-                public void onOpen()
-                {
-                    try
-                    {
-                        acceptIfNecessary();
-                        callback.onListening();
-                    } catch (IOException e)
-                    {
-                        callback.onError(e);
-                    }
-                }
-
-                @Override
-                public void onError()
-                {
-                    callback.onError(new RuntimeException("open ap failed by 'OpenApCallback.onError()'."));
-                }
-            });
-        } catch (ReflectHiddenFuncException e)
-        {
-            callback.onError(e);
-        }
-    }
-
-    private void openAp(Context context, final OpenApCallback callback) throws ReflectHiddenFuncException
+    public void openAp(Context context, final OpenApCallback callback)
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         final boolean isFirst = preApConfig == null;
@@ -177,7 +165,7 @@ public class User
                         preWifiStaticIp = -1;
                         preWifiEnabled = false;
                     }
-                    callback.onError();
+                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onTimeout()'."));
                 }
 
                 @Override
@@ -190,7 +178,7 @@ public class User
                         preWifiStaticIp = -1;
                         preWifiEnabled = false;
                     }
-                    callback.onError();
+                    callback.onError(new RuntimeException("open ap failed by 'WifiCallback.onWifiApFailed()'."));
                 }
             }, WIFI_TIMEOUT);
         } catch (ReflectHiddenFuncException e)
@@ -201,15 +189,8 @@ public class User
                 preWifiStaticIp = -1;
                 preWifiEnabled = false;
             }
-            throw e;
+            callback.onError(e);
         }
-    }
-
-    private interface OpenApCallback
-    {
-        public void onOpen();
-
-        public void onError();
     }
 
     private WifiConfiguration createDirectApConfig(Context context) throws ReflectHiddenFuncException
@@ -284,143 +265,55 @@ public class User
         return apconfig;
     }
 
-    void acceptIfNecessary() throws IOException
-    {
-        if (listeningKey != null)
-            return;
-        ServerSocketChannel serverChannel = null;
-        try
-        {
-            serverChannel = ServerSocketChannel.open();
-            serverChannel.configureBlocking(false);
-            serverChannel.socket().bind(new InetSocketAddress(LISTENING_PORT));
-            callback.setSleepForConflict(true);
-            try
-            {
-                listeningKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
-            } finally
-            {
-                callback.setSleepForConflict(false);
-            }
-        } catch (IOException e)
-        {
-            try
-            {
-                if (serverChannel != null)
-                    serverChannel.close();
-            } catch (IOException e1)
-            {
-                LogManager.logE(User.class, "close server socket channel failed.", e1);
-            }
-            throw e;
-        }
-    }
-
-    private void closeAp(final Context context, final CloseApCallback callback) throws ReflectHiddenFuncException
+    public void closeAp(final Context context, final CloseApCallback callback)
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
-        wifiUtils.setWifiApEnabled(null, false, new WifiCallback(context)
+        try
         {
-            @Override
-            public void onWifiApDisabled()
+            wifiUtils.setWifiApEnabled(null, false, new WifiCallback(context)
             {
-                super.onWifiApDisabled();
-                if (preApConfig != null)
+                @Override
+                public void onWifiApDisabled()
                 {
-                    try
+                    super.onWifiApDisabled();
+                    if (preApConfig != null)
                     {
-                        wifiUtils.setWifiApConfiguration(preApConfig);
-                    } catch (ReflectHiddenFuncException e)
-                    {
-                        LogManager.logE(User.class, "restore ap config failed.", e);
+                        try
+                        {
+                            wifiUtils.setWifiApConfiguration(preApConfig);
+                        } catch (ReflectHiddenFuncException e)
+                        {
+                            LogManager.logE(User.class, "restore ap config failed.", e);
+                        }
+                        if (preWifiStaticIp != -1)
+                            Settings.System.putInt(context.getContentResolver(), "wifi_static_ip", preWifiStaticIp);
+                        if (preWifiEnabled)
+                            wifiUtils.setWifiEnabled(true, null, WIFI_TIMEOUT);
+                        preApConfig = null;
+                        preWifiStaticIp = -1;
+                        preWifiEnabled = false;
                     }
-                    if (preWifiStaticIp != -1)
-                        Settings.System.putInt(context.getContentResolver(), "wifi_static_ip", preWifiStaticIp);
-                    if (preWifiEnabled)
-                        wifiUtils.setWifiEnabled(true, null, WIFI_TIMEOUT);
-                    preApConfig = null;
-                    preWifiStaticIp = -1;
-                    preWifiEnabled = false;
+                    callback.onClosed();
                 }
-                callback.onClosed();
-            }
 
-            @Override
-            public void onTimeout()
-            {
-                super.onTimeout();
-                callback.onError();
-            }
-
-            @Override
-            public void onWifiApFailed()
-            {
-                super.onWifiApFailed();
-                callback.onError();
-            }
-        }, WIFI_TIMEOUT);
-    }
-
-    private interface CloseApCallback
-    {
-        public void onClosed();
-
-        public void onError();
-    }
-
-    public void finishListening(Context context, final FinishListeningCallback callback)
-    {
-        Exception firstExcep = null;
-        if (listeningKey != null)
-        {
-            try
-            {
-                listeningKey.cancel();
-                ((ServerSocketChannel) listeningKey.channel()).close();
-                listeningKey = null;
-            } catch (IOException e)
-            {
-                if (firstExcep == null)
-                    firstExcep = e;
-            }
-        }
-        if (preApConfig != null)
-        {
-            try
-            {
-                final Exception firstExcepPoint = firstExcep;
-                closeAp(context, new CloseApCallback()
+                @Override
+                public void onTimeout()
                 {
-                    @Override
-                    public void onClosed()
-                    {
-                        if (firstExcepPoint == null)
-                            callback.onFinished();
-                        else
-                            callback.onError(firstExcepPoint);
-                    }
+                    super.onTimeout();
+                    callback.onError(new RuntimeException("close ap failed by 'WifiCallback.onTimeout()'."));
+                }
 
-                    @Override
-                    public void onError()
-                    {
-                        if (firstExcepPoint == null)
-                            callback.onError(new RuntimeException("close ap failed by 'CloseApCallback.onError()'."));
-                        else
-                            callback.onError(firstExcepPoint);
-                    }
-                });
-                return;
-            } catch (ReflectHiddenFuncException e)
-            {
-                if (firstExcep == null)
-                    firstExcep = e;
-            }
+                @Override
+                public void onWifiApFailed()
+                {
+                    super.onWifiApFailed();
+                    callback.onError(new RuntimeException("close ap failed by 'WifiCallback.onWifiApFailed()'."));
+                }
+            }, WIFI_TIMEOUT);
+        }catch (ReflectHiddenFuncException e)
+        {
+            callback.onError(e);
         }
-        final Exception firstExcepPoint = firstExcep;
-        if (firstExcepPoint == null)
-            callback.onFinished();
-        else
-            callback.onError(firstExcepPoint);
     }
 
     public void scanRemoteAps(final Context context, final ScanRemoteApsCallback callback)
@@ -737,22 +630,6 @@ public class User
     public void close(final Context context, final CloseCallback callback)
     {
         Exception firstExcep = null;
-        Set<SelectionKey> skeys = null;
-        try
-        {
-            this.callback.setSleepForConflict(true);
-            try
-            {
-                skeys = selector.keys();
-            } finally
-            {
-                this.callback.setSleepForConflict(false);
-            }
-        } catch (ClosedSelectorException e)
-        {
-            if (firstExcep == null)
-                firstExcep = e;
-        }
         try
         {
             selector.close();
@@ -760,23 +637,6 @@ public class User
         {
             if (firstExcep == null)
                 firstExcep = e;
-        }
-        if (skeys != null)
-        {
-            for (SelectionKey curKey : skeys)
-            {
-                try
-                {
-                    curKey.cancel();
-                    SelectableChannel curChannel = curKey.channel();
-                    if (curChannel instanceof SocketChannel) // ServerSocketChannel将由finishListening方法关闭
-                        ((SocketChannel) curChannel).close();
-                } catch (IOException e)
-                {
-                    if (firstExcep == null)
-                        firstExcep = e;
-                }
-            }
         }
         final Exception firstExcepPoint = firstExcep;
         handler.postDelayed(new Runnable()
@@ -799,11 +659,9 @@ public class User
                     }
                     wm.saveConfiguration();
                 }
-                finishListening(context, new FinishListeningCallback()
-                {
+                closeAp(context,new CloseApCallback() {
                     @Override
-                    public void onFinished()
-                    {
+                    public void onClosed() {
                         if (firstExcepPoint == null)
                             callback.onClosed();
                         else
@@ -811,8 +669,7 @@ public class User
                     }
 
                     @Override
-                    public void onError(Exception e)
-                    {
+                    public void onError(Exception e) {
                         if (firstExcepPoint == null)
                             callback.onError(e);
                         else
