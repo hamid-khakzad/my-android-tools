@@ -489,6 +489,7 @@ public class User
         {
             dc = DatagramChannel.open();
             dc.configureBlocking(false);
+            dc.socket().setBroadcast(true);
             callback.setSleepForConflict(true);
             try
             {
