@@ -30,6 +30,7 @@ import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
 import cn.emagsoftware.net.wifi.WifiUtils;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
+import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.StringUtilities;
 
@@ -44,13 +45,13 @@ public class User
     static final int  LISTENING_PORT_UDP  = 7002;
 
     private String            name            = null;
+    private RemoteCallback    callback        = null;
+    private WifiManager.WifiLock wifiLock = null;
+    private Selector          selector        = null;
 
     private WifiConfiguration preApConfig     = null;
     private int               preWifiStaticIp = -1;
     private boolean           preWifiEnabled  = false;
-
-    private Selector          selector        = null;
-    private RemoteCallback    callback        = null;
 
     private int scanToken = -1;
     Map<Integer,List<RemoteUser>> scanUsers = new HashMap<Integer, List<RemoteUser>>();
@@ -65,12 +66,40 @@ public class User
             throw new NameOutOfRangeException("name length can not great than " + MAX_NAME_LENGTH + ".");
         this.name = name;
         this.callback = callback;
-        selector = Selector.open();
+        if(TelephonyMgr.getSDKVersion() < 12)
+        {
+            wifiLock = callback.wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL,getClass().getName());
+        }else
+        {
+            int lockType;
+            try
+            {
+                Field field = WifiManager.class.getDeclaredField("WIFI_MODE_FULL_HIGH_PERF");
+                field.setAccessible(true);
+                lockType = field.getInt(null);
+            }catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+            wifiLock = callback.wifiManager.createWifiLock(lockType,getClass().getName());
+        }
+        wifiLock.acquire();
+        try
+        {
+            selector = Selector.open();
+        }catch (IOException e)
+        {
+            if(wifiLock.isHeld())
+                wifiLock.release();
+            throw e;
+        }
         try
         {
             callback.bindSelector(selector);
         }catch (RuntimeException e)
         {
+            if(wifiLock.isHeld())
+                wifiLock.release();
             selector.close();
             throw e;
         }
@@ -86,6 +115,8 @@ public class User
         {
             try
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -105,6 +136,8 @@ public class User
         {
             try
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -698,6 +731,8 @@ public class User
             @Override
             public void run()
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 WifiUtils wifiUtils = new WifiUtils(context);
                 WifiManager wm = wifiUtils.getWifiManager();
                 List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
