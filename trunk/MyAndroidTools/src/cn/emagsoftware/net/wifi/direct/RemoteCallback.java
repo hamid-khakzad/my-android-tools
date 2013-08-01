@@ -23,8 +23,10 @@ import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+
 import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.MathUtilities;
@@ -210,20 +212,10 @@ public abstract class RemoteCallback implements Runnable
                             DatagramChannel dc = (DatagramChannel)keyChannel;
                             Object[] objs = (Object[]) key.attachment();
                             ByteBuffer buff = null;
-                            User user = null;
-                            if(objs[0] instanceof User)
-                            {
-                                buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
-                                user = (User)objs[0];
-                                key.attach(new Object[]{buff,user});
-                            }else if(objs[0] instanceof ByteBuffer)
-                            {
-                                buff = (ByteBuffer)objs[0];
-                                user = (User)objs[1];
-                            }
                             SocketAddress addr = null;
                             try
                             {
+                                buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
                                 addr = dc.receive(buff);
                             }catch (IOException e)
                             {
@@ -231,36 +223,37 @@ public abstract class RemoteCallback implements Runnable
                                 continue;
                             }
                             String ip = ((InetSocketAddress)addr).getAddress().getHostAddress();
-                            if(!buff.hasRemaining())
+                            String localWifiIp = getWifiIp();
+                            if(localWifiIp == null)
+                                continue;
+                            if(ip.equals(localWifiIp)) // 发送给自己的广播要忽略
+                                continue;
+                            buff.flip();
+                            byte sign = buff.get();
+                            int token = buff.getInt();
+                            User user = (User)objs[0];
+                            if(sign == 0)
                             {
-                                buff.flip();
-                                byte sign = buff.get();
-                                int token = buff.getInt();
-                                if(sign == 0)
+                                key.attach(new Object[]{ip,token,user});
+                                key.interestOps(SelectionKey.OP_WRITE);
+                            }else
+                            {
+                                String name = null;
+                                try
                                 {
-                                    key.attach(new Object[]{ip,token,user});
-                                    key.interestOps(SelectionKey.OP_WRITE);
-                                }else
+                                    name = Charset.forName("UTF-8").newDecoder().decode(buff).toString();
+                                } catch (CharacterCodingException e)
                                 {
-                                    String name = null;
-                                    try
-                                    {
-                                        name = Charset.forName("UTF-8").newDecoder().decode(buff).toString();
-                                    } catch (CharacterCodingException e)
-                                    {
-                                        LogManager.logE(RemoteCallback.class, "decode remote name failed.", e);
-                                        key.attach(new Object[] { user });
-                                        continue;
-                                    }
-                                    RemoteUser curUser = new RemoteUser(name);
-                                    curUser.setIp(ip);
-                                    synchronized (user)
-                                    {
-                                        List<RemoteUser> scanList = user.scanUsers.get(token);
-                                        if(scanList != null) // 未超时
-                                            scanList.add(curUser);
-                                    }
-                                    key.attach(new Object[] { user });
+                                    LogManager.logE(RemoteCallback.class, "decode remote name failed.", e);
+                                    continue;
+                                }
+                                RemoteUser curUser = new RemoteUser(name);
+                                curUser.setIp(ip);
+                                synchronized (user)
+                                {
+                                    List<RemoteUser> scanList = user.scanUsers.get(token);
+                                    if(scanList != null) // 未超时
+                                        scanList.add(curUser);
                                 }
                             }
                         }else
@@ -588,66 +581,44 @@ public abstract class RemoteCallback implements Runnable
                             {
                                 try
                                 {
-                                    ByteBuffer buff = null;
-                                    if(objs.length == 1)
-                                    {
-                                        buff = ByteBuffer.allocate(1 + 4); // sign+token
-                                        buff.put((byte)0);
-                                        buff.putInt((Integer)objs[0]);
-                                        buff.flip();
-                                        key.attach(new Object[]{objs[0],buff});
-                                    }else
-                                    {
-                                        buff = (ByteBuffer)objs[1];
-                                    }
+                                    ByteBuffer buff = ByteBuffer.allocate(1 + 4); // sign+token
+                                    buff.put((byte)0);
+                                    buff.putInt((Integer)objs[0]);
+                                    buff.flip();
                                     dc.send(buff,new InetSocketAddress(InetAddress.getByName("255.255.255.255"),User.LISTENING_PORT_UDP));
-                                    if(!buff.hasRemaining())
-                                    {
-                                        key.cancel();
-                                        dc.close();
-                                    }
                                 }catch (IOException e)
+                                {
+                                    LogManager.logE(RemoteCallback.class,"send udp request for scanning user failed.",e);
+                                }finally
                                 {
                                     try
                                     {
                                         key.cancel();
                                         dc.close();
-                                    } catch (IOException e1)
+                                    } catch (IOException e)
                                     {
-                                        LogManager.logE(RemoteCallback.class, "close datagram channel failed.", e1);
+                                        LogManager.logE(RemoteCallback.class, "close datagram channel failed.", e);
                                     }
-                                    LogManager.logE(RemoteCallback.class,"send udp request for scanning user failed.",e);
                                 }
                             }else if(objs[0] instanceof String)
                             {
-                                String ip = (String)objs[0];
                                 User user = (User)objs[2];
                                 try
                                 {
-                                    ByteBuffer buff = null;
-                                    if(objs.length == 3)
-                                    {
-                                        buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
-                                        buff.put((byte)1);
-                                        buff.putInt((Integer)objs[1]);
-                                        buff.put(user.getName().getBytes("UTF-8"));
-                                        buff.flip();
-                                        key.attach(new Object[]{ip,objs[1],user,buff});
-                                    }else
-                                    {
-                                        buff = (ByteBuffer)objs[3];
-                                    }
+                                    ByteBuffer buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
+                                    buff.put((byte)1);
+                                    buff.putInt((Integer)objs[1]);
+                                    buff.put(user.getName().getBytes("UTF-8"));
+                                    buff.flip();
+                                    String ip = (String)objs[0];
                                     dc.send(buff,new InetSocketAddress(InetAddress.getByName(ip),User.LISTENING_PORT_UDP));
-                                    if(!buff.hasRemaining())
-                                    {
-                                        key.attach(new Object[]{user});
-                                        key.interestOps(SelectionKey.OP_READ);
-                                    }
                                 }catch (IOException e)
+                                {
+                                    LogManager.logE(RemoteCallback.class,"send udp response for scanning user failed.",e);
+                                }finally
                                 {
                                     key.attach(new Object[]{user});
                                     key.interestOps(SelectionKey.OP_READ);
-                                    LogManager.logE(RemoteCallback.class,"send udp response for scanning user failed.",e);
                                 }
                             }
                         }else
@@ -953,6 +924,23 @@ public abstract class RemoteCallback implements Runnable
                 }
             }
         }
+    }
+
+    private String getWifiIp()
+    {
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        int ipAddress = wifiInfo.getIpAddress();
+        if(ipAddress == 0)
+            return null;
+        return intToIp(ipAddress);
+    }
+
+    private String intToIp(int i)
+    {
+        return (i & 0xFF) + "." +
+                ((i >> 8 ) & 0xFF) + "." +
+                ((i >> 16 ) & 0xFF) + "." +
+                ( i >> 24 & 0xFF);
     }
 
     public abstract void onConnected(RemoteUser user);
