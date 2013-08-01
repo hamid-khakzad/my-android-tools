@@ -479,6 +479,18 @@ public class User
 
     public void scanUsers(Context context, final ScanUsersCallback scanCallback)
     {
+        try
+        {
+            if(new WifiUtils(context).isWifiApEnabled())
+            {
+                scanCallback.onError(new RuntimeException("can not support multi networks(mobile and AP),in this case,you want to scan in AP,but it scans in mobile factly"));
+                return;
+            }
+        }catch (ReflectHiddenFuncException e)
+        {
+            scanCallback.onError(e);
+            return;
+        }
         if(scanToken == Integer.MAX_VALUE)
             scanToken = -1;
         final int curToken = ++scanToken;
