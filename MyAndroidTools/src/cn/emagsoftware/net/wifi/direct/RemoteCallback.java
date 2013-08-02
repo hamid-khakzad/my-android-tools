@@ -35,7 +35,7 @@ import cn.emagsoftware.util.StringUtilities;
 public abstract class RemoteCallback implements Runnable
 {
 
-    WifiManager wifiManager      = null;
+    private WifiManager wifiManager      = null;
     private Selector    selector         = null;
     private boolean     sleepForConflict = false;
     private Handler     handler          = new Handler();
@@ -222,6 +222,8 @@ public abstract class RemoteCallback implements Runnable
                                 LogManager.logE(RemoteCallback.class, "receiving remote failed.", e);
                                 continue;
                             }
+                            if(dc.socket().getLocalPort() != User.LISTENING_PORT_UDP) // 排除定时发送数据包的DatagramChannel意外收到数据包的情况
+                                continue;
                             String ip = ((InetSocketAddress)addr).getAddress().getHostAddress();
                             String localWifiIp = getWifiIp();
                             if(localWifiIp == null)

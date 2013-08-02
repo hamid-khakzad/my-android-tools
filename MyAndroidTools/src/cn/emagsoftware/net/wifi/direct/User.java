@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -30,7 +31,6 @@ import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
 import cn.emagsoftware.net.wifi.WifiUtils;
 import cn.emagsoftware.telephony.ReflectHiddenFuncException;
-import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.util.LogManager;
 import cn.emagsoftware.util.StringUtilities;
 
@@ -43,10 +43,10 @@ public class User
 
     private static final int  LISTENING_PORT  = 7001;
     static final int  LISTENING_PORT_UDP  = 7002;
+    private static final int  LISTENING_PORT_UDP_OWNER = 7003;
 
     private String            name            = null;
     private RemoteCallback    callback        = null;
-    private WifiManager.WifiLock wifiLock = null;
     private Selector          selector        = null;
 
     private WifiConfiguration preApConfig     = null;
@@ -66,40 +66,12 @@ public class User
             throw new NameOutOfRangeException("name length can not great than " + MAX_NAME_LENGTH + ".");
         this.name = name;
         this.callback = callback;
-        if(TelephonyMgr.getSDKVersion() < 12)
-        {
-            wifiLock = callback.wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL,getClass().getName());
-        }else
-        {
-            int lockType;
-            try
-            {
-                Field field = WifiManager.class.getDeclaredField("WIFI_MODE_FULL_HIGH_PERF");
-                field.setAccessible(true);
-                lockType = field.getInt(null);
-            }catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-            wifiLock = callback.wifiManager.createWifiLock(lockType,getClass().getName());
-        }
-        wifiLock.acquire();
-        try
-        {
-            selector = Selector.open();
-        }catch (IOException e)
-        {
-            if(wifiLock.isHeld())
-                wifiLock.release();
-            throw e;
-        }
+        selector = Selector.open();
         try
         {
             callback.bindSelector(selector);
         }catch (RuntimeException e)
         {
-            if(wifiLock.isHeld())
-                wifiLock.release();
             selector.close();
             throw e;
         }
@@ -115,8 +87,6 @@ public class User
         {
             try
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -125,19 +95,18 @@ public class User
             }
             throw e;
         }
+        SelectionKey key = null;
         DatagramChannel channel = null;
         try
         {
             channel = DatagramChannel.open();
             channel.configureBlocking(false);
             channel.socket().bind(new InetSocketAddress(LISTENING_PORT_UDP));
-            channel.register(selector,SelectionKey.OP_READ,new Object[]{this});
+            key = channel.register(selector,SelectionKey.OP_READ,new Object[]{this});
         }catch (IOException e)
         {
             try
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -153,6 +122,62 @@ public class User
             }
             throw e;
         }
+        SelectionKey ownerKey = null;
+        DatagramChannel ownerChannel = null;
+        try
+        {
+            ownerChannel = DatagramChannel.open();
+            ownerChannel.configureBlocking(false);
+            ownerChannel.socket().bind(new InetSocketAddress(LISTENING_PORT_UDP_OWNER));
+            ownerKey = ownerChannel.register(selector,SelectionKey.OP_READ,new Object[]{this});
+        }catch (IOException e)
+        {
+            try
+            {
+                selector.close();
+            }finally
+            {
+                try
+                {
+                    serverKey.cancel();
+                    serverChannel.close();
+                }finally
+                {
+                    try
+                    {
+                        key.cancel();
+                        channel.close();
+                    }finally
+                    {
+                        if(ownerChannel != null)
+                            ownerChannel.close();
+                    }
+                }
+            }
+            throw e;
+        }
+        final SelectionKey ownerKeyPoint = ownerKey;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true)
+                {
+                    try
+                    {
+                        ownerKeyPoint.interestOps(SelectionKey.OP_WRITE);
+                    }catch (CancelledKeyException e)
+                    {
+                        break;
+                    }
+                    try
+                    {
+                        Thread.sleep(5000);
+                    }catch (InterruptedException e)
+                    {
+                    }
+                }
+            }
+        }).start();
         new Thread(callback).start();
     }
 
@@ -731,8 +756,6 @@ public class User
             @Override
             public void run()
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
                 WifiUtils wifiUtils = new WifiUtils(context);
                 WifiManager wm = wifiUtils.getWifiManager();
                 List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
