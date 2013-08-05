@@ -46,6 +46,7 @@ public class User
 
     private String            name            = null;
     private RemoteCallback    callback        = null;
+    private WifiManager.WifiLock wifiLock = null;
     private Selector          selector        = null;
 
     private WifiConfiguration preApConfig     = null;
@@ -64,12 +65,24 @@ public class User
             throw new NameOutOfRangeException("name length can not great than " + MAX_NAME_LENGTH + ".");
         this.name = name;
         this.callback = callback;
-        selector = Selector.open();
+        wifiLock = callback.wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL,getClass().getName());
+        wifiLock.acquire();
+        try
+        {
+            selector = Selector.open();
+        }catch (IOException e)
+        {
+            if(wifiLock.isHeld())
+                wifiLock.release();
+            throw e;
+        }
         try
         {
             callback.bindSelector(selector);
         }catch (RuntimeException e)
         {
+            if(wifiLock.isHeld())
+                wifiLock.release();
             selector.close();
             throw e;
         }
@@ -85,6 +98,8 @@ public class User
         {
             try
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -105,6 +120,8 @@ public class User
         {
             try
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -132,6 +149,8 @@ public class User
         {
             try
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 selector.close();
             }finally
             {
@@ -719,6 +738,8 @@ public class User
             @Override
             public void run()
             {
+                if(wifiLock.isHeld())
+                    wifiLock.release();
                 WifiUtils wifiUtils = new WifiUtils(context);
                 WifiManager wm = wifiUtils.getWifiManager();
                 List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
