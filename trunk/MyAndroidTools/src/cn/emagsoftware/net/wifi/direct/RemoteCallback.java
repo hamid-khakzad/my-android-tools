@@ -38,8 +38,8 @@ import cn.emagsoftware.util.StringUtilities;
 public abstract class RemoteCallback implements Runnable
 {
 
-    private Context appContext = null;
-    WifiManager wifiManager      = null;
+    Context appContext = null;
+    private WifiManager wifiManager      = null;
     private Selector    selector         = null;
     private boolean     sleepForConflict = false;
     private Handler     handler          = new Handler();

@@ -25,6 +25,7 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import cn.emagsoftware.net.wifi.WifiCallback;
@@ -46,7 +47,7 @@ public class User
 
     private String            name            = null;
     private RemoteCallback    callback        = null;
-    private WifiManager.WifiLock wifiLock = null;
+    private PowerManager.WakeLock wakeLock = null;
     private Selector          selector        = null;
 
     private WifiConfiguration preApConfig     = null;
@@ -65,15 +66,16 @@ public class User
             throw new NameOutOfRangeException("name length can not great than " + MAX_NAME_LENGTH + ".");
         this.name = name;
         this.callback = callback;
-        wifiLock = callback.wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL,getClass().getName());
-        wifiLock.acquire();
+        PowerManager powerManager = (PowerManager) callback.appContext.getSystemService(Context.POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE,getClass().getName());
+        wakeLock.acquire();
         try
         {
             selector = Selector.open();
         }catch (IOException e)
         {
-            if(wifiLock.isHeld())
-                wifiLock.release();
+            if(wakeLock.isHeld())
+                wakeLock.release();
             throw e;
         }
         try
@@ -81,8 +83,8 @@ public class User
             callback.bindSelector(selector);
         }catch (RuntimeException e)
         {
-            if(wifiLock.isHeld())
-                wifiLock.release();
+            if(wakeLock.isHeld())
+                wakeLock.release();
             selector.close();
             throw e;
         }
@@ -98,8 +100,8 @@ public class User
         {
             try
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
+                if(wakeLock.isHeld())
+                    wakeLock.release();
                 selector.close();
             }finally
             {
@@ -120,8 +122,8 @@ public class User
         {
             try
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
+                if(wakeLock.isHeld())
+                    wakeLock.release();
                 selector.close();
             }finally
             {
@@ -149,8 +151,8 @@ public class User
         {
             try
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
+                if(wakeLock.isHeld())
+                    wakeLock.release();
                 selector.close();
             }finally
             {
@@ -199,7 +201,7 @@ public class User
                     }
                     try
                     {
-                        Thread.sleep(4000);
+                        Thread.sleep(3000);
                     }catch (InterruptedException e)
                     {
                     }
@@ -738,8 +740,8 @@ public class User
             @Override
             public void run()
             {
-                if(wifiLock.isHeld())
-                    wifiLock.release();
+                if(wakeLock.isHeld())
+                    wakeLock.release();
                 WifiUtils wifiUtils = new WifiUtils(context);
                 WifiManager wm = wifiUtils.getWifiManager();
                 List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
