@@ -14,10 +14,9 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import android.content.Context;
@@ -53,8 +52,7 @@ public class User
     private int               preWifiStaticIp = -1;
     private boolean           preWifiEnabled  = false;
 
-    private int scanToken = -1;
-    Map<Integer,List<RemoteUser>> scanUsers = new HashMap<Integer, List<RemoteUser>>();
+    LinkedList<RemoteUser> scanUsers = new LinkedList<RemoteUser>();
 
     private Handler           handler         = new Handler();
 
@@ -169,9 +167,20 @@ public class User
                     {
                         break;
                     }
+                    long curTime = System.currentTimeMillis();
+                    synchronized (scanUsers)
+                    {
+                        Iterator<RemoteUser> users = scanUsers.iterator();
+                        while (users.hasNext())
+                        {
+                            RemoteUser curUser = users.next();
+                            if(curTime - curUser.getRefreshTime() > 20000)
+                                users.remove();
+                        }
+                    }
                     try
                     {
-                        Thread.sleep(5000);
+                        Thread.sleep(4000);
                     }catch (InterruptedException e)
                     {
                     }
@@ -535,65 +544,19 @@ public class User
         callback.onDisconnected(ap);
     }
 
-    public void scanUsers(Context context, final ScanUsersCallback scanCallback)
+    public void scanUsers(final ScanUsersCallback scanCallback)
     {
-        try
-        {
-            if(new WifiUtils(context).isWifiApEnabled())
-            {
-                scanCallback.onError(new RuntimeException("can not support multi networks(mobile and AP),in this case,you want to scan in AP,but it scans in mobile factly"));
-                return;
-            }
-        }catch (ReflectHiddenFuncException e)
-        {
-            scanCallback.onError(e);
-            return;
-        }
-        if(scanToken == Integer.MAX_VALUE)
-            scanToken = -1;
-        final int curToken = ++scanToken;
-        final LinkedList<RemoteUser> users = new LinkedList<RemoteUser>();
-        scanUsers.put(curToken,users);
-        DatagramChannel dc = null;
-        try
-        {
-            dc = DatagramChannel.open();
-            dc.configureBlocking(false);
-            dc.socket().setBroadcast(true);
-            callback.setSleepForConflict(true);
-            try
-            {
-                dc.register(selector, SelectionKey.OP_WRITE, new Object[] { curToken });
-            } finally
-            {
-                callback.setSleepForConflict(false);
-            }
-        }catch (IOException e)
-        {
-            try
-            {
-                if (dc != null)
-                    dc.close();
-            } catch (IOException e1)
-            {
-                LogManager.logE(User.class, "close datagram channel failed.", e1);
-            }
-            scanUsers.remove(curToken);
-            scanCallback.onError(e);
-            return;
-        }
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                LinkedList<RemoteUser> copy = null;
-                synchronized (User.this)
+                LinkedList<RemoteUser> users = null;
+                synchronized (scanUsers)
                 {
-                    scanUsers.remove(curToken);
-                    copy = (LinkedList<RemoteUser>)users.clone();
+                    users = (LinkedList<RemoteUser>)scanUsers.clone();
                 }
-                scanCallback.onScanned(copy);
+                scanCallback.onScanned(users);
             }
-        },4000);
+        },6000);
     }
 
     public void connectToUser(final RemoteUser user)

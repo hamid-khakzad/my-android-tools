@@ -14,6 +14,7 @@ public class RemoteUser
     private String               ip         = null;
     private SelectionKey         key        = null;
     private List<TransferEntity> transfers  = Collections.synchronizedList(new LinkedList<TransferEntity>());
+    private long refreshTime;
 
     RemoteUser(String name)
     {
@@ -65,6 +66,16 @@ public class RemoteUser
         transfers.remove(transfer);
     }
 
+    void setRefreshTime(long refreshTime)
+    {
+        this.refreshTime = refreshTime;
+    }
+
+    long getRefreshTime()
+    {
+        return refreshTime;
+    }
+
     void close() throws IOException
     {
         IOException firstExcep = null;
@@ -97,4 +108,13 @@ public class RemoteUser
         if(firstExcep != null)
             throw firstExcep;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof RemoteUser))
+            return false;
+        RemoteUser input = (RemoteUser)o;
+        return getIp().equals(input.getIp());
+    }
+
 }
