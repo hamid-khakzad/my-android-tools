@@ -51,6 +51,8 @@ public class User
     private SelectionKey      listeningKey    = null;
 
     private Handler           handler         = new Handler();
+    
+    private boolean isCloseCalled = false;
 
     public User(String name, RemoteCallback callback) throws NameOutOfRangeException, IOException
     {
@@ -93,7 +95,8 @@ public class User
                     // TODO Auto-generated method stub
                     try
                     {
-                        acceptIfNecessary();
+                        if(!isCloseCalled)
+                            acceptIfNecessary();
                         callback.onListening();
                     } catch (IOException e)
                     {
@@ -702,6 +705,7 @@ public class User
 
     public void close(final Context context, final CloseCallback callback)
     {
+        isCloseCalled = true;
         Exception firstExcep = null;
         Set<SelectionKey> skeys = null;
         try
