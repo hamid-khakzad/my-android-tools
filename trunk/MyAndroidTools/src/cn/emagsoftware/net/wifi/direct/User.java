@@ -227,7 +227,7 @@ public class User
         this.name = name;
     }
 
-    public void openAp(Context context, final OpenApCallback callback)
+    public void openDirectAp(Context context, final OpenDirectApCallback callback)
     {
         WifiUtils wifiUtils = new WifiUtils(context);
         final boolean isFirst = preApConfig == null;
@@ -363,7 +363,7 @@ public class User
         return apconfig;
     }
 
-    public void closeAp(final Context context, final CloseApCallback callback)
+    public void closeDirectAp(final Context context, final CloseDirectApCallback callback)
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
         try
@@ -414,7 +414,7 @@ public class User
         }
     }
 
-    public void scanRemoteAps(final Context context, final ScanRemoteApsCallback callback)
+    public void scanDirectAps(final Context context, final ScanDirectApsCallback callback)
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.setWifiEnabled(true, new WifiCallback(context)
@@ -429,7 +429,7 @@ public class User
                     public void onScanResults(List<ScanResult> scanResults)
                     {
                         super.onScanResults(scanResults);
-                        List<RemoteAp> callbackVal = new ArrayList<RemoteAp>();
+                        List<DirectAp> callbackVal = new ArrayList<DirectAp>();
                         for (ScanResult result : scanResults)
                         {
                             String ssid = result.SSID;
@@ -447,7 +447,7 @@ public class User
                             }
                             if (name != null)
                             {
-                                RemoteAp ap = new RemoteAp(name);
+                                DirectAp ap = new DirectAp(name);
                                 ap.setScanResult(result);
                                 callbackVal.add(ap);
                             }
@@ -487,7 +487,7 @@ public class User
         }, WIFI_TIMEOUT);
     }
 
-    public void connectToRemoteAp(final Context context, final RemoteAp ap, final ConnectToRemoteApCallback callback)
+    public void connectToDirectAp(final Context context, final DirectAp ap, final ConnectToDirectApCallback callback)
     {
         final WifiUtils wifiUtils = new WifiUtils(context);
         wifiUtils.setWifiEnabled(true, new WifiCallback(context)
@@ -544,7 +544,7 @@ public class User
         }, WIFI_TIMEOUT);
     }
 
-    public void disconnectRemoteAp(Context context, RemoteAp ap, DisconnectRemoteApCallback callback)
+    public void disconnectDirectAp(Context context, DirectAp ap, DisconnectDirectApCallback callback)
     {
         try
         {
@@ -757,7 +757,7 @@ public class User
                     }
                     wm.saveConfiguration();
                 }
-                closeAp(context,new CloseApCallback() {
+                closeDirectAp(context,new CloseDirectApCallback() {
                     @Override
                     public void onClosed() {
                         if (firstExcepPoint == null)
