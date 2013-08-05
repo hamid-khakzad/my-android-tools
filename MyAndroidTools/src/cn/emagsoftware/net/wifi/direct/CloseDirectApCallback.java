@@ -1,12 +1,12 @@
 package cn.emagsoftware.net.wifi.direct;
 
 /**
- * Created by Wendell on 13-7-30.
+ * Created by Wendell on 13-8-5.
  */
-public interface OpenApCallback
+public interface CloseDirectApCallback
 {
 
-    public void onOpen();
+    public void onClosed();
 
     public void onError(Exception e);
 
