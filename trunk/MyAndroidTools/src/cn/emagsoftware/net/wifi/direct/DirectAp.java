@@ -3,15 +3,15 @@ package cn.emagsoftware.net.wifi.direct;
 import android.net.wifi.ScanResult;
 
 /**
- * Created by Wendell on 13-7-25.
+ * Created by Wendell on 13-8-5.
  */
-public class RemoteAp
+public class DirectAp
 {
 
     private String               name       = null;
     private ScanResult scanResult = null;
 
-    RemoteAp(String name)
+    DirectAp(String name)
     {
         if (name == null)
             throw new NullPointerException();
