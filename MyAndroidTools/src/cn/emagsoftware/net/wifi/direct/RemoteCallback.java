@@ -6,7 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
@@ -18,12 +20,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 
@@ -35,6 +38,7 @@ import cn.emagsoftware.util.StringUtilities;
 public abstract class RemoteCallback implements Runnable
 {
 
+    private Context appContext = null;
     private WifiManager wifiManager      = null;
     private Selector    selector         = null;
     private boolean     sleepForConflict = false;
@@ -42,6 +46,7 @@ public abstract class RemoteCallback implements Runnable
 
     public RemoteCallback(Context context)
     {
+        appContext = context.getApplicationContext();
         wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
     }
 
@@ -215,7 +220,7 @@ public abstract class RemoteCallback implements Runnable
                             SocketAddress addr = null;
                             try
                             {
-                                buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
+                                buff = ByteBuffer.allocate(3 * User.MAX_NAME_LENGTH);
                                 addr = dc.receive(buff);
                             }catch (IOException e)
                             {
@@ -225,38 +230,27 @@ public abstract class RemoteCallback implements Runnable
                             if(dc.socket().getLocalPort() != User.LISTENING_PORT_UDP) // 排除定时发送数据包的DatagramChannel意外收到数据包的情况
                                 continue;
                             String ip = ((InetSocketAddress)addr).getAddress().getHostAddress();
-                            String localWifiIp = getWifiIp();
-                            if(localWifiIp == null)
-                                continue;
-                            if(ip.equals(localWifiIp)) // 发送给自己的广播要忽略
+                            List<String> localIps = getLocalIpAddress();
+                            if(localIps.contains(ip)) // 发送给自己的广播要忽略
                                 continue;
                             buff.flip();
-                            byte sign = buff.get();
-                            int token = buff.getInt();
-                            User user = (User)objs[0];
-                            if(sign == 0)
+                            String name = null;
+                            try
                             {
-                                key.attach(new Object[]{ip,token,user});
-                                key.interestOps(SelectionKey.OP_WRITE);
-                            }else
+                                name = Charset.forName("UTF-8").newDecoder().decode(buff).toString();
+                            } catch (CharacterCodingException e)
                             {
-                                String name = null;
-                                try
-                                {
-                                    name = Charset.forName("UTF-8").newDecoder().decode(buff).toString();
-                                } catch (CharacterCodingException e)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "decode remote name failed.", e);
-                                    continue;
-                                }
-                                RemoteUser curUser = new RemoteUser(name);
-                                curUser.setIp(ip);
-                                synchronized (user)
-                                {
-                                    List<RemoteUser> scanList = user.scanUsers.get(token);
-                                    if(scanList != null) // 未超时
-                                        scanList.add(curUser);
-                                }
+                                LogManager.logE(RemoteCallback.class, "decode remote name failed.", e);
+                                continue;
+                            }
+                            RemoteUser curUser = new RemoteUser(name);
+                            curUser.setIp(ip);
+                            curUser.setRefreshTime(System.currentTimeMillis());
+                            List<RemoteUser> users = ((User)objs[0]).scanUsers;
+                            synchronized (users)
+                            {
+                                users.remove(curUser);
+                                users.add(curUser);
                             }
                         }else
                         {
@@ -579,49 +573,19 @@ public abstract class RemoteCallback implements Runnable
                         {
                             DatagramChannel dc = (DatagramChannel)keyChannel;
                             Object[] objs = (Object[]) key.attachment();
-                            if(objs[0] instanceof Integer)
+                            User user = (User)objs[0];
+                            try
                             {
-                                try
-                                {
-                                    ByteBuffer buff = ByteBuffer.allocate(1 + 4); // sign+token
-                                    buff.put((byte)0);
-                                    buff.putInt((Integer)objs[0]);
-                                    buff.flip();
-                                    dc.send(buff,new InetSocketAddress(InetAddress.getByName("255.255.255.255"),User.LISTENING_PORT_UDP));
-                                }catch (IOException e)
-                                {
-                                    LogManager.logE(RemoteCallback.class,"send udp request for scanning user failed.",e);
-                                }finally
-                                {
-                                    try
-                                    {
-                                        key.cancel();
-                                        dc.close();
-                                    } catch (IOException e)
-                                    {
-                                        LogManager.logE(RemoteCallback.class, "close datagram channel failed.", e);
-                                    }
-                                }
-                            }else if(objs[0] instanceof String)
+                                ByteBuffer buff = ByteBuffer.allocate(3 * User.MAX_NAME_LENGTH);
+                                buff.put(user.getName().getBytes("UTF-8"));
+                                buff.flip();
+                                dc.send(buff,new InetSocketAddress(InetAddress.getByName("255.255.255.255"),User.LISTENING_PORT_UDP));
+                            }catch (IOException e)
                             {
-                                User user = (User)objs[2];
-                                try
-                                {
-                                    ByteBuffer buff = ByteBuffer.allocate(1 + 4 + 3 * User.MAX_NAME_LENGTH); // sign+token+content
-                                    buff.put((byte)1);
-                                    buff.putInt((Integer)objs[1]);
-                                    buff.put(user.getName().getBytes("UTF-8"));
-                                    buff.flip();
-                                    String ip = (String)objs[0];
-                                    dc.send(buff,new InetSocketAddress(InetAddress.getByName(ip),User.LISTENING_PORT_UDP));
-                                }catch (IOException e)
-                                {
-                                    LogManager.logE(RemoteCallback.class,"send udp response for scanning user failed.",e);
-                                }finally
-                                {
-                                    key.attach(new Object[]{user});
-                                    key.interestOps(SelectionKey.OP_READ);
-                                }
+                                LogManager.logE(RemoteCallback.class,"send udp message for scanning user failed.",e);
+                            }finally
+                            {
+                                key.interestOps(SelectionKey.OP_READ);
                             }
                         }else
                         {
@@ -928,21 +892,22 @@ public abstract class RemoteCallback implements Runnable
         }
     }
 
-    private String getWifiIp()
-    {
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        int ipAddress = wifiInfo.getIpAddress();
-        if(ipAddress == 0)
-            return null;
-        return intToIp(ipAddress);
-    }
-
-    private String intToIp(int i)
-    {
-        return (i & 0xFF) + "." +
-                ((i >> 8 ) & 0xFF) + "." +
-                ((i >> 16 ) & 0xFF) + "." +
-                ( i >> 24 & 0xFF);
+    private List<String> getLocalIpAddress() {
+        List<String> returnVal = new LinkedList<String>();
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (inetAddress.isSiteLocalAddress()) {
+                        returnVal.add(inetAddress.getHostAddress());
+                    }
+                }
+            }
+        } catch (SocketException ex) {
+            LogManager.logE(RemoteCallback.class,"get local ip failed.",ex);
+        }
+        return returnVal;
     }
 
     public abstract void onConnected(RemoteUser user);
