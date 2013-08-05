@@ -502,7 +502,11 @@ public class User
                     public void onNetworkConnected(WifiInfo wifiInfo)
                     {
                         super.onNetworkConnected(wifiInfo);
-                        callback.onConnected(ap);
+                        RemoteUser user = new RemoteUser(ap.getName());
+                        int apIp = wifiUtils.getWifiManager().getDhcpInfo().serverAddress;
+                        String apIpStr = String.format("%d.%d.%d.%d", (apIp & 0xff), (apIp >> 8 & 0xff), (apIp >> 16 & 0xff), (apIp >> 24 & 0xff));
+                        user.setIp(apIpStr);
+                        callback.onConnected(ap,user);
                     }
 
                     @Override
@@ -757,7 +761,7 @@ public class User
                     }
                     wm.saveConfiguration();
                 }
-                closeDirectAp(context,new CloseDirectApCallback() {
+                closeDirectAp(context, new CloseDirectApCallback() {
                     @Override
                     public void onClosed() {
                         if (firstExcepPoint == null)

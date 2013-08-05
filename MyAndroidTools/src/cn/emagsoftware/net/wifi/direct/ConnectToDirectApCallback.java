@@ -6,7 +6,7 @@ package cn.emagsoftware.net.wifi.direct;
 public interface ConnectToDirectApCallback
 {
 
-    public void onConnected(DirectAp ap);
+    public void onConnected(DirectAp ap,RemoteUser user);
 
     public void onError(DirectAp ap);
 
