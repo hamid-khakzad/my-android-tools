@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
@@ -589,19 +590,51 @@ public class User
         callback.post(new Runnable() {
             @Override
             public void run() {
+                SelectionKey key = null;
                 SocketChannel sc = null;
                 try
                 {
                     sc = SocketChannel.open();
                     sc.configureBlocking(false);
                     sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
-                    sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+                    key = sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+                    user.state = 0;
+                    final SelectionKey keyPoint = key;
+                    final SocketChannel scPoint = sc;
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if(user.state == 0)
+                                    {
+                                        try
+                                        {
+                                            keyPoint.cancel();
+                                            scPoint.close();
+                                        }catch (IOException e)
+                                        {
+                                            LogManager.logD(User.class,"close socket channel failed.",e);
+                                        }
+                                        user.state = 1;
+                                        handler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                callback.onConnectedFailed(user,new SocketTimeoutException("connect time out."));
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    },CONNECT_TIMEOUT);
                 } catch (final IOException e)
                 {
                     try
                     {
-                        if (sc != null)
-                            sc.close();
+                        if(key != null) key.cancel();
+                        if (sc != null) sc.close();
                     } catch (IOException e1)
                     {
                         LogManager.logE(User.class, "close socket channel failed.", e1);

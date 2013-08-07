@@ -168,6 +168,7 @@ public abstract class RemoteCallback implements Runnable
                                 {
                                     LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                                 }
+                                user.state = 1;
                                 handler.post(new Runnable()
                                 {
                                     @Override
@@ -643,6 +644,7 @@ public abstract class RemoteCallback implements Runnable
                                     {
                                         LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                                     }
+                                    remoteUser.state = 1;
                                     handler.post(new Runnable()
                                     {
                                         @Override
@@ -654,6 +656,7 @@ public abstract class RemoteCallback implements Runnable
                                     continue;
                                 }
                                 remoteUser.setKey(key);
+                                remoteUser.state = 1;
                                 handler.post(new Runnable()
                                 {
                                     @Override
