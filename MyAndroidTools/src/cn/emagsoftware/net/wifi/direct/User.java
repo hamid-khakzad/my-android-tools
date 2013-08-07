@@ -597,7 +597,7 @@ public class User
                     sc = SocketChannel.open();
                     sc.configureBlocking(false);
                     sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
-                    key = sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+                    key = sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", User.this });
                     user.state = 0;
                     final SelectionKey keyPoint = key;
                     final SocketChannel scPoint = sc;
