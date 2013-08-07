@@ -175,6 +175,8 @@ public abstract class RemoteCallback implements Runnable
                             SocketChannel sc = null;
                             try
                             {
+                                if(transfer.getCancelFlag())
+                                    throw new IOException("transfer is cancelled.");
                                 sc = (SocketChannel) key.channel();
                                 if (sc.isConnectionPending())
                                     sc.finishConnect();
@@ -182,19 +184,13 @@ public abstract class RemoteCallback implements Runnable
                             {
                                 try
                                 {
+                                    user.removeTransfer(transfer);
                                     key.cancel();
                                     if (sc != null)
                                         sc.close();
                                 } catch (IOException e1)
                                 {
                                     LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
-                                }
-                                try
-                                {
-                                    transfer.close();
-                                } catch (IOException e1)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
                                 }
                                 handler.post(new Runnable()
                                 {
@@ -402,7 +398,6 @@ public abstract class RemoteCallback implements Runnable
                                                 else
                                                     transfer.setExtraDescription(contentArr[3]);
                                                 transfer.setSavingPath(onGetSavingPathInBackground(queryUser, transfer.getSendPath(), transfer.getSize(), transfer.getExtraDescription()));
-                                                transfer.setSelectionKey(key);
                                                 queryUser.addTransfer(transfer);
                                                 handler.post(new Runnable()
                                                 {
@@ -430,11 +425,12 @@ public abstract class RemoteCallback implements Runnable
                                                 {
                                                     try
                                                     {
+                                                        queryUser.removeTransfer(transfer);
                                                         key.cancel();
-                                                        transfer.close();
+                                                        sc.close();
                                                     } catch (IOException e1)
                                                     {
-                                                        LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
+                                                        LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                                                     }
                                                     handler.post(new Runnable()
                                                     {
@@ -458,6 +454,8 @@ public abstract class RemoteCallback implements Runnable
                                     FileChannel channel = (FileChannel) objs[4];
                                     try
                                     {
+                                        if(transfer.getCancelFlag())
+                                            throw new IOException("transfer is cancelled.");
                                         int len = sc.read(cache);
                                         long curSize = Long.parseLong(String.valueOf(objs[5]));
                                         curSize = curSize + cache.position();
@@ -474,11 +472,12 @@ public abstract class RemoteCallback implements Runnable
                                             }
                                             try
                                             {
+                                                transfer.getRemoteUser().removeTransfer(transfer);
                                                 key.cancel();
-                                                transfer.close();
+                                                sc.close();
                                             } catch (IOException e)
                                             {
-                                                LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e);
+                                                LogManager.logE(RemoteCallback.class, "close socket channel failed.", e);
                                             }
                                             handler.post(new Runnable()
                                             {
@@ -501,11 +500,12 @@ public abstract class RemoteCallback implements Runnable
                                             }
                                             try
                                             {
+                                                transfer.getRemoteUser().removeTransfer(transfer);
                                                 key.cancel();
-                                                transfer.close();
+                                                sc.close();
                                             } catch (IOException e)
                                             {
-                                                LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e);
+                                                LogManager.logE(RemoteCallback.class, "close socket channel failed.", e);
                                             }
                                             handler.post(new Runnable()
                                             {
@@ -548,11 +548,12 @@ public abstract class RemoteCallback implements Runnable
                                         }
                                         try
                                         {
+                                            transfer.getRemoteUser().removeTransfer(transfer);
                                             key.cancel();
-                                            transfer.close();
+                                            sc.close();
                                         } catch (IOException e1)
                                         {
-                                            LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
+                                            LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                                         }
                                         handler.post(new Runnable()
                                         {
@@ -752,18 +753,12 @@ public abstract class RemoteCallback implements Runnable
                                 {
                                     try
                                     {
+                                        transfer.getRemoteUser().removeTransfer(transfer);
                                         key.cancel();
                                         sc.close();
                                     } catch (IOException e1)
                                     {
                                         LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
-                                    }
-                                    try
-                                    {
-                                        transfer.close();
-                                    } catch (IOException e1)
-                                    {
-                                        LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
                                     }
                                     final TransferEntity transferPoint = transfer;
                                     handler.post(new Runnable()
@@ -774,9 +769,7 @@ public abstract class RemoteCallback implements Runnable
                                             onTransferFailed(transferPoint, e);
                                         }
                                     });
-                                    continue;
                                 }
-                                transfer.setSelectionKey(key);
                             } else if (objs[1].equals("transfer_progress"))
                             {
                                 TransferEntity transfer = null;
@@ -805,11 +798,12 @@ public abstract class RemoteCallback implements Runnable
                                         {
                                             try
                                             {
+                                                transfer.getRemoteUser().removeTransfer(transfer);
                                                 key.cancel();
-                                                transfer.close();
+                                                sc.close();
                                             } catch (IOException e)
                                             {
-                                                LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e);
+                                                LogManager.logE(RemoteCallback.class, "close socket channel failed.", e);
                                             }
                                             try
                                             {
@@ -831,6 +825,8 @@ public abstract class RemoteCallback implements Runnable
                                         }
                                         sendBuff.flip();
                                     }
+                                    if(transfer.getCancelFlag())
+                                        throw new IOException("transfer is cancelled.");
                                     sc.write(sendBuff);
                                     if (sendBuff.hasRemaining())
                                     {
@@ -858,11 +854,12 @@ public abstract class RemoteCallback implements Runnable
                                 {
                                     try
                                     {
+                                        transfer.getRemoteUser().removeTransfer(transfer);
                                         key.cancel();
-                                        transfer.close();
+                                        sc.close();
                                     } catch (IOException e1)
                                     {
-                                        LogManager.logE(RemoteCallback.class, "close transfer entity failed.", e1);
+                                        LogManager.logE(RemoteCallback.class, "close socket channel failed.", e1);
                                     }
                                     try
                                     {

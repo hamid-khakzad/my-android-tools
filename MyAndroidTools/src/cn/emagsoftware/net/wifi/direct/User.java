@@ -691,9 +691,9 @@ public class User
         }
     }
 
-    public void cancelTransfer(TransferEntity transfer) throws IOException
+    public void cancelTransfer(TransferEntity transfer)
     {
-        transfer.close();
+        transfer.setCancelFlag();
     }
 
     public void close(final Context context, final CloseCallback callback)
