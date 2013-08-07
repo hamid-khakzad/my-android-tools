@@ -15,6 +15,7 @@ public class RemoteUser
     private SelectionKey         key        = null;
     private List<TransferEntity> transfers  = Collections.synchronizedList(new LinkedList<TransferEntity>());
     private long refreshTime;
+    int state = 1; //0:连接中；1:已断开或已连接
 
     RemoteUser(String name)
     {
