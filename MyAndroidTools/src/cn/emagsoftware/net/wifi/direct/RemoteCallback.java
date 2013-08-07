@@ -41,7 +41,8 @@ public abstract class RemoteCallback implements Runnable
     Context appContext = null;
     private WifiManager wifiManager      = null;
     private Selector    selector         = null;
-    private boolean     sleepForConflict = false;
+    private List<Runnable> runnables = new LinkedList<Runnable>();
+    private long lastRunTime = 0;
     private Handler     handler          = new Handler();
 
     public RemoteCallback(Context context)
@@ -59,9 +60,12 @@ public abstract class RemoteCallback implements Runnable
         this.selector = selector;
     }
 
-    void setSleepForConflict(boolean sleepForConflict)
+    void post(Runnable runnable)
     {
-        this.sleepForConflict = sleepForConflict;
+        synchronized (runnables)
+        {
+            runnables.add(runnable);
+        }
     }
 
     @Override
@@ -71,10 +75,29 @@ public abstract class RemoteCallback implements Runnable
         {
             if (selector == null)
                 return;
+            long curTime = System.currentTimeMillis();
+            if(curTime - lastRunTime >= 300)
+            {
+                lastRunTime = curTime;
+                List<Runnable> curRunnables = new LinkedList<Runnable>();
+                synchronized (runnables)
+                {
+                    Iterator<Runnable> iterator = runnables.iterator();
+                    while(iterator.hasNext())
+                    {
+                        curRunnables.add(iterator.next());
+                        iterator.remove();
+                    }
+                }
+                for(Runnable runnable:curRunnables)
+                {
+                    runnable.run();
+                }
+            }
             int readyCount = 0;
             try
             {
-                readyCount = selector.select(600);
+                readyCount = selector.select(100);
             } catch (IOException e)
             {
                 LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
@@ -83,16 +106,6 @@ public abstract class RemoteCallback implements Runnable
             {
                 LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
                 return;
-            }
-            if (sleepForConflict)
-            {
-                try
-                {
-                    Thread.sleep(150);
-                } catch (InterruptedException e)
-                {
-                    LogManager.logE(RemoteCallback.class, "sleep for register failed.", e);
-                }
             }
             if (readyCount <= 0)
                 continue;
@@ -119,7 +132,6 @@ public abstract class RemoteCallback implements Runnable
                         {
                             sc = ((ServerSocketChannel) key.channel()).accept();
                             sc.configureBlocking(false);
-                            sc.socket().setSoTimeout(0);
                             sc.register(selector, SelectionKey.OP_READ, new Object[] { null, "length", ByteBuffer.allocate(4) });
                         } catch (Exception e)
                         {
@@ -409,7 +421,6 @@ public abstract class RemoteCallback implements Runnable
                                                 });
                                                 try
                                                 {
-                                                    sc.socket().setSoTimeout(User.SOCKET_TIMEOUT);
                                                     File file = new File(transfer.getSavingPath());
                                                     File parentPath = file.getParentFile();
                                                     if (parentPath != null)
