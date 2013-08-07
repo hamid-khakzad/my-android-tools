@@ -10,6 +10,7 @@ public class TransferEntity
     private String     extraDescription;
     private Object     tag;
     private boolean    isCancelled = false;
+    int state = 1; // 0:传输中；1:已中断或已完成
 
     TransferEntity()
     {
