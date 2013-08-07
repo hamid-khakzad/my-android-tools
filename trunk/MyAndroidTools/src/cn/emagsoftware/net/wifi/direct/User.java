@@ -38,7 +38,7 @@ public class User
 {
 
     private static final int  WIFI_TIMEOUT    = 20000;
-    static final int          SOCKET_TIMEOUT  = 20000;
+    private static final int          CONNECT_TIMEOUT  = 20000;
     static final int MAX_NAME_LENGTH = 6;
 
     private static final int  LISTENING_PORT  = 7001;
@@ -586,32 +586,35 @@ public class User
 
     public void connectToUser(final RemoteUser user)
     {
-        SocketChannel sc = null;
-        try
-        {
-            sc = SocketChannel.open();
-            sc.configureBlocking(false);
-            sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
-            callback.setSleepForConflict(true);
-            try
-            {
-                sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
-            } finally
-            {
-                callback.setSleepForConflict(false);
+        callback.post(new Runnable() {
+            @Override
+            public void run() {
+                SocketChannel sc = null;
+                try
+                {
+                    sc = SocketChannel.open();
+                    sc.configureBlocking(false);
+                    sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
+                    sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", this });
+                } catch (final IOException e)
+                {
+                    try
+                    {
+                        if (sc != null)
+                            sc.close();
+                    } catch (IOException e1)
+                    {
+                        LogManager.logE(User.class, "close socket channel failed.", e1);
+                    }
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onConnectedFailed(user, e);
+                        }
+                    });
+                }
             }
-        } catch (final IOException e)
-        {
-            try
-            {
-                if (sc != null)
-                    sc.close();
-            } catch (IOException e1)
-            {
-                LogManager.logE(User.class, "close socket channel failed.", e1);
-            }
-            callback.onConnectedFailed(user, e);
-        }
+        });
     }
 
     public void disconnectUser(RemoteUser user)
@@ -646,7 +649,7 @@ public class User
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void sendTransfer(RemoteUser user, File file, String extraDescription)
+    public void sendTransfer(final RemoteUser user, final File file, String extraDescription)
     {
         if (user.getKey() == null)
             throw new IllegalStateException("the input user has not been connected already.");
@@ -658,37 +661,39 @@ public class User
         transfer.setExtraDescription(extraDescription);
         user.addTransfer(transfer);
         callback.onTransferProgress(transfer, 0);
-        String ip = user.getIp();
-        SocketChannel sc = null;
-        try
-        {
-            if (!file.isFile())
-                throw new FileNotFoundException("the input file is invalid.");
-            sc = SocketChannel.open();
-            sc.configureBlocking(false);
-            sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
-            sc.socket().setSoTimeout(SOCKET_TIMEOUT);
-            callback.setSleepForConflict(true);
-            try
-            {
-                sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
-            } finally
-            {
-                callback.setSleepForConflict(false);
+        callback.post(new Runnable() {
+            @Override
+            public void run() {
+                String ip = user.getIp();
+                SocketChannel sc = null;
+                try
+                {
+                    if (!file.isFile())
+                        throw new FileNotFoundException("the input file is invalid.");
+                    sc = SocketChannel.open();
+                    sc.configureBlocking(false);
+                    sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
+                    sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
+                } catch (final IOException e)
+                {
+                    try
+                    {
+                        user.removeTransfer(transfer);
+                        if (sc != null)
+                            sc.close();
+                    } catch (IOException e1)
+                    {
+                        LogManager.logE(User.class, "close socket channel failed.", e1);
+                    }
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onTransferFailed(transfer, e);
+                        }
+                    });
+                }
             }
-        } catch (final IOException e)
-        {
-            try
-            {
-                user.removeTransfer(transfer);
-                if (sc != null)
-                    sc.close();
-            } catch (IOException e1)
-            {
-                LogManager.logE(User.class, "close socket channel failed.", e1);
-            }
-            callback.onTransferFailed(transfer, e);
-        }
+        });
     }
 
     public void cancelTransfer(TransferEntity transfer)
@@ -698,88 +703,82 @@ public class User
 
     public void close(final Context context, final CloseCallback callback)
     {
-        Exception firstExcep = null;
-        Set<SelectionKey> skeys = null;
-        try
-        {
-            this.callback.setSleepForConflict(true);
-            try
-            {
-                skeys = selector.keys();
-            } finally
-            {
-                this.callback.setSleepForConflict(false);
-            }
-        } catch (ClosedSelectorException e)
-        {
-            if (firstExcep == null)
-                firstExcep = e;
-        }
-        try
-        {
-            selector.close();
-        } catch (IOException e)
-        {
-            if (firstExcep == null)
-                firstExcep = e;
-        }
-        if (skeys != null)
-        {
-            for (SelectionKey curKey : skeys)
-            {
+        this.callback.post(new Runnable() {
+            @Override
+            public void run() {
+                Exception firstExcep = null;
                 try
                 {
-                    curKey.cancel();
-                    curKey.channel().close();
+                    Set<SelectionKey> skeys = selector.keys();
+                    for (SelectionKey curKey : skeys)
+                    {
+                        try
+                        {
+                            curKey.cancel();
+                            curKey.channel().close();
+                        } catch (IOException e)
+                        {
+                            if (firstExcep == null)
+                                firstExcep = e;
+                        }
+                    }
+                } catch (ClosedSelectorException e)
+                {
+                    if (firstExcep == null)
+                        firstExcep = e;
+                }
+                try
+                {
+                    selector.close();
                 } catch (IOException e)
                 {
                     if (firstExcep == null)
                         firstExcep = e;
                 }
-            }
-        }
-        final Exception firstExcepPoint = firstExcep;
-        handler.postDelayed(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                if(wakeLock.isHeld())
-                    wakeLock.release();
-                WifiUtils wifiUtils = new WifiUtils(context);
-                WifiManager wm = wifiUtils.getWifiManager();
-                List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
-                if (wcs != null)
+                final Exception firstExcepPoint = firstExcep;
+                handler.postDelayed(new Runnable()
                 {
-                    for (WifiConfiguration wc : wcs)
+                    @Override
+                    public void run()
                     {
-                        String ssid = wc.SSID;
-                        if (ssid != null && ssid.startsWith("\"MYFY"))
+                        if(wakeLock.isHeld())
+                            wakeLock.release();
+                        WifiUtils wifiUtils = new WifiUtils(context);
+                        WifiManager wm = wifiUtils.getWifiManager();
+                        List<WifiConfiguration> wcs = wifiUtils.getConfigurations();
+                        if (wcs != null)
                         {
-                            wm.removeNetwork(wc.networkId);
+                            for (WifiConfiguration wc : wcs)
+                            {
+                                String ssid = wc.SSID;
+                                if (ssid != null && ssid.startsWith("\"MYFY"))
+                                {
+                                    wm.removeNetwork(wc.networkId);
+                                }
+                            }
+                            wm.saveConfiguration();
                         }
-                    }
-                    wm.saveConfiguration();
-                }
-                closeDirectAp(context, new CloseDirectApCallback() {
-                    @Override
-                    public void onClosed() {
-                        if (firstExcepPoint == null)
-                            callback.onClosed();
-                        else
-                            callback.onError(firstExcepPoint);
-                    }
+                        closeDirectAp(context, new CloseDirectApCallback() {
+                            @Override
+                            public void onClosed() {
+                                if (firstExcepPoint == null)
+                                    callback.onClosed();
+                                else
+                                    callback.onError(firstExcepPoint);
+                            }
 
-                    @Override
-                    public void onError(Exception e) {
-                        if (firstExcepPoint == null)
-                            callback.onError(e);
-                        else
-                            callback.onError(firstExcepPoint);
+                            @Override
+                            public void onError(Exception e) {
+                                if (firstExcepPoint == null)
+                                    callback.onError(e);
+                                else
+                                    callback.onError(firstExcepPoint);
+                            }
+                        });
                     }
-                });
+                }, 1000);
             }
-        }, 1000);
+        });
     }
 
 }
