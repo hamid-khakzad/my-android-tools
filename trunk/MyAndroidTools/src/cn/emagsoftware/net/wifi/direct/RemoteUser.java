@@ -78,35 +78,18 @@ public class RemoteUser
 
     void close() throws IOException
     {
-        IOException firstExcep = null;
         Object[] transfersArr = transfers.toArray();
         for (Object transfer : transfersArr)
         {
-            try
-            {
-                ((TransferEntity) transfer).close();
-            }catch (IOException e)
-            {
-                if(firstExcep == null)
-                    firstExcep = e;
-            }
+            ((TransferEntity) transfer).setCancelFlag();
         }
         if (key != null)
         {
-            try
-            {
-                key.cancel();
-                SocketChannel sc = (SocketChannel) key.channel();
-                sc.close();
-                key = null;
-            }catch (IOException e)
-            {
-                if(firstExcep == null)
-                    firstExcep = e;
-            }
+            key.cancel();
+            SocketChannel sc = (SocketChannel) key.channel();
+            sc.close();
+            key = null;
         }
-        if(firstExcep != null)
-            throw firstExcep;
     }
 
     @Override
