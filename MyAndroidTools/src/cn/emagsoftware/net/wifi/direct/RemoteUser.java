@@ -1,9 +1,6 @@
 package cn.emagsoftware.net.wifi.direct;
 
-import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -13,9 +10,9 @@ public class RemoteUser
     private String               name       = null;
     private String               ip         = null;
     private SelectionKey         key        = null;
-    private List<TransferEntity> transfers  = Collections.synchronizedList(new LinkedList<TransferEntity>());
+    private List<TransferEntity> transfers  = new LinkedList<TransferEntity>();
     private long refreshTime;
-    int state = 1; //0:连接中；1:已断开或已连接
+    int state = 1; //0:连接中；1:已断开；2:已连接
 
     RemoteUser(String name)
     {
@@ -53,18 +50,9 @@ public class RemoteUser
         return key;
     }
 
-    void addTransfer(TransferEntity transfer)
+    List<TransferEntity> getTransfers()
     {
-        if (transfer == null)
-            throw new NullPointerException();
-        transfers.add(transfer);
-    }
-
-    void removeTransfer(TransferEntity transfer)
-    {
-        if (transfer == null)
-            throw new NullPointerException();
-        transfers.remove(transfer);
+        return transfers;
     }
 
     void setRefreshTime(long refreshTime)
@@ -75,22 +63,6 @@ public class RemoteUser
     long getRefreshTime()
     {
         return refreshTime;
-    }
-
-    void close() throws IOException
-    {
-        Object[] transfersArr = transfers.toArray();
-        for (Object transfer : transfersArr)
-        {
-            ((TransferEntity) transfer).setCancelFlag();
-        }
-        if (key != null)
-        {
-            key.cancel();
-            SocketChannel sc = (SocketChannel) key.channel();
-            sc.close();
-            key = null;
-        }
     }
 
     @Override

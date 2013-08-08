@@ -507,6 +507,7 @@ public class User
                         int apIp = wifiUtils.getWifiManager().getDhcpInfo().serverAddress;
                         String apIpStr = String.format("%d.%d.%d.%d", (apIp & 0xff), (apIp >> 8 & 0xff), (apIp >> 16 & 0xff), (apIp >> 24 & 0xff));
                         user.setIp(apIpStr);
+                        user.state = 1;
                         callback.onConnected(ap,user);
                     }
 
@@ -590,16 +591,16 @@ public class User
         callback.post(new Runnable() {
             @Override
             public void run() {
-                SelectionKey key = null;
+                if(user.state != 1)
+                    return;
+                user.state = 0;
                 SocketChannel sc = null;
                 try
                 {
                     sc = SocketChannel.open();
                     sc.configureBlocking(false);
                     sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
-                    key = sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", User.this });
-                    user.state = 0;
-                    final SelectionKey keyPoint = key;
+                    final SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "connect", User.this });
                     final SocketChannel scPoint = sc;
                     handler.postDelayed(new Runnable() {
                         @Override
@@ -611,7 +612,7 @@ public class User
                                     {
                                         try
                                         {
-                                            keyPoint.cancel();
+                                            key.cancel();
                                             scPoint.close();
                                         }catch (IOException e)
                                         {
@@ -633,12 +634,13 @@ public class User
                 {
                     try
                     {
-                        if(key != null) key.cancel();
-                        if (sc != null) sc.close();
+                        if (sc != null)
+                            sc.close();
                     } catch (IOException e1)
                     {
                         LogManager.logE(User.class, "close socket channel failed.", e1);
                     }
+                    user.state = 1;
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -650,16 +652,58 @@ public class User
         });
     }
 
-    public void disconnectUser(RemoteUser user)
+    public void disconnectUser(final RemoteUser user)
     {
-        try
-        {
-            user.close();
-            callback.onDisconnected(user);
-        } catch (IOException e)
-        {
-            callback.onDisconnectedFailed(user, e);
-        }
+        callback.post(new Runnable() {
+            @Override
+            public void run() {
+                if(user.state != 2)
+                    return;
+                Iterator<TransferEntity> transfers = user.getTransfers().iterator();
+                while(transfers.hasNext())
+                {
+                    try
+                    {
+                        final TransferEntity transfer = transfers.next();
+                        SelectionKey key = transfer.getSelectionKey();
+                        key.cancel();
+                        key.channel().close();
+                        transfers.remove();
+                        transfer.state = 1;
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onTransferFailed(transfer,new RuntimeException("transfer is cancelled."));
+                            }
+                        });
+                    }catch (IOException e)
+                    {
+                        LogManager.logE(User.class,"close socket channel failed.",e);
+                    }
+                }
+                try
+                {
+                    SelectionKey userKey = user.getKey();
+                    userKey.cancel();
+                    userKey.channel().close();
+                    user.state = 1;
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onDisconnected(user);
+                        }
+                    });
+                }catch (final IOException e)
+                {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onDisconnectedFailed(user,e);
+                        }
+                    });
+                }
+            }
+        });
     }
 
     public void sendTransferRequest(RemoteUser user, String description)
@@ -682,46 +726,65 @@ public class User
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
-    public void sendTransfer(final RemoteUser user, final File file, String extraDescription)
+    public void sendTransfer(final RemoteUser user, final File file, final String extraDescription)
     {
-        if (user.getKey() == null)
-            throw new IllegalStateException("the input user has not been connected already.");
-        final TransferEntity transfer = new TransferEntity();
-        transfer.setRemoteUser(user);
-        transfer.setSendPath(file.getAbsolutePath());
-        transfer.setSize(file.length());
-        transfer.setSender(true);
-        transfer.setExtraDescription(extraDescription);
-        user.addTransfer(transfer);
-        callback.onTransferProgress(transfer, 0);
         callback.post(new Runnable() {
             @Override
             public void run() {
-                String ip = user.getIp();
+                final TransferEntity transfer = new TransferEntity();
+                transfer.setRemoteUser(user);
+                transfer.setSendPath(file.getAbsolutePath());
+                transfer.setSize(file.length());
+                transfer.setSender(true);
+                transfer.setExtraDescription(extraDescription);
+                transfer.state = 0;
+                user.getTransfers().add(transfer);
                 SocketChannel sc = null;
                 try
                 {
+                    if(user.state != 2)
+                        throw new IOException("the input user has not been connected already.");
                     if (!file.isFile())
                         throw new FileNotFoundException("the input file is invalid.");
                     sc = SocketChannel.open();
                     sc.configureBlocking(false);
-                    sc.connect(new InetSocketAddress(ip, LISTENING_PORT));
-                    sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
-                } catch (final IOException e)
-                {
-                    try
-                    {
-                        user.removeTransfer(transfer);
-                        if (sc != null)
-                            sc.close();
-                    } catch (IOException e1)
-                    {
-                        LogManager.logE(User.class, "close socket channel failed.", e1);
-                    }
+                    sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
+                    SelectionKey key = sc.register(selector, SelectionKey.OP_CONNECT, new Object[] { user, "transfer_connect", transfer });
+                    transfer.setSelectionKey(key);
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            callback.onTransferFailed(transfer, e);
+                            callback.onTransferProgress(transfer, 0);
+                        }
+                    });
+                } catch (final IOException e)
+                {
+                    final SocketChannel scPoint = sc;
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onTransferProgress(transfer, 0); // 协议规定为0时一定要通知到
+                            callback.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try
+                                    {
+                                        transfer.state = 1;
+                                        user.getTransfers().remove(transfer);
+                                        if (scPoint != null)
+                                            scPoint.close();
+                                    } catch (IOException e)
+                                    {
+                                        LogManager.logE(User.class, "close socket channel failed.", e);
+                                    }
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            callback.onTransferFailed(transfer, e);
+                                        }
+                                    });
+                                }
+                            });
                         }
                     });
                 }
@@ -729,9 +792,34 @@ public class User
         });
     }
 
-    public void cancelTransfer(TransferEntity transfer)
+    public void cancelTransfer(final TransferEntity transfer)
     {
-        transfer.setCancelFlag();
+        callback.post(new Runnable() {
+            @Override
+            public void run() {
+                SelectionKey key = transfer.getSelectionKey();
+                if(key == null) //sendTransfer强制要求通知进度为0导致的一种情况，这种情况随后会紧跟onTransferFailed，故可以忽略；若onTransferFailed已经执行，则仍可忽略，因为这符合已取消的被取消时无回调的原则
+                    return;
+                if(transfer.state == 1)
+                    return;
+                try
+                {
+                    transfer.state = 1;
+                    transfer.getRemoteUser().getTransfers().remove(transfer);
+                    key.cancel();
+                    key.channel().close();
+                }catch (IOException e)
+                {
+                    LogManager.logE(User.class, "close socket channel failed.", e);
+                }
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onTransferFailed(transfer,new RuntimeException("transfer is cancelled."));
+                    }
+                });
+            }
+        });
     }
 
     public void close(final Context context, final CloseCallback callback)
