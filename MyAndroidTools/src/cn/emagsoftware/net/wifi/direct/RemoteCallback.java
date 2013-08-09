@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Set;
 
 import android.content.Context;
-import android.net.wifi.WifiManager;
 import android.os.Handler;
 
 import cn.emagsoftware.telephony.TelephonyMgr;
@@ -39,7 +38,6 @@ public abstract class RemoteCallback implements Runnable
 {
 
     Context appContext = null;
-    private WifiManager wifiManager      = null;
     private Selector    selector         = null;
     private List<Runnable> runnables = new LinkedList<Runnable>();
     private long lastRunTime = 0;
@@ -48,7 +46,6 @@ public abstract class RemoteCallback implements Runnable
     public RemoteCallback(Context context)
     {
         appContext = context.getApplicationContext();
-        wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
     }
 
     void bindSelector(Selector selector)
