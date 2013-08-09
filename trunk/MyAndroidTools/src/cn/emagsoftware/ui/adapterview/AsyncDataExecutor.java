@@ -1,11 +1,7 @@
 package cn.emagsoftware.ui.adapterview;
 
-import java.util.TreeMap;
-
 public abstract class AsyncDataExecutor
 {
-
-    private TreeMap<Integer,AsyncDataManager.ExecuteRunnable> map = null;
 
     /**
      * <p>加载异步数据的回调方法 <p>可抛出任何异常，抛出异常时，外部会认为当前的异步数据执行失败
@@ -25,16 +21,6 @@ public abstract class AsyncDataExecutor
     public boolean isNotifyAsyncDataForAll()
     {
         return false;
-    }
-
-    void setExecuteMap(TreeMap<Integer,AsyncDataManager.ExecuteRunnable> map)
-    {
-        this.map = map;
-    }
-
-    TreeMap<Integer,AsyncDataManager.ExecuteRunnable> getExecuteMap()
-    {
-        return map;
     }
 
 }
