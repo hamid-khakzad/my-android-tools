@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 
 public class GenericAdapter extends BaseAdapter
@@ -15,8 +18,12 @@ public class GenericAdapter extends BaseAdapter
     private List<DataHolder>  mHolders       = null;
     /** 是否循环显示View */
     private boolean           mIsLoopView    = false;
+    /** 异步数据的执行对象 */
+    private AsyncDataExecutor mExecutor      = null;
     /** View类型的个数 */
     private int               mViewTypeCount = 1;
+    private Handler mHandler = new Handler();
+    private ViewGroup mRunView = null;
 
     public GenericAdapter(Context context)
     {
@@ -48,6 +55,11 @@ public class GenericAdapter extends BaseAdapter
         mContext = context;
         mHolders = new ArrayList<DataHolder>(holders);
         this.mViewTypeCount = viewTypeCount;
+    }
+
+    public void bindAsyncDataExecutor(AsyncDataExecutor executor)
+    {
+        mExecutor = executor;
     }
 
     public void addDataHolder(DataHolder holder)
@@ -186,7 +198,7 @@ public class GenericAdapter extends BaseAdapter
     }
 
     @Override
-    public final View getView(int position, View convertView, ViewGroup parent)
+    public final View getView(int position, View convertView, final ViewGroup parent)
     {
         // TODO Auto-generated method stub
         DataHolder holder = queryDataHolder(position);
@@ -200,6 +212,22 @@ public class GenericAdapter extends BaseAdapter
         {
             returnVal = convertView;
             holder.onUpdateView(mContext, position, convertView, holder.getData());
+        }
+        if(mExecutor != null)
+        {
+            if(mRunView != parent)
+            {
+                mRunView = parent;
+                final AsyncDataExecutor curExecutor = mExecutor;
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        AsyncDataManager.computeAsyncData((AdapterView<? extends Adapter>)parent,curExecutor);
+                        if(mRunView == parent)
+                            mRunView = null;
+                    }
+                },1000);
+            }
         }
         return returnVal;
     }
