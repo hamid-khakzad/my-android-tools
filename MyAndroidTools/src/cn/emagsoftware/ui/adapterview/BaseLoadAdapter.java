@@ -26,12 +26,12 @@ public abstract class BaseLoadAdapter extends GenericAdapter
         super(context, viewTypeCount);
     }
 
-    public BaseLoadAdapter(Context context, BaseLoadAdapter.LoadCallback callback)
+    public BaseLoadAdapter(Context context, LoadCallback callback)
     {
         this(context, callback, 1);
     }
 
-    public BaseLoadAdapter(Context context, BaseLoadAdapter.LoadCallback callback, int viewTypeCount)
+    public BaseLoadAdapter(Context context, LoadCallback callback, int viewTypeCount)
     {
         super(context, viewTypeCount);
         if (callback == null)

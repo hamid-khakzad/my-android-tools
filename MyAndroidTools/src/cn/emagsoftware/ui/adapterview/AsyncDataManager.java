@@ -4,10 +4,12 @@ import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
+import android.widget.WrapperListAdapter;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.TreeMap;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -30,98 +32,116 @@ final class AsyncDataManager {
 
     private AsyncDataManager(){}
 
-    public static void push(AdapterView<? extends Adapter> view,Object adapter,DataHolder holder,AsyncDataExecutor executor)
+    public static void computeAsyncData(AdapterView<? extends Adapter> view,AsyncDataExecutor executor)
     {
-        TreeMap<Integer,ExecuteRunnable> map = executor.getExecuteMap();
-        int pos;
+        if(view == null || executor == null)
+            throw new NullPointerException();
+        Object tag = view.getTag();
+        if(tag != null && !(tag instanceof ExecuteRunnable))
+            throw new IllegalStateException("can not use 'setTag(tag)' which is used internally.");
+        Object adapter = null;
+        if(view instanceof ExpandableListView)
+        {
+            adapter = ((ExpandableListView)view).getExpandableListAdapter();
+        }else
+        {
+            adapter = view.getAdapter();
+            if(adapter instanceof WrapperListAdapter)
+                adapter = ((WrapperListAdapter)adapter).getWrappedAdapter();
+        }
+        if(adapter == null)
+            throw new IllegalStateException("please call this method after 'setAdapter(adapter)' is called.");
+        int firstPos = view.getFirstVisiblePosition();
+        int lastPos = view.getLastVisiblePosition();
+        List<DataHolder> holders = new ArrayList<DataHolder>();
         if(adapter instanceof GenericAdapter)
         {
-            pos = holder.mExecuteConfig.mPosition;
-        }else
-        {
-            int groupPos = holder.mExecuteConfig.mGroupPosition;
-            if(groupPos == -1)
-                pos = ((ExpandableListView)view).getFlatListPosition(ExpandableListView.getPackedPositionForGroup(holder.mExecuteConfig.mPosition));
-            else
-                pos = ((ExpandableListView)view).getFlatListPosition(ExpandableListView.getPackedPositionForChild(groupPos,holder.mExecuteConfig.mPosition));
-        }
-        ExecuteRunnable runnable = new ExecuteRunnable(view,adapter,holder,executor);
-        if(map == null)
-        {
-            map = new TreeMap<Integer, ExecuteRunnable>();
-            map.put(pos,runnable);
-            executor.setExecuteMap(map);
-        }else
-        {
-            if(pos < map.firstKey())
+            GenericAdapter adapterPoint = (GenericAdapter)adapter;
+            if(view instanceof ListView)
             {
-                map.put(pos,runnable);
-                int visibleCount = view.getChildCount() + 1; // 当前的View没有包含，所以需要加1
-                int excessCount = map.size() - visibleCount;
-                while(excessCount > 0)
-                {
-                    map.remove(map.lastKey()).cancel();
-                    excessCount--;
-                }
-            }else if(pos > map.lastKey())
-            {
-                map.put(pos,runnable);
-                int visibleCount = view.getChildCount() + 1; // 当前的View没有包含，所以需要加1
-                int excessCount = map.size() - visibleCount;
-                while(excessCount > 0)
-                {
-                    map.remove(map.firstKey()).cancel();
-                    excessCount--;
-                }
-            }else
-            {
-                ExecuteRunnable oldRunnable = map.get(pos);
-                if(oldRunnable != null) // 可能为null，因为GridView向上滑动时position的变化可能是3,4,5->0,1,2。忽略为null时需要移除ExecuteRunnable的操作
-                    oldRunnable.cancel();
-                map.put(pos,runnable);
+                int headerCount = ((ListView)view).getHeaderViewsCount();
+                firstPos = firstPos - headerCount;
+                lastPos = lastPos - headerCount;
             }
+            if(firstPos < 0)
+                firstPos = 0;
+            int count = adapterPoint.getCount();
+            if(lastPos >= count)
+                lastPos = count - 1;
+            for(int i = firstPos;i <= lastPos;i++)
+            {
+                holders.add(adapterPoint.queryDataHolder(i));
+            }
+        }else if(adapter instanceof GenericExpandableListAdapter)
+        {
+            GenericExpandableListAdapter adapterPoint = (GenericExpandableListAdapter)adapter;
+            ExpandableListView expandableView = (ExpandableListView)view;
+            for(int i = firstPos;i <= lastPos;i++)
+            {
+                long packedPos = expandableView.getExpandableListPosition(i);
+                int groupPos = ExpandableListView.getPackedPositionGroup(packedPos);
+                int childPos = ExpandableListView.getPackedPositionChild(packedPos);
+                if(groupPos == -1)
+                    continue;
+                DataHolder holder = adapterPoint.queryDataHolder(groupPos);
+                if(childPos != -1)
+                    holder = ((GroupDataHolder)holder).queryChild(childPos);
+                holders.add(holder);
+            }
+        }else
+        {
+            throw new IllegalStateException("the adapter for AdapterView can only be GenericAdapter or GenericExpandableListAdapter.");
         }
-        if(!holder.mExecuteConfig.mShouldExecute)
+        if(holders.size() == 0)
             return;
+        if(tag != null)
+            ((ExecuteRunnable)tag).cancel();
+        ExecuteRunnable runnable = new ExecuteRunnable(view,adapter,holders,executor);
         PUSH_TASK.push(runnable);
+        view.setTag(runnable);
     }
 
-    static class ExecuteRunnable implements Runnable
+    private static class ExecuteRunnable implements Runnable
     {
 
         private WeakReference<AdapterView<? extends Adapter>> viewRef = null;
         private WeakReference<Object> adapterRef = null;
-        private DataHolder holder = null;
+        private List<DataHolder> holders = null;
         private AsyncDataExecutor executor = null;
         private boolean isCancelled = false;
 
-        public ExecuteRunnable(AdapterView<? extends Adapter> view,Object adapter,DataHolder holder,AsyncDataExecutor executor)
+        public ExecuteRunnable(AdapterView<? extends Adapter> view,Object adapter,List<DataHolder> holders,AsyncDataExecutor executor)
         {
             this.viewRef = new WeakReference<AdapterView<? extends Adapter>>(view);
             this.adapterRef = new WeakReference<Object>(adapter);
-            this.holder = holder;
+            this.holders = holders;
             this.executor = executor;
         }
 
         @Override
         public void run()
         {
-            if(isCancelled)
-                return;
-            AdapterView<? extends Adapter> view = viewRef.get();
-            Object adapter = adapterRef.get();
-            if(view == null || adapter == null)
-                return;
-            if(holder.mExecuteConfig.mIsExecuting)
-                return;
-            holder.mExecuteConfig.mIsExecuting = true;
-            // 由于线程池策略可能导致阻塞，所以当前操作会安排在子线程执行，由于同样使用OptionalExecutorTask的PushTask此时已经在主线程初始化了静态的Handler，所以ExecuteTask不会因为Handler报错，且能保证onProgressUpdate在主线程被执行
-            ExecuteTask task = new ExecuteTask(view,adapter,holder,executor);
-            // 提前置为null，因为下面可能会阻塞
-            view = null;
-            adapter = null;
-            // 未实现onPreExecute()，所以安排在子线程执行无影响
-            task.executeOnExecutor(EXECUTOR);
+            for(DataHolder holder:holders)
+            {
+                if(isCancelled)
+                    return;
+                AdapterView<? extends Adapter> view = viewRef.get();
+                Object adapter = adapterRef.get();
+                if(view == null || adapter == null)
+                    return;
+                if(!holder.mExecuteConfig.mShouldExecute)
+                    continue;
+                if(holder.mExecuteConfig.mIsExecuting)
+                    continue;
+                holder.mExecuteConfig.mIsExecuting = true;
+                // 由于线程池策略可能导致阻塞，所以当前操作会安排在子线程执行，由于同样使用OptionalExecutorTask的PushTask此时已经在主线程初始化了静态的Handler，所以ExecuteTask不会因为Handler报错，且能保证onProgressUpdate在主线程被执行
+                ExecuteTask task = new ExecuteTask(view,adapter,holder,executor);
+                // 提前置为null，因为下面可能会阻塞
+                view = null;
+                adapter = null;
+                // 未实现onPreExecute()，所以安排在子线程执行无影响
+                task.executeOnExecutor(EXECUTOR);
+            }
         }
 
         public void cancel()
@@ -160,7 +180,7 @@ final class AsyncDataManager {
                     {
                         Object asyncData = executor.onExecute(holder.mExecuteConfig.mPosition, holder, i);
                         if (asyncData == null)
-                            throw new NullPointerException("the method 'AsyncDataExecutor.onExecute(position,dataHolder,asyncDataIndex)' returns null");
+                            throw new NullPointerException("the method 'AsyncDataExecutor.onExecute' returns null");
                         holder.setAsyncData(i, asyncData);
                         // 更新界面
                         publishProgress(asyncData, i);

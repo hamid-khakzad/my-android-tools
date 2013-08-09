@@ -3,8 +3,6 @@ package cn.emagsoftware.ui.adapterview;
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
-import android.widget.AdapterView;
 import android.widget.BaseExpandableListAdapter;
 
 import java.util.ArrayList;
@@ -18,8 +16,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     Context mContext       = null;
     private List<GroupDataHolder> mHolders = null;
-    /** 异步数据的执行对象 */
-    private AsyncDataExecutor mExecutor      = null;
 
     public GenericExpandableListAdapter(Context context)
     {
@@ -35,11 +31,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
             throw new NullPointerException();
         mContext = context;
         mHolders = new ArrayList<GroupDataHolder>(holders);
-    }
-
-    public void bindAsyncDataExecutor(AsyncDataExecutor executor)
-    {
-        mExecutor = executor;
     }
 
     public void addDataHolder(GroupDataHolder holder)
@@ -135,6 +126,8 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         View returnVal;
         holder.setExpanded(b);
         holder.mExecuteConfig.mShouldExecute = false;
+        holder.mExecuteConfig.mGroupPosition = -1;
+        holder.mExecuteConfig.mPosition = i;
         if (view == null)
         {
             returnVal = holder.onCreateView(mContext, i, holder.getData());
@@ -142,12 +135,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         {
             returnVal = view;
             holder.onUpdateView(mContext, i, view, holder.getData());
-        }
-        if (mExecutor != null)
-        {
-            holder.mExecuteConfig.mGroupPosition = -1;
-            holder.mExecuteConfig.mPosition = i;
-            AsyncDataManager.push((AdapterView<? extends Adapter>) viewGroup,this,holder,mExecutor);
         }
         return returnVal;
     }
@@ -157,6 +144,8 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         DataHolder holder = queryDataHolder(i).queryChild(i2);
         View returnVal;
         holder.mExecuteConfig.mShouldExecute = false;
+        holder.mExecuteConfig.mGroupPosition = i;
+        holder.mExecuteConfig.mPosition = i2;
         if (view == null)
         {
             returnVal = holder.onCreateView(mContext, i2, holder.getData());
@@ -164,12 +153,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         {
             returnVal = view;
             holder.onUpdateView(mContext, i2, view, holder.getData());
-        }
-        if (mExecutor != null)
-        {
-            holder.mExecuteConfig.mGroupPosition = i;
-            holder.mExecuteConfig.mPosition = i2;
-            AsyncDataManager.push((AdapterView<? extends Adapter>) viewGroup,this,holder,mExecutor);
         }
         return returnVal;
     }

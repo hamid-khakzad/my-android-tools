@@ -23,12 +23,12 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     /** 懒加载时的回调对象 */
     private LazyLoadCallback mCallback           = null;
 
-    public BaseLazyLoadAdapter(Context context, BaseLazyLoadAdapter.LazyLoadCallback callback)
+    public BaseLazyLoadAdapter(Context context, LazyLoadCallback callback)
     {
         this(context, callback, 1);
     }
 
-    public BaseLazyLoadAdapter(Context context, BaseLazyLoadAdapter.LazyLoadCallback callback, int viewTypeCount)
+    public BaseLazyLoadAdapter(Context context, LazyLoadCallback callback, int viewTypeCount)
     {
         super(context, viewTypeCount);
         if (callback == null)
