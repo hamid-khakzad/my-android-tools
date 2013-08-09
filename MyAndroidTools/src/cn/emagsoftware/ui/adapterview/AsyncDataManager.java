@@ -29,6 +29,7 @@ final class AsyncDataManager {
         PUSH_TASK.execute();
     }
     private static Executor EXECUTOR = new ThreadPoolExecutor(0,5,45, TimeUnit.SECONDS,new SynchronousQueue<Runnable>(),new ThreadPoolExecutor.CallerRunsPolicy());
+    private static AdapterViewWrapper WRAPPER = null;
 
     private AsyncDataManager(){}
 
@@ -36,9 +37,6 @@ final class AsyncDataManager {
     {
         if(view == null || executor == null)
             throw new NullPointerException();
-        Object tag = view.getTag();
-        if(tag != null && !(tag instanceof ExecuteRunnable))
-            throw new IllegalStateException("can not use 'setTag(tag)' which is used internally.");
         Object adapter = null;
         if(view instanceof ExpandableListView)
         {
@@ -94,11 +92,13 @@ final class AsyncDataManager {
         }
         if(holders.size() == 0)
             return;
-        if(tag != null)
-            ((ExecuteRunnable)tag).cancel();
+        if(WRAPPER == null || WRAPPER.getAdapterView() != view)
+            WRAPPER = new AdapterViewWrapper(view);
+        else
+            WRAPPER.getExecuteRunnable().cancel();
         ExecuteRunnable runnable = new ExecuteRunnable(view,adapter,holders,executor);
         PUSH_TASK.push(runnable);
-        view.setTag(runnable);
+        WRAPPER.setExecuteRunnable(runnable);
     }
 
     private static class ExecuteRunnable implements Runnable
@@ -321,6 +321,35 @@ final class AsyncDataManager {
             {
                 runnables.addFirst(runnable);
             }
+        }
+
+    }
+
+    private static class AdapterViewWrapper
+    {
+
+        private WeakReference<AdapterView<? extends Adapter>> viewRef = null;
+        private ExecuteRunnable runnable = null;
+
+        public AdapterViewWrapper(AdapterView<? extends Adapter> view)
+        {
+            this.viewRef = new WeakReference<AdapterView<? extends Adapter>>(view);
+        }
+
+        public AdapterView<? extends Adapter> getAdapterView()
+        {
+            return viewRef.get();
+        }
+
+        public void setExecuteRunnable(ExecuteRunnable runnable)
+        {
+            if(runnable == null) throw new NullPointerException();
+            this.runnable = runnable;
+        }
+
+        public ExecuteRunnable getExecuteRunnable()
+        {
+            return runnable;
         }
 
     }
