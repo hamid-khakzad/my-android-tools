@@ -169,8 +169,6 @@ final class AsyncDataManager {
 
         @Override
         protected Object doInBackground(Object... params) {
-            boolean shouldChangeSoftRefByPublish = false;
-            // 更新界面publishProgress可能导致界面重构，从而重复使用到异步数据，但DataHolder在执行过程中却不允许重复执行，所以执行时要遍历检查所有的异步项，并且先前已执行完的要升级为强引用
             for (int i = 0; i < holder.getAsyncDataCount(); i++)
             {
                 Object curAsyncData = holder.getAsyncData(i);
@@ -182,104 +180,77 @@ final class AsyncDataManager {
                         if (asyncData == null)
                             throw new NullPointerException("the method 'AsyncDataExecutor.onExecute' returns null");
                         holder.setAsyncData(i, asyncData);
-                        // 更新界面
+                        // 更新界面，用户的更新实现可能导致界面重构，此时mIsExecuting为true使得当前DataHolder不再执行，这种情况下若异步数据丢失则会出现问题
+                        // 不考虑界面重构带来的问题，因为一般不会出现界面重构，且若出现时异步数据不会丢失得这么快
                         publishProgress(asyncData, i);
-                        shouldChangeSoftRefByPublish = true;
                     } catch (Exception e)
                     {
                         LogManager.logE(AsyncDataManager.class, "execute async data failed(position:" + holder.mExecuteConfig.mPosition + ",index:" + i + ")", e);
                     }
-                } else
-                {
-                    holder.setAsyncData(i, curAsyncData);
                 }
             }
             holder.mExecuteConfig.mIsExecuting = false;
-            if (shouldChangeSoftRefByPublish)
-            {
-                // 统一置为软引用可能需要通过publish方式来进行，因为需要保证该操作发生在更新界面publishProgress可能导致的界面重构之后
-                publishProgress();
-            } else
-            {
-                for (int i = 0; i < holder.getAsyncDataCount(); i++)
-                {
-                    holder.changeAsyncDataToSoftReference(i);
-                }
-            }
             return null;
         }
 
         @Override
         protected void onProgressUpdate(Object... values) {
             super.onProgressUpdate(values);
-            if(values.length == 0)
+            Object adapterObj = adapterRef.get();
+            if (adapterObj == null)
+                return;
+            if (executor.isNotifyAsyncDataForAll())
             {
-                // 再次publish，这样才能保证统一置为软引用操作发生在更新界面publishProgress可能导致的界面重构之后
-                publishProgress("");
-            }else if(values.length == 1)
+                if(adapterObj instanceof GenericAdapter)
+                    ((GenericAdapter)adapterObj).notifyDataSetChanged();
+                else if(adapterObj instanceof GenericExpandableListAdapter)
+                    ((GenericExpandableListAdapter)adapterObj).notifyDataSetChanged();
+            } else
             {
-                for (int i = 0; i < holder.getAsyncDataCount(); i++)
-                {
-                    holder.changeAsyncDataToSoftReference(i);
-                }
-            }else
-            {
-                Object adapterObj = adapterRef.get();
-                if (adapterObj == null)
+                AdapterView<? extends Adapter> adapterView = viewRef.get();
+                if (adapterView == null)
                     return;
-                if (executor.isNotifyAsyncDataForAll())
+                int position = holder.mExecuteConfig.mPosition;
+                int wholePosition = -1;
+                if(adapterObj instanceof GenericAdapter)
                 {
-                    if(adapterObj instanceof GenericAdapter)
-                        ((GenericAdapter)adapterObj).notifyDataSetChanged();
-                    else if(adapterObj instanceof GenericExpandableListAdapter)
-                        ((GenericExpandableListAdapter)adapterObj).notifyDataSetChanged();
-                } else
+                    GenericAdapter adapter = (GenericAdapter)adapterObj;
+                    if (position >= adapter.getCount())
+                        return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                    if (!holder.equals(adapter.queryDataHolder(position)))
+                        return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                    wholePosition = position;
+                    if (adapterView instanceof ListView)
+                        wholePosition = wholePosition + ((ListView) adapterView).getHeaderViewsCount();
+                }else if(adapterObj instanceof GenericExpandableListAdapter)
                 {
-                    AdapterView<? extends Adapter> adapterView = viewRef.get();
-                    if (adapterView == null)
-                        return;
-                    int position = holder.mExecuteConfig.mPosition;
-                    int wholePosition = -1;
-                    if(adapterObj instanceof GenericAdapter)
+                    GenericExpandableListAdapter adapter = (GenericExpandableListAdapter)adapterObj;
+                    int groupPos = holder.mExecuteConfig.mGroupPosition;
+                    long packedPosition = -1;
+                    if(groupPos == -1)
                     {
-                        GenericAdapter adapter = (GenericAdapter)adapterObj;
-                        if (position >= adapter.getCount())
+                        if (position >= adapter.getGroupCount())
                             return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
                         if (!holder.equals(adapter.queryDataHolder(position)))
                             return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                        wholePosition = position;
-                        if (adapterView instanceof ListView)
-                            wholePosition = wholePosition + ((ListView) adapterView).getHeaderViewsCount();
-                    }else if(adapterObj instanceof GenericExpandableListAdapter)
+                        packedPosition = ExpandableListView.getPackedPositionForGroup(position);
+                    }else
                     {
-                        GenericExpandableListAdapter adapter = (GenericExpandableListAdapter)adapterObj;
-                        int groupPos = holder.mExecuteConfig.mGroupPosition;
-                        long packedPosition = -1;
-                        if(groupPos == -1)
-                        {
-                            if (position >= adapter.getGroupCount())
-                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                            if (!holder.equals(adapter.queryDataHolder(position)))
-                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                            packedPosition = ExpandableListView.getPackedPositionForGroup(position);
-                        }else
-                        {
-                            if(groupPos >= adapter.getGroupCount())
-                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                            GroupDataHolder group = adapter.queryDataHolder(groupPos);
-                            if (position >= group.getChildrenCount())
-                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                            if (!holder.equals(group.queryChild(position)))
-                                return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
-                            packedPosition = ExpandableListView.getPackedPositionForChild(groupPos,position);
-                        }
-                        wholePosition = ((ExpandableListView)adapterView).getFlatListPosition(packedPosition);
+                        if(groupPos >= adapter.getGroupCount())
+                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        GroupDataHolder group = adapter.queryDataHolder(groupPos);
+                        if (position >= group.getChildrenCount())
+                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        if (!holder.equals(group.queryChild(position)))
+                            return; // DataHolder被执行就意味着Adapter和AdapterView已经同步，此时再判断下Adapter的变化，即可解决所有的不一致问题
+                        packedPosition = ExpandableListView.getPackedPositionForChild(groupPos,position);
                     }
-                    int first = adapterView.getFirstVisiblePosition();
-                    int last = adapterView.getLastVisiblePosition();
-                    if (wholePosition >= first && wholePosition <= last)
-                        holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wholePosition - first), values[0], (Integer) values[1]);
+                    wholePosition = ((ExpandableListView)adapterView).getFlatListPosition(packedPosition);
                 }
+                int first = adapterView.getFirstVisiblePosition();
+                int last = adapterView.getLastVisiblePosition();
+                if (wholePosition >= first && wholePosition <= last)
+                    holder.onAsyncDataExecuted(adapterView.getContext(), position, adapterView.getChildAt(wholePosition - first), values[0], (Integer) values[1]);
             }
         }
 
