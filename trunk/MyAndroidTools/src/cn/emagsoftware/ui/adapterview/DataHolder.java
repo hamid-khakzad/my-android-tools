@@ -14,7 +14,7 @@ public abstract class DataHolder
 {
 
     private Object   mData          = null;
-    private Object[] mAsyncData     = null;
+    private SoftReference<?>[] mAsyncData     = null;
     ExecuteConfig    mExecuteConfig = new ExecuteConfig();
 
     /**
@@ -26,7 +26,7 @@ public abstract class DataHolder
     public DataHolder(Object data, int asyncDataCount)
     {
         mData = data;
-        mAsyncData = new Object[asyncDataCount];
+        mAsyncData = new SoftReference<?>[asyncDataCount];
     }
 
     /**
@@ -89,12 +89,7 @@ public abstract class DataHolder
      */
     public Object getAsyncData(int index)
     {
-        Object asyncData = mAsyncData[index];
-        if (asyncData instanceof SoftReference<?>)
-        {
-            SoftReference<?> asyncDataRef = (SoftReference<?>) asyncData;
-            asyncData = asyncDataRef.get();
-        }
+        Object asyncData = mAsyncData[index]==null?null:mAsyncData[index].get();
         if (asyncData == null)
             mExecuteConfig.mShouldExecute = true;
         return asyncData;
@@ -108,21 +103,6 @@ public abstract class DataHolder
      */
     void setAsyncData(int index, Object asyncData)
     {
-        if (asyncData instanceof SoftReference<?>)
-            throw new IllegalArgumentException("asyncData can not be a type of SoftReference which is used by itself");
-        mAsyncData[index] = asyncData;
-    }
-
-    /**
-     * <p>内部方法：把指定位置的异步数据调整为弱引用，方便GC进行回收
-     * 
-     * @param index
-     */
-    void changeAsyncDataToSoftReference(int index)
-    {
-        Object asyncData = mAsyncData[index];
-        if (asyncData instanceof SoftReference<?>)
-            return;
         mAsyncData[index] = new SoftReference<Object>(asyncData);
     }
 
