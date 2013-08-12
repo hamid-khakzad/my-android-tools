@@ -55,6 +55,7 @@ public class User
     private int               preWifiStaticIp = -1;
     private boolean           preWifiEnabled  = false;
 
+    LinkedList<RemoteUser> connUsers = new LinkedList<RemoteUser>();
     LinkedList<RemoteUser> scanUsers = new LinkedList<RemoteUser>();
 
     private Handler           handler         = new Handler();
@@ -96,7 +97,7 @@ public class User
             serverChannel = ServerSocketChannel.open();
             serverChannel.configureBlocking(false);
             serverChannel.socket().bind(new InetSocketAddress(LISTENING_PORT));
-            serverKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+            serverKey = serverChannel.register(selector, SelectionKey.OP_ACCEPT, new Object[]{this});
         }catch (IOException e)
         {
             try
@@ -597,6 +598,8 @@ public class User
                 SocketChannel sc = null;
                 try
                 {
+                    if(connUsers.contains(user))
+                        throw new DuplicateAlreadyConnectedException();
                     sc = SocketChannel.open();
                     sc.configureBlocking(false);
                     sc.connect(new InetSocketAddress(user.getIp(), LISTENING_PORT));
@@ -687,6 +690,7 @@ public class User
                     userKey.cancel();
                     userKey.channel().close();
                     user.state = 1;
+                    User.this.connUsers.remove(user);
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -706,23 +710,41 @@ public class User
         });
     }
 
+    public void getConnectedUsers(final GetConnectedUsersCallback callback)
+    {
+        this.callback.post(new Runnable() {
+            @Override
+            public void run() {
+                final LinkedList<RemoteUser> users = (LinkedList<RemoteUser>)connUsers.clone();
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onGet(users);
+                    }
+                });
+            }
+        });
+    }
+
     public void sendTransferRequest(RemoteUser user, String description)
     {
-        SelectionKey key = user.getKey();
-        if (key == null)
+        // 存在不同步的问题，将在下个版本修复
+        if(user.state != 2)
             throw new IllegalStateException("the input user has not been connected already.");
+        SelectionKey key = user.getKey();
         Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_request", description });
+        key.attach(new Object[] { objs[0], "transfer_request", description, this });
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
     public void replyTransferRequest(RemoteUser user, boolean allow, String description)
     {
-        SelectionKey key = user.getKey();
-        if (key == null)
+        // 存在不同步的问题，将在下个版本修复
+        if(user.state != 2)
             throw new IllegalStateException("the input user has not been connected already.");
+        SelectionKey key = user.getKey();
         Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_reply", allow, description });
+        key.attach(new Object[] { objs[0], "transfer_reply", allow, description, this });
         key.interestOps(SelectionKey.OP_WRITE);
     }
 
