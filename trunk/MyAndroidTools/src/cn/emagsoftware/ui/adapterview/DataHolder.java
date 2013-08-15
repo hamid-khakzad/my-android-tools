@@ -1,8 +1,8 @@
 package cn.emagsoftware.ui.adapterview;
 
-import java.lang.ref.SoftReference;
-
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.support.v4.util.LruCache;
 import android.view.View;
 
 /**
@@ -13,8 +13,24 @@ import android.view.View;
 public abstract class DataHolder
 {
 
+    /**丢弃的异步数据仍有可能因为存在外部引用而不能即时被回收，所以这里的GLOBAL_CACHE被认作为单个AdapterView的最大缓存则更为合适，故分配的大小只有2.5M*/
+    private static LruCache<String,Object> GLOBAL_CACHE = new LruCache<String, Object>((int)(2.5 * 1024)){
+        @Override
+        protected int sizeOf(String key, Object value) {
+            if(value instanceof Bitmap)
+            {
+                Bitmap bitmap = (Bitmap)value;
+                return bitmap.getRowBytes() * bitmap.getHeight() / 1024;
+            }else if(value instanceof byte[])
+            {
+                return ((byte[])value).length / 1024;
+            }
+            return super.sizeOf(key, value);
+        }
+    };
+
     private Object   mData          = null;
-    private SoftReference<?>[] mAsyncData     = null;
+    private String[] mGlobalIds     = null;
     ExecuteConfig    mExecuteConfig = new ExecuteConfig();
 
     /**
@@ -26,7 +42,7 @@ public abstract class DataHolder
     public DataHolder(Object data, int asyncDataCount)
     {
         mData = data;
-        mAsyncData = new SoftReference<?>[asyncDataCount];
+        mGlobalIds = new String[asyncDataCount];
     }
 
     /**
@@ -82,28 +98,43 @@ public abstract class DataHolder
     }
 
     /**
-     * <p>获取指定位置的异步数据，未加载或已被回收时返回null
-     * 
-     * @param index 异步数据的位置
+     * <p>获取指定的异步数据，未加载或已被丢弃时返回null</>
+     * @param index
+     * @param globalId
      * @return
      */
-    public Object getAsyncData(int index)
+    public Object getAsyncData(int index, String globalId)
     {
-        Object asyncData = mAsyncData[index]==null?null:mAsyncData[index].get();
+        if(globalId == null)
+            throw new NullPointerException();
+        mGlobalIds[index] = globalId;
+        Object asyncData = GLOBAL_CACHE.get(globalId);
         if (asyncData == null)
             mExecuteConfig.mShouldExecute = true;
         return asyncData;
     }
 
     /**
-     * <p>内部方法：设置指定位置的异步数据
-     * 
-     * @param index 异步数据的位置
+     * <p>内部方法：指定的异步数据是否需要被执行</>
+     * @param index
+     * @return
+     */
+    boolean asyncDataShouldExecute(int index)
+    {
+        String globalId = mGlobalIds[index];
+        if(globalId == null)
+            return false;
+        return GLOBAL_CACHE.get(globalId) == null;
+    }
+
+    /**
+     * <p>内部方法：设置指定的异步数据</>
+     * @param index
      * @param asyncData
      */
     void setAsyncData(int index, Object asyncData)
     {
-        mAsyncData[index] = new SoftReference<Object>(asyncData);
+        GLOBAL_CACHE.put(mGlobalIds[index],asyncData);
     }
 
     /**
@@ -113,7 +144,7 @@ public abstract class DataHolder
      */
     public int getAsyncDataCount()
     {
-        return mAsyncData.length;
+        return mGlobalIds.length;
     }
 
     class ExecuteConfig
