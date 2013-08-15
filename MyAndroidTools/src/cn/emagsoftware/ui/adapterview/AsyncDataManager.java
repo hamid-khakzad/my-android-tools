@@ -1,5 +1,6 @@
 package cn.emagsoftware.ui.adapterview;
 
+import android.graphics.Bitmap;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ExpandableListView;
@@ -171,17 +172,16 @@ final class AsyncDataManager {
         protected Object doInBackground(Object... params) {
             for (int i = 0; i < holder.getAsyncDataCount(); i++)
             {
-                Object curAsyncData = holder.getAsyncData(i);
-                if (curAsyncData == null)
+                if (holder.asyncDataShouldExecute(i))
                 {
                     try
                     {
                         Object asyncData = executor.onExecute(holder.mExecuteConfig.mPosition, holder, i);
                         if (asyncData == null)
-                            throw new NullPointerException("the method 'AsyncDataExecutor.onExecute' returns null");
+                            throw new NullPointerException("'AsyncDataExecutor.onExecute' can not return null");
+                        if(!(asyncData instanceof Bitmap) && !(asyncData instanceof byte[]))
+                            throw new UnsupportedOperationException("'AsyncDataExecutor.onExecute' should return only Bitmap or byte[]");
                         holder.setAsyncData(i, asyncData);
-                        // 更新界面，用户的更新实现可能导致界面重构，此时mIsExecuting为true使得当前DataHolder不再执行，这种情况下若异步数据丢失则会出现问题
-                        // 不考虑界面重构带来的问题，因为一般不会出现界面重构，且若出现时异步数据不会丢失得这么快
                         publishProgress(asyncData, i);
                     } catch (Exception e)
                     {
