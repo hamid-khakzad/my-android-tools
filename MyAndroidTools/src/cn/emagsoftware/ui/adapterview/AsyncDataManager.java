@@ -22,7 +22,7 @@ import cn.emagsoftware.util.OptionalExecutorTask;
 /**
  * Created by Wendell on 13-7-8.
  */
-final class AsyncDataManager {
+public final class AsyncDataManager {
 
     private static PushTask PUSH_TASK = new PushTask();
     static
@@ -172,16 +172,17 @@ final class AsyncDataManager {
         protected Object doInBackground(Object... params) {
             for (int i = 0; i < holder.getAsyncDataCount(); i++)
             {
-                if (holder.asyncDataShouldExecute(i))
+                String globalId = holder.asyncDataShouldExecute(i);
+                if (globalId != null)
                 {
                     try
                     {
-                        Object asyncData = executor.onExecute(holder.mExecuteConfig.mPosition, holder, i);
+                        Object asyncData = executor.onExecute(holder.mExecuteConfig.mPosition, holder, i, globalId);
                         if (asyncData == null)
                             throw new NullPointerException("'AsyncDataExecutor.onExecute' can not return null");
                         if(!(asyncData instanceof Bitmap) && !(asyncData instanceof byte[]))
                             throw new UnsupportedOperationException("'AsyncDataExecutor.onExecute' should return only Bitmap or byte[]");
-                        holder.setAsyncData(i, asyncData);
+                        holder.setAsyncData(globalId, asyncData);
                         publishProgress(asyncData, i);
                     } catch (Exception e)
                     {
