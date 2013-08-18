@@ -119,22 +119,22 @@ public abstract class DataHolder
      * @param index
      * @return
      */
-    boolean asyncDataShouldExecute(int index)
+    String asyncDataShouldExecute(int index)
     {
         String globalId = mGlobalIds[index];
         if(globalId == null)
-            return false;
-        return GLOBAL_CACHE.get(globalId) == null;
+            return null;
+        return GLOBAL_CACHE.get(globalId) == null ? globalId : null;
     }
 
     /**
      * <p>内部方法：设置指定的异步数据</>
-     * @param index
+     * @param globalId
      * @param asyncData
      */
-    void setAsyncData(int index, Object asyncData)
+    void setAsyncData(String globalId, Object asyncData)
     {
-        GLOBAL_CACHE.put(mGlobalIds[index],asyncData);
+        GLOBAL_CACHE.put(globalId,asyncData);
     }
 
     /**
