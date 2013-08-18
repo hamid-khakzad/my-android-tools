@@ -40,7 +40,6 @@ public abstract class RemoteCallback implements Runnable
     Context appContext = null;
     private Selector    selector         = null;
     private List<Runnable> runnables = new LinkedList<Runnable>();
-    private long lastRunTime = 0;
     private Handler     handler          = new Handler();
 
     public RemoteCallback(Context context)
@@ -72,29 +71,25 @@ public abstract class RemoteCallback implements Runnable
         {
             if (selector == null)
                 return;
-            long curTime = System.currentTimeMillis();
-            if(curTime - lastRunTime >= 300)
+
+            List<Runnable> curRunnables = new LinkedList<Runnable>();
+            synchronized (runnables)
             {
-                lastRunTime = curTime;
-                List<Runnable> curRunnables = new LinkedList<Runnable>();
-                synchronized (runnables)
+                Iterator<Runnable> iterator = runnables.iterator();
+                while(iterator.hasNext())
                 {
-                    Iterator<Runnable> iterator = runnables.iterator();
-                    while(iterator.hasNext())
-                    {
-                        curRunnables.add(iterator.next());
-                        iterator.remove();
-                    }
+                    curRunnables.add(iterator.next());
+                    iterator.remove();
                 }
-                for(Runnable runnable:curRunnables)
-                {
-                    runnable.run();
-                }
+            }
+            for(Runnable runnable:curRunnables)
+            {
+                runnable.run();
             }
             int readyCount = 0;
             try
             {
-                readyCount = selector.select(100);
+                readyCount = selector.select(300);
             } catch (IOException e)
             {
                 LogManager.logW(RemoteCallback.class, "running has been stopped.", e);
@@ -342,33 +337,18 @@ public abstract class RemoteCallback implements Runnable
                                                 }
                                             });
                                             key.attach(new Object[] { remote, "length", ByteBuffer.allocate(4), user });
-                                        } else if (contentArr[0].equals("transfer_request"))
+                                        } else if (contentArr[0].equals("message"))
                                         {
                                             if (remoteUser != null)
                                             {
-                                                final String description = contentArr[1];
+                                                final String msgType = contentArr[1];
+                                                final String msg = contentArr[2];
                                                 handler.post(new Runnable()
                                                 {
                                                     @Override
                                                     public void run()
                                                     {
-                                                        onTransferRequest(remoteUser, description);
-                                                    }
-                                                });
-                                            }
-                                            key.attach(new Object[] { remoteUser, "length", ByteBuffer.allocate(4), user });
-                                        } else if (contentArr[0].equals("transfer_reply"))
-                                        {
-                                            if (remoteUser != null)
-                                            {
-                                                final boolean allow = Boolean.parseBoolean(contentArr[1]);
-                                                final String description = contentArr[2];
-                                                handler.post(new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        onTransferReply(remoteUser, allow, description);
+                                                        onMessageOK(remoteUser,false,msgType,msg);
                                                     }
                                                 });
                                             }
@@ -602,7 +582,7 @@ public abstract class RemoteCallback implements Runnable
                         }else
                         {
                             SocketChannel sc = (SocketChannel) keyChannel;
-                            Object[] objs = (Object[]) key.attachment();
+                            final Object[] objs = (Object[]) key.attachment();
                             if (objs[1].equals("info_send"))
                             {
                                 final RemoteUser remoteUser = (RemoteUser) objs[0];
@@ -664,18 +644,17 @@ public abstract class RemoteCallback implements Runnable
                                         }
                                     });
                                 }
-                            } else if (objs[1].equals("transfer_request"))
+                            } else if (objs[1].equals("message"))
                             {
                                 try
                                 {
                                     ByteBuffer sendBuff = null;
-                                    if (objs[2] instanceof ByteBuffer)
+                                    if (objs.length == 6)
                                     {
-                                        sendBuff = (ByteBuffer) objs[2];
+                                        sendBuff = (ByteBuffer) objs[5];
                                     } else
                                     {
-                                        String description = String.valueOf(objs[2]);
-                                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_request", description });
+                                        String msg = StringUtilities.concatByCSV(new String[] { "message", (String)objs[2], (String)objs[3] });
                                         byte[] msgByte = msg.getBytes("UTF-8");
                                         sendBuff = ByteBuffer.allocate(4 + msgByte.length);
                                         sendBuff.putInt(msgByte.length);
@@ -685,49 +664,28 @@ public abstract class RemoteCallback implements Runnable
                                     sc.write(sendBuff);
                                     if (sendBuff.hasRemaining())
                                     {
-                                        key.attach(new Object[] { objs[0], "transfer_request", sendBuff });
-                                    } else
-                                    {
-                                        key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4), objs[3] });
-                                        key.interestOps(SelectionKey.OP_READ);
-                                    }
-                                } catch (IOException e)
-                                {
-                                    LogManager.logE(RemoteCallback.class, "transfer request failed.", e);
-                                    key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4), objs[3] });
-                                    key.interestOps(SelectionKey.OP_READ);
-                                }
-                            } else if (objs[1].equals("transfer_reply"))
-                            {
-                                try
-                                {
-                                    ByteBuffer sendBuff = null;
-                                    if (objs[2] instanceof ByteBuffer)
-                                    {
-                                        sendBuff = (ByteBuffer) objs[2];
-                                    } else
-                                    {
-                                        String msg = StringUtilities.concatByCSV(new String[] { "transfer_reply", String.valueOf(objs[2]), String.valueOf(objs[3]) });
-                                        byte[] msgByte = msg.getBytes("UTF-8");
-                                        sendBuff = ByteBuffer.allocate(4 + msgByte.length);
-                                        sendBuff.putInt(msgByte.length);
-                                        sendBuff.put(msgByte);
-                                        sendBuff.flip();
-                                    }
-                                    sc.write(sendBuff);
-                                    if (sendBuff.hasRemaining())
-                                    {
-                                        key.attach(new Object[] { objs[0], "transfer_reply", sendBuff });
+                                        key.attach(new Object[] { objs[0], objs[1], objs[2], objs[3], objs[4], sendBuff });
                                     } else
                                     {
                                         key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4), objs[4] });
                                         key.interestOps(SelectionKey.OP_READ);
+                                        handler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                onMessageOK((RemoteUser)objs[0],true,(String)objs[2],(String)objs[3]);
+                                            }
+                                        });
                                     }
-                                } catch (IOException e)
+                                } catch (final IOException e)
                                 {
-                                    LogManager.logE(RemoteCallback.class, "transfer reply failed.", e);
                                     key.attach(new Object[] { objs[0], "length", ByteBuffer.allocate(4), objs[4] });
                                     key.interestOps(SelectionKey.OP_READ);
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            onMessageFailed((RemoteUser)objs[0],true,(String)objs[2],(String)objs[3],e);
+                                        }
+                                    });
                                 }
                             } else if (objs[1].equals("transfer_send"))
                             {
@@ -932,9 +890,9 @@ public abstract class RemoteCallback implements Runnable
 
     public abstract void onDisconnectedFailed(RemoteUser user, Exception e);
 
-    public abstract void onTransferRequest(RemoteUser user, String description);
+    public abstract void onMessageOK(RemoteUser user,boolean isSender,String msgType,String msg);
 
-    public abstract void onTransferReply(RemoteUser user, boolean allow, String description);
+    public abstract void onMessageFailed(RemoteUser user,boolean isSender,String msgType,String msg,Exception e);
 
     public abstract String onGetSavingPathInBackground(RemoteUser user, String sendPath, long size, String extraDescription);
 
