@@ -726,26 +726,27 @@ public class User
         });
     }
 
-    public void sendTransferRequest(RemoteUser user, String description)
+    public void sendMessage(final RemoteUser user,final String msgType,final String msg)
     {
-        // 存在不同步的问题，将在下个版本修复
-        if(user.state != 2)
-            throw new IllegalStateException("the input user has not been connected already.");
-        SelectionKey key = user.getKey();
-        Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_request", description, this });
-        key.interestOps(SelectionKey.OP_WRITE);
-    }
-
-    public void replyTransferRequest(RemoteUser user, boolean allow, String description)
-    {
-        // 存在不同步的问题，将在下个版本修复
-        if(user.state != 2)
-            throw new IllegalStateException("the input user has not been connected already.");
-        SelectionKey key = user.getKey();
-        Object[] objs = (Object[]) key.attachment();
-        key.attach(new Object[] { objs[0], "transfer_reply", allow, description, this });
-        key.interestOps(SelectionKey.OP_WRITE);
+        callback.post(new Runnable() {
+            @Override
+            public void run() {
+                if(user.state != 2)
+                {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onMessageFailed(user,true,msgType,msg,new IOException("the input user has not been connected already."));
+                        }
+                    });
+                    return;
+                }
+                SelectionKey key = user.getKey();
+                Object[] objs = (Object[]) key.attachment();
+                key.attach(new Object[] { objs[0], "message", msgType, msg, User.this });
+                key.interestOps(SelectionKey.OP_WRITE);
+            }
+        });
     }
 
     public void sendTransfer(final RemoteUser user, final File file, final String extraDescription)
