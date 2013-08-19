@@ -69,7 +69,9 @@ public final class AsyncDataManager {
                 lastPos = count - 1;
             for(int i = firstPos;i <= lastPos;i++)
             {
-                holders.add(adapterPoint.queryDataHolder(i));
+                DataHolder holder = adapterPoint.queryDataHolder(i);
+                if(holder.mExecuteConfig.mShouldExecute)
+                    holders.add(holder);
             }
         }else if(adapter instanceof GenericExpandableListAdapter)
         {
@@ -85,7 +87,8 @@ public final class AsyncDataManager {
                 DataHolder holder = adapterPoint.queryDataHolder(groupPos);
                 if(childPos != -1)
                     holder = ((GroupDataHolder)holder).queryChild(childPos);
-                holders.add(holder);
+                if(holder.mExecuteConfig.mShouldExecute)
+                    holders.add(holder);
             }
         }else
         {
@@ -130,8 +133,6 @@ public final class AsyncDataManager {
                 Object adapter = adapterRef.get();
                 if(view == null || adapter == null)
                     return;
-                if(!holder.mExecuteConfig.mShouldExecute)
-                    continue;
                 if(holder.mExecuteConfig.mIsExecuting)
                     continue;
                 holder.mExecuteConfig.mIsExecuting = true;
