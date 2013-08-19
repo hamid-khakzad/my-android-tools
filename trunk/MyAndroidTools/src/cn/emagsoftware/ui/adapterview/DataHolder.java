@@ -13,8 +13,8 @@ import android.view.View;
 public abstract class DataHolder
 {
 
-    /**丢弃的异步数据仍有可能因为存在外部引用而不能即时被回收，所以这里的GLOBAL_CACHE被认作为单个AdapterView的最大缓存则更为合适，故分配的大小只有2.5M*/
-    private static LruCache<String,Object> GLOBAL_CACHE = new LruCache<String, Object>((int)(2.5 * 1024 * 1024)){
+    /**丢弃的异步数据仍有可能因为存在外部引用而不能即时被回收，所以这里的GLOBAL_CACHE被认作为单个AdapterView的最大缓存则更为合适*/
+    private static LruCache<String,Object> GLOBAL_CACHE = new LruCache<String, Object>((int)(Runtime.getRuntime().maxMemory()/8)){
         @Override
         protected int sizeOf(String key, Object value) {
             if(value instanceof Bitmap)
