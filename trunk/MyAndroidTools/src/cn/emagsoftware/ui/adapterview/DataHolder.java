@@ -5,6 +5,9 @@ import android.graphics.Bitmap;
 import android.support.v4.util.LruCache;
 import android.view.View;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * <p>当前类没有提供setData方法，因为这可能会影响异步数据加载机制，如果需要改变data，可使用新data来创建新的DataHolder实例
  * 
@@ -30,7 +33,7 @@ public abstract class DataHolder
     };
 
     private Object   mData          = null;
-    private String[] mGlobalIds     = null;
+    private int mAsyncDataCount;
     ExecuteConfig    mExecuteConfig = new ExecuteConfig();
 
     /**
@@ -41,8 +44,10 @@ public abstract class DataHolder
      */
     public DataHolder(Object data, int asyncDataCount)
     {
+        if(asyncDataCount < 0)
+            throw new IllegalArgumentException("asyncDataCount < 0");
         mData = data;
-        mGlobalIds = new String[asyncDataCount];
+        mAsyncDataCount = asyncDataCount;
     }
 
     /**
@@ -105,26 +110,22 @@ public abstract class DataHolder
      */
     public Object getAsyncData(int index, String globalId)
     {
-        if(globalId == null)
-            throw new NullPointerException();
-        mGlobalIds[index] = globalId;
+        if(index < 0 || index >= mAsyncDataCount)
+            throw new IllegalArgumentException("index < 0 || index >= mAsyncDataCount");
         Object asyncData = GLOBAL_CACHE.get(globalId);
         if (asyncData == null)
-            mExecuteConfig.mShouldExecute = true;
+            mExecuteConfig.mUnits.put(index,globalId);
         return asyncData;
     }
 
     /**
-     * <p>内部方法：指定的异步数据是否需要被执行</>
-     * @param index
+     * <p>内部方法：获取指定的异步数据</>
+     * @param globalId
      * @return
      */
-    String asyncDataShouldExecute(int index)
+    Object getAsyncData(String globalId)
     {
-        String globalId = mGlobalIds[index];
-        if(globalId == null)
-            return null;
-        return GLOBAL_CACHE.get(globalId) == null ? globalId : null;
+        return GLOBAL_CACHE.get(globalId);
     }
 
     /**
@@ -144,15 +145,18 @@ public abstract class DataHolder
      */
     public int getAsyncDataCount()
     {
-        return mGlobalIds.length;
+        return mAsyncDataCount;
     }
 
     class ExecuteConfig
     {
-        boolean mShouldExecute = false;
-        boolean mIsExecuting   = false;
+        boolean mShouldRefresh = true;
+        HashMap<Integer,String> mUnits = new HashMap<Integer, String>();
         int     mGroupPosition = -1;
         int     mPosition      = -1;
+        Map<Integer,String> mUnitsClone = null;
+        Map<Integer,String> mUnitsExecute = null;
+        boolean mIsExecuting   = false;
     }
 
 }
