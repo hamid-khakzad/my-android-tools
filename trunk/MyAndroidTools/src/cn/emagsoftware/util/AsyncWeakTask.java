@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import android.os.AsyncTask;
-import android.os.Handler;
 
 /**
  * <p>此类适用于执行依赖于特定数据(尤其为大数据)的异步操作且依赖数据被回收后任务可取消的情况，该类内部对依赖数据使用了虚引用，不妨碍其被回收
@@ -20,8 +19,7 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
 {
 
     private List<WeakReference<Object>> mObjReferences          = null;
-    private Handler                     mHandler                = new Handler();
-    private boolean                     mIsWithoutOnPostExecute = false;
+    private Exception mExcep = null;
 
     public AsyncWeakTask(Object... objs)
     {
@@ -77,21 +75,9 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
         try
         {
             return doInBackgroundImpl(params);
-        } catch (final Exception e)
+        } catch (Exception e)
         {
-            mHandler.post(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    if (isCancelled())
-                        return;
-                    Object[] objs = getObjects();
-                    if (objs != null)
-                        onException(objs, e);
-                }
-            });
-            mIsWithoutOnPostExecute = true;
+            mExcep = e;
             return null;
         }
     }
@@ -99,6 +85,8 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onProgressUpdate(Progress... values)
     {
+        if(isCancelled()) // google在publishProgress方法中判断isCancelled()可能存在不同步，所以这里额外判断
+            return;
         Object[] objs = getObjects();
         if (objs == null)
             cancel(true); // 由于依赖数据被回收导致onCancelled自动不执行
@@ -117,11 +105,14 @@ public abstract class AsyncWeakTask<Params, Progress, Result> extends AsyncTask<
     @Override
     protected final void onPostExecute(Result result)
     {
-        if (mIsWithoutOnPostExecute)
-            return;
         Object[] objs = getObjects();
         if (objs != null)
-            onPostExecute(objs, result);
+        {
+            if(mExcep == null)
+                onPostExecute(objs, result);
+            else
+                onException(objs, mExcep);
+        }
     }
 
     private Object[] getObjects()
