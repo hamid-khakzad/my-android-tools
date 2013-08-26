@@ -11,10 +11,16 @@ public class GenericFragment extends Fragment {
     private Bundle backStackState = null;
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onDestroyView() {
+        super.onDestroyView();
         backStackState = new Bundle();
         onSaveInstanceState(backStackState);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        backStackState = null;
     }
 
     public Bundle getBackStackState()
