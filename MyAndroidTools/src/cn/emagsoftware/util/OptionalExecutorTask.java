@@ -479,10 +479,10 @@ public abstract class OptionalExecutorTask<Params, Progress, Result> {
      * @see #doInBackground
      */
     protected final void publishProgress(Progress... values) {
-        if (!isCancelled()) {
+        //if (!isCancelled()) { // AsyncTask在这里的判断可能存在不同步的问题，所以改为在主线程判断
             sHandler.obtainMessage(MESSAGE_POST_PROGRESS,
                     new AsyncTaskResult<Progress>(this, values)).sendToTarget();
-        }
+        //}
     }
 
     private void finish(Result result) {
@@ -505,7 +505,9 @@ public abstract class OptionalExecutorTask<Params, Progress, Result> {
                     result.mTask.finish(result.mData[0]);
                     break;
                 case MESSAGE_POST_PROGRESS:
-                    result.mTask.onProgressUpdate(result.mData);
+                    if(!result.mTask.isCancelled()) { // 添加在主线程的判断，以解决AsyncTask原来的判断不同步的问题
+                        result.mTask.onProgressUpdate(result.mData);
+                    }
                     break;
             }
         }
