@@ -1,10 +1,11 @@
 package cn.emagsoftware.ui.recreate;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
-public class RecreateActivity extends Activity
+import cn.emagsoftware.ui.GenericActivity;
+
+public abstract class RecreateActivity extends GenericActivity
 {
 
     private static final String EXTRA_RECREATEACTIVITY_OUTSTATE = "android.intent.extra.RECREATEACTIVITY_OUTSTATE";
@@ -16,7 +17,6 @@ public class RecreateActivity extends Activity
     @Override
     protected final void onCreate(Bundle savedInstanceState)
     {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         RecreateManager.addRecreateActivity(this);
         Intent intent = getIntent();
@@ -38,7 +38,6 @@ public class RecreateActivity extends Activity
     @Override
     protected final void onStart()
     {
-        // TODO Auto-generated method stub
         super.onStart();
         onStartImpl();
         if (outState != null)
@@ -55,7 +54,6 @@ public class RecreateActivity extends Activity
     @Override
     protected final void onResume()
     {
-        // TODO Auto-generated method stub
         super.onResume();
         isAtFront = true;
         if (shouldRecreateNextTime)
@@ -74,7 +72,6 @@ public class RecreateActivity extends Activity
     @Override
     protected void onPause()
     {
-        // TODO Auto-generated method stub
         super.onPause();
         isAtFront = false;
     }
@@ -82,7 +79,6 @@ public class RecreateActivity extends Activity
     @Override
     protected void onDestroy()
     {
-        // TODO Auto-generated method stub
         super.onDestroy();
         RecreateManager.removeRecreateActivity(this);
     }
