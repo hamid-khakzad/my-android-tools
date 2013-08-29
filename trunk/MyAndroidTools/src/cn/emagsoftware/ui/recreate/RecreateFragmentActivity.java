@@ -2,9 +2,10 @@ package cn.emagsoftware.ui.recreate;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 
-public class RecreateFragmentActivity extends FragmentActivity
+import cn.emagsoftware.ui.GenericFragmentActivity;
+
+public abstract class RecreateFragmentActivity extends GenericFragmentActivity
 {
 
     private static final String EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE = "android.intent.extra.RECREATEFRAGMENTACTIVITY_OUTSTATE";
@@ -16,7 +17,6 @@ public class RecreateFragmentActivity extends FragmentActivity
     @Override
     protected final void onCreate(Bundle savedInstanceState)
     {
-        // TODO Auto-generated method stub
         super.onCreate(savedInstanceState);
         RecreateManager.addRecreateActivity(this);
         Intent intent = getIntent();
@@ -38,7 +38,6 @@ public class RecreateFragmentActivity extends FragmentActivity
     @Override
     protected final void onStart()
     {
-        // TODO Auto-generated method stub
         super.onStart();
         onStartImpl();
         if (outState != null)
@@ -55,7 +54,6 @@ public class RecreateFragmentActivity extends FragmentActivity
     @Override
     protected final void onResume()
     {
-        // TODO Auto-generated method stub
         super.onResume();
         isAtFront = true;
         if (shouldRecreateNextTime)
@@ -74,7 +72,6 @@ public class RecreateFragmentActivity extends FragmentActivity
     @Override
     protected void onPause()
     {
-        // TODO Auto-generated method stub
         super.onPause();
         isAtFront = false;
     }
@@ -82,7 +79,6 @@ public class RecreateFragmentActivity extends FragmentActivity
     @Override
     protected void onDestroy()
     {
-        // TODO Auto-generated method stub
         super.onDestroy();
         RecreateManager.removeRecreateActivity(this);
     }
