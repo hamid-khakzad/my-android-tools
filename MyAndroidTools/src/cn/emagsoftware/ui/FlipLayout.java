@@ -131,7 +131,7 @@ public class FlipLayout extends ViewGroup
                     {
                         int scrollX = getScrollX();
                         int delta = mTempCurScreen * getWidth() - scrollX;
-                        mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
+                        mScroller.startScroll(scrollX, 0, delta, 0, 500);
                         invalidate(); // ÖØ»æ
                     }
                 } else
@@ -140,7 +140,7 @@ public class FlipLayout extends ViewGroup
                     {
                         int scrollX = getScrollX();
                         int delta = mTempCurScreen * getWidth() - scrollX;
-                        mScroller.startScroll(scrollX, 0, delta, 0, Math.abs(delta) * 2);
+                        mScroller.startScroll(scrollX, 0, delta, 0, 500);
                         mTempCurScreen = mCurScreen;
                         invalidate(); // ÖØ»æ
                     } else
