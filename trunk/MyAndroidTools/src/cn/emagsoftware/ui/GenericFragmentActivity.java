@@ -13,13 +13,10 @@ public abstract class GenericFragmentActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         if(!GenericActivity.IS_RUNNING)
         {
-            if(!isFirstForProcess())
-                onRestoreStaticState();
+            onRestoreStaticState();
             GenericActivity.IS_RUNNING = true;
         }
     }
-
-    protected abstract boolean isFirstForProcess();
 
     protected abstract void onRestoreStaticState();
 
