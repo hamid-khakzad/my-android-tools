@@ -15,11 +15,6 @@ public class TestActivity extends GenericActivity
     }
 
     @Override
-    protected boolean isFirstForProcess() {
-        return true;
-    }
-
-    @Override
     protected void onRestoreStaticState() {
     }
 
