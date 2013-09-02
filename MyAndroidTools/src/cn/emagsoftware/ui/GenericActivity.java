@@ -15,13 +15,10 @@ public abstract class GenericActivity extends Activity {
         super.onCreate(savedInstanceState);
         if(!IS_RUNNING)
         {
-            if(!isFirstForProcess())
-                onRestoreStaticState();
+            onRestoreStaticState();
             IS_RUNNING = true;
         }
     }
-
-    protected abstract boolean isFirstForProcess();
 
     protected abstract void onRestoreStaticState();
 
