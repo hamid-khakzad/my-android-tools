@@ -18,7 +18,8 @@ import cn.emagsoftware.util.LogManager;
 
 /**
  * 仿Launcher中的WorkSpace，可以左右滑动切换屏幕的类
- * 
+ *
+ * @deprecated 该类已舍弃，请使用实现更好的android.support.v4.view.ViewPager代替
  * @author Wendell
  * @version 4.9
  */
