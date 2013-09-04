@@ -93,6 +93,10 @@ public class LeftSliderLayout extends ViewGroup {
 
     private float fDensity;
 
+    public LeftSliderLayout(Context context) {
+        this(context, null, 0);
+    }
+
     /**
      * Instantiates a new LeftSliderLayout.
      *
@@ -129,12 +133,6 @@ public class LeftSliderLayout extends ViewGroup {
     {
         if(slidingWidth < 0) throw new IllegalArgumentException("slidingWidth < 0");
         mSlidingWidth = (int) (slidingWidth * fDensity + 0.5f);
-    }
-
-    public void setShadowWidthDp(int shadowWidth)
-    {
-        if(shadowWidth < 0) throw new IllegalArgumentException("shadowWidth < 0");
-        mDefShadowWidth = (int) (shadowWidth * fDensity + 0.5f);
     }
 
     @Override
