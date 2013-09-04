@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<cn.emagsoftware.ui.LeftSliderLayout xmlns:android="http://schemas.android.com/apk/res/android"
-     android:layout_width="fill_parent"
-     android:layout_height="fill_parent"
-     android:id="@+id/zwd">
-    <TextView android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="#333333"></TextView>
-    <TextView android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="#555555"></TextView>
-</cn.emagsoftware.ui.LeftSliderLayout>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+    <TextView android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="#333333" android:layout_alignParentTop="true"></TextView>
+    <cn.emagsoftware.ui.LeftSliderLayout android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_alignParentTop="true">
+        <TextView android:layout_width="8dip" android:layout_height="fill_parent" android:background="#aaaaaa"></TextView>
+        <TextView android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="#eeeeee"></TextView>
+    </cn.emagsoftware.ui.LeftSliderLayout>
+</RelativeLayout>
