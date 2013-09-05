@@ -169,6 +169,12 @@ public class LeftSliderLayout extends ViewGroup {
         scrollTo(mSaveScrollX, 0);
     }
 
+    /**
+     * <p>由layout方法回调，指定在布局完自己之后，如何布局子View。所以非ViewGroup的View无需实现该方法 <p>layout方法根据measure方法计算出的自身大小来布局自己使产生大小并回调onLayout布局子View。若得到的自身大小和位置与上次一样，将在回调onLayout时给changed参数传入false
+     * <p>measure方法会在调用requestLayout方法时调用并递归计算出所有子View的大小，然后才会递归执行layout方法，而不是在layout方法中逐一调用measure方法 <p>系统不会自动调用requestLayout方法，View需在某些可能改变自身大小的属性设置之后手动调用requestLayout方法
+     * <p>布局之后就需要对界面绘制了，View通过调用invalidate方法进行绘制或重绘，ViewGroup的invalidate方法将会绘制或重绘自己所有的子View，在其他线程中调用绘制或重绘时需执行postInvalidate方法
+     * <p>系统不会自动调用invalidate方法，View需在某些可能改变自身大小的属性设置之后手动调用invalidate方法，invalidate方法实际上调用了View的onDraw方法 <p>绘制并不等同于显示到屏幕，系统会在UI-Thread的Looper处于空闲时，将onDraw方法中绘制在内存的内容渲染到屏幕
+     */
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         final int nCount = getChildCount();
@@ -327,6 +333,14 @@ public class LeftSliderLayout extends ViewGroup {
         return true;
     }
 
+    /**
+     * <p>MotionEvent事件按时间先后可以分成两个部分：
+     *    1.寻找target：寻找target只会在MotionEvent为ACTION_DOWN执行，会对范围内的View从上而下（ViewGroup->View）递归执行onInterceptTouchEvent，直到没有子View或onInterceptTouchEvent返回true时将停止递归，
+     *      此时将从当前View开始向上（View->ViewGroup）执行OnTouchListener和onTouchEvent，直到返回true或到达顶层View将停止执行，此时当前的View便会被标记成一个target。
+     *    2.执行MotionEvent：后续MotionEvent事件只会发送给target进行执行。但事件仍会先通过onInterceptTouchEvent从上而下（ViewGroup->View）进行拦截，若某个View此时在onInterceptTouchEvent返回true，则该View将会成为新的
+     *      target，所有的后续事件都会发送到新的target，原来的target只会再收到一个ACTION_CANCEL事件。
+     * <p>调用requestDisallowInterceptTouchEvent(true)会导致当前View及其所有父View不再执行onInterceptTouchEvent进行拦截，requestDisallowInterceptTouchEvent可重复调用，并且在下一个整MotionEvent事件开始时会恢复为允许拦截状态
+     */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
 
