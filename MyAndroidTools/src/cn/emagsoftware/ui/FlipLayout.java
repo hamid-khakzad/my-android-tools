@@ -369,12 +369,12 @@ public class FlipLayout extends ViewGroup
     }
 
     /**
-     * <p>当MotionEvent为ACTION_DOWN时，会从上而下（ViewGroup->View）递归执行onInterceptTouchEvent，直到没有子View或onInterceptTouchEvent返回true时将停止递归，
-     * 此时将从当前View开始向上（View->ViewGroup）执行OnTouchListener和onTouchEvent，直到返回true将停止执行，并且当前返回true的View将会标记成一个target。需要注意的是，
-     * 如果此时设置了requestDisallowInterceptTouchEvent(true)，将不会执行onInterceptTouchEvent，而是直接从最下方的View开始向上（View->ViewGroup）执行OnTouchListener 和onTouchEvent来寻找target
-     * <p>当MotionEvent为非ACTION_DOWN时，如果没有target，将会执行顶层View的OnTouchListener和onTouchEvent；如果存在target，将只会执行target的OnTouchListener和onTouchEvent：
-     * 1.在requestDisallowInterceptTouchEvent(false)且递归执行onInterceptTouchEvent时返回了true，target执行的事件将会被修改为ACTION_CANCEL， 此后onInterceptTouchEvent返回true的View的会成为新的target，后续情况同上
-     * 2.否则，target会执行原始的非ACTION_DOWN事件 <p>当MotionEvent为非ACTION_DOWN时，OnTouchListener和onTouchEvent的返回值已经变得无关紧要
+     * <p>MotionEvent事件按时间先后可以分成两个部分：
+     *    1.寻找target：寻找target只会在MotionEvent为ACTION_DOWN执行，会对范围内的View从上而下（ViewGroup->View）递归执行onInterceptTouchEvent，直到没有子View或onInterceptTouchEvent返回true时将停止递归，
+     *      此时将从当前View开始向上（View->ViewGroup）执行OnTouchListener和onTouchEvent，直到返回true或到达顶层View将停止执行，此时当前的View便会被标记成一个target。
+     *    2.执行MotionEvent：后续MotionEvent事件只会发送给target进行执行。但事件仍会先通过onInterceptTouchEvent从上而下（ViewGroup->View）进行拦截，若某个View此时在onInterceptTouchEvent返回true，则该View将会成为新的
+     *      target，所有的后续事件都会发送到新的target，原来的target只会再收到一个ACTION_CANCEL事件。
+     * <p>调用requestDisallowInterceptTouchEvent(true)会导致当前View及其所有父View不再执行onInterceptTouchEvent进行拦截，requestDisallowInterceptTouchEvent可重复调用，并且在下一个整MotionEvent事件开始时会恢复为允许拦截状态
      */
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev)
