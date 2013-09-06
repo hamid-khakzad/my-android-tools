@@ -361,7 +361,7 @@ public class LeftSliderLayout extends ViewGroup {
             case MotionEvent.ACTION_DOWN:
                 mLastMotionX = x;
                 mLastMotionY = y;
-                mTouchState = mScroller.isFinished() ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
+                mTouchState = mScroller.isFinished() && !mIsOpen ? TOUCH_STATE_REST : TOUCH_STATE_SCROLLING;
                 break;
 
             case MotionEvent.ACTION_MOVE:
