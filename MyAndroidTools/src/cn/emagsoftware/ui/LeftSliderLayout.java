@@ -366,7 +366,7 @@ public class LeftSliderLayout extends ViewGroup {
 
             case MotionEvent.ACTION_MOVE:
                 float xDif = mLastMotionX - x;
-                if(mIsOpen || xDif < 0)
+                if(xDif < 0)
                 {
                     final int xDiff = (int) Math.abs(xDif);
                     if (xDiff > mTouchSlop) {
