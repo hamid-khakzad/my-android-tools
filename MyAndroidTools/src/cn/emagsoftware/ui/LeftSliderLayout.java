@@ -365,10 +365,14 @@ public class LeftSliderLayout extends ViewGroup {
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                final int xDiff = (int) Math.abs(mLastMotionX - x);
-                if (xDiff > mTouchSlop) {
-                    if (Math.abs(mLastMotionY - y) / Math.abs(mLastMotionX - x) < 1)
-                        mTouchState = TOUCH_STATE_SCROLLING;
+                float xDif = mLastMotionX - x;
+                if(mIsOpen || xDif < 0)
+                {
+                    final int xDiff = (int) Math.abs(xDif);
+                    if (xDiff > mTouchSlop) {
+                        if (Math.abs(mLastMotionY - y) / Math.abs(xDif) < 1)
+                            mTouchState = TOUCH_STATE_SCROLLING;
+                    }
                 }
                 break;
 
