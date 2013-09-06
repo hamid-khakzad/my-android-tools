@@ -65,8 +65,8 @@ public class LeftSliderLayout extends ViewGroup {
      * VELOCITY_UNITS in dp
      * mVelocityUnits in px
      */
-    private static final float DEF_SHADOW_WIDTH = 10.0f;
-    private int mDefShadowWidth;
+    /**private static final float DEF_SHADOW_WIDTH = 10.0f;
+    private int mDefShadowWidth;*/
 
     /**
      * Value for checking a touch event is completed.
@@ -126,7 +126,7 @@ public class LeftSliderLayout extends ViewGroup {
         mVelocityUnits = (int) (VELOCITY_UNITS * fDensity + 0.5f);
         mMinorVelocity = (int) (MINOR_VELOCITY * fDensity + 0.5f);
         mSlidingWidth = (int) (SLIDING_WIDTH * fDensity + 0.5f);
-        mDefShadowWidth = (int) (DEF_SHADOW_WIDTH * fDensity + 0.5f);
+        /**mDefShadowWidth = (int) (DEF_SHADOW_WIDTH * fDensity + 0.5f);*/
     }
 
     public void setSlidingWidthDp(int slidingWidth)
@@ -158,7 +158,17 @@ public class LeftSliderLayout extends ViewGroup {
         if (nCount > 0) {
             if (nCount > 1) {
                 mMainChild = getChildAt(1);
-                getChildAt(0).measure(widthMeasureSpec, heightMeasureSpec);
+                View leftChild = getChildAt(0);
+                ViewGroup.LayoutParams layoutParams = leftChild.getLayoutParams();
+                int width = layoutParams.width;
+                int widthSpec;
+                if(width == ViewGroup.LayoutParams.FILL_PARENT)
+                    widthSpec = MeasureSpec.makeMeasureSpec(mSlidingWidth, MeasureSpec.EXACTLY);
+                else if(width == ViewGroup.LayoutParams.WRAP_CONTENT)
+                    widthSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+                else
+                    widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
+                leftChild.measure(widthSpec, heightMeasureSpec);
             } else {
                 mMainChild = getChildAt(0);
             }
@@ -193,17 +203,9 @@ public class LeftSliderLayout extends ViewGroup {
 
         // Set the size and position of Shadow Child
         if (nCount > 1) {
-            int nLeftChildWidth = 0;
             View leftChild = getChildAt(0);
-            ViewGroup.LayoutParams layoutParams = leftChild.getLayoutParams();
-            if (layoutParams.width == ViewGroup.LayoutParams.FILL_PARENT
-                    /**|| layoutParams.width == ViewGroup.LayoutParams.MATCH_PARENT*/) {
-                nLeftChildWidth = mDefShadowWidth;
-            } else {
-                nLeftChildWidth = layoutParams.width;
-            }
             leftChild.layout(
-                    l - nLeftChildWidth,
+                    l - leftChild.getMeasuredWidth(),
                     t,
                     l,
                     t + leftChild.getMeasuredHeight());
@@ -346,7 +348,7 @@ public class LeftSliderLayout extends ViewGroup {
 
         final int action = ev.getAction();
 
-        /*if (mListener != null && !mListener.OnLeftSliderLayoutInterceptTouch(ev)) {
+        /**if (mListener != null && !mListener.OnLeftSliderLayoutInterceptTouch(ev)) {
             return false;
         }*/
 
@@ -463,7 +465,7 @@ public class LeftSliderLayout extends ViewGroup {
         mIsOpen = bIsOpen;
 
         if (bIsOpen) {
-            mSaveScrollX = getMaxScrollX();
+            mSaveScrollX = getMinScrollX();
         } else {
             mSaveScrollX = 0;
         }
