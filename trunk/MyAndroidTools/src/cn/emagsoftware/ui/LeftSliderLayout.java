@@ -334,10 +334,10 @@ public class LeftSliderLayout extends ViewGroup {
     }
 
     /**
-     * <p>MotionEvent事件按时间先后可以分成两个部分：
-     *    1.寻找target：寻找target只会在MotionEvent为ACTION_DOWN执行，会对范围内的View从上而下（ViewGroup->View）递归执行onInterceptTouchEvent，直到没有子View或onInterceptTouchEvent返回true时将停止递归，
-     *      此时将从当前View开始向上（View->ViewGroup）执行OnTouchListener和onTouchEvent，直到返回true或到达顶层View将停止执行，此时当前的View便会被标记成一个target。
-     *    2.执行MotionEvent：后续MotionEvent事件只会发送给target进行执行。但事件仍会先通过target以上（不包括target）View的onInterceptTouchEvent进行拦截，若上层View此时在onInterceptTouchEvent返回true，则该上层View将会成为新的
+     * <p>MotionEvent事件可分为两个部分：
+     *    1.当为ACTION_DOWN时：会对范围内的View从上而下（ViewGroup->View）递归执行onInterceptTouchEvent，直到没有子View或onInterceptTouchEvent返回true时将停止递归，此时，若当前View是onInterceptTouchEvent返回true的，
+     *      则当前View会被标识为一个target，否则将从当前View开始向上（View->ViewGroup）执行OnTouchListener和onTouchEvent，直到返回true或到达顶层View时停止，这种情况下的target便是此时的View。
+     *    2.当为后续MotionEvent时：后续MotionEvent只会发送给target进行执行。但事件仍会先通过target以上（不包括target）View的onInterceptTouchEvent进行拦截，若上层View此时在onInterceptTouchEvent返回true，则该上层View将会成为新的
      *      target，所有的后续事件都会发送到新的target，原来的target只会再收到一个ACTION_CANCEL事件。
      * <p>调用requestDisallowInterceptTouchEvent(true)会导致当前View及其所有父View不再执行onInterceptTouchEvent进行拦截，requestDisallowInterceptTouchEvent可重复调用，并且在下一个整MotionEvent事件开始时会恢复为允许拦截状态
      */
