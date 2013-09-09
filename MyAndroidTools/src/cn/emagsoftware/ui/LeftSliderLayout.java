@@ -226,8 +226,6 @@ public class LeftSliderLayout extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        super.onTouchEvent(event);
-
         int nCurScrollX = getScrollX();
 
         // check touch point is in the rectangle of Main Child
