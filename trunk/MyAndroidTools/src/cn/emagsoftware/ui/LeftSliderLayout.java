@@ -34,6 +34,7 @@ public class LeftSliderLayout extends ViewGroup {
      */
     private float mLastMotionX;
     private float mLastMotionY;
+    private float mFirstMotionX = -1;
 
     /**
      * Values for VelocityTracker to compute current velocity.
@@ -50,6 +51,8 @@ public class LeftSliderLayout extends ViewGroup {
      */
     private static final float MINOR_VELOCITY = 150.0f;
     private int mMinorVelocity;
+    private static final float STILL_RANGE = 2.0f;
+    private int mStillRange;
 
     /**
      * The width of Sliding distance from left.
@@ -125,6 +128,7 @@ public class LeftSliderLayout extends ViewGroup {
         fDensity = getResources().getDisplayMetrics().density;
         mVelocityUnits = (int) (VELOCITY_UNITS * fDensity + 0.5f);
         mMinorVelocity = (int) (MINOR_VELOCITY * fDensity + 0.5f);
+        mStillRange = (int) (STILL_RANGE * fDensity + 0.5f);
         mSlidingWidth = (int) (SLIDING_WIDTH * fDensity + 0.5f);
         /**mDefShadowWidth = (int) (DEF_SHADOW_WIDTH * fDensity + 0.5f);*/
     }
@@ -222,6 +226,7 @@ public class LeftSliderLayout extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        super.onTouchEvent(event);
 
         int nCurScrollX = getScrollX();
 
@@ -253,6 +258,7 @@ public class LeftSliderLayout extends ViewGroup {
 
                 mIsTouchEventDone = false;
                 mLastMotionX = x;
+                mFirstMotionX = mLastMotionX;
                 break;
             }
 
@@ -273,6 +279,7 @@ public class LeftSliderLayout extends ViewGroup {
                 } else {
                     mLastMotionX = x;
                 }
+                if(mFirstMotionX == -1) mFirstMotionX = mLastMotionX;
 
                 // Move view to the current point
                 if (deltaX != 0) {
@@ -286,6 +293,8 @@ public class LeftSliderLayout extends ViewGroup {
 
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP: {
+                float distance = Math.abs(mFirstMotionX - mLastMotionX);
+                mFirstMotionX = -1;
 
                 // check slider is allowed to slide.
                 if (!mEnableSlide) {
@@ -297,21 +306,28 @@ public class LeftSliderLayout extends ViewGroup {
 
                 // Set open or close state, when get ACTION_UP or ACTION_CANCEL event.
                 if (nCurScrollX < 0) {
-                    int velocityX = (int) velocityTracker.getXVelocity();
-                    if (velocityX > mMinorVelocity) {
-                        scrollByWithAnim(getMinScrollX() - nCurScrollX);
-                        setState(true);
-                    }
-                    else if (velocityX < -mMinorVelocity) {
+                    if(distance <= mStillRange)
+                    {
                         scrollByWithAnim(-nCurScrollX);
                         setState(false);
-                    } else {
-                        if (nCurScrollX >= getMinScrollX() / 2) {
-                            scrollByWithAnim(- nCurScrollX);
-                            setState(false);
-                        } else {
+                    }else
+                    {
+                        int velocityX = (int) velocityTracker.getXVelocity();
+                        if (velocityX > mMinorVelocity) {
                             scrollByWithAnim(getMinScrollX() - nCurScrollX);
                             setState(true);
+                        }
+                        else if (velocityX < -mMinorVelocity) {
+                            scrollByWithAnim(-nCurScrollX);
+                            setState(false);
+                        } else {
+                            if (nCurScrollX >= getMinScrollX() / 2) {
+                                scrollByWithAnim(- nCurScrollX);
+                                setState(false);
+                            } else {
+                                scrollByWithAnim(getMinScrollX() - nCurScrollX);
+                                setState(true);
+                            }
                         }
                     }
                 } else {
