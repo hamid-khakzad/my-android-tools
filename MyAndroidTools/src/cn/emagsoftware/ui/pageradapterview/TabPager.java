@@ -29,7 +29,6 @@ public class TabPager extends ViewGroup {
     private PagerAdapter mAdapter;
     private int mCurItem;   // Index of currently displayed page.
     private int mCurTempItem;
-    private View mCurView;
     private int mRestoredCurItem = -1;
     private Parcelable mRestoredAdapterState = null;
     private ClassLoader mRestoredClassLoader = null;
@@ -317,55 +316,56 @@ public class TabPager extends ViewGroup {
         setMeasuredDimension(getDefaultSize(0, widthMeasureSpec),
                 getDefaultSize(0, heightMeasureSpec));
 
-        mCurView = null;
+        // Children are just made to fill our space.
+        int childWidthSize = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
+        int childHeightSize = getMeasuredHeight() - getPaddingTop() - getPaddingBottom();
+        mChildWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidthSize, MeasureSpec.EXACTLY);
+        mChildHeightMeasureSpec = MeasureSpec.makeMeasureSpec(childHeightSize, MeasureSpec.EXACTLY);
 
+        ItemInfo info = null;
         if(mAdapter != null)
         {
-            // Children are just made to fill our space.
-            int childWidthSize = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
-            int childHeightSize = getMeasuredHeight() - getPaddingTop() - getPaddingBottom();
-            mChildWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidthSize, MeasureSpec.EXACTLY);
-            mChildHeightMeasureSpec = MeasureSpec.makeMeasureSpec(childHeightSize, MeasureSpec.EXACTLY);
-
             // Make sure we have created all fragments that we need to have shown.
             mInLayout = true;
-            ItemInfo info = populate();
+            info = populate();
             mInLayout = false;
+        }
 
-            if(info != null)
+        // Page views next.
+        int size = getChildCount();
+        for (int i = 0; i < size; ++i) {
+            final View child = getChildAt(i);
+            if(info != null && infoForChild(child,info))
             {
-                // Page views next.
-                int size = getChildCount();
-                for (int i = 0; i < size; ++i) {
-                    final View child = getChildAt(i);
-                    if (child.getVisibility() != GONE) {
-                        if(infoForChild(child,info))
-                        {
-                            if (DEBUG) LogManager.logV(TabPager.class, "Measuring #" + i + " " + child
-                                    + ": " + mChildWidthMeasureSpec);
-                            child.measure(mChildWidthMeasureSpec, mChildHeightMeasureSpec);
-                            mCurView = child;
-                            break;
-                        }
-                    }
-                }
+                child.setVisibility(View.VISIBLE);
+                if (DEBUG) LogManager.logV(TabPager.class, "Measuring #" + i + " " + child
+                        + ": " + mChildWidthMeasureSpec);
+                child.measure(mChildWidthMeasureSpec, mChildHeightMeasureSpec);
+            }else
+            {
+                child.setVisibility(View.GONE);
             }
         }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        if(mCurView != null)
-        {
-            int paddingLeft = getPaddingLeft();
-            int paddingTop = getPaddingTop();
-            mCurView.layout(paddingLeft, paddingTop, paddingLeft + mCurView.getMeasuredWidth(), paddingTop + mCurView.getMeasuredHeight());
+        int size = getChildCount();
+        int paddingLeft = getPaddingLeft();
+        int paddingTop = getPaddingTop();
+        for (int i = 0; i < size; ++i) {
+            final View child = getChildAt(i);
+            if(child.getVisibility() != View.GONE)
+            {
+                child.layout(paddingLeft, paddingTop, paddingLeft + child.getMeasuredWidth(), paddingTop + child.getMeasuredHeight());
+            }
         }
         if(mCurTempItem != mCurItem)
         {
             mCurItem = mCurTempItem;
             if(mOnTabChangeListener != null)
             {
+                // 在当前layout过程中onTabSelected回调方法如果导致了requestLayout()将无法执行，故post处理
                 new Handler().post(new Runnable() {
                     @Override
                     public void run() {
