@@ -34,10 +34,6 @@ public class TabPager extends ViewGroup {
     private ClassLoader mRestoredClassLoader = null;
     private PagerObserver mObserver;
 
-    private int mChildWidthMeasureSpec;
-    private int mChildHeightMeasureSpec;
-    private boolean mInLayout;
-
     private OnTabChangeListener mOnTabChangeListener;
 
     public interface OnTabChangeListener {
@@ -292,16 +288,6 @@ public class TabPager extends ViewGroup {
         }
     }
 
-    @Override
-    public void addView(View child, int index, ViewGroup.LayoutParams params) {
-        if (mInLayout) {
-            addViewInLayout(child, index, params);
-            child.measure(mChildWidthMeasureSpec, mChildHeightMeasureSpec);
-        } else {
-            super.addView(child, index, params);
-        }
-    }
-
     boolean infoForChild(View child, ItemInfo ii) {
         return mAdapter.isViewFromObject(child, ii.object);
     }
@@ -319,16 +305,13 @@ public class TabPager extends ViewGroup {
         // Children are just made to fill our space.
         int childWidthSize = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
         int childHeightSize = getMeasuredHeight() - getPaddingTop() - getPaddingBottom();
-        mChildWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidthSize, MeasureSpec.EXACTLY);
-        mChildHeightMeasureSpec = MeasureSpec.makeMeasureSpec(childHeightSize, MeasureSpec.EXACTLY);
+        int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(childWidthSize, MeasureSpec.EXACTLY);
+        int childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(childHeightSize, MeasureSpec.EXACTLY);
 
         ItemInfo info = null;
-        if(mAdapter != null)
-        {
+        if(mAdapter != null) {
             // Make sure we have created all fragments that we need to have shown.
-            mInLayout = true;
             info = populate();
-            mInLayout = false;
         }
 
         // Page views next.
@@ -339,8 +322,8 @@ public class TabPager extends ViewGroup {
             {
                 child.setVisibility(View.VISIBLE);
                 if (DEBUG) LogManager.logV(TabPager.class, "Measuring #" + i + " " + child
-                        + ": " + mChildWidthMeasureSpec);
-                child.measure(mChildWidthMeasureSpec, mChildHeightMeasureSpec);
+                        + ": " + childWidthMeasureSpec);
+                child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
             }else
             {
                 child.setVisibility(View.GONE);
