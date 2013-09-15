@@ -17,7 +17,7 @@ import android.widget.CompoundButton;
 /**
  * Tab形式的布局类
  *
- * @deprecated 该类已舍弃，请使用实现更好的android.support.v4.view.ViewPager或NoFlipViewPager代替
+ * @deprecated 该类已舍弃，请使用实现更好的TabPager代替
  * @author Wendell
  * @version 4.5
  */
