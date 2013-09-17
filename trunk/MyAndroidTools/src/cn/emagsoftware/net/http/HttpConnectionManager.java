@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.Proxy.Type;
@@ -17,7 +16,6 @@ import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +46,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 6.0
+ * @version 6.1
  */
 public final class HttpConnectionManager
 {
@@ -543,46 +541,53 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>删除指定URL的Cookies，该方法将会删除以当前URL路径以上各级为path的所有Cookies，以保证getCookies方法返回null <p>不暴露CookieManager的removeAllCookie和removeSessionCookie方法的原因有二： 1.这两者在Android4.0以下是异步实现，无法即时达到效果
-     * 2.这两者调用完成后，如果接下来是第一次调用getCookies或addCookie方法，则仍会从Flash获取Cookies，从而可能取到其他进程在这之后添加的Cookies，使得这两者的调用失去意义
-     * 
-     * @param url
+     * <p>删除所有的Cookies
+     * @param loadUrlsAfterRemove 在删除所有Cookies后需要立即加载Cookies到Ram的Urls，立即加载的原因是删除Cookies操作会清除Ram结构，如果在将来某个不确定的时间加载Cookies可能会同步到其他进程的Cookies，这可能不是当前方法调用的初衷。该参数可以为null
      */
-    public static void removeCookies(String url)
+    public static void removeAllCookies(String[] loadUrlsAfterRemove)
     {
         if (appContext == null)
             throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
-        CookieManager cookieManager = CookieManager.getInstance();
-        String cookies = cookieManager.getCookie(url);
-        if (cookies == null)
-            return;
-        String[] cookieArr = cookies.split(";");
-        String expires = new Date(0).toGMTString();
-        URL curUrl = null;
-        try
+        CookieManager.getInstance().removeAllCookie(); // 无需同步
+        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以下是异步实现，所以无奈只能等待
         {
-            curUrl = new URL(url);
-        } catch (MalformedURLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        String main = curUrl.getProtocol() + "://" + curUrl.getAuthority();
-        String[] paths = curUrl.getPath().split("/");
-        for (int i = 1; i < paths.length; i++)
-        {
-            main = main + "/" + paths[i];
-            for (String cookie : cookieArr)
+            try
             {
-                cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
+                Thread.sleep(200);
+            } catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
             }
         }
-        main = main + "/";
-        for (String cookie : cookieArr)
+        if(loadUrlsAfterRemove != null)
         {
-            cookieManager.setCookie(main, cookie.trim() + "; expires=" + expires);
+            CookieManager cookieManager = CookieManager.getInstance();
+            for(String url : loadUrlsAfterRemove)
+            {
+                if(url != null)
+                    cookieManager.getCookie(url);
+            }
         }
-        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以上会通过JNI自动快速同步，为使行为一致，4.0以下版本将手工进行异步快速同步(Cookie同步是单向的，只会从Ram到Flash，从而保证了当前Cookie不受外部影响)
-            CookieSyncManager.getInstance().sync();
+    }
+
+    /**
+     * <p>删除所有的Session Cookies，即没有expires的Cookies
+     */
+    public static void removeSessionCookies()
+    {
+        if (appContext == null)
+            throw new IllegalStateException("call bindApplicationContext(context) first,this method can be called only once");
+        CookieManager.getInstance().removeSessionCookie(); // 无需同步
+        if (!TelephonyMgr.isAndroid4Above()) // Android4.0以下是异步实现，所以无奈只能等待
+        {
+            try
+            {
+                Thread.sleep(200);
+            } catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
@@ -601,7 +606,9 @@ public final class HttpConnectionManager
     }
 
     /**
-     * <p>添加指定的Cookie <p>Cookie由name，domain和path联合唯一标识，无domain时默认为当前URL的域，path是一个相对于domain的路径，无path时默认为当前URL的路径(以"/"结尾时即为自己，否则为其直接上级) <p>Cookie具有继承性，相同domain下，URL的路径是path的子级，也能获取到该Cookie
+     * <p>添加指定的Cookie
+     * <p>Cookie由name，domain和path联合唯一标识，无domain时默认为当前URL的域(注意，若指定domain为当前域，其结果却为"."+域，与未指定的不属于同一个Cookie)，path是一个相对于domain的路径，无path时默认为当前URL的路径(以"/"结尾时即为自己，否则为其直接上级)
+     * <p>Cookie具有继承性，URL的域是domain的子域或路径是path的子级，也能获取到该Cookie
      * <p>综上，<b>使用该方法时要格外小心</b>，同名Cookie并不一定会被替换，又由于Cookie具有继承性，从而可能导致一个URL对应多个同名Cookie的现象
      * 
      * @param url
