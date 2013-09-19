@@ -12,12 +12,12 @@ public abstract class GenericActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         if(!IS_RUNNING)
         {
             onRestoreStaticState();
             IS_RUNNING = true;
         }
+        super.onCreate(savedInstanceState); // 可能会触发一些用户行为，故放在恢复静态状态之后
     }
 
     protected abstract void onRestoreStaticState();
