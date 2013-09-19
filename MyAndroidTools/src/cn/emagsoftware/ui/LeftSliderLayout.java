@@ -72,11 +72,6 @@ public class LeftSliderLayout extends ViewGroup {
     private int mDefShadowWidth;*/
 
     /**
-     * Value for checking a touch event is completed.
-     */
-    private boolean mIsTouchEventDone = false;
-
-    /**
      * Value for checking slider is open.
      */
     private boolean mIsOpen = false;
@@ -230,8 +225,7 @@ public class LeftSliderLayout extends ViewGroup {
 
         // check touch point is in the rectangle of Main Child
         if (mMainChild != null
-                && mTouchState != TOUCH_STATE_SCROLLING
-                && mIsTouchEventDone) {
+                && mTouchState != TOUCH_STATE_SCROLLING) {
             Rect rect = new Rect();
             mMainChild.getHitRect(rect);
             if (!rect.contains((int)event.getX() + nCurScrollX, (int)event.getY())) {
@@ -254,7 +248,6 @@ public class LeftSliderLayout extends ViewGroup {
                     mScroller.abortAnimation();
                 }
 
-                mIsTouchEventDone = false;
                 mLastMotionX = x;
                 mFirstMotionX = mLastMotionX;
                 break;
@@ -341,7 +334,6 @@ public class LeftSliderLayout extends ViewGroup {
                 }
 
                 mTouchState = TOUCH_STATE_REST;
-                mIsTouchEventDone = true;
                 break;
             }
 
