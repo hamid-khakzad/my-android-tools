@@ -986,7 +986,10 @@ public class NoDestroyViewPager extends ViewGroup {
             }
         }
 
+        boolean needLayout = false;
+
         if (curItem == null && N > 0) {
+            needLayout = true;
             curItem = addNewItem(mCurItem, curIndex);
         }
 
@@ -1008,6 +1011,7 @@ public class NoDestroyViewPager extends ViewGroup {
                     itemIndex--;
                     ii = itemIndex >= 0 ? mItems.get(itemIndex) : null;
                 } else {
+                    needLayout = true;
                     ii = addNewItem(pos, itemIndex + 1);
                     extraWidthLeft += ii.widthFactor;
                     curIndex++;
@@ -1029,6 +1033,7 @@ public class NoDestroyViewPager extends ViewGroup {
                         itemIndex++;
                         ii = itemIndex < mItems.size() ? mItems.get(itemIndex) : null;
                     } else {
+                        needLayout = true;
                         ii = addNewItem(pos, itemIndex);
                         itemIndex++;
                         extraWidthRight += ii.widthFactor;
@@ -1039,6 +1044,8 @@ public class NoDestroyViewPager extends ViewGroup {
 
             calculatePageOffsets(curItem, curIndex, oldCurInfo);
         }
+
+        if(needLayout) requestLayout(); // addNewItem方法如果针对的是状态恢复后的Fragment，则由于View已经存在，并不会导致重新layout，故在外部执行requestLayout()
 
         if (DEBUG) {
             Log.i(TAG, "Current page list:");
