@@ -994,14 +994,22 @@ public class NoDestroyViewPager extends ViewGroup {
         // pages requested to either side, whichever is larger.
         // If we have no current item we have no work to do.
         if (curItem != null) {
+            float extraWidthLeft = 0.f;
             int itemIndex = curIndex - 1;
             ItemInfo ii = itemIndex >= 0 ? mItems.get(itemIndex) : null;
-            for (int pos = mCurItem - 1; pos >= startPos; pos--) {
-                if (ii != null && pos == ii.position) {
+            final int clientWidth = getClientWidth();
+            final float leftWidthNeeded = clientWidth <= 0 ? 0 :
+                    2.f - curItem.widthFactor + (float) getPaddingLeft() / (float) clientWidth;
+            for (int pos = mCurItem - 1; pos >= 0; pos--) {
+                if (extraWidthLeft >= leftWidthNeeded && pos < startPos) {
+                    break;
+                } else if (ii != null && pos == ii.position) {
+                    extraWidthLeft += ii.widthFactor;
                     itemIndex--;
                     ii = itemIndex >= 0 ? mItems.get(itemIndex) : null;
                 } else {
                     ii = addNewItem(pos, itemIndex + 1);
+                    extraWidthLeft += ii.widthFactor;
                     curIndex++;
                     ii = itemIndex >= 0 ? mItems.get(itemIndex) : null;
                 }
@@ -1011,13 +1019,19 @@ public class NoDestroyViewPager extends ViewGroup {
             itemIndex = curIndex + 1;
             if (extraWidthRight < 2.f) {
                 ii = itemIndex < mItems.size() ? mItems.get(itemIndex) : null;
-                for (int pos = mCurItem + 1; pos <= endPos; pos++) {
-                    if (ii != null && pos == ii.position) {
+                final float rightWidthNeeded = clientWidth <= 0 ? 0 :
+                        (float) getPaddingRight() / (float) clientWidth + 2.f;
+                for (int pos = mCurItem + 1; pos < N; pos++) {
+                    if (extraWidthRight >= rightWidthNeeded && pos > endPos) {
+                        break;
+                    } else if (ii != null && pos == ii.position) {
+                        extraWidthRight += ii.widthFactor;
                         itemIndex++;
                         ii = itemIndex < mItems.size() ? mItems.get(itemIndex) : null;
                     } else {
                         ii = addNewItem(pos, itemIndex);
                         itemIndex++;
+                        extraWidthRight += ii.widthFactor;
                         ii = itemIndex < mItems.size() ? mItems.get(itemIndex) : null;
                     }
                 }
