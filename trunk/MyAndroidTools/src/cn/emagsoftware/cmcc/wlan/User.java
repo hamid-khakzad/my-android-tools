@@ -113,7 +113,7 @@ public class User implements Serializable
                     }
                 }
             }
-            HttpResponseResult result = doHttpGet(location);
+            HttpResponseResult result = doHttpGet(location,false);
             parseLoginPage(result.getDataString("gb2312"));
         }
     }
@@ -323,17 +323,18 @@ public class User implements Serializable
 
     public boolean redirectedToPortal() throws IOException
     {
-        HttpResponseResult result = doHttpGet("http://www.baidu.com");
+        HttpResponseResult result = doHttpGet("http://www.baidu.com",false);
         String html = result.getDataString("gb2312");
-        if (html.indexOf(KEYWORD_CMCCCS + SEPARATOR + KEYWORD_LOGINREQ) >= 0)
+        String bdHost = "www.baidu.com";
+        if(bdHost.equalsIgnoreCase(result.getResponseURL().getHost()) && html.indexOf(bdHost) >= 0)
         {
-            this.cmccPortalHtml = html;
-            return true;
+            return false;
         }
-        return false;
+        this.cmccPortalHtml = html;
+        return true;
     }
 
-    protected HttpResponseResult doHttpGet(String url) throws IOException
+    protected HttpResponseResult doHttpGet(String url,boolean carryCookie) throws IOException
     {
         Map<String, List<String>> requestHeaders = new HashMap<String, List<String>>();
         List<String> values = new ArrayList<String>();
@@ -342,6 +343,8 @@ public class User implements Serializable
         values = new ArrayList<String>();
         values.add("G3WLAN");
         requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_USER_AGENT, values);
+        if(!carryCookie)
+            requestHeaders.put(HttpConnectionManager.HEADER_REQUEST_COOKIE,new ArrayList<String>());
         return HttpConnectionManager.doGet(url, true, 15000, requestHeaders);
     }
 
