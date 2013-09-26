@@ -46,7 +46,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 6.1
+ * @version 6.2
  */
 public final class HttpConnectionManager
 {
@@ -388,24 +388,31 @@ public final class HttpConnectionManager
             {
                 httpConn.addRequestProperty("X-Online-Host", concatHost);
             }
+            boolean cookieFromUser = false;
             if (requestHeaders != null)
             {
-                Iterator<String> keys = requestHeaders.keySet().iterator();
-                while (keys.hasNext())
+                Iterator<Map.Entry<String,List<String>>> entries = requestHeaders.entrySet().iterator();
+                while (entries.hasNext())
                 {
-                    String key = keys.next();
-                    List<String> values = requestHeaders.get(key);
+                    Map.Entry<String,List<String>> entry = entries.next();
+                    String key = entry.getKey();
+                    List<String> values = entry.getValue();
+                    if(key.equalsIgnoreCase(HEADER_REQUEST_COOKIE))
+                        cookieFromUser = true;
                     for (String value : values)
                     {
                         httpConn.addRequestProperty(key, value);
                     }
                 }
             }
-            String cookies = getCookies(url); // 需要使用原始URL获取Cookies
-            if (cookies != null)
+            if(!cookieFromUser)
             {
-                LogManager.logI(HttpConnectionManager.class, "set cookies(" + cookies + ") to url " + url);
-                httpConn.setRequestProperty(HEADER_REQUEST_COOKIE, cookies);
+                String cookies = getCookies(url); // 需要使用原始URL获取Cookies
+                if (cookies != null)
+                {
+                    LogManager.logI(HttpConnectionManager.class, "set cookies(" + cookies + ") to url " + url);
+                    httpConn.setRequestProperty(HEADER_REQUEST_COOKIE, cookies);
+                }
             }
             if (method.equalsIgnoreCase("POST") && postData != null)
             {
