@@ -8,24 +8,24 @@ import android.support.v4.app.Fragment;
  */
 public class GenericFragment extends Fragment {
 
-    private Bundle backStackState = null;
+    private Bundle detachState = null;
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        backStackState = new Bundle();
-        onSaveInstanceState(backStackState);
+        detachState = new Bundle();
+        onSaveInstanceState(detachState);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        backStackState = null;
+        detachState = null;
     }
 
-    public Bundle getBackStackState()
+    public Bundle getDetachState()
     {
-        return backStackState;
+        return detachState;
     }
 
 }
