@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.nio.channels.CancelledKeyException;
@@ -177,6 +178,52 @@ public class User
             }
             throw e;
         }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while(true)
+                {
+                    try
+                    {
+                        Thread.sleep(8000);
+                    }catch (InterruptedException e)
+                    {
+                    }
+                    final Object[] usersArr = new Object[1];
+                    getConnectedUsers(new GetConnectedUsersCallback() {
+                        @Override
+                        public void onGet(List<RemoteUser> users) {
+                            usersArr[0] = users;
+                        }
+                    });
+                    while(usersArr[0] == null)
+                    {
+                        if(!selector.isOpen())
+                            return;
+                        try
+                        {
+                            Thread.sleep(200);
+                        }catch (InterruptedException e)
+                        {
+                        }
+                    }
+                    List<RemoteUser> users = (List<RemoteUser>)usersArr[0];
+                    for(RemoteUser user:users)
+                    {
+                        try
+                        {
+                            if(!InetAddress.getByName(user.getIp()).isReachable(5000))
+                            {
+                                disconnectUser(user);
+                            }
+                        }catch (IOException e)
+                        {
+                            LogManager.logE(User.class,"check reachable for connected users failed.",e);
+                        }
+                    }
+                }
+            }
+        }).start();
         final SelectionKey ownerKeyPoint = ownerKey;
         new Thread(new Runnable() {
             @Override
