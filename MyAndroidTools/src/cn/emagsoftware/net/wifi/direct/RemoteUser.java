@@ -33,7 +33,7 @@ public class RemoteUser
         this.ip = ip;
     }
 
-    String getIp()
+    public String getIp()
     {
         return ip;
     }
