@@ -58,12 +58,13 @@ public final class SmsUtils
         } else
             throw new IllegalArgumentException("cardIndex can only be 0 or 1");
 
+        if(sendMessageToken == Integer.MAX_VALUE) sendMessageToken = 0;
         sendMessageToken = sendMessageToken + 1;
         Intent sentIntent = new Intent(SMS_SENT_ACTION);
         sentIntent.putExtra("SMS_TOKEN", sendMessageToken);
         sentIntent.putExtra("SMS_TO", to);
         sentIntent.putExtra("SMS_TEXT", text);
-        PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, sentIntent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent sentPI = PendingIntent.getBroadcast(context, sendMessageToken, sentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         /*
          * Intent deliveredIntent = new Intent(SMS_DELIVERED_ACTION); deliveredIntent.putExtra("SMS_TOKEN", sendMessageToken); deliveredIntent.putExtra("SMS_TO", to);
          * deliveredIntent.putExtra("SMS_TEXT", text); PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);
