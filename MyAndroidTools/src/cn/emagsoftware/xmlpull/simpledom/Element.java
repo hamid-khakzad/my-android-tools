@@ -1,7 +1,9 @@
 package cn.emagsoftware.xmlpull.simpledom;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>简单的xml元素类
@@ -60,6 +62,16 @@ public class Element
         return attributes;
     }
 
+    public Map<String,String> attributesToSimpleBean()
+    {
+        Map<String,String> returnVal = new HashMap<String, String>();
+        for(String[] attribute:attributes)
+        {
+            returnVal.put(attribute[0],attribute[1]);
+        }
+        return returnVal;
+    }
+
     /**
      * <p>当前类的一个简单原则是对Children的增、删、改、查操作要求通过getChildren()得到List进行处理 <p>对Children的查找操作（如getChildren(String tag)）较繁琐，理应提供相关方法，但由于是遍历查找，可能会在上层不清楚具体实现的情况下由于频繁调用导致效率降低，所以交由上层实现
      * 
@@ -68,6 +80,16 @@ public class Element
     public List<Element> getChildren()
     {
         return children;
+    }
+
+    public Map<String,Element> childrenToSimpleBean()
+    {
+        Map<String,Element> returnVal = new HashMap<String, Element>();
+        for(Element element:children)
+        {
+            returnVal.put(element.getTag(),element);
+        }
+        return returnVal;
     }
 
     public boolean isLeaf()
