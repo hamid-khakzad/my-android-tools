@@ -1,9 +1,9 @@
 package cn.emagsoftware.xmlpull.simpledom;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>简单的xml元素类
@@ -11,13 +11,13 @@ import java.util.Map;
  * @author Wendell
  * 
  */
-public class Element
+public class Element implements Serializable
 {
 
     private String         tag        = "";
     private String         text       = "";
-    private List<String[]> attributes = new ArrayList<String[]>();
-    private List<Element>  children   = new ArrayList<Element>();
+    private ArrayList<String[]> attributes = new ArrayList<String[]>();
+    private ArrayList<Element>  children   = new ArrayList<Element>();
 
     public Element(String tag)
     {
@@ -62,9 +62,9 @@ public class Element
         return attributes;
     }
 
-    public Map<String,String> attributesToSimpleBean()
+    public HashMap<String,String> attributesToSimpleBean()
     {
-        Map<String,String> returnVal = new HashMap<String, String>();
+        HashMap<String,String> returnVal = new HashMap<String, String>();
         for(String[] attribute:attributes)
         {
             returnVal.put(attribute[0],attribute[1]);
@@ -82,9 +82,9 @@ public class Element
         return children;
     }
 
-    public Map<String,Element> childrenToSimpleBean()
+    public HashMap<String,Element> childrenToSimpleBean()
     {
-        Map<String,Element> returnVal = new HashMap<String, Element>();
+        HashMap<String,Element> returnVal = new HashMap<String, Element>();
         for(Element element:children)
         {
             returnVal.put(element.getTag(),element);
