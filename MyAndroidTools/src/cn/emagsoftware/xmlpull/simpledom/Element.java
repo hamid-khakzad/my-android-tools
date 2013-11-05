@@ -84,12 +84,7 @@ public class Element implements Serializable
 
     public HashMap<String,Element> childrenToSimpleBean()
     {
-        HashMap<String,Element> returnVal = new HashMap<String, Element>();
-        for(Element element:children)
-        {
-            returnVal.put(element.getTag(),element);
-        }
-        return returnVal;
+        return SimpleDomManager.toSimpleBean(children);
     }
 
     public boolean isLeaf()
