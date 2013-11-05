@@ -46,7 +46,7 @@ import cn.emagsoftware.util.LogManager;
  * Http Connection Manager
  * 
  * @author Wendell
- * @version 6.2
+ * @version 6.3
  */
 public final class HttpConnectionManager
 {
@@ -164,7 +164,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * 进行Http Post请求，将以值为application/x-www-form-urlencoded的Content-Type来提交键值对参数
+     * 进行Http Post请求，将强制以application/x-www-form-urlencoded作为Content-Type来提交表单参数
      * 
      * @param url 请求的url
      * @param followRedirects 是否自动重定向
@@ -227,7 +227,7 @@ public final class HttpConnectionManager
     }
 
     /**
-     * 进行Http Post请求，将以值为application/octet-stream的Content-Type来提交数据
+     * 进行Http Post请求，将以用户指定的Content-Type来提交任意数据，默认Content-Type为application/octet-stream
      * 
      * @param url 请求的url
      * @param followRedirects 是否自动重定向
@@ -246,11 +246,14 @@ public final class HttpConnectionManager
         {
             if (requestHeaders == null)
                 requestHeaders = new HashMap<String, List<String>>();
-            List<String> contentTypes = new ArrayList<String>(); // Http规范规定Content-Type只能有一个
-            contentTypes.add("application/octet-stream");
-            requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
+            if(!requestHeaders.containsKey(HEADER_REQUEST_CONTENT_TYPE))
+            {
+                List<String> contentTypes = new ArrayList<String>(); // Http规范规定Content-Type只能有一个
+                contentTypes.add("application/octet-stream");
+                requestHeaders.put(HEADER_REQUEST_CONTENT_TYPE, contentTypes);
+            }
             if (postData == null)
-                postData = new ByteArrayInputStream(new byte[] {}); // 貌似针对application/octet-stream的情况必须这样处理，否则会抛出FileNotFoundException，这可能是Android的底层实现有缺陷
+                postData = new ByteArrayInputStream(new byte[] {}); // 在某些版本上需要这样处理，否则会抛出FileNotFoundException，这可能是Android的底层实现有缺陷
             httpConn = openConnection(url, "POST", followRedirects, connOrReadTimeout, 0, 0, requestHeaders, postData);
             HttpResponseResultStream result = new HttpResponseResultStream();
             result.setResponseURL(httpConn.getURL());
