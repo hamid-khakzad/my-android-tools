@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -139,6 +140,16 @@ public final class SimpleDomManager
             }
             eventType = parser.next();
         }
+    }
+
+    public static HashMap<String,Element> toSimpleBean(List<Element> elements)
+    {
+        HashMap<String,Element> returnVal = new HashMap<String, Element>();
+        for(Element element:elements)
+        {
+            returnVal.put(element.getTag(),element);
+        }
+        return returnVal;
     }
 
 }
