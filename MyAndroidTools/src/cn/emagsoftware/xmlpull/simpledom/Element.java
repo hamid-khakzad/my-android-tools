@@ -1,8 +1,6 @@
 package cn.emagsoftware.xmlpull.simpledom;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -11,13 +9,13 @@ import java.util.List;
  * @author Wendell
  * 
  */
-public class Element implements Serializable
+public class Element
 {
 
     private String         tag        = "";
     private String         text       = "";
-    private ArrayList<String[]> attributes = new ArrayList<String[]>();
-    private ArrayList<Element>  children   = new ArrayList<Element>();
+    private List<String[]> attributes = new ArrayList<String[]>();
+    private List<Element>  children   = new ArrayList<Element>();
 
     public Element(String tag)
     {
@@ -62,16 +60,6 @@ public class Element implements Serializable
         return attributes;
     }
 
-    public HashMap<String,String> attributesToSimpleBean()
-    {
-        HashMap<String,String> returnVal = new HashMap<String, String>();
-        for(String[] attribute:attributes)
-        {
-            returnVal.put(attribute[0],attribute[1]);
-        }
-        return returnVal;
-    }
-
     /**
      * <p>当前类的一个简单原则是对Children的增、删、改、查操作要求通过getChildren()得到List进行处理 <p>对Children的查找操作（如getChildren(String tag)）较繁琐，理应提供相关方法，但由于是遍历查找，可能会在上层不清楚具体实现的情况下由于频繁调用导致效率降低，所以交由上层实现
      * 
@@ -80,11 +68,6 @@ public class Element implements Serializable
     public List<Element> getChildren()
     {
         return children;
-    }
-
-    public HashMap<String,Element> childrenToSimpleBean()
-    {
-        return SimpleDomManager.toSimpleBean(children);
     }
 
     public boolean isLeaf()
