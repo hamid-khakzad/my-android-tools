@@ -1,6 +1,5 @@
 package cn.emagsoftware.ui.fragment;
 
-import android.os.Bundle;
 import android.support.v4.app.Fragment;
 
 /**
@@ -8,24 +7,23 @@ import android.support.v4.app.Fragment;
  */
 public class GenericFragment extends Fragment {
 
-    private Bundle detachState = null;
+    private boolean isViewDetached = false;
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        detachState = new Bundle();
-        onSaveInstanceState(detachState);
+        isViewDetached = true;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        detachState = null;
+        isViewDetached = false;
     }
 
-    public Bundle getDetachState()
+    public boolean isViewDetached()
     {
-        return detachState;
+        return isViewDetached;
     }
 
 }
