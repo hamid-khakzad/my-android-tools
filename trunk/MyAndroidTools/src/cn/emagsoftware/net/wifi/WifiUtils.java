@@ -324,10 +324,11 @@ public final class WifiUtils
         if (!circs)
             if (callback != null)
             {
+                /*一些新机器出于安全考虑可能会限制程序自动启动和关闭Wifi并弹出用户确认对话框，此时circs可能为false，故忽略circs的值
                 if (callback.unregisterMe())
                 {
                     callback.onWifiFailed();
-                }
+                }*/
             }
     }
 
