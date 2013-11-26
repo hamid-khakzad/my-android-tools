@@ -128,13 +128,13 @@ public final class SmsUtils
      * @param interruptWhenReceive
      * @param timeout 单位为毫秒，设为0将永不超时，此时可能需要手工反注册
      */
-    public static void receiveMessage(SmsReceiver sr, boolean interruptWhenReceive, int timeout)
+    /*public static void receiveMessage(SmsReceiver sr, boolean interruptWhenReceive, int timeout)
     {
         if (sr == null)
             throw new NullPointerException();
         sr.setAutoUnregisterWhenReceive(interruptWhenReceive);
         sr.registerMe(timeout);
-    }
+    }*/
 
     /**
      * <p>拦截短信
@@ -143,12 +143,12 @@ public final class SmsUtils
      * @param interruptWhenIntercept
      * @param timeout 单位为毫秒，设为0将永不超时，此时可能需要手工反注册
      */
-    public static void interceptMessage(SmsInterceptor si, boolean interruptWhenIntercept, int timeout)
+    /*public static void interceptMessage(SmsInterceptor si, boolean interruptWhenIntercept, int timeout)
     {
         if (si == null)
             throw new NullPointerException();
         si.setAutoUnregisterWhenIntercept(interruptWhenIntercept);
         si.registerMe(1000, timeout);
-    }
+    }*/
 
 }
