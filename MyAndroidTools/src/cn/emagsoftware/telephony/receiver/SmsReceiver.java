@@ -16,7 +16,7 @@ import cn.emagsoftware.util.LogManager;
 public abstract class SmsReceiver
 {
 
-    private Context           context                            = null;
+    /*private Context           context                            = null;
     private BroadcastReceiver receiver                           = null;
     private boolean           autoUnregisterWhenReceive          = false;
     private boolean           isDoneForAutoUnregisterWhenReceive = false;
@@ -96,11 +96,11 @@ public abstract class SmsReceiver
         this.autoUnregisterWhenReceive = auto;
     }
 
-    /**
+    *//**
      * <p>注册并指定等待超时时间，超时时将回调onTimeout方法并自动反注册 <p>若在超时之前已经反注册，则将不再计算超时
      * 
      * @param timeout 单位为毫秒，设为0将永不超时
-     */
+     *//*
     public void registerMe(int timeout)
     {
         if (timeout < 0)
@@ -178,6 +178,6 @@ public abstract class SmsReceiver
             LogManager.logW(SmsReceiver.class, "unregister receiver failed.", e);
             return false;
         }
-    }
+    }*/
 
 }
