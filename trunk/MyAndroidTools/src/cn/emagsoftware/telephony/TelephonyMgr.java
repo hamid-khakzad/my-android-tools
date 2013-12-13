@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.os.StatFs;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
-import cn.emagsoftware.util.LogManager;
 
 public final class TelephonyMgr
 {
@@ -209,14 +208,7 @@ public final class TelephonyMgr
 
     public static int getSDKVersion()
     {
-        try
-        {
-            return Integer.valueOf(Build.VERSION.SDK);
-        } catch (NumberFormatException e)
-        {
-            LogManager.logW(TelephonyMgr.class, "can not convert SDK", e);
-            return 0;
-        }
+        return Build.VERSION.SDK_INT;
     }
 
     public static boolean isAndroid4Above()
