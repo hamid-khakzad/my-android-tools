@@ -89,8 +89,13 @@ public final class SmsUtils
                     method = Class.forName("com.android.internal.telephony.ISms$Stub").getDeclaredMethod("asInterface", IBinder.class);
                     method.setAccessible(true);
                     Object stubObj = method.invoke(null, param);
-                    method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
-                    method.invoke(stubObj, to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    if(TelephonyMgr.getSDKVersion() < 18){
+                        method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
+                        method.invoke(stubObj, to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }else{
+                        method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
+                        method.invoke(stubObj, context.getPackageName(), to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }
                 } catch (ClassNotFoundException e)
                 {
                     throw new ReflectHiddenFuncException(e);
