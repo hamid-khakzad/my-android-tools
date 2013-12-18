@@ -35,6 +35,9 @@ public final class RecreateManager
             } else if (activity instanceof RecreateFragmentActivity)
             {
                 ((RecreateFragmentActivity) activity).recreate();
+            } else if (activity instanceof RecreateActionBarActivity)
+            {
+                ((RecreateActionBarActivity) activity).recreate();
             }
         }
     }
