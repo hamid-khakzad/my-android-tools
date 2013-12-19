@@ -59,7 +59,7 @@ public abstract class RecreateFragmentActivity extends GenericFragmentActivity
         if (shouldRecreateNextTime)
         {
             shouldRecreateNextTime = false;
-            recreateImmediately();
+            recreateMeImmediately();
             return;
         }
         onResumeImpl();
@@ -88,15 +88,15 @@ public abstract class RecreateFragmentActivity extends GenericFragmentActivity
         return isAtFront;
     }
 
-    public void recreate()
+    public void recreateMe()
     {
         if (isAtFront())
-            recreateImmediately();
+            recreateMeImmediately();
         else
             shouldRecreateNextTime = true;
     }
 
-    private void recreateImmediately()
+    private void recreateMeImmediately()
     {
         Intent intent = getIntent();
         overridePendingTransition(0, 0);
