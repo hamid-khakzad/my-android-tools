@@ -31,13 +31,13 @@ public final class RecreateManager
         {
             if (activity instanceof RecreateActivity)
             {
-                ((RecreateActivity) activity).recreate();
+                ((RecreateActivity) activity).recreateMe();
             } else if (activity instanceof RecreateFragmentActivity)
             {
-                ((RecreateFragmentActivity) activity).recreate();
+                ((RecreateFragmentActivity) activity).recreateMe();
             } else if (activity instanceof RecreateActionBarActivity)
             {
-                ((RecreateActionBarActivity) activity).recreate();
+                ((RecreateActionBarActivity) activity).recreateMe();
             }
         }
     }
