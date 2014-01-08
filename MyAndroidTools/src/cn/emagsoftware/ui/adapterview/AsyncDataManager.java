@@ -9,11 +9,8 @@ import android.widget.WrapperListAdapter;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -73,12 +70,8 @@ public final class AsyncDataManager {
             for(int i = firstPos;i <= lastPos;i++)
             {
                 DataHolder holder = adapterPoint.queryDataHolder(i);
-                if(holder.mExecuteConfig.mShouldRefresh)
-                {
-                    holder.mExecuteConfig.mUnitsClone = (HashMap<Integer,String>)holder.mExecuteConfig.mUnits.clone();
-                    holder.mExecuteConfig.mShouldRefresh = false;
-                }
-                holders.add(holder);
+                if(holder.mExecuteConfig.mStatus == 1)
+                    holders.add(holder);
             }
         }else if(adapter instanceof GenericExpandableListAdapter)
         {
@@ -94,12 +87,8 @@ public final class AsyncDataManager {
                 DataHolder holder = adapterPoint.queryDataHolder(groupPos);
                 if(childPos != -1)
                     holder = ((GroupDataHolder)holder).queryChild(childPos);
-                if(holder.mExecuteConfig.mShouldRefresh)
-                {
-                    holder.mExecuteConfig.mUnitsClone = (HashMap<Integer,String>)holder.mExecuteConfig.mUnits.clone();
-                    holder.mExecuteConfig.mShouldRefresh = false;
-                }
-                holders.add(holder);
+                if(holder.mExecuteConfig.mStatus == 1)
+                    holders.add(holder);
             }
         }else
         {
@@ -144,15 +133,9 @@ public final class AsyncDataManager {
                 Object adapter = adapterRef.get();
                 if(view == null || adapter == null)
                     return;
-                Map<Integer,String> curUnits = holder.mExecuteConfig.mUnitsClone;
-                if(curUnits == holder.mExecuteConfig.mUnitsExecute)
+                if(holder.mExecuteConfig.mStatus == 2)
                     continue;
-                if(holder.mExecuteConfig.mIsExecuting)
-                    continue;
-                holder.mExecuteConfig.mUnitsExecute = curUnits;
-                if(curUnits.size() == 0)
-                    continue;
-                holder.mExecuteConfig.mIsExecuting = true;
+                holder.mExecuteConfig.mStatus = 2;
                 // 由于线程池策略可能导致阻塞，所以当前操作会安排在子线程执行，由于同样使用OptionalExecutorTask的PushTask此时已经在主线程初始化了静态的Handler，所以ExecuteTask不会因为Handler报错，且能保证onProgressUpdate在主线程被执行
                 ExecuteTask task = new ExecuteTask(view,adapter,holder,executor);
                 // 提前置为null，因为下面可能会阻塞
@@ -188,32 +171,34 @@ public final class AsyncDataManager {
 
         @Override
         protected Object doInBackground(Object... params) {
-            Iterator<Map.Entry<Integer,String>> entries = holder.mExecuteConfig.mUnitsExecute.entrySet().iterator();
-            while(entries.hasNext())
+            String[] units = holder.mExecuteConfig.mUnits;
+            for(int i = 0;i < units.length;i++)
             {
-                Map.Entry<Integer,String> entry = entries.next();
-                int index = entry.getKey();
-                String globalId = entry.getValue();
-                Object asyncData = holder.getAsyncData(globalId);
-                if(asyncData == null)
+                String globalId = units[i];
+                if(globalId != null)
                 {
-                    try
+                    units[i] = null;
+                    Object asyncData = holder.getAsyncData(globalId);
+                    if(asyncData == null)
                     {
-                        asyncData = executor.onExecute(holder.mExecuteConfig.mPosition, holder, index, globalId);
-                        if (asyncData == null)
-                            throw new NullPointerException("'AsyncDataExecutor.onExecute' can not return null");
-                        if(!(asyncData instanceof Bitmap) && !(asyncData instanceof byte[]))
-                            throw new UnsupportedOperationException("'AsyncDataExecutor.onExecute' should return only Bitmap or byte[]");
-                        holder.setAsyncData(globalId, asyncData);
-                    } catch (Exception e)
-                    {
-                        LogManager.logE(AsyncDataManager.class, "execute async data failed(position:" + holder.mExecuteConfig.mPosition + ",index:" + index + ")", e);
-                        continue;
+                        try
+                        {
+                            asyncData = executor.onExecute(holder.mExecuteConfig.mPosition, holder, i, globalId);
+                            if (asyncData == null)
+                                throw new NullPointerException("'AsyncDataExecutor.onExecute' can not return null");
+                            if(!(asyncData instanceof Bitmap) && !(asyncData instanceof byte[]))
+                                throw new UnsupportedOperationException("'AsyncDataExecutor.onExecute' should return only Bitmap or byte[]");
+                            holder.setAsyncData(globalId, asyncData);
+                        } catch (Exception e)
+                        {
+                            LogManager.logE(AsyncDataManager.class, "execute async data failed(position:" + holder.mExecuteConfig.mPosition + ",index:" + i + ")", e);
+                            continue;
+                        }
                     }
+                    publishProgress(asyncData, i);
                 }
-                publishProgress(asyncData, index);
             }
-            holder.mExecuteConfig.mIsExecuting = false;
+            holder.mExecuteConfig.mStatus = 0;
             return null;
         }
 
