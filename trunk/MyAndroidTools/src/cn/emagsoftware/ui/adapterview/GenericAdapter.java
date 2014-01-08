@@ -203,8 +203,6 @@ public class GenericAdapter extends BaseAdapter
         // TODO Auto-generated method stub
         DataHolder holder = queryDataHolder(position);
         View returnVal;
-        holder.mExecuteConfig.mShouldRefresh = true;
-        holder.mExecuteConfig.mUnits.clear();
         holder.mExecuteConfig.mPosition = position;
         if (convertView == null)
         {

@@ -5,9 +5,6 @@ import android.graphics.Bitmap;
 import android.support.v4.util.LruCache;
 import android.view.View;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * <p>当前类没有提供setData方法，因为这可能会影响异步数据加载机制，如果需要改变data，可使用新data来创建新的DataHolder实例
  * 
@@ -33,7 +30,6 @@ public abstract class DataHolder
     };
 
     private Object   mData          = null;
-    private int mAsyncDataCount;
     ExecuteConfig    mExecuteConfig = new ExecuteConfig();
 
     /**
@@ -44,10 +40,8 @@ public abstract class DataHolder
      */
     public DataHolder(Object data, int asyncDataCount)
     {
-        if(asyncDataCount < 0)
-            throw new IllegalArgumentException("asyncDataCount < 0");
         mData = data;
-        mAsyncDataCount = asyncDataCount;
+        mExecuteConfig.mUnits = new String[asyncDataCount];
     }
 
     /**
@@ -110,11 +104,13 @@ public abstract class DataHolder
      */
     public Object getAsyncData(int index, String globalId)
     {
-        if(index < 0 || index >= mAsyncDataCount)
-            throw new IllegalArgumentException("index < 0 || index >= mAsyncDataCount");
+        String s = mExecuteConfig.mUnits[index]; //仅仅是为了检查数组下标越界
         Object asyncData = GLOBAL_CACHE.get(globalId);
-        if (asyncData == null)
-            mExecuteConfig.mUnits.put(index,globalId);
+        if (asyncData == null && mExecuteConfig.mStatus != 2)
+        {
+            mExecuteConfig.mUnits[index] = globalId;
+            mExecuteConfig.mStatus = 1;
+        }
         return asyncData;
     }
 
@@ -145,18 +141,15 @@ public abstract class DataHolder
      */
     public int getAsyncDataCount()
     {
-        return mAsyncDataCount;
+        return mExecuteConfig.mUnits.length;
     }
 
     class ExecuteConfig
     {
-        boolean mShouldRefresh = true;
-        HashMap<Integer,String> mUnits = new HashMap<Integer, String>();
+        int     mStatus = 0; //0-执行完毕；1-等待执行；2-正在执行
         int     mGroupPosition = -1;
         int     mPosition      = -1;
-        Map<Integer,String> mUnitsClone = null;
-        Map<Integer,String> mUnitsExecute = null;
-        boolean mIsExecuting   = false;
+        String[] mUnits = null;
     }
 
 }

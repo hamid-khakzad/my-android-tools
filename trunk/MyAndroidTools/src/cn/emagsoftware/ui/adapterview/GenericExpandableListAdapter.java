@@ -137,8 +137,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         GroupDataHolder holder = queryDataHolder(i);
         View returnVal;
         holder.setExpanded(b);
-        holder.mExecuteConfig.mShouldRefresh = true;
-        holder.mExecuteConfig.mUnits.clear();
         holder.mExecuteConfig.mGroupPosition = -1;
         holder.mExecuteConfig.mPosition = i;
         if (view == null)
@@ -172,8 +170,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
     public final View getChildView(int i, int i2, boolean b, View view, final ViewGroup viewGroup) {
         DataHolder holder = queryDataHolder(i).queryChild(i2);
         View returnVal;
-        holder.mExecuteConfig.mShouldRefresh = true;
-        holder.mExecuteConfig.mUnits.clear();
         holder.mExecuteConfig.mGroupPosition = i;
         holder.mExecuteConfig.mPosition = i2;
         if (view == null)
