@@ -47,6 +47,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import cn.emagsoftware.util.LogManager;
+
 /**
  * SlidingPaneLayout provides a horizontal, multi-pane layout for use at the top level
  * of a UI. A left (or first) pane is treated as a content list or browser, subordinate to a
@@ -780,7 +782,12 @@ public class AlwaysDimSlidingPaneLayout extends ViewGroup {
             }
         }
 
-        final boolean interceptForDrag = mDragHelper.shouldInterceptTouchEvent(ev);
+        boolean interceptForDrag = false;
+        try {
+            interceptForDrag = mDragHelper.shouldInterceptTouchEvent(ev);
+        }catch (ArrayIndexOutOfBoundsException e) {
+            LogManager.logE(AlwaysDimSlidingPaneLayout.class,"internal bug,this bug can be ignored in most cases.",e);
+        }
 
         return interceptForDrag || interceptTap;
     }
