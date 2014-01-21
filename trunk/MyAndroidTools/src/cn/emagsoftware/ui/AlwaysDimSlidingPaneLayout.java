@@ -798,7 +798,11 @@ public class AlwaysDimSlidingPaneLayout extends ViewGroup {
             return super.onTouchEvent(ev);
         }
 
-        mDragHelper.processTouchEvent(ev);
+        try {
+            mDragHelper.processTouchEvent(ev);
+        }catch (IllegalArgumentException e) {
+            LogManager.logE(AlwaysDimSlidingPaneLayout.class,"internal bug,this bug can be ignored in most cases.",e);
+        }
 
         final int action = ev.getAction();
         boolean wantTouchEvents = true;
