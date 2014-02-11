@@ -12,15 +12,15 @@ public abstract class GroupDataHolder extends DataHolder
     private List<DataHolder>  mChildren       = null;
     private boolean mIsExpanded;
 
-    public GroupDataHolder(Object data, int asyncDataCount)
+    public GroupDataHolder(Object data)
     {
-        super(data,asyncDataCount);
+        super(data);
         mChildren = new ArrayList<DataHolder>();
     }
 
-    public GroupDataHolder(Object data, int asyncDataCount, List<DataHolder> children)
+    public GroupDataHolder(Object data, List<DataHolder> children)
     {
-        super(data,asyncDataCount);
+        super(data);
         if(children == null)
             throw new NullPointerException();
         mChildren = new ArrayList<DataHolder>(children);

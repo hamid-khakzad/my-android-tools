@@ -1,11 +1,8 @@
 package cn.emagsoftware.ui.adapterview;
 
 import android.content.Context;
-import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
-import android.widget.AdapterView;
 import android.widget.BaseExpandableListAdapter;
 
 import java.util.ArrayList;
@@ -19,10 +16,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     Context mContext       = null;
     private List<GroupDataHolder> mHolders = null;
-    /** 异步数据的执行对象 */
-    private AsyncDataExecutor mExecutor      = null;
-    private Handler mHandler = new Handler();
-    private ViewGroup mRunView = null;
 
     public GenericExpandableListAdapter(Context context)
     {
@@ -38,11 +31,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
             throw new NullPointerException();
         mContext = context;
         mHolders = new ArrayList<GroupDataHolder>(holders);
-    }
-
-    public void bindAsyncDataExecutor(AsyncDataExecutor executor)
-    {
-        mExecutor = executor;
     }
 
     public void addDataHolder(GroupDataHolder holder)
@@ -133,12 +121,10 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
     }
 
     @Override
-    public final View getGroupView(int i, boolean b, View view, final ViewGroup viewGroup) {
+    public final View getGroupView(int i, boolean b, View view, ViewGroup viewGroup) {
         GroupDataHolder holder = queryDataHolder(i);
         View returnVal;
         holder.setExpanded(b);
-        holder.mExecuteConfig.mGroupPosition = -1;
-        holder.mExecuteConfig.mPosition = i;
         if (view == null)
         {
             returnVal = holder.onCreateView(mContext, i, holder.getData());
@@ -147,31 +133,13 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
             returnVal = view;
             holder.onUpdateView(mContext, i, view, holder.getData());
         }
-        if(mExecutor != null)
-        {
-            if(mRunView != viewGroup)
-            {
-                mRunView = viewGroup;
-                final AsyncDataExecutor curExecutor = mExecutor;
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        AsyncDataManager.computeAsyncData((AdapterView<? extends Adapter>)viewGroup,curExecutor);
-                        if(mRunView == viewGroup)
-                            mRunView = null;
-                    }
-                },1000);
-            }
-        }
         return returnVal;
     }
 
     @Override
-    public final View getChildView(int i, int i2, boolean b, View view, final ViewGroup viewGroup) {
+    public final View getChildView(int i, int i2, boolean b, View view, ViewGroup viewGroup) {
         DataHolder holder = queryDataHolder(i).queryChild(i2);
         View returnVal;
-        holder.mExecuteConfig.mGroupPosition = i;
-        holder.mExecuteConfig.mPosition = i2;
         if (view == null)
         {
             returnVal = holder.onCreateView(mContext, i2, holder.getData());
@@ -179,22 +147,6 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         {
             returnVal = view;
             holder.onUpdateView(mContext, i2, view, holder.getData());
-        }
-        if(mExecutor != null)
-        {
-            if(mRunView != viewGroup)
-            {
-                mRunView = viewGroup;
-                final AsyncDataExecutor curExecutor = mExecutor;
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        AsyncDataManager.computeAsyncData((AdapterView<? extends Adapter>)viewGroup,curExecutor);
-                        if(mRunView == viewGroup)
-                            mRunView = null;
-                    }
-                },1000);
-            }
         }
         return returnVal;
     }
