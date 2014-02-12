@@ -1,5 +1,7 @@
 package cn.emagsoftware.ui.adapterview;
 
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,9 +20,23 @@ public abstract class GroupDataHolder extends DataHolder
         mChildren = new ArrayList<DataHolder>();
     }
 
+    public GroupDataHolder(Object data,DisplayImageOptions... options)
+    {
+        super(data,options);
+        mChildren = new ArrayList<DataHolder>();
+    }
+
     public GroupDataHolder(Object data, List<DataHolder> children)
     {
         super(data);
+        if(children == null)
+            throw new NullPointerException();
+        mChildren = new ArrayList<DataHolder>(children);
+    }
+
+    public GroupDataHolder(Object data, List<DataHolder> children, DisplayImageOptions... options)
+    {
+        super(data,options);
         if(children == null)
             throw new NullPointerException();
         mChildren = new ArrayList<DataHolder>(children);
