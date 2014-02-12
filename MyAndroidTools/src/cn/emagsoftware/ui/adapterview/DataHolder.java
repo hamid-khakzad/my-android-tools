@@ -3,6 +3,8 @@ package cn.emagsoftware.ui.adapterview;
 import android.content.Context;
 import android.view.View;
 
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+
 /**
  * <p>DataHolder
  * 
@@ -12,6 +14,7 @@ public abstract class DataHolder
 {
 
     private Object   mData          = null;
+    private DisplayImageOptions[] mOptions = null;
 
     /**
      * <p>¹¹Ôìº¯Êý
@@ -21,6 +24,12 @@ public abstract class DataHolder
     public DataHolder(Object data)
     {
         mData = data;
+    }
+
+    public DataHolder(Object data,DisplayImageOptions... options)
+    {
+        mData = data;
+        mOptions = options;
     }
 
     /**
@@ -62,6 +71,11 @@ public abstract class DataHolder
     public Object getData()
     {
         return mData;
+    }
+
+    public DisplayImageOptions[] getDisplayImageOptions()
+    {
+        return mOptions;
     }
 
 }
