@@ -16,16 +16,6 @@ public abstract class DataHolder
     private Object   mData          = null;
     private DisplayImageOptions[] mOptions = null;
 
-    /**
-     * <p>构造函数
-     * 
-     * @param data 需要用到的数据
-     */
-    public DataHolder(Object data)
-    {
-        mData = data;
-    }
-
     public DataHolder(Object data,DisplayImageOptions... options)
     {
         mData = data;

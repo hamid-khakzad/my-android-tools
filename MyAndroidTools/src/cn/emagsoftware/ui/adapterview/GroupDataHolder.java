@@ -14,24 +14,10 @@ public abstract class GroupDataHolder extends DataHolder
     private List<DataHolder>  mChildren       = null;
     private boolean mIsExpanded;
 
-    public GroupDataHolder(Object data)
-    {
-        super(data);
-        mChildren = new ArrayList<DataHolder>();
-    }
-
     public GroupDataHolder(Object data,DisplayImageOptions... options)
     {
         super(data,options);
         mChildren = new ArrayList<DataHolder>();
-    }
-
-    public GroupDataHolder(Object data, List<DataHolder> children)
-    {
-        super(data);
-        if(children == null)
-            throw new NullPointerException();
-        mChildren = new ArrayList<DataHolder>(children);
     }
 
     public GroupDataHolder(Object data, List<DataHolder> children, DisplayImageOptions... options)
