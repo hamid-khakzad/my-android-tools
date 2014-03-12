@@ -79,7 +79,7 @@ public final class WifiUtils
 
     public void unlockWifi()
     {
-        if (!wifiLock.isHeld())
+        if (wifiLock.isHeld())
         {
             wifiLock.release();
         }
