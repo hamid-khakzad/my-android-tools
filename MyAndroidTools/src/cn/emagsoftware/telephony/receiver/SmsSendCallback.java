@@ -39,14 +39,11 @@ public abstract class SmsSendCallback
             @Override
             public void onReceive(Context context, Intent intent)
             {
-                // TODO Auto-generated method stub
                 if (isUnregistered)
                     return; // 如果已经反注册，将直接返回
                 String actionStr = intent.getAction();
                 int code = getResultCode();
                 int srcToken = intent.getIntExtra("SMS_TOKEN", -1);
-                String to = intent.getStringExtra("SMS_TO");
-                String text = intent.getStringExtra("SMS_TEXT");
                 if (token == -1 || token == srcToken)
                 { // 验证token
                     if (actionStr.equals(SmsUtils.SMS_SENT_ACTION))
@@ -59,10 +56,10 @@ public abstract class SmsSendCallback
                         }
                         if (code == Activity.RESULT_OK)
                         {
-                            onSendSuccess(to, text);
+                            onSendSuccess();
                         } else
                         {
-                            onSendFailure(to, text);
+                            onSendFailure();
                         }
                     } else if (actionStr.equals(SmsUtils.SMS_DELIVERED_ACTION))
                     {
@@ -74,10 +71,10 @@ public abstract class SmsSendCallback
                         }
                         if (code == Activity.RESULT_OK)
                         {
-                            onDeliverSuccess(to, text);
+                            onDeliverSuccess();
                         } else
                         {
-                            onDeliverFailure(to, text);
+                            onDeliverFailure();
                         }
                     }
                 }
@@ -86,19 +83,19 @@ public abstract class SmsSendCallback
         Arrays.sort(autoUnregisterActions);
     }
 
-    public void onDeliverSuccess(String to, String text)
+    public void onDeliverSuccess()
     {
     }
 
-    public void onDeliverFailure(String to, String text)
+    public void onDeliverFailure()
     {
     }
 
-    public void onSendSuccess(String to, String text)
+    public void onSendSuccess()
     {
     }
 
-    public void onSendFailure(String to, String text)
+    public void onSendFailure()
     {
     }
 
