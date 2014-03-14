@@ -36,8 +36,16 @@ public final class SmsUtils
      * @param cardIndex 卡位置，0或1
      * @throws ReflectHiddenFuncException
      */
-    public static void sendMessage(Context context, String to, String text, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException
+    public static void sendTextMessage(Context context, String to, String text, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException
     {
+        sendMessageImpl(context,to,(short)-1,text,ssc,timeout,cardIndex);
+    }
+
+    public static void sendDataMessage(Context context, String to, short port, byte[] data, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException {
+        sendMessageImpl(context,to,port,data,ssc,timeout,cardIndex);
+    }
+
+    private static void sendMessageImpl(Context context, String to, short port, Object data, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException {
         boolean isDualMode = TelephonyMgr.isDualMode();
         String name = null;
         String model = Build.MODEL;
@@ -62,12 +70,10 @@ public final class SmsUtils
         sendMessageToken = sendMessageToken + 1;
         Intent sentIntent = new Intent(SMS_SENT_ACTION);
         sentIntent.putExtra("SMS_TOKEN", sendMessageToken);
-        sentIntent.putExtra("SMS_TO", to);
-        sentIntent.putExtra("SMS_TEXT", text);
         PendingIntent sentPI = PendingIntent.getBroadcast(context, sendMessageToken, sentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         /*
-         * Intent deliveredIntent = new Intent(SMS_DELIVERED_ACTION); deliveredIntent.putExtra("SMS_TOKEN", sendMessageToken); deliveredIntent.putExtra("SMS_TO", to);
-         * deliveredIntent.putExtra("SMS_TEXT", text); PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);
+         * Intent deliveredIntent = new Intent(SMS_DELIVERED_ACTION); deliveredIntent.putExtra("SMS_TOKEN", sendMessageToken);
+         * PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);
          */
         if (ssc != null)
         {
@@ -89,12 +95,22 @@ public final class SmsUtils
                     method = Class.forName("com.android.internal.telephony.ISms$Stub").getDeclaredMethod("asInterface", IBinder.class);
                     method.setAccessible(true);
                     Object stubObj = method.invoke(null, param);
-                    if(TelephonyMgr.getSDKVersion() < 18){
-                        method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
-                        method.invoke(stubObj, to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    if(data instanceof String){
+                        if(TelephonyMgr.getSDKVersion() < 18){
+                            method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
+                            method.invoke(stubObj, to, null, (String)data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                        }else{
+                            method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
+                            method.invoke(stubObj, context.getPackageName(), to, null, (String)data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                        }
                     }else{
-                        method = stubObj.getClass().getMethod("sendText", String.class, String.class, String.class, String.class, PendingIntent.class, PendingIntent.class);
-                        method.invoke(stubObj, context.getPackageName(), to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                        if(TelephonyMgr.getSDKVersion() < 18){
+                            method = stubObj.getClass().getMethod("sendData", String.class, String.class, int.class, byte[].class, PendingIntent.class, PendingIntent.class);
+                            method.invoke(stubObj, to, null, port & 0xFFFF, (byte[])data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                        }else{
+                            method = stubObj.getClass().getMethod("sendData", String.class, String.class, String.class, int.class, byte[].class, PendingIntent.class, PendingIntent.class);
+                            method.invoke(stubObj, context.getPackageName(), to, null, port & 0xFFFF, (byte[])data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                        }
                     }
                 } catch (ClassNotFoundException e)
                 {
@@ -111,7 +127,11 @@ public final class SmsUtils
                 }
             } else
             {
-                SmsManager.getDefault().sendTextMessage(to, null, text, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                if(data instanceof String){
+                    SmsManager.getDefault().sendTextMessage(to, null, (String)data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                }else{
+                    SmsManager.getDefault().sendDataMessage(to, null, port, (byte[])data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                }
             }
         } catch (ReflectHiddenFuncException e)
         {
