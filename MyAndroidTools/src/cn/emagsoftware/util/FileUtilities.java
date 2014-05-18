@@ -1,7 +1,5 @@
 package cn.emagsoftware.util;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -16,7 +14,7 @@ import java.util.List;
  * <p>关于文件的抽象实用类
  * 
  * @author Wendell
- * @version 1.6
+ * @version 1.7
  */
 public abstract class FileUtilities
 {
@@ -91,15 +89,13 @@ public abstract class FileUtilities
             throw new NullPointerException();
         if (cacheBytesLength <= 0)
             throw new IllegalArgumentException("The parameter of cacheBytesLength should be great than zero.");
-        BufferedInputStream buffInput = new BufferedInputStream(input);
-        BufferedOutputStream buffOutput = new BufferedOutputStream(output);
         byte[] b = new byte[cacheBytesLength];
         int len;
-        while ((len = buffInput.read(b)) > 0)
+        while ((len = input.read(b)) > 0)
         {
-            buffOutput.write(b, 0, len);
+            output.write(b, 0, len);
         }
-        buffOutput.flush();
+        output.flush();
     }
 
     /**
@@ -118,15 +114,13 @@ public abstract class FileUtilities
             throw new IllegalArgumentException("The parameter of cacheBytesLength should be great than zero.");
         if (listeningInterval <= 0)
             throw new IllegalArgumentException("The parameter of listeningInterval should be great than zero.");
-        BufferedInputStream buffInput = new BufferedInputStream(input);
-        BufferedOutputStream buffOutput = new BufferedOutputStream(output);
         byte[] b = new byte[cacheBytesLength];
         int len;
         int allLen = 0;
         long timing = System.currentTimeMillis();
-        while ((len = buffInput.read(b)) > 0)
+        while ((len = input.read(b)) > 0)
         {
-            buffOutput.write(b, 0, len);
+            output.write(b, 0, len);
             allLen = allLen + len;
             long now = System.currentTimeMillis();
             if(now - timing >= listeningInterval){
@@ -134,7 +128,7 @@ public abstract class FileUtilities
                 listener.onWrittenLength(allLen);
             }
         }
-        buffOutput.flush();
+        output.flush();
     }
 
     public static abstract class ProcessListener{
