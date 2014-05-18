@@ -16,7 +16,7 @@ import java.util.List;
  * <p>关于文件的抽象实用类
  * 
  * @author Wendell
- * @version 1.5
+ * @version 1.6
  */
 public abstract class FileUtilities
 {
@@ -100,6 +100,45 @@ public abstract class FileUtilities
             buffOutput.write(b, 0, len);
         }
         buffOutput.flush();
+    }
+
+    /**
+     * <p>读取输入流的数据写入到输出流，除非到达输入流的末尾，否则该方法将一直读取</>
+     * @param input
+     * @param output
+     * @param cacheBytesLength
+     * @param listener 读取写入过程中的监听器
+     * @param listeningInterval 监听的时间间隔，以毫秒为单位
+     * @throws IOException
+     */
+    public static void readAndWrite(InputStream input, OutputStream output, int cacheBytesLength, ProcessListener listener, int listeningInterval) throws IOException{
+        if (input == null || output == null || listener == null)
+            throw new NullPointerException();
+        if (cacheBytesLength <= 0)
+            throw new IllegalArgumentException("The parameter of cacheBytesLength should be great than zero.");
+        if (listeningInterval <= 0)
+            throw new IllegalArgumentException("The parameter of listeningInterval should be great than zero.");
+        BufferedInputStream buffInput = new BufferedInputStream(input);
+        BufferedOutputStream buffOutput = new BufferedOutputStream(output);
+        byte[] b = new byte[cacheBytesLength];
+        int len;
+        int allLen = 0;
+        long timing = System.currentTimeMillis();
+        while ((len = buffInput.read(b)) > 0)
+        {
+            buffOutput.write(b, 0, len);
+            allLen = allLen + len;
+            long now = System.currentTimeMillis();
+            if(now - timing >= listeningInterval){
+                timing = now;
+                listener.onWrittenLength(allLen);
+            }
+        }
+        buffOutput.flush();
+    }
+
+    public static abstract class ProcessListener{
+        protected abstract void onWrittenLength(int curLength);
     }
 
     /**
