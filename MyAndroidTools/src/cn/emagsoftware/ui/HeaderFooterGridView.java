@@ -47,6 +47,7 @@ public class HeaderFooterGridView extends GridView {
 
     private ArrayList<FixedViewInfo> mHeaderViewInfos = new ArrayList<FixedViewInfo>();
     private ArrayList<FixedViewInfo> mFooterViewInfos = new ArrayList<FixedViewInfo>();
+    private View mPlaceholderFooter = null;
 
     private void notifiyChanged(){
         this.requestLayout();
@@ -115,6 +116,13 @@ public class HeaderFooterGridView extends GridView {
         return mHeaderViewInfos.size();
     }
 
+    public void addPlaceholderFooterView() {
+        if(mPlaceholderFooter == null) {
+            mPlaceholderFooter = new View(getContext());
+            addFooterView(mPlaceholderFooter, null, false);
+        }
+    }
+
     /**
      * Add a fixed view to appear at the bottom of the list. If addFooterView is
      * called more than once, the views will appear in the order they were
@@ -172,6 +180,15 @@ public class HeaderFooterGridView extends GridView {
 
     public int getFooterViewsCount() {
         return mFooterViewInfos.size();
+    }
+
+    public boolean removePlaceholderFooterView() {
+        if(mPlaceholderFooter != null) {
+            boolean result = removeFooterView(mPlaceholderFooter);
+            mPlaceholderFooter = null;
+            return result;
+        }
+        return false;
     }
 
     /**
