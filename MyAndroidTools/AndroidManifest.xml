@@ -3,7 +3,7 @@
       package="cn.emagsoftware.ui"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="7" />
+    <uses-sdk android:minSdkVersion="8" />
     
     <application android:theme="@style/Theme.AppCompat.Light">
         <activity android:name=".test.TestActivity" android:configChanges="orientation|keyboardHidden|keyboard">
@@ -18,8 +18,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
-	<uses-permission android:name="android.permission.INSTALL_PACKAGES" />
-    <uses-permission android:name="android.permission.DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.CLEAR_APP_CACHE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     
