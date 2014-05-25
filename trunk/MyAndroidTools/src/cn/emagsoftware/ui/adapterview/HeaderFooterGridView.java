@@ -222,7 +222,7 @@ public class HeaderFooterGridView extends GridView {
 
     @Override
     public void setAdapter(ListAdapter adapter) {
-        if (mHeaderViewInfos.size() > 0) {
+        if (mHeaderViewInfos.size() > 0 || mFooterViewInfos.size() > 0) {
             HeaderViewGridAdapter hadapter = new HeaderViewGridAdapter(mHeaderViewInfos, mFooterViewInfos, adapter);
             int numColumns = getNumColumns();
             if (numColumns > 1) {
@@ -476,7 +476,10 @@ public class HeaderFooterGridView extends GridView {
                     if (convertView == null) {
                         convertView = new View(parent.getContext());
                     }
+                    // We need to do this because GridView uses the height of the last item
+                    // in a row to determine the height for the entire row.
                     convertView.setVisibility(View.INVISIBLE);
+                    convertView.setMinimumHeight(parent.getChildAt(parent.getChildCount() - 1).getHeight());
                     return convertView;
                 }
             }
@@ -490,7 +493,10 @@ public class HeaderFooterGridView extends GridView {
                     if (convertView == null) {
                         convertView = new View(parent.getContext());
                     }
+                    // We need to do this because GridView uses the height of the last item
+                    // in a row to determine the height for the entire row.
                     convertView.setVisibility(View.INVISIBLE);
+                    convertView.setMinimumHeight(parent.getChildAt(parent.getChildCount() - 1).getHeight());
                     return convertView;
                 }
             }
