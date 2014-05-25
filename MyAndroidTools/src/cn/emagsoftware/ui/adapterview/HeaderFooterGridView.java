@@ -269,6 +269,7 @@ public class HeaderFooterGridView extends GridView {
         // This ArrayList is assumed to NOT be null.
         ArrayList<FixedViewInfo> mHeaderViewInfos;
         ArrayList<FixedViewInfo> mFooterViewInfos;
+        private View mPreView;
 
         boolean mAreAllFixedViewsSelectable;
 
@@ -471,7 +472,8 @@ public class HeaderFooterGridView extends GridView {
             if(mAdapter != null) headerAndWrapCount = headerAndWrapCount + mAdapter.getCount();
             if (position < numHeadersAndPlaceholders) {
                 if(position % mNumColumns == 0) {
-                    return mHeaderViewInfos.get(position / mNumColumns).viewContainer;
+                    mPreView = mHeaderViewInfos.get(position / mNumColumns).viewContainer;
+                    return mPreView;
                 }else{
                     if (convertView == null) {
                         convertView = new View(parent.getContext());
@@ -479,8 +481,9 @@ public class HeaderFooterGridView extends GridView {
                     // We need to do this because GridView uses the height of the last item
                     // in a row to determine the height for the entire row.
                     convertView.setVisibility(View.INVISIBLE);
-                    convertView.setMinimumHeight(parent.getChildAt(parent.getChildCount() - 1).getHeight());
-                    return convertView;
+                    convertView.setMinimumHeight(mPreView.getHeight());
+                    mPreView = convertView;
+                    return mPreView;
                 }
             }
             if(position >= headerAndWrapCount) {
@@ -488,7 +491,8 @@ public class HeaderFooterGridView extends GridView {
                 int footCount = getFootersCount() * mNumColumns;
                 if(footPos >= footCount) throw new ArrayIndexOutOfBoundsException(position);
                 if(footPos >= 0 && footPos % mNumColumns == 0) {
-                    return mFooterViewInfos.get(footPos / mNumColumns).viewContainer;
+                    mPreView = mFooterViewInfos.get(footPos / mNumColumns).viewContainer;
+                    return mPreView;
                 }else {
                     if (convertView == null) {
                         convertView = new View(parent.getContext());
@@ -496,14 +500,16 @@ public class HeaderFooterGridView extends GridView {
                     // We need to do this because GridView uses the height of the last item
                     // in a row to determine the height for the entire row.
                     convertView.setVisibility(View.INVISIBLE);
-                    convertView.setMinimumHeight(parent.getChildAt(parent.getChildCount() - 1).getHeight());
-                    return convertView;
+                    convertView.setMinimumHeight(mPreView.getHeight());
+                    mPreView = convertView;
+                    return mPreView;
                 }
             }
 
             // Adapter
             final int adjPosition = position - numHeadersAndPlaceholders;
-            return mAdapter.getView(adjPosition, convertView, parent);
+            mPreView = mAdapter.getView(adjPosition, convertView, parent);
+            return mPreView;
         }
 
         @Override
