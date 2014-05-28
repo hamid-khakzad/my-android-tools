@@ -1,6 +1,8 @@
 package cn.emagsoftware.ui.dialog;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import cn.emagsoftware.telephony.TelephonyMgr;
 import cn.emagsoftware.ui.theme.ThemeManager;
@@ -11,6 +13,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.view.ContextThemeWrapper;
@@ -39,7 +42,27 @@ public abstract class DialogManager
      */
     public static Context convertToSystemDialogTheme(Context context)
     {
-        return new ContextThemeWrapper(context, R.style.Theme_Dialog);
+        int theme;
+        if(TelephonyMgr.getSDKVersion() <= Build.VERSION_CODES.GINGERBREAD_MR1) {
+            theme = R.style.Theme_Dialog;
+        }else {
+            theme = resolveDialogTheme(context, 0);
+        }
+        return new ContextThemeWrapper(context, theme);
+    }
+
+    private static int resolveDialogTheme(Context context, int resid) {
+        try {
+            Method method = AlertDialog.class.getDeclaredMethod("resolveDialogTheme",Context.class,int.class);
+            method.setAccessible(true);
+            return (Integer)method.invoke(null,context,resid);
+        }catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static AlertDialog setNotAutoDismiss(final AlertDialog dialog)
