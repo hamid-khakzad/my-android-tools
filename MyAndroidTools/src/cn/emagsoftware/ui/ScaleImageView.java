@@ -93,28 +93,29 @@ public class ScaleImageView extends ImageView {
         mWidth = r - l;
         mHeight = b - t;
 
-        mMatrix.reset();
+        //mMatrix.reset();
         int r_norm = r - l;
         mScale = (float) r_norm / (float) mIntrinsicWidth;
 
-        int paddingHeight = 0;
-        int paddingWidth = 0;
+        //int paddingHeight = 0;
+        //int paddingWidth = 0;
         // scaling vertical
         if (mScale * mIntrinsicHeight > mHeight) {
             mScale = (float) mHeight / (float) mIntrinsicHeight;
-            mMatrix.postScale(mScale, mScale);
-            paddingWidth = (r - mWidth) / 2;
-            paddingHeight = 0;
+            //mMatrix.postScale(mScale, mScale);
+            //paddingWidth = (r - mWidth) / 2;
+            //paddingHeight = 0;
             // scaling horizontal
         } else {
-            mMatrix.postScale(mScale, mScale);
-            paddingHeight = (b - mHeight) / 2;
-            paddingWidth = 0;
+            //mMatrix.postScale(mScale, mScale);
+            //paddingHeight = (b - mHeight) / 2;
+            //paddingWidth = 0;
         }
-        mMatrix.postTranslate(paddingWidth, paddingHeight);
+        //mMatrix.postTranslate(paddingWidth, paddingHeight);
 
-        setImageMatrix(mMatrix);
+        //setImageMatrix(mMatrix);
         mMinScale = mScale;
+        MAX_SCALE = mMinScale * 2.0f;
         zoomTo(mScale, mWidth / 2, mHeight / 2);
         cutting();
         return super.setFrame(l, t, r, b);
