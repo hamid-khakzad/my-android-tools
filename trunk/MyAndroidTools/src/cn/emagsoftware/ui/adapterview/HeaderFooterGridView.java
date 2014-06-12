@@ -16,9 +16,11 @@
 
 package cn.emagsoftware.ui.adapterview;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.database.DataSetObservable;
 import android.database.DataSetObserver;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +32,10 @@ import android.widget.GridView;
 import android.widget.ListAdapter;
 import android.widget.WrapperListAdapter;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+
+import cn.emagsoftware.telephony.TelephonyMgr;
 
 /**
  * A {@link GridView} that supports adding header rows in a
@@ -81,7 +86,22 @@ public class HeaderFooterGridView extends GridView {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         ListAdapter adapter = getAdapter();
         if (adapter != null && adapter instanceof HeaderViewGridAdapter) {
-            ((HeaderViewGridAdapter) adapter).setNumColumns(getNumColumns());
+            ((HeaderViewGridAdapter) adapter).setNumColumns(getNumColumnsImpl());
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private int getNumColumnsImpl() {
+        if(TelephonyMgr.getSDKVersion() >= Build.VERSION_CODES.HONEYCOMB)
+            return getNumColumns();
+        try {
+            Field field = GridView.class.getDeclaredField("mNumColumns");
+            field.setAccessible(true);
+            return field.getInt(this);
+        }catch (NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -169,7 +189,7 @@ public class HeaderFooterGridView extends GridView {
     }
 
     public int getHeaderViewCount() {
-        int numColumns = getNumColumns();
+        int numColumns = getNumColumnsImpl();
         if (numColumns > 1) {
             return mHeaderViewInfos.size() * numColumns;
         }
@@ -177,7 +197,7 @@ public class HeaderFooterGridView extends GridView {
     }
 
     public int getFooterViewCount() {
-        int numColumns = getNumColumns();
+        int numColumns = getNumColumnsImpl();
         if (numColumns > 1) {
             return mFooterViewInfos.size() * numColumns + getFooterViewExtraCount();
         }
@@ -241,7 +261,7 @@ public class HeaderFooterGridView extends GridView {
     public void setAdapter(ListAdapter adapter) {
         if (mHeaderViewInfos.size() > 0 || mFooterViewInfos.size() > 0) {
             HeaderViewGridAdapter hadapter = new HeaderViewGridAdapter(mHeaderViewInfos, mFooterViewInfos, adapter);
-            int numColumns = getNumColumns();
+            int numColumns = getNumColumnsImpl();
             if (numColumns > 1) {
                 hadapter.setNumColumns(numColumns);
             }
