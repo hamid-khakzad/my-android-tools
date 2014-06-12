@@ -125,14 +125,19 @@ public abstract class FileUtilities
             long now = System.currentTimeMillis();
             if(now - timing >= listeningInterval){
                 timing = now;
-                listener.onWrittenLength(allLen);
+                boolean result = listener.onWrittenLength(allLen);
+                if(!result) break;
             }
         }
         output.flush();
     }
 
     public static abstract class ProcessListener{
-        protected abstract void onWrittenLength(int curLength);
+        /**
+         * @param curLength
+         * @return 返回false将导致取消进程
+         */
+        protected abstract boolean onWrittenLength(int curLength);
     }
 
     /**
