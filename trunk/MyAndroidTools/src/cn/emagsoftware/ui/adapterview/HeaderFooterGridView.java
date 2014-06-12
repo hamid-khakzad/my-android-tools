@@ -169,11 +169,28 @@ public class HeaderFooterGridView extends GridView {
     }
 
     public int getHeaderViewCount() {
+        int numColumns = getNumColumns();
+        if (numColumns > 1) {
+            return mHeaderViewInfos.size() * numColumns;
+        }
         return mHeaderViewInfos.size();
     }
 
     public int getFooterViewCount() {
-        return mFooterViewInfos.size();
+        int numColumns = getNumColumns();
+        if (numColumns > 1) {
+            return mFooterViewInfos.size() * numColumns + getFooterViewExtraCount();
+        }
+        return mFooterViewInfos.size() + getFooterViewExtraCount();
+    }
+
+    private int getFooterViewExtraCount() {
+        int count = 0;
+        ListAdapter adapter = getAdapter();
+        if (adapter instanceof HeaderViewGridAdapter) {
+            return ((HeaderViewGridAdapter)adapter).getFooterExtraCount();
+        }
+        return count;
     }
 
     /**
@@ -292,11 +309,21 @@ public class HeaderFooterGridView extends GridView {
         }
 
         public int getHeadersCount() {
-            return mHeaderViewInfos.size();
+            return mHeaderViewInfos.size() * mNumColumns;
         }
 
         public int getFootersCount() {
-            return mFooterViewInfos.size();
+            return mFooterViewInfos.size() * mNumColumns + getFooterExtraCount();
+        }
+
+        private int getFooterExtraCount() {
+            int count = 0;
+            if(mFooterViewInfos.size() > 0 && mAdapter != null) {
+                int wrapCount = mAdapter.getCount();
+                int numExtra = wrapCount % mNumColumns;
+                count = numExtra == 0 ? 0 : mNumColumns - numExtra;
+            }
+            return count;
         }
 
         @Override
@@ -366,22 +393,12 @@ public class HeaderFooterGridView extends GridView {
 
         @Override
         public int getCount() {
-            int extraCount = getHeadersCount() * mNumColumns + getFootersCount() * mNumColumns + getFooterExtraCount();
+            int extraCount = getHeadersCount() + getFootersCount();
             if (mAdapter != null) {
                 return extraCount + mAdapter.getCount();
             } else {
                 return extraCount;
             }
-        }
-
-        private int getFooterExtraCount() {
-            int count = 0;
-            if(getFootersCount() > 0 && mAdapter != null) {
-                int wrapCount = mAdapter.getCount();
-                int numExtra = wrapCount % mNumColumns;
-                count = numExtra == 0 ? 0 : mNumColumns - numExtra;
-            }
-            return count;
         }
 
         @Override
@@ -396,7 +413,7 @@ public class HeaderFooterGridView extends GridView {
         @Override
         public boolean isEnabled(int position) {
             // Header (negative positions will throw an ArrayIndexOutOfBoundsException)
-            int numHeadersAndPlaceholders = getHeadersCount() * mNumColumns;
+            int numHeadersAndPlaceholders = getHeadersCount();
             int headerAndWrapCount = numHeadersAndPlaceholders;
             if(mAdapter != null) headerAndWrapCount = headerAndWrapCount + mAdapter.getCount();
             if (position < numHeadersAndPlaceholders) {
@@ -404,8 +421,9 @@ public class HeaderFooterGridView extends GridView {
                         && mHeaderViewInfos.get(position / mNumColumns).isSelectable;
             }
             if(position >= headerAndWrapCount) {
-                int footPos = position - headerAndWrapCount - getFooterExtraCount();
-                int footCount = getFootersCount() * mNumColumns;
+                int footExtra = getFooterExtraCount();
+                int footPos = position - headerAndWrapCount - footExtra;
+                int footCount = getFootersCount() - footExtra;
                 if(footPos >= footCount) throw new ArrayIndexOutOfBoundsException(position);
                 return footPos >= 0 && (footPos % mNumColumns == 0)
                         && mFooterViewInfos.get(footPos / mNumColumns).isSelectable;
@@ -419,7 +437,7 @@ public class HeaderFooterGridView extends GridView {
         @Override
         public Object getItem(int position) {
             // Header (negative positions will throw an ArrayIndexOutOfBoundsException)
-            int numHeadersAndPlaceholders = getHeadersCount() * mNumColumns;
+            int numHeadersAndPlaceholders = getHeadersCount();
             int headerAndWrapCount = numHeadersAndPlaceholders;
             if(mAdapter != null) headerAndWrapCount = headerAndWrapCount + mAdapter.getCount();
             if (position < numHeadersAndPlaceholders) {
@@ -429,8 +447,9 @@ public class HeaderFooterGridView extends GridView {
                 return null;
             }
             if(position >= headerAndWrapCount) {
-                int footPos = position - headerAndWrapCount - getFooterExtraCount();
-                int footCount = getFootersCount() * mNumColumns;
+                int footExtra = getFooterExtraCount();
+                int footPos = position - headerAndWrapCount - footExtra;
+                int footCount = getFootersCount() - footExtra;
                 if(footPos >= footCount) throw new ArrayIndexOutOfBoundsException(position);
                 if(footPos >= 0 && footPos % mNumColumns == 0) {
                     return mFooterViewInfos.get(footPos / mNumColumns).data;
@@ -445,7 +464,7 @@ public class HeaderFooterGridView extends GridView {
 
         @Override
         public long getItemId(int position) {
-            int numHeadersAndPlaceholders = getHeadersCount() * mNumColumns;
+            int numHeadersAndPlaceholders = getHeadersCount();
             if (mAdapter != null && position >= numHeadersAndPlaceholders) {
                 int adjPosition = position - numHeadersAndPlaceholders;
                 int adapterCount = mAdapter.getCount();
@@ -467,7 +486,7 @@ public class HeaderFooterGridView extends GridView {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             // Header (negative positions will throw an ArrayIndexOutOfBoundsException)
-            int numHeadersAndPlaceholders = getHeadersCount() * mNumColumns;
+            int numHeadersAndPlaceholders = getHeadersCount();
             int headerAndWrapCount = numHeadersAndPlaceholders;
             if(mAdapter != null) headerAndWrapCount = headerAndWrapCount + mAdapter.getCount();
             if (position < numHeadersAndPlaceholders) {
@@ -487,8 +506,9 @@ public class HeaderFooterGridView extends GridView {
                 }
             }
             if(position >= headerAndWrapCount) {
-                int footPos = position - headerAndWrapCount - getFooterExtraCount();
-                int footCount = getFootersCount() * mNumColumns;
+                int footExtra = getFooterExtraCount();
+                int footPos = position - headerAndWrapCount - footExtra;
+                int footCount = getFootersCount() - footExtra;
                 if(footPos >= footCount) throw new ArrayIndexOutOfBoundsException(position);
                 if(footPos >= 0 && footPos % mNumColumns == 0) {
                     mPreView = mFooterViewInfos.get(footPos / mNumColumns).viewContainer;
@@ -514,7 +534,7 @@ public class HeaderFooterGridView extends GridView {
 
         @Override
         public int getItemViewType(int position) {
-            int numHeadersAndPlaceholders = getHeadersCount() * mNumColumns;
+            int numHeadersAndPlaceholders = getHeadersCount();
             int headerAndWrapCount = numHeadersAndPlaceholders;
             if(mAdapter != null) headerAndWrapCount = headerAndWrapCount + mAdapter.getCount();
             if (position < numHeadersAndPlaceholders) {
@@ -525,8 +545,9 @@ public class HeaderFooterGridView extends GridView {
                 }
             }
             if(position >= headerAndWrapCount) {
-                int footPos = position - headerAndWrapCount - getFooterExtraCount();
-                int footCount = getFootersCount() * mNumColumns;
+                int footExtra = getFooterExtraCount();
+                int footPos = position - headerAndWrapCount - footExtra;
+                int footCount = getFootersCount() - footExtra;
                 if(footPos >= footCount || (footPos >= 0 && (footPos % mNumColumns == 0))) {
                     return AdapterView.ITEM_VIEW_TYPE_HEADER_OR_FOOTER;
                 }else {
