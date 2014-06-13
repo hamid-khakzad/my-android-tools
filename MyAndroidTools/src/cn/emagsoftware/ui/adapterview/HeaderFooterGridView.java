@@ -251,6 +251,7 @@ public class HeaderFooterGridView extends GridView {
         for (int i = 0; i < len; ++i) {
             FixedViewInfo info = where.get(i);
             if (info.view == v) {
+                info.viewContainer.removeView(v);
                 where.remove(i);
                 break;
             }
@@ -383,6 +384,7 @@ public class HeaderFooterGridView extends GridView {
             for (int i = 0; i < mHeaderViewInfos.size(); i++) {
                 FixedViewInfo info = mHeaderViewInfos.get(i);
                 if (info.view == v) {
+                    info.viewContainer.removeView(v);
                     mHeaderViewInfos.remove(i);
 
                     mAreAllFixedViewsSelectable = areAllListInfosSelectable(mHeaderViewInfos, mFooterViewInfos);
@@ -399,6 +401,7 @@ public class HeaderFooterGridView extends GridView {
             for (int i = 0; i < mFooterViewInfos.size(); i++) {
                 FixedViewInfo info = mFooterViewInfos.get(i);
                 if (info.view == v) {
+                    info.viewContainer.removeView(v);
                     mFooterViewInfos.remove(i);
 
                     mAreAllFixedViewsSelectable = areAllListInfosSelectable(mHeaderViewInfos, mFooterViewInfos);
