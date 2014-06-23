@@ -8,6 +8,8 @@ import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
@@ -49,8 +51,8 @@ public class ProxyActivity extends GenericActivity {
         String className = getIntent().getStringExtra(EXTRA_CLASS);
         if(TextUtils.isEmpty(mApkPath)) throw new RuntimeException("the parameter named '" + EXTRA_APK_PATH + "' for ProxyActivity is necessary.");
         loadResources();
-        if(className == null) launchRemoteActivity();
-        else launchRemoteActivity(className);
+        if(className == null) launchRemoteActivity(savedInstanceState);
+        else launchRemoteActivity(savedInstanceState, className);
     }
 
     protected void loadResources() {
@@ -75,13 +77,14 @@ public class ProxyActivity extends GenericActivity {
         mTheme.setTo(super.getTheme());
     }
 
-    protected void launchRemoteActivity() {
+    protected void launchRemoteActivity(Bundle savedInstanceState) {
         PackageInfo packageInfo = getPackageManager().getPackageArchiveInfo(mApkPath, 1);
+        if(packageInfo == null) throw new RuntimeException("apk from '" + mApkPath + "' is invalid or can not be launched.");
         if(packageInfo.activities == null || packageInfo.activities.length == 0) throw new RuntimeException("apk from '" + mApkPath + "' should have one Activity at least.");
-        launchRemoteActivity(packageInfo.activities[0].name);
+        launchRemoteActivity(savedInstanceState, packageInfo.activities[0].name);
     }
 
-    protected void launchRemoteActivity(String className) {
+    protected void launchRemoteActivity(Bundle savedInstanceState, String className) {
         File dexOutputDir = this.getDir("dex", Context.MODE_PRIVATE);
         final String dexOutputPath = dexOutputDir.getAbsolutePath();
         ClassLoader localClassLoader = ClassLoader.getSystemClassLoader();
@@ -92,16 +95,20 @@ public class ProxyActivity extends GenericActivity {
             Class<?> localClass = dexClassLoader.loadClass(className);
             Constructor<?> localConstructor = localClass.getConstructor(new Class[] {});
             Object instance = localConstructor.newInstance(new Object[] {});
-            if(!(instance instanceof ClientActivity)) throw new RuntimeException("activity in secified apk should extend ClientActivity.");
+            if(!(instance instanceof Activity)) throw new RuntimeException("activity in secified apk should extend ClientActivity.");
             setRemoteActivity((Activity)instance);
-            instantiateLifecircleMethods(localClass);
-
-            Method setProxy = localClass.getMethod("setProxy", new Class[] { Activity.class, String.class });
+            instantiateLifecircleMethods();
+            Method setProxy;
+            try {
+                setProxy = localClass.getMethod("setProxy", new Class[] { Activity.class, String.class });
+            }catch (NoSuchMethodException e) {
+                throw new RuntimeException("activity in secified apk should extend ClientActivity.", e);
+            }
             setProxy.setAccessible(true);
             setProxy.invoke(instance, new Object[] { this, mApkPath });
 
             Method onCreate = mLifecircleMethods.get("onCreate");
-            onCreate.invoke(instance, new Object[] { new Bundle() });
+            onCreate.invoke(instance, new Object[] { savedInstanceState });
         } catch(ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (NoSuchMethodException e) {
@@ -119,19 +126,19 @@ public class ProxyActivity extends GenericActivity {
         mRemoteActivity = activity;
     }
 
-    protected void instantiateLifecircleMethods(Class<?> localClass) {
+    protected void instantiateLifecircleMethods() {
         String[] methodNames = new String[] {
                 "onStart",
                 "onRestart",
                 "onResume",
                 "onPause",
                 "onStop",
-                "onDestory"
+                "onDestroy"
         };
         for (String methodName : methodNames) {
             Method method = null;
             try {
-                method = localClass.getDeclaredMethod(methodName, new Class[] { });
+                method = Activity.class.getDeclaredMethod(methodName, new Class[]{});
                 method.setAccessible(true);
             } catch (NoSuchMethodException e) {
                 throw new RuntimeException(e);
@@ -141,7 +148,7 @@ public class ProxyActivity extends GenericActivity {
 
         Method onCreate = null;
         try {
-            onCreate = localClass.getDeclaredMethod("onCreate", new Class[] { Bundle.class });
+            onCreate = Activity.class.getDeclaredMethod("onCreate", new Class[]{Bundle.class});
             onCreate.setAccessible(true);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
@@ -150,13 +157,33 @@ public class ProxyActivity extends GenericActivity {
 
         Method onActivityResult = null;
         try {
-            onActivityResult = localClass.getDeclaredMethod("onActivityResult",
-                    new Class[] { int.class, int.class, Intent.class });
+            onActivityResult = Activity.class.getDeclaredMethod("onActivityResult",
+                    new Class[]{int.class, int.class, Intent.class});
             onActivityResult.setAccessible(true);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
         mLifecircleMethods.put("onActivityResult", onActivityResult);
+
+        Method onCreateOptionsMenu = null;
+        try {
+            onCreateOptionsMenu = Activity.class.getDeclaredMethod("onCreateOptionsMenu",
+                    new Class[] { Menu.class });
+            onCreateOptionsMenu.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+        mLifecircleMethods.put("onCreateOptionsMenu", onCreateOptionsMenu);
+
+        Method onOptionsItemSelected = null;
+        try {
+            onOptionsItemSelected = Activity.class.getDeclaredMethod("onOptionsItemSelected",
+                    new Class[] { MenuItem.class });
+            onOptionsItemSelected.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+        mLifecircleMethods.put("onOptionsItemSelected", onOptionsItemSelected);
     }
 
     @Override
@@ -169,10 +196,10 @@ public class ProxyActivity extends GenericActivity {
         return mResources == null ? super.getResources() : mResources;
     }
 
-    @Override
+    /*@Override
     public Resources.Theme getTheme() {
         return mTheme == null ? super.getTheme() : mTheme;
-    }
+    }*/
 
     @Override
     public ClassLoader getClassLoader() {
@@ -284,6 +311,32 @@ public class ProxyActivity extends GenericActivity {
             throw new RuntimeException(e);
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        Method onCreateOptionsMenu = mLifecircleMethods.get("onCreateOptionsMenu");
+        try {
+            return (Boolean)onCreateOptionsMenu.invoke(mRemoteActivity, new Object[] { menu });
+        } catch(IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+        Method onOptionsItemSelected = mLifecircleMethods.get("onOptionsItemSelected");
+        try {
+            return (Boolean)onOptionsItemSelected.invoke(mRemoteActivity, new Object[] { item });
+        } catch(IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
