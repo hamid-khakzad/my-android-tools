@@ -22,6 +22,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     private boolean          mIsLoadedAllNoPages = false;
     /** 懒加载时的回调对象 */
     private LazyLoadCallback mCallback           = null;
+    private int mPagesLimit = 1;
 
     public BaseLazyLoadAdapter(Context context, LazyLoadCallback callback)
     {
@@ -121,7 +122,7 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
                 adapter.mIsLoaded = true;
                 if (adapter.mPages == -1)
                 {
-                    if (resultList == null || resultList.size() == 0)
+                    if (resultList == null || resultList.size() < mPagesLimit)
                         adapter.mIsLoadedAllNoPages = true;
                     else
                         adapter.mIsLoadedAllNoPages = false;
@@ -151,6 +152,11 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
     public int getPage()
     {
         return mPage;
+    }
+
+    public void setPagesLimitWithoutPages(int pagesLimit) {
+        if(pagesLimit < 1) throw new IllegalArgumentException("pagesLimit could not be less than 1.");
+        this.mPagesLimit = pagesLimit;
     }
 
     /**
