@@ -83,6 +83,24 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
         }
     }
 
+    public void unbindLazyLoading(AdapterView<? extends Adapter> adapterView) {
+        if (adapterView instanceof AbsListView) {
+            try {
+                AbsListView absList = (AbsListView) adapterView;
+                Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
+                field.setAccessible(true);
+                AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absList);
+                if(onScrollListener instanceof WrappedOnScrollListener) {
+                    absList.setOnScrollListener(((WrappedOnScrollListener)onScrollListener).getOriginalListener());
+                }
+            }catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     /**
      * <p>覆盖父类的方法，用来执行懒加载 <p>如果调用bindLazyLoading方法绑定了AdapterView，则该方法会被自动调用（第一次在layout时也会被自动调用）
      */
