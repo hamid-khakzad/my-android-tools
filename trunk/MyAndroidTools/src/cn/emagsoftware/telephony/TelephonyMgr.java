@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.StatFs;
+import android.os.storage.StorageManager;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 
@@ -170,14 +171,50 @@ public final class TelephonyMgr
         return false;
     }
 
+    public static File getExternalStorageDirectory() {
+        return Environment.getExternalStorageDirectory();
+    }
+
     public static String getExternalStorageState()
     {
         return Environment.getExternalStorageState();
     }
 
-    public static long getExternalStorageSize()
+    public static boolean isExternalStorageValid()
     {
-        return getFileStorageSize(Environment.getExternalStorageDirectory());
+        return getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+    }
+
+    /**
+     * <p>获取外置SD卡的File</>
+     * @param context
+     * @return 若无外置SD卡时返回null
+     * @throws ReflectHiddenFuncException
+     */
+    public static File getSdCardDirectory(Context context) throws ReflectHiddenFuncException {
+        StorageManager storageManager = (StorageManager)context.getSystemService(Context.STORAGE_SERVICE);
+        try {
+            Method getVolumeList = storageManager.getClass().getMethod("getVolumeList");
+            Object[] storageVolumes = (Object[])getVolumeList.invoke(storageManager);
+            for(Object storageVolume : storageVolumes) {
+                Method method = storageVolume.getClass().getMethod("isRemovable");
+                boolean isRemovable = (Boolean)method.invoke(storageVolume);
+                if(isRemovable) {
+                    method = storageVolume.getClass().getMethod("getPath");
+                    String path = (String)method.invoke(storageVolume);
+                    if(!path.toLowerCase().contains("usb")) {
+                        return new File(path);
+                    }
+                }
+            }
+            return null;
+        }catch (NoSuchMethodException e) {
+            throw new ReflectHiddenFuncException(e);
+        }catch (IllegalAccessException e) {
+            throw new ReflectHiddenFuncException(e);
+        }catch (InvocationTargetException e) {
+            throw new ReflectHiddenFuncException(e);
+        }
     }
 
     public static long getFileStorageSize(File file)
@@ -188,22 +225,12 @@ public final class TelephonyMgr
         return blockSize * totalBlocks;
     }
 
-    public static long getExternalStorageAvailableSize()
-    {
-        return getFileStorageAvailableSize(Environment.getExternalStorageDirectory());
-    }
-
     public static long getFileStorageAvailableSize(File file)
     {
         StatFs stat = new StatFs(file.getAbsolutePath());
         long blockSize = stat.getBlockSize();
         long availableBlocks = stat.getAvailableBlocks();
-        return blockSize * (availableBlocks - 4);
-    }
-
-    public static boolean isExternalStorageValid()
-    {
-        return getExternalStorageState().equals(Environment.MEDIA_MOUNTED);
+        return blockSize * availableBlocks;
     }
 
     public static int getSDKVersion()
