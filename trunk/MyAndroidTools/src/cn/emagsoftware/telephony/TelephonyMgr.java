@@ -188,7 +188,7 @@ public final class TelephonyMgr
     /**
      * <p>获取外置SD卡的File</>
      * @param context
-     * @return 若无外置SD卡时返回null
+     * @return 若无外置SD卡槽时返回null
      * @throws ReflectHiddenFuncException
      */
     public static File getSdCardDirectory(Context context) throws ReflectHiddenFuncException {
