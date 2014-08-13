@@ -7,6 +7,9 @@ import cn.emagsoftware.util.LogManager;
 
 import android.content.Context;
 
+/**
+ * @deprecated use {@link cn.emagsoftware.ui.adapterview.LoadAdapter} instead.
+ */
 public abstract class BaseLoadAdapter extends GenericAdapter
 {
 

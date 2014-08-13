@@ -11,6 +11,9 @@ import android.widget.AdapterView;
 import cn.emagsoftware.util.AsyncWeakTask;
 import cn.emagsoftware.util.LogManager;
 
+/**
+ * @deprecated use {@link cn.emagsoftware.ui.adapterview.LazyLoadAdapter} instead.
+ */
 public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
 {
 
