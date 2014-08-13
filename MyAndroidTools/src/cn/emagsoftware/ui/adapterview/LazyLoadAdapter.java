@@ -39,6 +39,15 @@ public class LazyLoadAdapter extends LoadAdapter
     }
 
     /**
+     * <p>覆盖父类的方法，以返回当前的LazyLoadCallback
+     */
+    @Override
+    public LazyLoadCallback getLoadCallback()
+    {
+        return mCallback;
+    }
+
+    /**
      * <p>绑定AdapterView，使其自动懒加载 <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载 <p>bindLazyLoading实际上设置了AbsListView的OnScrollListener监听；
      * 用户若包含自己的OnScrollListener监听，请在bindLazyLoading之前调用setOnScrollListener，bindLazyLoading方法会将用户的逻辑包含进来； 若在bindLazyLoading之后调用setOnScrollListener，将取消bindLazyLoading的作用
      *
@@ -95,24 +104,24 @@ public class LazyLoadAdapter extends LoadAdapter
 
     /**
      * <p>覆盖父类的方法，用来执行懒加载</>
+     * @param param
      * @param result
      * @return
      */
     @Override
-    public boolean load(LoadResult result)
-    {
+    public boolean load(Object param, LoadResult result) {
         if(result == null) throw new NullPointerException("result == null");
         if (mIsLoading)
             return false;
         mIsLoading = true;
-        mTask = createTask(this,result);
+        mParam = param;
+        mTask = createTask(this,param,result);
         mTask.execute();
         return true;
     }
 
-    private static AsyncWeakTask<Object, Integer, Object> createTask(LazyLoadAdapter adapter,LoadResult result) {
+    private static AsyncWeakTask<Object, Integer, Object> createTask(LazyLoadAdapter adapter,final Object param,LoadResult result) {
         final LazyLoadCallback loader = adapter.mCallback;
-        final Object param = adapter.mParam;
         final int start = adapter.getRealCount();
         final int page = adapter.mPage;
         return new AsyncWeakTask<Object, Integer, Object>(adapter,result)
@@ -129,12 +138,10 @@ public class LazyLoadAdapter extends LoadAdapter
             {
                 LazyLoadAdapter adapter = (LazyLoadAdapter) objs[0];
                 LoadResult loadRst = (LoadResult) objs[1];
-                adapter.mPage++;
-                List<DataHolder> resultList = (List<DataHolder>) result;
-                if (resultList != null && resultList.size() > 0)
-                    adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
                 adapter.mIsLoading = false;
                 adapter.mIsLoaded = true;
+                adapter.mIsException = false;
+                List<DataHolder> resultList = (List<DataHolder>) result;
                 if (adapter.mPages == -1)
                 {
                     if (resultList == null || resultList.size() < adapter.mPagesLimit)
@@ -142,8 +149,17 @@ public class LazyLoadAdapter extends LoadAdapter
                     else
                         adapter.mIsLoadedAllNoPages = false;
                 }
-                adapter.mIsException = false;
-                loadRst.onSuccess(adapter.mContext,param,loader);
+                loadRst.onSuccess(adapter,param);
+                adapter.mPage++;
+                if (adapter.mPages == -1)
+                {
+                    if (resultList == null || resultList.size() < adapter.mPagesLimit)
+                        adapter.mIsLoadedAllNoPages = true;
+                    else
+                        adapter.mIsLoadedAllNoPages = false;
+                }
+                if (resultList != null && resultList.size() > 0)
+                    adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
             }
 
             @Override
@@ -154,7 +170,7 @@ public class LazyLoadAdapter extends LoadAdapter
                 LoadResult loadRst = (LoadResult) objs[1];
                 adapter.mIsLoading = false;
                 adapter.mIsException = true;
-                loadRst.onException(adapter.mContext,param,loader,e);
+                loadRst.onException(adapter,param,e);
             }
         };
     }
