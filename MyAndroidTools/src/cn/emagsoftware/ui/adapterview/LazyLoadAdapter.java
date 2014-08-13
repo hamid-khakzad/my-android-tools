@@ -48,13 +48,13 @@ public class LazyLoadAdapter extends LoadAdapter
     }
 
     /**
-     * <p>绑定AdapterView，使其自动懒加载 <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动开始新的加载 <p>bindLazyLoading实际上设置了AbsListView的OnScrollListener监听；
-     * 用户若包含自己的OnScrollListener监听，请在bindLazyLoading之前调用setOnScrollListener，bindLazyLoading方法会将用户的逻辑包含进来； 若在bindLazyLoading之后调用setOnScrollListener，将取消bindLazyLoading的作用
-     *
+     * <p>绑定AdapterView，使其自动回调懒加载</>
+     * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将自动回调懒加载</>
+     * <p>bindLazyLoading实际上设置了AbsListView的OnScrollListener监听；用户若包含自己的OnScrollListener监听，请在bindLazyLoading之前调用setOnScrollListener，bindLazyLoading方法会将用户的逻辑包含进来； 若在bindLazyLoading之后调用setOnScrollListener，将取消bindLazyLoading的作用</>
      * @param adapterView
-     * @param remainingCount 当剩余多少个时开始继续加载，最小值为0，表示直到最后才开始继续加载
+     * @param onLazyLoading
      */
-    public void bindLazyLoading(AdapterView<? extends Adapter> adapterView, int remainingCount)
+    public void bindLazyLoading(AdapterView<? extends Adapter> adapterView,OnLazyLoading onLazyLoading)
     {
         if (adapterView instanceof AbsListView)
         {
@@ -64,12 +64,12 @@ public class LazyLoadAdapter extends LoadAdapter
                 Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
                 field.setAccessible(true);
                 AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absList);
-                if (onScrollListener != null && onScrollListener instanceof WrappedOnScrollListener)
+                if (onScrollListener instanceof WrappedOnScrollListener)
                 {
-                    absList.setOnScrollListener(new WrappedOnScrollListener(((WrappedOnScrollListener) onScrollListener).getOriginalListener(), remainingCount));
+                    absList.setOnScrollListener(new WrappedOnScrollListener(((WrappedOnScrollListener) onScrollListener).getOriginalListener(), onLazyLoading, 0));
                 } else
                 {
-                    absList.setOnScrollListener(new WrappedOnScrollListener(onScrollListener, remainingCount));
+                    absList.setOnScrollListener(new WrappedOnScrollListener(onScrollListener, onLazyLoading, 0));
                 }
             } catch (NoSuchFieldException e)
             {
@@ -261,16 +261,26 @@ public class LazyLoadAdapter extends LoadAdapter
 
     }
 
+    public static abstract class OnLazyLoading {
+
+        protected abstract void onLazyLoading(LazyLoadAdapter adapter,AdapterView<? extends Adapter> adapterView);
+
+    }
+
     private class WrappedOnScrollListener implements AbsListView.OnScrollListener
     {
         private AbsListView.OnScrollListener mOriginalListener = null;
+        private OnLazyLoading mOnLazyLoading = null;
         private int                          mRemainingCount   = 0;
 
-        public WrappedOnScrollListener(AbsListView.OnScrollListener originalListener, int remainingCount)
+        public WrappedOnScrollListener(AbsListView.OnScrollListener originalListener, OnLazyLoading onLazyLoading, int remainingCount)
         {
-            if (originalListener != null && originalListener instanceof WrappedOnScrollListener)
+            if (originalListener instanceof WrappedOnScrollListener)
                 throw new IllegalArgumentException("the OnScrollListener could not be WrappedOnScrollListener");
+            if(onLazyLoading == null) throw new NullPointerException("onLazyLoading == null");
+            if(remainingCount < 0) throw new IllegalArgumentException("remainingCount < 0");
             this.mOriginalListener = originalListener;
+            this.mOnLazyLoading = onLazyLoading;
             this.mRemainingCount = remainingCount;
         }
 
@@ -287,7 +297,7 @@ public class LazyLoadAdapter extends LoadAdapter
                 return;
             if (firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount && !isLoadedAll() && !isException())
             {
-                load();
+                mOnLazyLoading.onLazyLoading(LazyLoadAdapter.this,view);
             }
         }
 
