@@ -40,6 +40,11 @@ public class LoadAdapter extends GenericAdapter
         mCallback = callback;
     }
 
+    public LoadCallback getLoadCallback()
+    {
+        return mCallback;
+    }
+
     /**
      * <p>加载的执行方法</>
      * @param result
@@ -47,11 +52,16 @@ public class LoadAdapter extends GenericAdapter
      */
     public boolean load(LoadResult result)
     {
+        return load(null,result);
+    }
+
+    public boolean load(Object param, LoadResult result) {
         if(result == null) throw new NullPointerException("result == null");
         if (mIsLoading)
             return false;
         mIsLoading = true;
-        mTask = createTask(this,result);
+        mParam = param;
+        mTask = createTask(this,param,result);
         mTask.execute();
         return true;
     }
@@ -64,9 +74,8 @@ public class LoadAdapter extends GenericAdapter
         return true;
     }
 
-    private static AsyncWeakTask<Object, Integer, Object> createTask(LoadAdapter adapter,LoadResult result) {
+    private static AsyncWeakTask<Object, Integer, Object> createTask(LoadAdapter adapter,final Object param,LoadResult result) {
         final LoadCallback loader = adapter.mCallback;
-        final Object param = adapter.mParam;
         return new AsyncWeakTask<Object, Integer, Object>(adapter,result)
         {
             @Override
@@ -81,13 +90,13 @@ public class LoadAdapter extends GenericAdapter
             {
                 LoadAdapter adapter = (LoadAdapter) objs[0];
                 LoadResult loadRst = (LoadResult)objs[1];
-                List<DataHolder> resultList = (List<DataHolder>) result;
-                if (resultList != null && resultList.size() > 0)
-                    adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
                 adapter.mIsLoading = false;
                 adapter.mIsLoaded = true;
                 adapter.mIsException = false;
-                loadRst.onSuccess(adapter.mContext,param,loader);
+                loadRst.onSuccess(adapter,param);
+                List<DataHolder> resultList = (List<DataHolder>) result;
+                if (resultList != null && resultList.size() > 0)
+                    adapter.addDataHolders(resultList); // 该方法需在UI线程中执行且是非线程安全的
             }
 
             @Override
@@ -98,21 +107,13 @@ public class LoadAdapter extends GenericAdapter
                 LoadResult loadRst = (LoadResult)objs[1];
                 adapter.mIsLoading = false;
                 adapter.mIsException = true;
-                loadRst.onException(adapter.mContext,param,loader,e);
+                loadRst.onException(adapter,param,e);
             }
         };
     }
 
-    /**
-     * <p>设置参数数据
-     * 
-     * @param param
-     */
-    public void setParam(Object param)
-    {
-        if (param == null)
-            throw new NullPointerException();
-        this.mParam = param;
+    public Object getCurParam() {
+        return mParam;
     }
 
     /**
@@ -175,9 +176,9 @@ public class LoadAdapter extends GenericAdapter
 
     public abstract static class LoadResult {
 
-        protected abstract void onSuccess(Context context, Object param, LoadCallback loader);
+        protected abstract void onSuccess(LoadAdapter adapter, Object param);
 
-        protected abstract void onException(Context context, Object param, LoadCallback loader, Exception exception);
+        protected abstract void onException(LoadAdapter adapter, Object param, Exception exception);
 
     }
 
