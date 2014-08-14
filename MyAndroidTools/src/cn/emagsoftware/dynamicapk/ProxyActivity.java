@@ -17,13 +17,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
-import cn.emagsoftware.ui.GenericActivity;
 import dalvik.system.DexClassLoader;
 
 /**
  * Created by Wendell on 14-6-18.
  */
-public class ProxyActivity extends GenericActivity {
+public class ProxyActivity extends Activity {
 
     private static final String TAG = "ProxyActivity";
 
@@ -39,10 +38,6 @@ public class ProxyActivity extends GenericActivity {
 
     private Activity mRemoteActivity;
     private HashMap<String, Method> mLifecircleMethods = new HashMap<String, Method>();
-
-    @Override
-    protected void onRestoreStaticState() {
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

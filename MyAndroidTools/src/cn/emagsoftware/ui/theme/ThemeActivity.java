@@ -3,7 +3,7 @@ package cn.emagsoftware.ui.theme;
 import cn.emagsoftware.ui.recreate.RecreateActivity;
 import android.os.Bundle;
 
-public abstract class ThemeActivity extends RecreateActivity
+public class ThemeActivity extends RecreateActivity
 {
 
     @Override
