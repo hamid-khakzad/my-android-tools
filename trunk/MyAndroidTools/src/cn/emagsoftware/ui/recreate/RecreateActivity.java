@@ -1,11 +1,10 @@
 package cn.emagsoftware.ui.recreate;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
-import cn.emagsoftware.ui.GenericActivity;
-
-public abstract class RecreateActivity extends GenericActivity
+public class RecreateActivity extends Activity
 {
 
     private static final String EXTRA_RECREATEACTIVITY_OUTSTATE = "android.intent.extra.RECREATEACTIVITY_OUTSTATE";

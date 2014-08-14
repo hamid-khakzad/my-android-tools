@@ -17,21 +17,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import cn.emagsoftware.ui.GenericActivity;
-
 /**
  * Created by Wendell on 14-6-18.
  */
-public class ClientActivity extends GenericActivity {
+public class ClientActivity extends Activity {
 
     private static final String TAG = "ClientActivity";
 
     protected Activity mProxyActivity = this;
     protected String mApkPath;
-
-    @Override
-    protected void onRestoreStaticState() {
-    }
 
     public final void setProxy(Activity proxyActivity, String apkPath) {
         if(proxyActivity == null || apkPath == null) throw new NullPointerException();

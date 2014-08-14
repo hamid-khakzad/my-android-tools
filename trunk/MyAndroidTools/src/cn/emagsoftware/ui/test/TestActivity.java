@@ -1,10 +1,10 @@
 package cn.emagsoftware.ui.test;
 
-import cn.emagsoftware.ui.GenericActionBarActivity;
 import cn.emagsoftware.ui.R;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 
-public class TestActivity extends GenericActionBarActivity
+public class TestActivity extends ActionBarActivity
 {
 
     @Override
@@ -14,9 +14,5 @@ public class TestActivity extends GenericActionBarActivity
         setContentView(R.layout.test);
         getSupportActionBar().setTitle("MyAndroidTools");
     }
-
-    @Override
-    protected void onRestoreStaticState() {
-    }
-
+    
 }

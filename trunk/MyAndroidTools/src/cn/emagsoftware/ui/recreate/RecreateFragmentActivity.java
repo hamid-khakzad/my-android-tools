@@ -2,10 +2,9 @@ package cn.emagsoftware.ui.recreate;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 
-import cn.emagsoftware.ui.GenericFragmentActivity;
-
-public abstract class RecreateFragmentActivity extends GenericFragmentActivity
+public class RecreateFragmentActivity extends FragmentActivity
 {
 
     private static final String EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE = "android.intent.extra.RECREATEFRAGMENTACTIVITY_OUTSTATE";

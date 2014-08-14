@@ -2,10 +2,9 @@ package cn.emagsoftware.ui.recreate;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 
-import cn.emagsoftware.ui.GenericActionBarActivity;
-
-public abstract class RecreateActionBarActivity extends GenericActionBarActivity
+public class RecreateActionBarActivity extends ActionBarActivity
 {
 
     private static final String EXTRA_RECREATEACTIONBARACTIVITY_OUTSTATE = "android.intent.extra.RECREATEACTIONBARACTIVITY_OUTSTATE";
