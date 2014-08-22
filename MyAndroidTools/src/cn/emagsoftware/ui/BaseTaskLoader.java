@@ -29,7 +29,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     }
 
     @Override
-    public LoaderResult<D> loadInBackground() {
+    public final LoaderResult<D> loadInBackground() {
         D data = null;
         try {
             data = loadInBackgroundImpl(mParam);
