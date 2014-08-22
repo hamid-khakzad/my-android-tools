@@ -5,19 +5,18 @@ import android.content.Context;
 import java.util.List;
 
 import cn.emagsoftware.ui.BaseTaskLoader;
-import cn.emagsoftware.ui.LoaderResult;
 
 /**
  * Created by Wendell on 14-8-22.
  */
 public abstract class DataHolderLoader extends BaseTaskLoader<List<DataHolder>> {
 
-    public DataHolderLoader(Context context,LoaderResult<List<DataHolder>> oldResult) {
-        super(context,oldResult);
+    public DataHolderLoader(Context context,List<DataHolder> oldData) {
+        super(context,oldData);
     }
 
-    public DataHolderLoader(Context context,LoaderResult<List<DataHolder>> oldResult,Object param) {
-        super(context,oldResult,param);
+    public DataHolderLoader(Context context,List<DataHolder> oldData,Object param) {
+        super(context,oldData,param);
     }
 
     @Override
