@@ -25,7 +25,6 @@ public class TestActivity extends ActionBarActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
-        getSupportActionBar().setTitle("MyAndroidTools");
         final SwipeRefreshLayout swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
         swiper.setColorSchemeResources(android.R.color.holo_blue_light,
                 android.R.color.holo_green_light,
