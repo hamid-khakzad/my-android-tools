@@ -6,7 +6,7 @@
     <uses-sdk android:minSdkVersion="7" />
     
     <application android:theme="@style/Theme.AppCompat.Light">
-        <activity android:name=".test.TestActivity" android:configChanges="orientation|keyboardHidden|keyboard">
+        <activity android:name=".test.TestActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
