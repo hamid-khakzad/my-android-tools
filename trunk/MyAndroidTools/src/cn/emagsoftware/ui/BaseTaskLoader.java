@@ -26,6 +26,10 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         }
     }
 
+    public D getOldData() {
+        return mOldData;
+    }
+
     @Override
     public LoaderResult<D> loadInBackground() {
         D data = null;
