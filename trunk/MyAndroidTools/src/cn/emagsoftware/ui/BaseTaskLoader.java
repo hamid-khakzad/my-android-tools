@@ -13,17 +13,15 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     private D mOldData = null;
     private LoaderResult<D> mResult = null;
 
-    public BaseTaskLoader(Context context,LoaderResult<D> oldResult) {
-        this(context,oldResult,null);
+    public BaseTaskLoader(Context context,D oldData) {
+        this(context,oldData,null);
     }
 
-    public BaseTaskLoader(Context context,LoaderResult<D> oldResult,Object param) {
+    public BaseTaskLoader(Context context,D oldData,Object param) {
         super(context);
         mObserver = new ForceLoadContentObserver();
         mParam = param;
-        if(oldResult != null) {
-            mOldData = oldResult.getData();
-        }
+        mOldData = oldData;
     }
 
     public D getOldData() {
