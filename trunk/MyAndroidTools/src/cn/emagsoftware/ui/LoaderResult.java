@@ -8,11 +8,8 @@ public class LoaderResult<D> {
     private Exception mException = null;
     private D mData = null;
 
-    public LoaderResult(Exception exception) {
+    public LoaderResult(Exception exception,D data) {
         this.mException = exception;
-    }
-
-    public LoaderResult(D data) {
         this.mData = data;
     }
 
@@ -21,7 +18,6 @@ public class LoaderResult<D> {
     }
 
     public D getData() {
-        if(getException() != null) throw new IllegalStateException("current LoaderResult contains exception,can not get data.");
         return mData;
     }
 

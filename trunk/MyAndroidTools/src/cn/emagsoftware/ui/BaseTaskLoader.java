@@ -10,16 +10,20 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
 
     private ForceLoadContentObserver mObserver = null;
     private Object mParam = null;
+    private D mOldData = null;
     private LoaderResult<D> mResult = null;
 
-    public BaseTaskLoader(Context context) {
-        this(context,null);
+    public BaseTaskLoader(Context context,LoaderResult<D> oldResult) {
+        this(context,oldResult,null);
     }
 
-    public BaseTaskLoader(Context context,Object param) {
+    public BaseTaskLoader(Context context,LoaderResult<D> oldResult,Object param) {
         super(context);
         mObserver = new ForceLoadContentObserver();
         mParam = param;
+        if(oldResult != null) {
+            mOldData = oldResult.getData();
+        }
     }
 
     @Override
@@ -28,15 +32,17 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         try {
             data = loadInBackgroundImpl(mParam);
         }catch (Exception e) {
-            return new LoaderResult<D>(e);
+            return new LoaderResult<D>(e,mOldData == null?null:cloneInBackground(mOldData));
+        }finally {
+            mOldData = null;
         }
-        return new LoaderResult<D>(data);
+        return new LoaderResult<D>(null,data);
     }
 
     @Override
     public void deliverResult(LoaderResult<D> data) {
         if(isReset()) {
-            if(data != null && data.getException() == null) {
+            if(data != null) {
                 D curData = data.getData();
                 if(curData != null) {
                     onReleaseData(curData);
@@ -44,7 +50,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
             }
             return;
         }
-        if(data != null && data.getException() == null) {
+        if(data != null) {
             D curData = data.getData();
             if(curData != null) {
                 registerContentObserver(curData, mObserver);
@@ -55,7 +61,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         if(isStarted()) {
             super.deliverResult(data);
         }
-        if(oldResult != null && oldResult != data && oldResult.getException() == null) {
+        if(oldResult != null && oldResult != data) {
             D oldData = oldResult.getData();
             if(oldData != null) {
                 onReleaseData(oldData);
@@ -80,7 +86,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
 
     @Override
     public void onCanceled(LoaderResult<D> data) {
-        if(data != null && data.getException() == null) {
+        if(data != null) {
             D curData = data.getData();
             if(curData != null) {
                 onReleaseData(curData);
@@ -92,7 +98,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     protected void onReset() {
         super.onReset();
         onStopLoading();
-        if(mResult != null && mResult.getException() == null) {
+        if(mResult != null) {
             D curData = mResult.getData();
             if(curData != null) {
                 onReleaseData(curData);
@@ -102,6 +108,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     }
 
     public abstract D loadInBackgroundImpl(Object param) throws Exception;
+    public abstract D cloneInBackground(D oldData);
     public abstract void onReleaseData(D data);
     public abstract void registerContentObserver(D data,ForceLoadContentObserver observer);
 
