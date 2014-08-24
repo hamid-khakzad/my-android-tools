@@ -49,7 +49,12 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         if(data != null) {
             D curData = data.getData();
             if(curData != null) {
-                registerContentObserver(curData, mObserver);
+                try {
+                    registerContentObserver(curData, mObserver);
+                }catch (RuntimeException e) {
+                    onReleaseData(curData);
+                    throw e;
+                }
             }
         }
         LoaderResult<D> oldResult = mResult;
