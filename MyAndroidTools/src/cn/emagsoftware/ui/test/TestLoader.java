@@ -22,7 +22,7 @@ public class TestLoader extends DataHolderLoader {
     }
 
     @Override
-    public List<DataHolder> loadInBackgroundImpl(Object param) throws Exception {
+    public List<DataHolder> loadInBackgroundImpl() throws Exception {
         Thread.sleep(8000);
         int count = 20;
         List<DataHolder> holders = new ArrayList<DataHolder>(count);
