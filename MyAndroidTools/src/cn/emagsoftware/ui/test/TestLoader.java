@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.emagsoftware.ui.adapterview.DataHolder;
-import cn.emagsoftware.ui.adapterview.DataHolderLoader;
+import cn.emagsoftware.ui.adapterview.GenericLoader;
 
 /**
  * Created by Wendell on 14-8-22.
  */
-public class TestLoader extends DataHolderLoader {
+public class TestLoader extends GenericLoader {
 
     public TestLoader(Context context,List<DataHolder> oldData) {
         super(context,oldData);
