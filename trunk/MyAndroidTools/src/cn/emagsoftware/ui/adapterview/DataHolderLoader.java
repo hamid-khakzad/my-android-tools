@@ -15,10 +15,6 @@ public abstract class DataHolderLoader extends BaseTaskLoader<List<DataHolder>> 
         super(context,oldData);
     }
 
-    public DataHolderLoader(Context context,List<DataHolder> oldData,Object param) {
-        super(context,oldData,param);
-    }
-
     @Override
     public void registerContentObserver(List<DataHolder> data, ForceLoadContentObserver observer) {
     }

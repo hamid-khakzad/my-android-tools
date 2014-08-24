@@ -9,18 +9,12 @@ import android.support.v4.content.AsyncTaskLoader;
 public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>> {
 
     private ForceLoadContentObserver mObserver = null;
-    private Object mParam = null;
     private D mOldData = null;
     private LoaderResult<D> mResult = null;
 
     public BaseTaskLoader(Context context,D oldData) {
-        this(context,oldData,null);
-    }
-
-    public BaseTaskLoader(Context context,D oldData,Object param) {
         super(context);
         mObserver = new ForceLoadContentObserver();
-        mParam = param;
         mOldData = oldData;
     }
 
@@ -32,7 +26,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     public final LoaderResult<D> loadInBackground() {
         D data = null;
         try {
-            data = loadInBackgroundImpl(mParam);
+            data = loadInBackgroundImpl();
         }catch (Exception e) {
             return new LoaderResult<D>(e,mOldData == null?null:cloneInBackground(mOldData));
         }finally {
@@ -109,7 +103,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         mResult = null;
     }
 
-    public abstract D loadInBackgroundImpl(Object param) throws Exception;
+    public abstract D loadInBackgroundImpl() throws Exception;
     public abstract D cloneInBackground(D oldData);
     public abstract void onReleaseData(D data);
     public abstract void registerContentObserver(D data,ForceLoadContentObserver observer);
