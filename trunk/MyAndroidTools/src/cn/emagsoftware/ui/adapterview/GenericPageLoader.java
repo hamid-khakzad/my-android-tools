@@ -81,18 +81,14 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
             if(mPageCount == -1) {
                 if(mResult.getException() == null) {
                     int curPageSize = mPrePageData==null?0:mPrePageData.size();
-                    if(curPageSize < mPageSize) {
-                        return true;
-                    }
+                    return curPageSize < mPageSize;
                 }
             }else {
                 List<DataHolder> data = mResult.getData();
                 int size = data==null?0:data.size();
                 int curPageCount = size/mPageSize;
                 curPageCount = size%mPageSize==0?curPageCount:curPageCount+1;
-                if(curPageCount >= mPageCount) {
-                    return true;
-                }
+                return curPageCount >= mPageCount;
             }
         }
         return false;
@@ -101,9 +97,7 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
     @Override
     public boolean isException() {
         if(mResult != null) {
-            if(mResult.getException() != null) {
-                return true;
-            }
+            return mResult.getException() != null;
         }
         return false;
     }
