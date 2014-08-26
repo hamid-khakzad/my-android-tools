@@ -19,12 +19,21 @@ public abstract class GenericLoader extends BaseTaskLoader<List<DataHolder>> {
     public void registerContentObserver(List<DataHolder> data, ForceLoadContentObserver observer) {
     }
 
+    /**
+     * <p>使用final的原因在于List<DataHolder>不需要Release，且避免给子类的其他逻辑带来困惑</>
+     * @param data
+     */
     @Override
-    public void onReleaseData(List<DataHolder> data) {
+    public final void onReleaseData(List<DataHolder> data) {
     }
 
+    /**
+     * <p>使用final的原因在于onReleaseData没有任何操作且被标识为final，故不需要进行Clone</>
+     * @param oldData
+     * @return
+     */
     @Override
-    public List<DataHolder> cloneInBackground(List<DataHolder> oldData) {
+    public final List<DataHolder> cloneInBackground(List<DataHolder> oldData) {
         return oldData;
     }
 
