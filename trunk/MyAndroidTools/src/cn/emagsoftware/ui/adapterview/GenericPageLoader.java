@@ -101,7 +101,9 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
     @Override
     public boolean isException() {
         if(mResult != null) {
-            return mResult.getException() != null;
+            if(mResult.getException() != null) {
+                return true;
+            }
         }
         return false;
     }
