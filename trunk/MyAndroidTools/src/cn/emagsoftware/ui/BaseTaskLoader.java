@@ -10,7 +10,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
 
     private ForceLoadContentObserver mObserver = null;
     private D mOldData = null;
-    private LoaderResult<D> mResult = null;
+    protected LoaderResult<D> mResult = null;
 
     public BaseTaskLoader(Context context,D oldData) {
         super(context);
@@ -28,7 +28,13 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         try {
             data = loadInBackgroundImpl();
         }catch (Exception e) {
-            return new LoaderResult<D>(e,mOldData == null?null:cloneInBackground(mOldData));
+            D eData;
+            if(mResult == null) {
+                eData = mOldData == null?null:cloneInBackground(mOldData);
+            }else {
+                eData = mResult.getData();
+            }
+            return new LoaderResult<D>(e,eData);
         }finally {
             mOldData = null;
         }
@@ -37,17 +43,16 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
 
     @Override
     public void deliverResult(LoaderResult<D> data) {
+        D curData = data==null?null:data.getData();
         if(isReset()) {
-            if(data != null) {
-                D curData = data.getData();
-                if(curData != null) {
-                    onReleaseData(curData);
-                }
+            if(curData != null) {
+                onReleaseData(curData);
             }
             return;
         }
-        if(data != null) {
-            D curData = data.getData();
+        LoaderResult<D> oldResult = mResult;
+        mResult = data;
+        if(oldResult == null || oldResult.getData() != curData) {
             if(curData != null) {
                 try {
                     registerContentObserver(curData, mObserver);
@@ -57,15 +62,15 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
                 }
             }
         }
-        LoaderResult<D> oldResult = mResult;
-        mResult = data;
         if(isStarted()) {
             super.deliverResult(data);
         }
-        if(oldResult != null && oldResult != data) {
+        if(oldResult != null) {
             D oldData = oldResult.getData();
-            if(oldData != null) {
-                onReleaseData(oldData);
+            if(oldData != curData) {
+                if(oldData != null) {
+                    onReleaseData(oldData);
+                }
             }
         }
     }
