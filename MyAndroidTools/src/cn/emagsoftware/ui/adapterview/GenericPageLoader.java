@@ -16,8 +16,9 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
     private int mStart = 0;
     private int mPage = 1;
     private int mPageCount = -1;
-    private List<DataHolder> mPrePageData;
     private List<DataHolder> mPageData;
+    private int mPageDataSize = -1;
+    private int mDataSize;
 
     public GenericPageLoader(Context context, List<DataHolder> oldData, int pageSize) {
         super(context,oldData);
@@ -32,40 +33,45 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
 
     @Override
     public final List<DataHolder> loadInBackgroundImpl() throws Exception {
-        mPageData = loadPageInBackground(mStart,mPage + 1);
-        List<DataHolder> preData = null;
-        if(mResult == null) {
-            preData = getOldData();
-        }
-        return preData;
+        return loadPageInBackground(mStart,mPage + 1);
     }
 
     @Override
     public void deliverResult(LoaderResult<List<DataHolder>> data) {
         if(data != null && data.getException() == null) {
-            List<DataHolder> preData = data.getData();
-            if(mResult != null) {
+            List<DataHolder> preData = null;
+            if(mResult == null) {
+                preData = getOldData();
+            }else {
                 List<DataHolder> preAllData = mResult.getData();
                 if(preAllData != null) {
                     preData = new ArrayList<DataHolder>(preAllData);
-                    if(mPrePageData != null) {
-                        preData.removeAll(mPrePageData);
+                    if(mPageData != null) {
+                        preData.removeAll(mPageData);
                     }
                 }
             }
-            mPrePageData = mPageData;
-            mPageData = null;
+            mPageData = data.getData();
+            mPageDataSize = mPageData==null?0:mPageData.size();
             if(preData == null) {
-                data = new LoaderResult<List<DataHolder>>(null,mPrePageData);
-            }else if(mPrePageData == null) {
+                data = new LoaderResult<List<DataHolder>>(null,mPageData);
+            }else if(mPageData == null) {
                 data = new LoaderResult<List<DataHolder>>(null,preData);
             }else {
-                List<DataHolder> all = new ArrayList<DataHolder>(preData.size() + mPrePageData.size());
+                List<DataHolder> all = new ArrayList<DataHolder>(preData.size() + mPageData.size());
                 all.addAll(preData);
-                all.addAll(mPrePageData);
+                all.addAll(mPageData);
                 data = new LoaderResult<List<DataHolder>>(null,all);
             }
         }
+        int dataSize = 0;
+        if(data != null) {
+            List<DataHolder> curData = data.getData();
+            if(curData != null) {
+                dataSize = curData.size();
+            }
+        }
+        mDataSize = dataSize;
         super.deliverResult(data);
     }
 
@@ -79,15 +85,12 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
     public boolean isLoadedAll() {
         if(mResult != null) {
             if(mPageCount == -1) {
-                if(mResult.getException() == null) {
-                    int curPageSize = mPrePageData==null?0:mPrePageData.size();
-                    return curPageSize < mPageSize;
+                if(mPageDataSize != -1) {
+                    return mPageDataSize < mPageSize;
                 }
             }else {
-                List<DataHolder> data = mResult.getData();
-                int size = data==null?0:data.size();
-                int curPageCount = size/mPageSize;
-                curPageCount = size%mPageSize==0?curPageCount:curPageCount+1;
+                int curPageCount = mDataSize/mPageSize;
+                curPageCount = mDataSize%mPageSize==0?curPageCount:curPageCount+1;
                 return curPageCount >= mPageCount;
             }
         }
