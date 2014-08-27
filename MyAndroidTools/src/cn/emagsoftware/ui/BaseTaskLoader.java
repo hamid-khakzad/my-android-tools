@@ -35,14 +35,13 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
                 eData = mResult.getData();
             }
             return new LoaderResult<D>(e,eData);
-        }finally {
-            mOldData = null;
         }
         return new LoaderResult<D>(null,data);
     }
 
     @Override
     public void deliverResult(LoaderResult<D> data) {
+        mOldData = null;
         D curData = data==null?null:data.getData();
         if(isReset()) {
             if(curData != null) {
