@@ -9,9 +9,9 @@ import cn.emagsoftware.ui.BaseTaskLoader;
 /**
  * Created by Wendell on 14-8-22.
  */
-public abstract class GenericLoader extends BaseTaskLoader<List<DataHolder>> {
+public abstract class BaseLoader extends BaseTaskLoader<List<DataHolder>> {
 
-    public GenericLoader(Context context, List<DataHolder> oldData) {
+    public BaseLoader(Context context, List<DataHolder> oldData) {
         super(context,oldData);
     }
 
