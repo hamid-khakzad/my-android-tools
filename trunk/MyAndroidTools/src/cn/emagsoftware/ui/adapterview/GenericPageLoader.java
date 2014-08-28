@@ -29,6 +29,7 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
         }
         mPage = mStart / pageSize;
         mPage = mStart%pageSize==0?mPage:mPage+1;
+        mDataSize = mStart;
     }
 
     @Override
@@ -63,15 +64,9 @@ public abstract class GenericPageLoader extends GenericLoader implements PageInt
                 all.addAll(mPageData);
                 data = new LoaderResult<List<DataHolder>>(null,all);
             }
-        }
-        int dataSize = 0;
-        if(data != null) {
             List<DataHolder> curData = data.getData();
-            if(curData != null) {
-                dataSize = curData.size();
-            }
+            mDataSize = curData==null?0:curData.size();
         }
-        mDataSize = dataSize;
         super.deliverResult(data);
     }
 
