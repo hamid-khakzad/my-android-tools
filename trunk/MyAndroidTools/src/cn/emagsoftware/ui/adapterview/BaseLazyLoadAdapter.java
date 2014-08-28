@@ -12,7 +12,7 @@ import cn.emagsoftware.util.AsyncWeakTask;
 import cn.emagsoftware.util.LogManager;
 
 /**
- * @deprecated use {@link cn.emagsoftware.ui.adapterview.GenericPageLoader} instead.
+ * @deprecated use {@link BasePageLoader} instead.
  */
 public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
 {

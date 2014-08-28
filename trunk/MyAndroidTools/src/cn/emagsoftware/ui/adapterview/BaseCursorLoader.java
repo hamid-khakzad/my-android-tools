@@ -8,9 +8,9 @@ import cn.emagsoftware.ui.BaseTaskLoader;
 /**
  * Created by Wendell on 14-8-24.
  */
-public abstract class GenericCursorLoader extends BaseTaskLoader<Cursor> {
+public abstract class BaseCursorLoader extends BaseTaskLoader<Cursor> {
 
-    public GenericCursorLoader(Context context,Cursor oldData) {
+    public BaseCursorLoader(Context context, Cursor oldData) {
         super(context,oldData);
     }
 
