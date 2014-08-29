@@ -10,21 +10,21 @@ import cn.emagsoftware.ui.BaseTaskLoader;
  */
 public abstract class BaseCursorLoader extends BaseTaskLoader<Cursor> {
 
-    public BaseCursorLoader(Context context, Cursor oldData) {
-        super(context,oldData);
+    public BaseCursorLoader(Context context) {
+        super(context);
     }
 
     @Override
-    public void registerContentObserver(Cursor data, ForceLoadContentObserver observer) {
-        data.getCount();
-        data.registerContentObserver(observer);
-    }
-
-    @Override
-    public void onReleaseData(Cursor data) {
+    protected void onReleaseData(Cursor data) {
         if(!data.isClosed()) {
             data.close();
         }
+    }
+
+    @Override
+    protected void registerContentObserver(Cursor data, ForceLoadContentObserver observer) {
+        data.getCount();
+        data.registerContentObserver(observer);
     }
 
 }
