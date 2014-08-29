@@ -9,39 +9,68 @@ import android.support.v4.content.AsyncTaskLoader;
 public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>> {
 
     private ForceLoadContentObserver mObserver = null;
-    private D mOldData = null;
-    protected LoaderResult<D> mResult = null;
+    private boolean mIsRefresh = false;
+    private boolean mIsLoading = false;
+    private LoaderResult<D> mLoadedResult = null;
+    private LoaderResult<D> mResult = null;
 
-    public BaseTaskLoader(Context context,D oldData) {
+    public BaseTaskLoader(Context context) {
         super(context);
         mObserver = new ForceLoadContentObserver();
-        mOldData = oldData;
     }
 
-    public D getOldData() {
-        return mOldData;
+    @Override
+    public void forceLoad() {
+        mIsRefresh = false;
+        super.forceLoad();
+    }
+
+    public void forceRefresh() {
+        mIsRefresh = true;
+        super.forceLoad();
+    }
+
+    @Override
+    protected void onForceLoad() {
+        super.onForceLoad();
+        mIsLoading = true;
+    }
+
+    @Override
+    public boolean cancelLoad() {
+        boolean returnVal = super.cancelLoad();
+        mIsLoading = false;
+        return returnVal;
+    }
+
+    public boolean isLoading() {
+        return mIsLoading;
     }
 
     @Override
     public final LoaderResult<D> loadInBackground() {
         D data = null;
         try {
-            data = loadInBackgroundImpl();
+            data = loadInBackgroundImpl(mIsRefresh);
         }catch (Exception e) {
-            D eData;
-            if(mResult == null) {
-                eData = mOldData == null?null:cloneInBackground(mOldData);
-            }else {
-                eData = mResult.getData();
-            }
-            return new LoaderResult<D>(e,eData);
+            mLoadedResult = new LoaderResult<D>(e,null);
+            return mLoadedResult;
         }
-        return new LoaderResult<D>(null,data);
+        mLoadedResult = new LoaderResult<D>(null,data);
+        return mLoadedResult;
     }
 
     @Override
-    public void deliverResult(LoaderResult<D> data) {
-        mOldData = null;
+    public final void deliverResult(LoaderResult<D> data) {
+        if(mLoadedResult != null && mLoadedResult == data) {
+            Exception exception = data.getException();
+            if(exception != null) {
+                data = new LoaderResult<D>(exception,mResult==null?null:mResult.getData());
+            }
+            mLoadedResult = null;
+            deliverLoadedResult(data);
+            return;
+        }
         D curData = data==null?null:data.getData();
         if(isReset()) {
             if(curData != null) {
@@ -72,6 +101,11 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
                 }
             }
         }
+    }
+
+    protected void deliverLoadedResult(LoaderResult<D> data) {
+        mIsLoading = false;
+        deliverResult(data);
     }
 
     @Override
@@ -112,9 +146,8 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         mResult = null;
     }
 
-    public abstract D loadInBackgroundImpl() throws Exception;
-    public abstract D cloneInBackground(D oldData);
-    public abstract void onReleaseData(D data);
-    public abstract void registerContentObserver(D data,ForceLoadContentObserver observer);
+    protected abstract D loadInBackgroundImpl(boolean isRefresh) throws Exception;
+    protected abstract void onReleaseData(D data);
+    protected abstract void registerContentObserver(D data,ForceLoadContentObserver observer);
 
 }
