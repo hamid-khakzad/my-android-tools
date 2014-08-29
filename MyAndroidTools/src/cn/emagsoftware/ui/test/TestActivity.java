@@ -6,6 +6,7 @@ import cn.emagsoftware.ui.ToastManager;
 import cn.emagsoftware.ui.adapterview.DataHolder;
 import cn.emagsoftware.ui.adapterview.GenericAdapter;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -26,9 +27,7 @@ public class TestActivity extends ActionBarActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
         swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
-        swiper.setColorSchemeResources(android.R.color.holo_blue_light,
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light, android.R.color.holo_red_light);
+        swiper.setColorSchemeColors(Color.parseColor("#ff33b5e5"),Color.parseColor("#ff99cc00"),Color.parseColor("#ffffbb33"),Color.parseColor("#ffff4444"));
         final ListView list = (ListView)findViewById(R.id.list);
         final GenericAdapter adapter = new GenericAdapter(this);
         list.setAdapter(adapter);
