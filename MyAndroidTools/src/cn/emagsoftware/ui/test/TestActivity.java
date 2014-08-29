@@ -18,14 +18,14 @@ import java.util.List;
 public class TestActivity extends ActionBarActivity
 {
 
-    private List<DataHolder> mOldData = null;
+    private SwipeRefreshLayout swiper = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
-        final SwipeRefreshLayout swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
+        swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
         swiper.setColorSchemeResources(android.R.color.holo_blue_light,
                 android.R.color.holo_green_light,
                 android.R.color.holo_orange_light, android.R.color.holo_red_light);
@@ -36,44 +36,25 @@ public class TestActivity extends ActionBarActivity
         swiper.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                getSupportLoaderManager().restartLoader(0,null,new LoaderManager.LoaderCallbacks<LoaderResult<List<DataHolder>>>() {
-                    @Override
-                    public Loader<LoaderResult<List<DataHolder>>> onCreateLoader(int i, Bundle bundle) {
-                        return new TestLoader(TestActivity.this,mOldData);
-                    }
-                    @Override
-                    public void onLoadFinished(Loader<LoaderResult<List<DataHolder>>> loaderResultLoader, LoaderResult<List<DataHolder>> listLoaderResult) {
-                        mOldData = listLoaderResult.getData();
-                        swiper.setRefreshing(false);
-                        adapter.clearDataHolders();
-                        if(mOldData != null) {
-                            adapter.addDataHolders(mOldData);
-                        }
-                        if(listLoaderResult.getException() != null) {
-                            ToastManager.showLong(TestActivity.this,"error...");
-                        }else{
-                            list.setSelection(0);
-                        }
-                    }
-                    @Override
-                    public void onLoaderReset(Loader<LoaderResult<List<DataHolder>>> loaderResultLoader) {
-                        adapter.clearDataHolders();
-                    }
-                });
+                Loader loader = getSupportLoaderManager().getLoader(0);
+                TestLoader testLoader = (TestLoader)loader;
+                if(!testLoader.isLoading()) {
+                    testLoader.forceRefresh();
+                }
             }
         });
-        TestLoader loader = (TestLoader)getSupportLoaderManager().initLoader(0,null,new LoaderManager.LoaderCallbacks<LoaderResult<List<DataHolder>>>() {
+        getSupportLoaderManager().initLoader(0,null,new LoaderManager.LoaderCallbacks<LoaderResult<List<DataHolder>>>() {
             @Override
             public Loader<LoaderResult<List<DataHolder>>> onCreateLoader(int i, Bundle bundle) {
-                return new TestLoader(TestActivity.this,mOldData);
+                return new TestLoader(TestActivity.this);
             }
             @Override
             public void onLoadFinished(Loader<LoaderResult<List<DataHolder>>> loaderResultLoader, LoaderResult<List<DataHolder>> listLoaderResult) {
-                mOldData = listLoaderResult.getData();
                 swiper.setRefreshing(false);
                 adapter.clearDataHolders();
-                if(mOldData != null) {
-                    adapter.addDataHolders(mOldData);
+                List<DataHolder> data = listLoaderResult.getData();
+                if(data != null) {
+                    adapter.addDataHolders(data);
                 }
                 if(listLoaderResult.getException() != null) {
                     ToastManager.showLong(TestActivity.this,"error...");
@@ -86,11 +67,18 @@ public class TestActivity extends ActionBarActivity
                 adapter.clearDataHolders();
             }
         });
-        List<DataHolder> oldHolders = loader.getOldData();
-        if(oldHolders != null) {
-            adapter.addDataHolders(oldHolders);
-            mOldData = oldHolders;
-        }
     }
-    
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        swiper.setRefreshing(savedInstanceState.getBoolean("isRefresh"));
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("isRefresh",swiper.isRefreshing());
+    }
+
 }
