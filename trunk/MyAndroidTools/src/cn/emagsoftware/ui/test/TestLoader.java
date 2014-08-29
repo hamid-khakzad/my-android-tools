@@ -17,12 +17,12 @@ import cn.emagsoftware.ui.adapterview.DataHolder;
  */
 public class TestLoader extends BaseLoader {
 
-    public TestLoader(Context context,List<DataHolder> oldData) {
-        super(context,oldData);
+    public TestLoader(Context context) {
+        super(context);
     }
 
     @Override
-    public List<DataHolder> loadInBackgroundImpl() throws Exception {
+    protected List<DataHolder> loadInBackgroundImpl(boolean isRefresh) throws Exception {
         Thread.sleep(8000);
         int count = 20;
         List<DataHolder> holders = new ArrayList<DataHolder>(count);
