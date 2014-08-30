@@ -12,39 +12,56 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
 
     private int mPageSize;
     private int mStart = 0;
-    private int mPage = 1;
     private int mPageCount = -1;
-    private int mPageDataSize = -1;
-    private int mDataSize;
+    private int mCurPageSize = -1;
 
-    public BaseCursorPageLoader(Context context, Cursor oldData, int pageSize) {
-        super(context,oldData);
+    public BaseCursorPageLoader(Context context, int pageSize) {
+        super(context);
         if(pageSize <= 0) throw new IllegalArgumentException("pageSize <= 0");
         mPageSize = pageSize;
-        if(oldData != null) {
-            mStart = oldData.getCount();
+    }
+
+    @Override
+    public void forceLoad() {
+        super.forceLoad();
+        mStart = 0;
+    }
+
+    @Override
+    public void forceRefresh() {
+        super.forceRefresh();
+        mStart = 0;
+    }
+
+    @Override
+    public void forcePageLoad() {
+        super.forceLoad();
+        Cursor data = mResult==null?null:mResult.getData();
+        mStart = data==null?0:data.getCount();
+    }
+
+    @Override
+    protected Cursor loadInBackgroundImpl(boolean isRefresh) throws Exception {
+        int start = mStart;
+        if(isRefresh && start != 0) { //解决同步问题
+            isRefresh = false;
         }
-        mPage = mStart / pageSize;
-        mPage = mStart%pageSize==0?mPage:mPage+1;
-        mDataSize = mStart;
+        int page = start / mPageSize;
+        page = start%mPageSize==0?page+1:page+2;
+        return loadPageInBackground(isRefresh,start,page);
     }
 
     @Override
-    public final Cursor loadInBackgroundImpl() throws Exception {
-        return loadPageInBackground(mStart,mPage + 1);
-    }
-
-    @Override
-    public void deliverResult(LoaderResult<Cursor> data) {
+    protected void deliverLoadedResult(LoaderResult<Cursor> data) {
         if(data != null && data.getException() == null) {
             Cursor curData = data.getData();
-            mDataSize = curData==null?0:curData.getCount();
-            mPageDataSize = mDataSize - mStart;
-            if(mPageDataSize < 0) {
-                mPageDataSize = 0;
+            int curSize = curData==null?0:curData.getCount();
+            mCurPageSize = curSize - mStart; //mStart是同步的，否则当前方法将会被取消
+            if(mCurPageSize < 0) {
+                mCurPageSize = 0;
             }
         }
-        super.deliverResult(data);
+        super.deliverLoadedResult(data);
     }
 
     @Override
@@ -57,12 +74,14 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
     public boolean isLoadedAll() {
         if(mResult != null) {
             if(mPageCount == -1) {
-                if(mPageDataSize != -1) {
-                    return mPageDataSize < mPageSize;
+                if(mCurPageSize != -1) {
+                    return mCurPageSize < mPageSize;
                 }
             }else {
-                int curPageCount = mDataSize/mPageSize;
-                curPageCount = mDataSize%mPageSize==0?curPageCount:curPageCount+1;
+                Cursor data = mResult.getData();
+                int curSize = data==null?0:data.getCount();
+                int curPageCount = curSize/mPageSize;
+                curPageCount = curSize%mPageSize==0?curPageCount:curPageCount+1;
                 return curPageCount >= mPageCount;
             }
         }
