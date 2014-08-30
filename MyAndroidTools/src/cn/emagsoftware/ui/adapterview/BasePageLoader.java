@@ -14,60 +14,63 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
 
     private int mPageSize;
     private int mStart = 0;
-    private int mPage = 1;
     private int mPageCount = -1;
-    private List<DataHolder> mPageData;
-    private int mPageDataSize = -1;
-    private int mDataSize;
+    private int mCurPageSize = -1;
 
-    public BasePageLoader(Context context, List<DataHolder> oldData, int pageSize) {
-        super(context,oldData);
+    public BasePageLoader(Context context, int pageSize) {
+        super(context);
         if(pageSize <= 0) throw new IllegalArgumentException("pageSize <= 0");
         mPageSize = pageSize;
-        if(oldData != null) {
-            mStart = oldData.size();
+    }
+
+    @Override
+    public void forceLoad() {
+        super.forceLoad();
+        mStart = 0;
+    }
+
+    @Override
+    public void forceRefresh() {
+        super.forceRefresh();
+        mStart = 0;
+    }
+
+    @Override
+    public void forcePageLoad() {
+        super.forceLoad();
+        List<DataHolder> data = mResult==null?null:mResult.getData();
+        mStart = data==null?0:data.size();
+    }
+
+    @Override
+    protected List<DataHolder> loadInBackgroundImpl(boolean isRefresh) throws Exception {
+        int start = mStart;
+        if(isRefresh && start != 0) { //解决同步问题
+            isRefresh = false;
         }
-        mPage = mStart / pageSize;
-        mPage = mStart%pageSize==0?mPage:mPage+1;
-        mDataSize = mStart;
+        int page = start / mPageSize;
+        page = start%mPageSize==0?page+1:page+2;
+        return loadPageInBackground(isRefresh,start,page);
     }
 
     @Override
-    public final List<DataHolder> loadInBackgroundImpl() throws Exception {
-        return loadPageInBackground(mStart,mPage + 1);
-    }
-
-    @Override
-    public void deliverResult(LoaderResult<List<DataHolder>> data) {
+    protected void deliverLoadedResult(LoaderResult<List<DataHolder>> data) {
         if(data != null && data.getException() == null) {
-            List<DataHolder> preData = null;
-            if(mResult == null) {
-                preData = getOldData();
-            }else {
-                List<DataHolder> preAllData = mResult.getData();
-                if(preAllData != null) {
-                    preData = new ArrayList<DataHolder>(preAllData);
-                    if(mPageData != null) {
-                        preData.removeAll(mPageData);
-                    }
+            List<DataHolder> oldData = mResult==null?null:mResult.getData();
+            List<DataHolder> pageData = data.getData();
+            mCurPageSize = pageData==null?0:pageData.size();
+            if(oldData != null) {
+                if(pageData == null) {
+                    data = new LoaderResult<List<DataHolder>>(null,oldData);
+                }else {
+                    List<DataHolder> all = new ArrayList<DataHolder>(oldData.size() + pageData.size());
+                    all.addAll(oldData);
+                    all.addAll(pageData);
+                    data = new LoaderResult<List<DataHolder>>(null,all);
                 }
             }
-            mPageData = data.getData();
-            mPageDataSize = mPageData==null?0:mPageData.size();
-            if(preData == null) {
-                data = new LoaderResult<List<DataHolder>>(null,mPageData);
-            }else if(mPageData == null) {
-                data = new LoaderResult<List<DataHolder>>(null,preData);
-            }else {
-                List<DataHolder> all = new ArrayList<DataHolder>(preData.size() + mPageData.size());
-                all.addAll(preData);
-                all.addAll(mPageData);
-                data = new LoaderResult<List<DataHolder>>(null,all);
-            }
-            List<DataHolder> curData = data.getData();
-            mDataSize = curData==null?0:curData.size();
         }
-        super.deliverResult(data);
+        super.deliverLoadedResult(data);
     }
 
     @Override
@@ -80,12 +83,14 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
     public boolean isLoadedAll() {
         if(mResult != null) {
             if(mPageCount == -1) {
-                if(mPageDataSize != -1) {
-                    return mPageDataSize < mPageSize;
+                if(mCurPageSize != -1) {
+                    return mCurPageSize < mPageSize;
                 }
             }else {
-                int curPageCount = mDataSize/mPageSize;
-                curPageCount = mDataSize%mPageSize==0?curPageCount:curPageCount+1;
+                List<DataHolder> data = mResult.getData();
+                int curSize = data==null?0:data.size();
+                int curPageCount = curSize/mPageSize;
+                curPageCount = curSize%mPageSize==0?curPageCount:curPageCount+1;
                 return curPageCount >= mPageCount;
             }
         }
