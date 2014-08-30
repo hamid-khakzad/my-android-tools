@@ -12,7 +12,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     private boolean mIsRefresh = false;
     private boolean mIsLoading = false;
     private LoaderResult<D> mLoadedResult = null;
-    private LoaderResult<D> mResult = null;
+    protected LoaderResult<D> mResult = null;
 
     public BaseTaskLoader(Context context) {
         super(context);

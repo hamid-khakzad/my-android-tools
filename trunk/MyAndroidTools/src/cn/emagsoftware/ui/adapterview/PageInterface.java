@@ -5,6 +5,7 @@ package cn.emagsoftware.ui.adapterview;
  */
 public interface PageInterface<D> {
 
+    public void forcePageLoad();
     /**
      * <p>只返回单页数据，但对Cursor而言，尽管加载的可以是单页数据，但返回的需要是整个结果集</>
      * @param start 起始位置，最小为0
