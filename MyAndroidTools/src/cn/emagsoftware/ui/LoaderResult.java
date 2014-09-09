@@ -7,6 +7,7 @@ public class LoaderResult<D> {
 
     private Exception mException = null;
     private D mData = null;
+    boolean mIsNew = true;
 
     public LoaderResult(Exception exception,D data) {
         this.mException = exception;
