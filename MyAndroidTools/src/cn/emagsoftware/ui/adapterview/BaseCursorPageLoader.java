@@ -12,6 +12,7 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
 
     private int mPageSize;
     private int mStart = 0;
+    private int mStartSign;
     private int mPageCount = -1;
     private int mCurPageSize = -1;
 
@@ -24,13 +25,13 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
     @Override
     public void forceLoad() {
         super.forceLoad();
-        mStart = 0;
+        mStart = -1;
     }
 
     @Override
     public void forceRefresh() {
         super.forceRefresh();
-        mStart = 0;
+        mStart = -1;
     }
 
     @Override
@@ -41,10 +42,25 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
     }
 
     @Override
-    protected Cursor loadInBackgroundImpl(boolean isRefresh) throws Exception {
+    protected final Cursor loadInBackgroundImpl(boolean isRefresh) throws Exception {
         int start = mStart;
-        if(isRefresh && start != 0) { //解决同步问题
-            isRefresh = false;
+        if(start == -1) {
+            start = 0;
+            mStartSign = start;
+        }else {
+            int calcStart = loadCountInBackground();
+            if(calcStart < 0) {
+                if(calcStart == -1) {
+                    throw new IllegalStateException("in BaseCursorPageLoader,loadCountInBackground() can not return -1");
+                }else {
+                    throw new IllegalStateException("loadCountInBackground()'value should (>=0)");
+                }
+            }
+            start = calcStart;
+            mStartSign = start;
+            if(isRefresh) { //解决同步问题
+                isRefresh = false;
+            }
         }
         int page = start / mPageSize;
         page = start%mPageSize==0?page+1:page+2;
@@ -54,9 +70,9 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
     @Override
     protected void deliverLoadedResult(LoaderResult<Cursor> data) {
         if(data != null && data.getException() == null) {
-            Cursor curData = data.getData();
-            int curSize = curData==null?0:curData.getCount();
-            mCurPageSize = curSize - mStart; //mStart是同步的，否则当前方法将会被取消
+            Cursor pageData = data.getData();
+            int allSize = pageData==null?0:pageData.getCount();
+            mCurPageSize = allSize - mStartSign;
             if(mCurPageSize < 0) {
                 mCurPageSize = 0;
             }
