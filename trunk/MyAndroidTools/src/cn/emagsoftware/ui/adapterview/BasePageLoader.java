@@ -14,6 +14,7 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
 
     private int mPageSize;
     private int mStart = 0;
+    private int mStartSign;
     private int mPageCount = -1;
     private int mCurPageSize = -1;
 
@@ -26,13 +27,13 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
     @Override
     public void forceLoad() {
         super.forceLoad();
-        mStart = 0;
+        mStart = -1;
     }
 
     @Override
     public void forceRefresh() {
         super.forceRefresh();
-        mStart = 0;
+        mStart = -1;
     }
 
     @Override
@@ -43,10 +44,25 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
     }
 
     @Override
-    protected List<DataHolder> loadInBackgroundImpl(boolean isRefresh) throws Exception {
+    protected final List<DataHolder> loadInBackgroundImpl(boolean isRefresh) throws Exception {
         int start = mStart;
-        if(isRefresh && start != 0) { //解决同步问题
-            isRefresh = false;
+        if(start == -1) {
+            start = 0;
+            mStartSign = start;
+        }else {
+            int calcStart = loadCountInBackground();
+            if(calcStart != -1 && calcStart < 0) {
+                throw new IllegalStateException("loadCountInBackground()'value should (==-1 or >=0)");
+            }
+            if(calcStart == -1) {
+                mStartSign = -1;
+            }else {
+                start = calcStart;
+                mStartSign = start;
+            }
+            if(isRefresh) { //解决同步问题
+                isRefresh = false;
+            }
         }
         int page = start / mPageSize;
         page = start%mPageSize==0?page+1:page+2;
@@ -56,17 +72,25 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
     @Override
     protected void deliverLoadedResult(LoaderResult<List<DataHolder>> data) {
         if(data != null && data.getException() == null) {
-            List<DataHolder> oldData = mResult==null?null:mResult.getData();
             List<DataHolder> pageData = data.getData();
-            mCurPageSize = pageData==null?0:pageData.size();
-            if(oldData != null) {
-                if(pageData == null) {
-                    data = new LoaderResult<List<DataHolder>>(null,oldData);
-                }else {
-                    List<DataHolder> all = new ArrayList<DataHolder>(oldData.size() + pageData.size());
-                    all.addAll(oldData);
-                    all.addAll(pageData);
-                    data = new LoaderResult<List<DataHolder>>(null,all);
+            if(mStartSign == -1) {
+                List<DataHolder> oldData = mResult==null?null:mResult.getData();
+                mCurPageSize = pageData==null?0:pageData.size();
+                if(oldData != null) {
+                    if(pageData == null) {
+                        data = new LoaderResult<List<DataHolder>>(null,oldData);
+                    }else {
+                        List<DataHolder> all = new ArrayList<DataHolder>(oldData.size() + pageData.size());
+                        all.addAll(oldData);
+                        all.addAll(pageData);
+                        data = new LoaderResult<List<DataHolder>>(null,all);
+                    }
+                }
+            }else {
+                int allSize = pageData==null?0:pageData.size();
+                mCurPageSize = allSize - mStartSign;
+                if(mCurPageSize < 0) {
+                    mCurPageSize = 0;
                 }
             }
         }
