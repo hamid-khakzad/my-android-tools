@@ -11,21 +11,19 @@ import java.util.List;
 public abstract class GroupDataHolder extends DataHolder
 {
 
-    private List<DataHolder>  mChildren       = null;
+    private List<DataHolder>  mChildren       = new ArrayList<DataHolder>();
     private boolean mIsExpanded;
 
     public GroupDataHolder(Object data,DisplayImageOptions... options)
     {
         super(data,options);
-        mChildren = new ArrayList<DataHolder>();
     }
 
     public GroupDataHolder(Object data, List<DataHolder> children, DisplayImageOptions... options)
     {
         super(data,options);
-        if(children == null)
-            throw new NullPointerException();
-        mChildren = new ArrayList<DataHolder>(children);
+        if(children != null)
+            mChildren = new ArrayList<DataHolder>(children);
     }
 
     public boolean isExpanded()
@@ -43,7 +41,10 @@ public abstract class GroupDataHolder extends DataHolder
      * @param holders
      */
     public void setChildren(List<DataHolder> holders) {
-        mChildren = new ArrayList<DataHolder>(holders);
+        if(holders == null)
+            mChildren = new ArrayList<DataHolder>();
+        else
+            mChildren = new ArrayList<DataHolder>(holders);
     }
 
     /**
@@ -114,6 +115,7 @@ public abstract class GroupDataHolder extends DataHolder
 
     /**
      * <p>需要手动刷新</>
+     * @deprecated use setChildren(null) instead.
      */
     public void clearChildren()
     {
