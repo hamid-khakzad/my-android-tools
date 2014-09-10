@@ -1,7 +1,12 @@
 package cn.emagsoftware.ui.adapterview;
 
 import android.content.Context;
+import android.view.View;
+import android.widget.AbsListView;
+import android.widget.Adapter;
+import android.widget.AdapterView;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -127,6 +132,113 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
             return mResult.getException() != null;
         }
         return false;
+    }
+
+    /**
+     * <p>绑定AdapterView，使其自动分页加载</>
+     * <p>目前只支持AbsListView，当AbsListView滑动到最后面时将触发OnPageLoading的回调方法</>
+     * <p>bindPageLoading实际上设置了AbsListView的OnScrollListener监听；用户若包含自己的OnScrollListener监听，请在bindPageLoading之前调用setOnScrollListener，bindPageLoading方法会将用户的逻辑包含进来； 若在bindPageLoading之后调用setOnScrollListener，将取消bindPageLoading的作用</>
+     * @param adapterView
+     * @param onPageLoading
+     */
+    public static void bindPageLoading(AdapterView<? extends Adapter> adapterView,OnPageLoading onPageLoading)
+    {
+        if (adapterView instanceof AbsListView)
+        {
+            try
+            {
+                AbsListView absList = (AbsListView) adapterView;
+                Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
+                field.setAccessible(true);
+                AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absList);
+                if (onScrollListener instanceof WrappedOnScrollListener)
+                {
+                    absList.setOnScrollListener(new WrappedOnScrollListener(((WrappedOnScrollListener) onScrollListener).getOriginalListener(), onPageLoading, 0));
+                } else
+                {
+                    absList.setOnScrollListener(new WrappedOnScrollListener(onScrollListener, onPageLoading, 0));
+                }
+            } catch (NoSuchFieldException e)
+            {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e)
+            {
+                throw new RuntimeException(e);
+            }
+        } else
+        {
+            throw new UnsupportedOperationException("Only supports page loading for the AdapterView which is AbsListView.");
+        }
+    }
+
+    public static void unbindPageLoading(AdapterView<? extends Adapter> adapterView) {
+        if (adapterView instanceof AbsListView) {
+            try {
+                AbsListView absList = (AbsListView) adapterView;
+                Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
+                field.setAccessible(true);
+                AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absList);
+                if(onScrollListener instanceof WrappedOnScrollListener) {
+                    absList.setOnScrollListener(((WrappedOnScrollListener)onScrollListener).getOriginalListener());
+                }
+            }catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static interface OnPageLoading {
+        public void onPageLoading(AdapterView<? extends Adapter> adapterView);
+    }
+
+    private static class WrappedOnScrollListener implements AbsListView.OnScrollListener
+    {
+        private AbsListView.OnScrollListener mOriginalListener = null;
+        private OnPageLoading mOnPageLoading = null;
+        private int                          mRemainingCount   = 0;
+
+        public WrappedOnScrollListener(AbsListView.OnScrollListener originalListener, OnPageLoading onPageLoading, int remainingCount)
+        {
+            if (originalListener instanceof WrappedOnScrollListener)
+                throw new IllegalArgumentException("the OnScrollListener could not be WrappedOnScrollListener");
+            if(onPageLoading == null) throw new NullPointerException("onPageLoading == null");
+            if(remainingCount < 0) throw new IllegalArgumentException("remainingCount < 0");
+            this.mOriginalListener = originalListener;
+            this.mOnPageLoading = onPageLoading;
+            this.mRemainingCount = remainingCount;
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount)
+        {
+            // 执行原始监听器的逻辑
+            if (mOriginalListener != null)
+                mOriginalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
+            if (view.getVisibility() == View.GONE)
+                // 由于在执行layout并显示时总会触发该事件，所以在未layout时禁止不必要的触发（执行setOnScrollListener或修改AbsListView的Item个数时都会触发该事件）
+                return;
+            if (visibleItemCount == 0) // 通过visibleItemCount为0来判断从未layout的情况，该情况下可见状态可能不是View.GONE，但要排除之
+                return;
+            if (firstVisibleItem + visibleItemCount + mRemainingCount >= totalItemCount)
+            {
+                mOnPageLoading.onPageLoading(view);
+            }
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState)
+        {
+            // 执行原始监听器的逻辑
+            if (mOriginalListener != null)
+                mOriginalListener.onScrollStateChanged(view, scrollState);
+        }
+
+        public AbsListView.OnScrollListener getOriginalListener()
+        {
+            return mOriginalListener;
+        }
     }
 
 }
