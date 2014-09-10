@@ -33,6 +33,11 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         mHolders = new ArrayList<GroupDataHolder>(holders);
     }
 
+    public void setDataHolders(List<GroupDataHolder> holders) {
+        mHolders = new ArrayList<GroupDataHolder>(holders);
+        notifyDataSetChanged();
+    }
+
     public void addDataHolder(GroupDataHolder holder)
     {
         mHolders.add(holder);

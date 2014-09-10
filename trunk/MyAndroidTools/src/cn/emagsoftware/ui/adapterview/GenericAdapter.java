@@ -50,6 +50,11 @@ public class GenericAdapter extends BaseAdapter
         this.mViewTypeCount = viewTypeCount;
     }
 
+    public void setDataHolders(List<DataHolder> holders) {
+        mHolders = new ArrayList<DataHolder>(holders);
+        notifyDataSetChanged();
+    }
+
     public void addDataHolder(DataHolder holder)
     {
         mHolders.add(holder);
