@@ -40,6 +40,14 @@ public abstract class GroupDataHolder extends DataHolder
 
     /**
      * <p>需要手动刷新</>
+     * @param holders
+     */
+    public void setChildren(List<DataHolder> holders) {
+        mChildren = new ArrayList<DataHolder>(holders);
+    }
+
+    /**
+     * <p>需要手动刷新</>
      * @param holder
      */
     public void addChild(DataHolder holder)
