@@ -218,6 +218,15 @@ public abstract class BaseLazyLoadAdapter extends BaseLoadAdapter
         }
     }
 
+    @Override
+    public void setDataHolders(List<DataHolder> holders) {
+        super.setDataHolders(holders);
+        if(holders == null) {
+            mPage = 0;
+            mIsLoadedAllNoPages = false;
+        }
+    }
+
     /**
      * <p>覆盖父类的方法，以重置当前类的一些属性
      */
