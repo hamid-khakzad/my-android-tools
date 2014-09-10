@@ -15,26 +15,29 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 {
 
     Context mContext       = null;
-    private List<GroupDataHolder> mHolders = null;
+    private List<GroupDataHolder> mHolders = new ArrayList<GroupDataHolder>();
 
     public GenericExpandableListAdapter(Context context)
     {
         if(context == null)
             throw new NullPointerException();
         mContext = context;
-        mHolders = new ArrayList<GroupDataHolder>();
     }
 
     public GenericExpandableListAdapter(Context context,List<GroupDataHolder> holders)
     {
-        if(context == null || holders == null)
+        if(context == null)
             throw new NullPointerException();
         mContext = context;
-        mHolders = new ArrayList<GroupDataHolder>(holders);
+        if(holders != null)
+            mHolders = new ArrayList<GroupDataHolder>(holders);
     }
 
     public void setDataHolders(List<GroupDataHolder> holders) {
-        mHolders = new ArrayList<GroupDataHolder>(holders);
+        if(holders == null)
+            mHolders = new ArrayList<GroupDataHolder>();
+        else
+            mHolders = new ArrayList<GroupDataHolder>(holders);
         notifyDataSetChanged();
     }
 
@@ -84,6 +87,9 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
         return mHolders.indexOf(holder);
     }
 
+    /**
+     * @deprecated use setDataHolders(null) instead.
+     */
     public void clearDataHolders()
     {
         mHolders.clear();

@@ -12,7 +12,7 @@ public class GenericAdapter extends BaseAdapter
 {
 
     Context                   mContext       = null;
-    private List<DataHolder>  mHolders       = null;
+    private List<DataHolder>  mHolders       = new ArrayList<DataHolder>();
     /** 是否循环显示View */
     private boolean           mIsLoopView    = false;
     /** View类型的个数 */
@@ -30,7 +30,6 @@ public class GenericAdapter extends BaseAdapter
         if (viewTypeCount <= 0)
             throw new IllegalArgumentException("viewTypeCount should great than zero.");
         mContext = context;
-        mHolders = new ArrayList<DataHolder>();
         this.mViewTypeCount = viewTypeCount;
     }
 
@@ -41,17 +40,21 @@ public class GenericAdapter extends BaseAdapter
 
     public GenericAdapter(Context context, List<DataHolder> holders, int viewTypeCount)
     {
-        if (context == null || holders == null)
+        if (context == null)
             throw new NullPointerException();
         if (viewTypeCount <= 0)
             throw new IllegalArgumentException("viewTypeCount should great than zero.");
         mContext = context;
-        mHolders = new ArrayList<DataHolder>(holders);
+        if(holders != null)
+            mHolders = new ArrayList<DataHolder>(holders);
         this.mViewTypeCount = viewTypeCount;
     }
 
     public void setDataHolders(List<DataHolder> holders) {
-        mHolders = new ArrayList<DataHolder>(holders);
+        if(holders == null)
+            mHolders = new ArrayList<DataHolder>();
+        else
+            mHolders = new ArrayList<DataHolder>(holders);
         notifyDataSetChanged();
     }
 
@@ -109,6 +112,9 @@ public class GenericAdapter extends BaseAdapter
         return mHolders.indexOf(holder);
     }
 
+    /**
+     * @deprecated use setDataHolders(null) instead.
+     */
     public void clearDataHolders()
     {
         mHolders.clear();
