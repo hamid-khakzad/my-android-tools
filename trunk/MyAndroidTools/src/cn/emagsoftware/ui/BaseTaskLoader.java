@@ -13,6 +13,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     private boolean mIsLoading = false;
     private LoaderResult<D> mLoadedResult = null;
     protected LoaderResult<D> mResult = null;
+    protected int mResumeType = 0;
 
     public BaseTaskLoader(Context context) {
         super(context);
@@ -43,7 +44,11 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         return returnVal;
     }
 
-    public boolean isLoading() {
+    /**
+     * <p>内部使用，按照Loader的设计理念，加载是可以重复调用的，不需要判断是否正在加载</>
+     * @return
+     */
+    protected boolean isLoading() {
         return mIsLoading;
     }
 
@@ -113,13 +118,21 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         if(mResult != null) {
             deliverResult(mResult);
         }
-        if(takeContentChanged() || mResult == null) {
+        int resumeType = mResumeType;
+        mResumeType = 0;
+        boolean takeContentChanged = takeContentChanged();
+        if(resumeType == 1) {
+            forceRefresh();
+        }else if(resumeType == 2 || takeContentChanged || mResult == null) {
             forceLoad();
         }
     }
 
     @Override
     protected void onStopLoading() {
+        if(mIsLoading) {
+            mResumeType = mIsRefresh?1:2;
+        }
         cancelLoad();
     }
 

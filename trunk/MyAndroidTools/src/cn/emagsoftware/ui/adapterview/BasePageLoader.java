@@ -103,6 +103,24 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
     }
 
     @Override
+    protected void onStartLoading() {
+        int resumeType = mResumeType;
+        super.onStartLoading();
+        if(resumeType == 3 && !isLoading()) {
+            forcePageLoad();
+        }
+    }
+
+    @Override
+    protected void onStopLoading() {
+        boolean isLoading = isLoading();
+        super.onStopLoading();
+        if(isLoading && mStart != -1) {
+            mResumeType = 3;
+        }
+    }
+
+    @Override
     public void setPageCount(int pageCount) {
         if(pageCount < 0) throw new IllegalArgumentException("pageCount < 0");
         this.mPageCount = pageCount;
