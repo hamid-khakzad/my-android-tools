@@ -104,7 +104,11 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
                     if(pageData == null) {
                         data = new LoaderResult<D>(null,oldData);
                     }else {
-                        data = new LoaderResult<D>(null,merge(oldData,pageData));
+                        D allData = merge(oldData,pageData);
+                        if(pageData != allData) {
+                            onReleaseData(pageData);
+                        }
+                        data = new LoaderResult<D>(null,allData);
                     }
                 }
             }else {
