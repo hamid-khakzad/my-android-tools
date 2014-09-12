@@ -56,7 +56,9 @@ public abstract class BaseCursorPageLoader extends BaseCursorLoader implements P
                     throw new IllegalStateException("loadCountInBackground()'value should (>=0)");
                 }
             }
-            start = calcStart;
+            if(start != calcStart) {
+                start = 0;
+            }
             mStartSign = start;
             if(isRefresh) { //解决同步问题
                 isRefresh = false;
