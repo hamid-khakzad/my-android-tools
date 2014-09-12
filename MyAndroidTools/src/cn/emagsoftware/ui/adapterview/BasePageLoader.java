@@ -62,7 +62,9 @@ public abstract class BasePageLoader extends BaseLoader implements PageInterface
             if(calcStart == -1) {
                 mStartSign = -1;
             }else {
-                start = calcStart;
+                if(start != calcStart) {
+                    start = 0;
+                }
                 mStartSign = start;
             }
             if(isRefresh) { //解决同步问题
