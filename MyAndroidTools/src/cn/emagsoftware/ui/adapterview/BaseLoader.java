@@ -15,12 +15,8 @@ public abstract class BaseLoader extends BaseTaskLoader<List<DataHolder>> {
         super(context);
     }
 
-    /**
-     * <p>使用final的原因在于List<DataHolder>不需要Release，且避免给子类的其他逻辑带来困惑</>
-     * @param data
-     */
     @Override
-    protected final void onReleaseData(List<DataHolder> data) {
+    protected void onReleaseData(List<DataHolder> data) {
     }
 
     @Override
