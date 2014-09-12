@@ -45,10 +45,10 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     }
 
     /**
-     * <p>内部使用，按照Loader的设计理念，加载是可以重复调用的，不需要判断是否正在加载</>
+     * <p>按照Loader的设计理念，加载是可以重复调用的，不需要判断是否正在加载，该方法旨在解决一些操作冲突，比如删除和加载的冲突</>
      * @return
      */
-    protected boolean isLoading() {
+    public boolean isLoading() {
         return mIsLoading;
     }
 
