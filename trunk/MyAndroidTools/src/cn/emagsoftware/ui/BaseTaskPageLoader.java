@@ -72,6 +72,7 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
             if(calcStart != -1 && calcStart < 0) {
                 throw new IllegalStateException("loadCountInBackground()'value should (==-1 or >=0)");
             }
+            extraCountCheckInBackground(calcStart);
             if(calcStart == -1) {
                 mStartSign = -1;
             }else {
@@ -87,6 +88,9 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
         int page = start / mPageSize;
         page = start%mPageSize==0?page+1:page+2;
         return loadPageInBackground(isRefresh,start,page);
+    }
+
+    protected void extraCountCheckInBackground(int count) {
     }
 
     @Override
