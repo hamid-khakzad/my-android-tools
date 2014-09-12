@@ -81,8 +81,8 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
                 }
                 mStartSign = start;
             }
-            if(isRefresh) { //解决同步问题
-                isRefresh = false;
+            if(isRefresh) { //并不是刻意检查取消，此时isRefresh为true会导致逻辑问题
+                return null;
             }
         }
         int page = start / mPageSize;
