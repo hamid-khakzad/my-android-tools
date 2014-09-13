@@ -55,13 +55,15 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     @Override
     public final LoaderResult<D> loadInBackground() {
         D data = null;
+        boolean isRefresh = mIsRefresh;
         try {
-            data = loadInBackgroundImpl(mIsRefresh);
+            data = loadInBackgroundImpl(isRefresh);
         }catch (Exception e) {
             mLoadedResult = new LoaderResult<D>(e,null);
             return mLoadedResult;
         }
         mLoadedResult = new LoaderResult<D>(null,data);
+        mLoadedResult.mIsRefresh = isRefresh;
         return mLoadedResult;
     }
 

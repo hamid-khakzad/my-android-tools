@@ -11,14 +11,14 @@ public abstract class BaseLoaderCallbacks<D> implements LoaderManager.LoaderCall
     @Override
     public final void onLoadFinished(Loader<LoaderResult<D>> loaderResultLoader, LoaderResult<D> dLoaderResult) {
         if(dLoaderResult == null) {
-            onLoadFinished(loaderResultLoader,null,null,true);
+            onLoadFinished(loaderResultLoader,null,null,true,false);
         }else {
             boolean isNew = dLoaderResult.mIsNew;
             dLoaderResult.mIsNew = false;
-            onLoadFinished(loaderResultLoader,dLoaderResult.getData(),dLoaderResult.getException(),isNew);
+            onLoadFinished(loaderResultLoader,dLoaderResult.getData(),dLoaderResult.getException(),isNew,dLoaderResult.mIsRefresh);
         }
     }
 
-    protected abstract void onLoadFinished(Loader<LoaderResult<D>> loader,D result,Exception e,boolean isNew);
+    protected abstract void onLoadFinished(Loader<LoaderResult<D>> loader,D result,Exception e,boolean isNew,boolean isRefresh);
 
 }
