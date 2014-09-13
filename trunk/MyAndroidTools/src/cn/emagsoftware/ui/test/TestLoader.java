@@ -9,20 +9,25 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import cn.emagsoftware.ui.adapterview.BaseLoader;
+import cn.emagsoftware.ui.adapterview.BasePageLoader;
 import cn.emagsoftware.ui.adapterview.DataHolder;
 
 /**
  * Created by Wendell on 14-8-22.
  */
-public class TestLoader extends BaseLoader {
+public class TestLoader extends BasePageLoader {
 
     public TestLoader(Context context) {
-        super(context);
+        super(context,20);
     }
 
     @Override
-    protected List<DataHolder> loadInBackgroundImpl(boolean isRefresh) throws Exception {
+    protected int loadCountInBackground() throws Exception {
+        return -1;
+    }
+
+    @Override
+    protected List<DataHolder> loadPageInBackground(boolean isRefresh, int start, int page) throws Exception {
         Thread.sleep(8000);
         int count = 20;
         List<DataHolder> holders = new ArrayList<DataHolder>(count);
