@@ -56,6 +56,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
             data = loadInBackgroundImpl(isRefresh);
         }catch (Exception e) {
             mLoadedResult = new LoaderResult<D>(e,null);
+            mLoadedResult.mIsRefresh = isRefresh;
             return mLoadedResult;
         }
         mLoadedResult = new LoaderResult<D>(null,data);
@@ -68,7 +69,9 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         if(mLoadedResult != null && mLoadedResult == data) {
             Exception exception = data.getException();
             if(exception != null) {
+                boolean isRefresh = data.mIsRefresh;
                 data = new LoaderResult<D>(exception,mResult==null?null:mResult.getData());
+                data.mIsRefresh = isRefresh;
             }
             mLoadedResult = null;
             deliverLoadedResult(data);
