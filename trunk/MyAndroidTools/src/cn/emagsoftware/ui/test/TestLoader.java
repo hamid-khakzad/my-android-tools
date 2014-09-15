@@ -11,6 +11,7 @@ import java.util.List;
 
 import cn.emagsoftware.ui.adapterview.BasePageLoader;
 import cn.emagsoftware.ui.adapterview.DataHolder;
+import cn.emagsoftware.util.MathUtilities;
 
 /**
  * Created by Wendell on 14-8-22.
@@ -28,7 +29,10 @@ public class TestLoader extends BasePageLoader {
 
     @Override
     protected List<DataHolder> loadPageInBackground(boolean isRefresh, int start, int page) throws Exception {
-        Thread.sleep(8000);
+        Thread.sleep(3000);
+        if(MathUtilities.Random(3) == 2) {
+            throw new Exception("test");
+        }
         int count = 20;
         List<DataHolder> holders = new ArrayList<DataHolder>(count);
         for(int i = 0;i < count;i++) {
