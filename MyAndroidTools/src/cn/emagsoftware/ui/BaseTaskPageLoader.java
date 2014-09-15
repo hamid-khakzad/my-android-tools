@@ -162,9 +162,11 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
         return false;
     }
 
-    public boolean isException() {
+    public boolean isPageException() {
         if(mResult != null) {
-            return mResult.getException() != null;
+            if(!mResult.mIsRefresh) {
+                return mResult.getException() != null;
+            }
         }
         return false;
     }
