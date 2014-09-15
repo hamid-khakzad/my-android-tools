@@ -16,6 +16,8 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
+import android.text.TextUtils;
+
 import cn.emagsoftware.util.LogManager;
 
 /**
@@ -184,10 +186,15 @@ public abstract class WifiCallback
                                 }
                             }
                         }
-                        // 移除搜索到的相同WLAN热点
+                        // 移除隐藏WLAN热点、相同WLAN热点
                         for (int i = 0; i < results.size(); i++)
                         {
                             ScanResult curr = results.get(i);
+                            if(TextUtils.isEmpty(curr.SSID)) {
+                                results.remove(i);
+                                i--;
+                                continue;
+                            }
                             for (int j = 0; j < i; j++)
                             {
                                 ScanResult pre = results.get(j);
