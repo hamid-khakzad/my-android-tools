@@ -40,7 +40,7 @@ public class TestLoader extends BasePageLoader {
                 @Override
                 public View onCreateView(Context context, int position, Object data) {
                     TextView text = new TextView(context);
-                    text.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,140));
+                    text.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,80));
                     text.setGravity(Gravity.CENTER_VERTICAL);
                     text.setText("POSITION:" + position);
                     return text;
