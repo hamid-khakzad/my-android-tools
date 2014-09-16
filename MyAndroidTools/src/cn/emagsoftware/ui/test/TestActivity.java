@@ -14,6 +14,7 @@ import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.AdapterView;
@@ -36,6 +37,11 @@ public class TestActivity extends ActionBarActivity
         swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
         swiper.setColorSchemeColors(Color.parseColor("#ff33b5e5"),Color.parseColor("#ff99cc00"),Color.parseColor("#ffffbb33"),Color.parseColor("#ffff4444"));
         final ListView list = (ListView)findViewById(R.id.list);
+        loading = new TextView(this);
+        loading.setGravity(Gravity.CENTER);
+        loading.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,60));
+        list.addFooterView(loading,null,false);
+        loading.setVisibility(View.GONE);
         final GenericAdapter adapter = new GenericAdapter(this);
         list.setAdapter(adapter);
         swiper.setRefreshing(true);
@@ -61,17 +67,9 @@ public class TestActivity extends ActionBarActivity
                 TestLoader testLoader = (TestLoader)loader;
                 // 添加/删除Footer
                 if(testLoader.isLoadedAll()) {
-                    if(loading != null) {
-                        list.removeFooterView(loading);
-                        loading = null;
-                    }
+                    loading.setVisibility(View.GONE);
                 }else {
-                    if(loading == null) {
-                        loading = new TextView(TestActivity.this);
-                        loading.setGravity(Gravity.CENTER);
-                        loading.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,100));
-                        list.addFooterView(loading,null,false);
-                    }
+                    loading.setVisibility(View.VISIBLE);
                     loading.setText("loading...");
                 }
                 // 处理异常
