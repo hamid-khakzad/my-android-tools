@@ -37,13 +37,11 @@ public class TestActivity extends ActionBarActivity
         swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
         swiper.setColorSchemeColors(Color.parseColor("#ff33b5e5"),Color.parseColor("#ff99cc00"),Color.parseColor("#ffffbb33"),Color.parseColor("#ffff4444"));
         final ListView list = (ListView)findViewById(R.id.list);
-        loading = new TextView(this);
-        loading.setGravity(Gravity.CENTER);
-        loading.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,60));
-        list.addFooterView(loading,null,false);
-        loading.setVisibility(View.GONE);
         final GenericAdapter adapter = new GenericAdapter(this);
+        View temp = new View(this);
+        list.addFooterView(temp); // 兼容Android 2.x，Android 2.x第一次调用addFooterView必须在setAdapter之前
         list.setAdapter(adapter);
+        list.removeFooterView(temp);
         swiper.setRefreshing(true);
         if(savedInstanceState == null) {
             swiper.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -67,9 +65,17 @@ public class TestActivity extends ActionBarActivity
                 TestLoader testLoader = (TestLoader)loader;
                 // 添加/删除Footer
                 if(testLoader.isLoadedAll()) {
-                    loading.setVisibility(View.GONE);
+                    if(loading != null) {
+                        list.removeFooterView(loading);
+                        loading = null;
+                    }
                 }else {
-                    loading.setVisibility(View.VISIBLE);
+                    if(loading == null) {
+                        loading = new TextView(TestActivity.this);
+                        loading.setGravity(Gravity.CENTER);
+                        loading.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,60));
+                        list.addFooterView(loading,null,false);
+                    }
                     loading.setText("loading...");
                 }
                 // 处理异常
