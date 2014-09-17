@@ -73,7 +73,7 @@ public class TestActivity extends ActionBarActivity
                     if(loading == null) {
                         loading = new TextView(TestActivity.this);
                         loading.setGravity(Gravity.CENTER);
-                        loading.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,60));
+                        loading.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,100));
                         list.addFooterView(loading,null,false);
                     }
                     loading.setText("loading...");
