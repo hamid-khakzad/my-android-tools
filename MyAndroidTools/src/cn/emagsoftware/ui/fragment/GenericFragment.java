@@ -21,6 +21,10 @@ public class GenericFragment extends Fragment {
         isViewDetached = false;
     }
 
+    /**
+     * @deprecated 通过判断findFragmentById或findFragmentByTag的值是否为null来决定是否添加Fragment会更全面
+     * @return
+     */
     public boolean isViewDetached()
     {
         return isViewDetached;
