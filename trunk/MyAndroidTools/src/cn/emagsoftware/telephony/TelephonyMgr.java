@@ -186,6 +186,36 @@ public final class TelephonyMgr
     }
 
     /**
+     * <p>获取内置存储的File，与getExternalStorageDirectory()不同的是，getExternalStorageDirectory()返回的是系统最优的存储路径，不能保证一定是内置存储，尽管在大部分机器上是</>
+     * @param context
+     * @return 若无内置存储时返回null
+     * @throws ReflectHiddenFuncException
+     */
+    public static File getOwnStorageDirectory(Context context) throws ReflectHiddenFuncException {
+        StorageManager storageManager = (StorageManager)context.getSystemService(Context.STORAGE_SERVICE);
+        try {
+            Method getVolumeList = storageManager.getClass().getMethod("getVolumeList");
+            Object[] storageVolumes = (Object[])getVolumeList.invoke(storageManager);
+            for(Object storageVolume : storageVolumes) {
+                Method method = storageVolume.getClass().getMethod("isRemovable");
+                boolean isRemovable = (Boolean)method.invoke(storageVolume);
+                if(!isRemovable) {
+                    method = storageVolume.getClass().getMethod("getPath");
+                    String path = (String)method.invoke(storageVolume);
+                    return new File(path);
+                }
+            }
+            return null;
+        }catch (NoSuchMethodException e) {
+            throw new ReflectHiddenFuncException(e);
+        }catch (IllegalAccessException e) {
+            throw new ReflectHiddenFuncException(e);
+        }catch (InvocationTargetException e) {
+            throw new ReflectHiddenFuncException(e);
+        }
+    }
+
+    /**
      * <p>获取外置SD卡的File</>
      * @param context
      * @return 若无外置SD卡槽时返回null
