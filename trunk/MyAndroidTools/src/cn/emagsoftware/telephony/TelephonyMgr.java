@@ -192,6 +192,8 @@ public final class TelephonyMgr
      * @throws ReflectHiddenFuncException
      */
     public static File getOwnStorageDirectory(Context context) throws ReflectHiddenFuncException {
+        if(getSDKVersion() < Build.VERSION_CODES.HONEYCOMB)
+            return null;
         StorageManager storageManager = (StorageManager)context.getSystemService(Context.STORAGE_SERVICE);
         try {
             Method getVolumeList = storageManager.getClass().getMethod("getVolumeList");
@@ -222,6 +224,8 @@ public final class TelephonyMgr
      * @throws ReflectHiddenFuncException
      */
     public static File getSdCardDirectory(Context context) throws ReflectHiddenFuncException {
+        if(getSDKVersion() < Build.VERSION_CODES.HONEYCOMB)
+            return getExternalStorageDirectory();
         StorageManager storageManager = (StorageManager)context.getSystemService(Context.STORAGE_SERVICE);
         try {
             Method getVolumeList = storageManager.getClass().getMethod("getVolumeList");
