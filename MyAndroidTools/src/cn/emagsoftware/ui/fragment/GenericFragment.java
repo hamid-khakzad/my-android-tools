@@ -5,17 +5,34 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
+
+import cn.emagsoftware.util.LogManager;
 
 /**
  * Created by Wendell on 13-8-26.
  */
 public class GenericFragment extends Fragment {
+
+    private static final Field sChildFragmentManagerField;
+    static {
+        Field f = null;
+        try {
+            f = Fragment.class.getDeclaredField("mChildFragmentManager");
+            f.setAccessible(true);
+        }catch (NoSuchFieldException e) {
+            LogManager.logE(GenericFragment.class,"Error getting mChildFragmentManager field",e);
+        }
+        sChildFragmentManagerField = f;
+    }
 
     private boolean isViewDetached = false;
     private BroadcastReceiver refreshReceiver = null;
@@ -75,6 +92,18 @@ public class GenericFragment extends Fragment {
     }
 
     @Override
+    public void onDetach() {
+        super.onDetach();
+        if(sChildFragmentManagerField != null) {
+            try {
+                sChildFragmentManagerField.set(this, null);
+            }catch (Exception e) {
+                LogManager.logE(GenericFragment.class,"Error setting mChildFragmentManager field",e);
+            }
+        }
+    }
+
+    @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if(refreshToken != null) {
@@ -119,6 +148,19 @@ public class GenericFragment extends Fragment {
             intent.putExtra("DATA",bundle);
         }
         context.sendStickyBroadcast(intent);
+    }
+
+    public void refresh() {
+        final int id = getId();
+        final FragmentTransaction ft = getFragmentManager().beginTransaction();
+        final String tag = getTag();
+        getFragmentManager().beginTransaction().remove(this).commitAllowingStateLoss();
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                ft.add(id,GenericFragment.this,tag).commitAllowingStateLoss();
+            }
+        });
     }
 
 }
