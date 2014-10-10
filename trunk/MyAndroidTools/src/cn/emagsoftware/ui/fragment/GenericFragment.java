@@ -8,9 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 
 import java.lang.reflect.Field;
 import java.util.UUID;
@@ -35,60 +32,88 @@ public class GenericFragment extends Fragment {
     }
 
     private boolean isViewDetached = false;
-    private BroadcastReceiver refreshReceiver = null;
-    private String refreshToken = null;
+    private String[] refreshTypes = null;
+    private String[] refreshTokens = null;
+    private BroadcastReceiver[] refreshReceivers = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if(savedInstanceState != null) {
-            refreshToken = savedInstanceState.getString("genericfragment:support:refreshtoken");
+            refreshTypes = savedInstanceState.getStringArray("genericfragment:support:refreshtypes");
+            refreshTokens = savedInstanceState.getStringArray("genericfragment:support:refreshtokens");
+            if(refreshTokens != null) {
+                for(int i = 0;i < refreshTokens.length;i++) {
+                    if(refreshTokens[i] == null) {
+                        refreshTokens[i] = "";
+                    }
+                }
+            }
+        }
+        if(refreshTypes == null) {
+            refreshTypes = getRefreshTypes();
+            if(refreshTypes != null) {
+                refreshTypes = refreshTypes.clone();
+                refreshTokens = new String[refreshTypes.length];
+            }
         }
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = super.onCreateView(inflater, container, savedInstanceState);
-        String refreshType = getRefreshType();
-        if(refreshType != null) {
-            refreshReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    String token = intent.getStringExtra("TOKEN");
-                    if(token == null) {
-                        return;
+    public void onStart() {
+        super.onStart();
+        if(refreshTypes != null) {
+            refreshReceivers = new BroadcastReceiver[refreshTypes.length];
+            for(int i = 0;i < refreshTypes.length;i++) {
+                final int index = i;
+                refreshReceivers[i] = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        String token = intent.getStringExtra("TOKEN");
+                        if(token == null || token.equals("")) {
+                            return;
+                        }
+                        if(refreshTokens[index] == null && isInitialStickyBroadcast()) {
+                            refreshTokens[index] = token;
+                            return;
+                        }
+                        if(!token.equals(refreshTokens[index])) {
+                            refreshTokens[index] = token;
+                            onRefresh(refreshTypes[index],intent.getBundleExtra("DATA"));
+                        }
                     }
-                    if(refreshToken == null) {
-                        refreshToken = token;
-                        return;
-                    }
-                    if(!refreshToken.equals(token)) {
-                        refreshToken = token;
-                        onRefresh(intent.getBundleExtra("DATA"));
-                    }
-                }
-            };
-            IntentFilter intentFilter = new IntentFilter();
-            intentFilter.addAction(getActivity().getPackageName() + "@" + refreshType);
-            getActivity().registerReceiver(refreshReceiver, intentFilter);
+                };
+                IntentFilter intentFilter = new IntentFilter();
+                intentFilter.addAction(getActivity().getPackageName() + "@" + refreshTypes[i]);
+                getActivity().registerReceiver(refreshReceivers[i], intentFilter);
+            }
         }
-        return view;
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(refreshReceivers != null) {
+            Context context = getActivity();
+            for(BroadcastReceiver refreshReceiver:refreshReceivers) {
+                context.unregisterReceiver(refreshReceiver);
+            }
+            refreshReceivers = null;
+        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         isViewDetached = true;
-        if(refreshReceiver != null) {
-            getActivity().unregisterReceiver(refreshReceiver);
-            refreshReceiver = null;
-        }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         isViewDetached = false;
+        refreshTypes = null;
+        refreshTokens = null;
     }
 
     @Override
@@ -106,8 +131,9 @@ public class GenericFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        if(refreshToken != null) {
-            outState.putString("genericfragment:support:refreshtoken",refreshToken);
+        if(refreshTypes != null) {
+            outState.putStringArray("genericfragment:support:refreshtypes",refreshTypes);
+            outState.putStringArray("genericfragment:support:refreshtokens",refreshTokens);
         }
     }
 
@@ -121,18 +147,19 @@ public class GenericFragment extends Fragment {
     }
 
     /**
-     * <p>通过重写该方法以返回刷新类型，返回null表示不需要被通知刷新</>
+     * <p>通过重写该方法以返回所有刷新类型，返回null表示不需要被通知刷新</>
      * @return
      */
-    protected String getRefreshType() {
+    protected String[] getRefreshTypes() {
         return null;
     }
 
     /**
      * <p>通知刷新的回调方法</>
+     * @param refreshType
      * @param bundle
      */
-    protected void onRefresh(Bundle bundle) {
+    protected void onRefresh(String refreshType,Bundle bundle) {
     }
 
     /**
@@ -154,11 +181,11 @@ public class GenericFragment extends Fragment {
         final int id = getId();
         final FragmentTransaction ft = getFragmentManager().beginTransaction();
         final String tag = getTag();
-        getFragmentManager().beginTransaction().remove(this).commitAllowingStateLoss();
+        getFragmentManager().beginTransaction().remove(this).commit();
         new Handler().post(new Runnable() {
             @Override
             public void run() {
-                ft.add(id,GenericFragment.this,tag).commitAllowingStateLoss();
+                ft.add(id,GenericFragment.this,tag).commit();
             }
         });
     }
