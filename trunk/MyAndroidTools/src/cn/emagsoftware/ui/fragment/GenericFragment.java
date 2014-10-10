@@ -42,13 +42,6 @@ public class GenericFragment extends Fragment {
         if(savedInstanceState != null) {
             refreshTypes = savedInstanceState.getStringArray("genericfragment:support:refreshtypes");
             refreshTokens = savedInstanceState.getStringArray("genericfragment:support:refreshtokens");
-            if(refreshTokens != null) {
-                for(int i = 0;i < refreshTokens.length;i++) {
-                    if(refreshTokens[i] == null) {
-                        refreshTokens[i] = "";
-                    }
-                }
-            }
         }
         if(refreshTypes == null) {
             refreshTypes = getRefreshTypes();
@@ -91,15 +84,34 @@ public class GenericFragment extends Fragment {
     }
 
     @Override
-    public void onStop() {
-        super.onStop();
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        clearReceivers();
+        if(refreshTypes != null) {
+            outState.putStringArray("genericfragment:support:refreshtypes",refreshTypes);
+            outState.putStringArray("genericfragment:support:refreshtokens",refreshTokens);
+        }
+    }
+
+    private void clearReceivers() {
         if(refreshReceivers != null) {
             Context context = getActivity();
             for(BroadcastReceiver refreshReceiver:refreshReceivers) {
                 context.unregisterReceiver(refreshReceiver);
             }
             refreshReceivers = null;
+            for(int i = 0;i < refreshTokens.length;i++) {
+                if(refreshTokens[i] == null) {
+                    refreshTokens[i] = "";
+                }
+            }
         }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        clearReceivers();
     }
 
     @Override
@@ -125,15 +137,6 @@ public class GenericFragment extends Fragment {
             }catch (Exception e) {
                 LogManager.logE(GenericFragment.class,"Error setting mChildFragmentManager field",e);
             }
-        }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if(refreshTypes != null) {
-            outState.putStringArray("genericfragment:support:refreshtypes",refreshTypes);
-            outState.putStringArray("genericfragment:support:refreshtokens",refreshTokens);
         }
     }
 
