@@ -16,7 +16,6 @@ public class RecreateFragmentActivity extends FragmentActivity
     @Override
     protected final void onCreate(Bundle savedInstanceState)
     {
-        super.onCreate(savedInstanceState);
         RecreateManager.addRecreateActivity(this);
         Intent intent = getIntent();
         outState = intent.getBundleExtra(EXTRA_RECREATEFRAGMENTACTIVITY_OUTSTATE);
@@ -32,12 +31,12 @@ public class RecreateFragmentActivity extends FragmentActivity
 
     protected void onCreateImpl(Bundle savedInstanceState)
     {
+        super.onCreate(savedInstanceState);
     }
 
     @Override
     protected final void onStart()
     {
-        super.onStart();
         onStartImpl();
         if (outState != null)
         {
@@ -48,12 +47,12 @@ public class RecreateFragmentActivity extends FragmentActivity
 
     protected void onStartImpl()
     {
+        super.onStart();
     }
 
     @Override
     protected final void onResume()
     {
-        super.onResume();
         isAtFront = true;
         if (shouldRecreateNextTime)
         {
@@ -66,6 +65,7 @@ public class RecreateFragmentActivity extends FragmentActivity
 
     protected void onResumeImpl()
     {
+        super.onResume();
     }
 
     @Override
