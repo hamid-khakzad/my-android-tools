@@ -58,7 +58,7 @@ public class TestActivity extends ActionBarActivity
             @Override
             protected void onLoadFinished(Loader<LoaderResult<List<DataHolder>>> loader, List<DataHolder> result, Exception e, boolean isNew, boolean isRefresh) {
                 TestLoader testLoader = (TestLoader)loader;
-                if(!testLoader.isLoading()) { // 可能存在刷新的情况
+                if(!testLoader.isLoading() || !isRefresh) { // 可能存在刷新的情况
                     swiper.setRefreshing(false);
                 }
                 adapter.setDataHolders(result);
