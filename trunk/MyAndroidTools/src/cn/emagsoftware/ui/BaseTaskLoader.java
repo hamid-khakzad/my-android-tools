@@ -10,6 +10,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
 
     private ForceLoadContentObserver mObserver = null;
     private boolean mIsRefresh = false;
+    private boolean mIsRefreshing = false;
     private boolean mIsLoading = false;
     private LoaderResult<D> mLoadedResult = null;
     LoaderResult<D> mResult = null;
@@ -24,24 +25,27 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     public void forceLoad() {
         mIsRefresh = false;
         super.forceLoad();
+        mIsRefreshing = false;
+        mIsLoading = true;
     }
 
     public void forceRefresh() {
         mIsRefresh = true;
         super.forceLoad();
-    }
-
-    @Override
-    protected void onForceLoad() {
-        super.onForceLoad();
+        mIsRefreshing = true;
         mIsLoading = true;
     }
 
     @Override
     public boolean cancelLoad() {
         boolean returnVal = super.cancelLoad();
+        mIsRefreshing = false;
         mIsLoading = false;
         return returnVal;
+    }
+
+    public boolean isRefreshing() {
+        return mIsRefreshing;
     }
 
     public boolean isLoading() {
@@ -110,6 +114,7 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
     }
 
     protected void deliverLoadedResult(LoaderResult<D> data) {
+        mIsRefreshing = false;
         mIsLoading = false;
         deliverResult(data);
     }
