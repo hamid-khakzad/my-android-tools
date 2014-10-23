@@ -26,7 +26,6 @@ import java.util.List;
 public class TestActivity extends ActionBarActivity
 {
 
-    private SwipeRefreshLayout swiper = null;
     private TextView loading = null;
 
     @Override
@@ -34,7 +33,7 @@ public class TestActivity extends ActionBarActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
-        swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
+        final SwipeRefreshLayout swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
         swiper.setColorSchemeColors(Color.parseColor("#ff33b5e5"),Color.parseColor("#ff99cc00"),Color.parseColor("#ffffbb33"),Color.parseColor("#ffff4444"));
         final ListView list = (ListView)findViewById(R.id.list);
         final GenericAdapter adapter = new GenericAdapter(this);
@@ -43,16 +42,14 @@ public class TestActivity extends ActionBarActivity
         list.setAdapter(adapter);
         list.removeFooterView(temp);
         swiper.setRefreshing(true);
-        if(savedInstanceState == null) {
-            swiper.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                @Override
-                public void onRefresh() {
-                    Loader loader = getSupportLoaderManager().getLoader(0);
-                    TestLoader testLoader = (TestLoader)loader;
-                    testLoader.forceRefresh();
-                }
-            });
-        }
+        swiper.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Loader loader = getSupportLoaderManager().getLoader(0);
+                TestLoader testLoader = (TestLoader)loader;
+                testLoader.forceRefresh();
+            }
+        });
         getSupportLoaderManager().initLoader(0,null,new BaseLoaderCallbacks<List<DataHolder>>() {
             @Override
             public Loader<LoaderResult<List<DataHolder>>> onCreateLoader(int i, Bundle bundle) {
@@ -60,9 +57,11 @@ public class TestActivity extends ActionBarActivity
             }
             @Override
             protected void onLoadFinished(Loader<LoaderResult<List<DataHolder>>> loader, List<DataHolder> result, Exception e, boolean isNew, boolean isRefresh) {
-                swiper.setRefreshing(false);
-                adapter.setDataHolders(result);
                 TestLoader testLoader = (TestLoader)loader;
+                if(!testLoader.isLoading()) { // 可能存在刷新的情况
+                    swiper.setRefreshing(false);
+                }
+                adapter.setDataHolders(result);
                 // 添加/删除Footer
                 if(testLoader.isLoadedAll()) {
                     if(loading != null) {
@@ -110,26 +109,6 @@ public class TestActivity extends ActionBarActivity
                 }
             }
         });
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        swiper.setRefreshing(savedInstanceState.getBoolean("isRefresh"));
-        swiper.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                Loader loader = getSupportLoaderManager().getLoader(0);
-                TestLoader testLoader = (TestLoader)loader;
-                testLoader.forceRefresh();
-            }
-        });
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean("isRefresh",swiper.isRefreshing());
     }
 
 }
