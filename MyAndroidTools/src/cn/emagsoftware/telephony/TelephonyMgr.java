@@ -22,6 +22,8 @@ public final class TelephonyMgr
 
     public static boolean isDualMode() throws ReflectHiddenFuncException
     {
+        boolean isDualMode = HtcDualModeSupport.isDualMode();
+        if(isDualMode) return isDualMode;
         try
         {
             Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
@@ -30,8 +32,7 @@ public final class TelephonyMgr
             if ("Philips T939".equals(model))
                 return method.invoke(null, "phone0") != null && method.invoke(null, "phone1") != null;
             else
-                return (method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null)
-                        || (method.invoke(null, "telephony.registry") != null && method.invoke(null, "telephony.registry2") != null);
+                return (method.invoke(null, "phone") != null && method.invoke(null, "phone2") != null) || (method.invoke(null, "telephony.registry") != null && method.invoke(null, "telephony.registry2") != null);
         } catch (ClassNotFoundException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -53,8 +54,14 @@ public final class TelephonyMgr
         return tm.getDeviceId();
     }
 
-    public static String getSubscriberId(int cardIndex) throws ReflectHiddenFuncException
+    public static String getSubscriberId(Context context) {
+        TelephonyManager tm = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
+        return tm.getSubscriberId();
+    }
+
+    public static String getSubscriberId(Context context,int cardIndex) throws ReflectHiddenFuncException
     {
+        boolean isDualMode = isDualMode();
         String name = null;
         String model = Build.MODEL;
         if (cardIndex == 0)
@@ -65,37 +72,45 @@ public final class TelephonyMgr
                 name = "iphonesubinfo";
         } else if (cardIndex == 1)
         {
+            if (!isDualMode)
+                return null;
             if ("Philips T939".equals(model))
                 name = "iphonesubinfo1";
             else
                 name = "iphonesubinfo2";
         } else
             throw new IllegalArgumentException("cardIndex can only be 0 or 1");
-        try
-        {
-            Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
-            method.setAccessible(true);
-            Object param = method.invoke(null, name);
-            if (param == null && cardIndex == 1)
-                param = method.invoke(null, "iphonesubinfo1");
-            if (param == null)
-                return null;
-            method = Class.forName("com.android.internal.telephony.IPhoneSubInfo$Stub").getDeclaredMethod("asInterface", IBinder.class);
-            method.setAccessible(true);
-            Object stubObj = method.invoke(null, param);
-            return (String) stubObj.getClass().getMethod("getSubscriberId").invoke(stubObj);
-        } catch (ClassNotFoundException e)
-        {
-            throw new ReflectHiddenFuncException(e);
-        } catch (NoSuchMethodException e)
-        {
-            throw new ReflectHiddenFuncException(e);
-        } catch (InvocationTargetException e)
-        {
-            throw new ReflectHiddenFuncException(e);
-        } catch (IllegalAccessException e)
-        {
-            throw new ReflectHiddenFuncException(e);
+        if(isDualMode) {
+            if(HtcDualModeSupport.isDualMode())
+                return HtcDualModeSupport.getSubscriberId(cardIndex);
+            try
+            {
+                Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
+                method.setAccessible(true);
+                Object param = method.invoke(null, name);
+                if (param == null && cardIndex == 1)
+                    param = method.invoke(null, "iphonesubinfo1");
+                if (param == null)
+                    return null;
+                method = Class.forName("com.android.internal.telephony.IPhoneSubInfo$Stub").getDeclaredMethod("asInterface", IBinder.class);
+                method.setAccessible(true);
+                Object stubObj = method.invoke(null, param);
+                return (String) stubObj.getClass().getMethod("getSubscriberId").invoke(stubObj);
+            } catch (ClassNotFoundException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            } catch (NoSuchMethodException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            } catch (InvocationTargetException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            } catch (IllegalAccessException e)
+            {
+                throw new ReflectHiddenFuncException(e);
+            }
+        }else {
+            return getSubscriberId(context);
         }
     }
 
