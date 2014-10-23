@@ -26,6 +26,22 @@ public final class SmsUtils
     }
 
     /**
+     * <p>发送短信</>
+     * @param context
+     * @param to
+     * @param text
+     * @param ssc
+     * @param timeout 单位为毫秒，设为0将永不超时
+     */
+    public static void sendTextMessage(Context context, String to, String text, SmsSendCallback ssc, int timeout) {
+        sendMessageImpl(context,to,(short)-1,text,ssc,timeout);
+    }
+
+    public static void sendDataMessage(Context context, String to, short port, byte[] data, SmsSendCallback ssc, int timeout) {
+        sendMessageImpl(context,to,port,data,ssc,timeout);
+    }
+
+    /**
      * <p>发送短信
      * 
      * @param context
@@ -43,6 +59,36 @@ public final class SmsUtils
 
     public static void sendDataMessage(Context context, String to, short port, byte[] data, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException {
         sendMessageImpl(context,to,port,data,ssc,timeout,cardIndex);
+    }
+
+    private static void sendMessageImpl(Context context, String to, short port, Object data, SmsSendCallback ssc, int timeout) {
+        if(sendMessageToken == Integer.MAX_VALUE) sendMessageToken = 0;
+        sendMessageToken = sendMessageToken + 1;
+        Intent sentIntent = new Intent(SMS_SENT_ACTION);
+        sentIntent.putExtra("SMS_TOKEN", sendMessageToken);
+        PendingIntent sentPI = PendingIntent.getBroadcast(context, sendMessageToken, sentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        /*
+         * Intent deliveredIntent = new Intent(SMS_DELIVERED_ACTION); deliveredIntent.putExtra("SMS_TOKEN", sendMessageToken);
+         * PendingIntent deliveredPI = PendingIntent.getBroadcast(context,0,deliveredIntent,PendingIntent.FLAG_ONE_SHOT);
+         */
+        if (ssc != null)
+        {
+            ssc.setToken(sendMessageToken);
+            ssc.setAutoUnregisterActions(new int[] { SmsSendCallback.ACTION_SENT });
+            ssc.registerMe(timeout);
+        }
+        try {
+            if(data instanceof String){
+                SmsManager.getDefault().sendTextMessage(to, null, (String)data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+            }else{
+                SmsManager.getDefault().sendDataMessage(to, null, port, (byte[])data, sentPI, null); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+            }
+        } catch (RuntimeException e)
+        {
+            if (ssc != null)
+                ssc.unregisterMe();
+            throw e;
+        }
     }
 
     private static void sendMessageImpl(Context context, String to, short port, Object data, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException {
@@ -85,6 +131,14 @@ public final class SmsUtils
         {
             if (isDualMode)
             {
+                if(HtcDualModeSupport.isDualMode()) {
+                    if(data instanceof String){
+                        HtcDualModeSupport.sendTextMessage(to, null, (String)data, sentPI, null, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }else{
+                        HtcDualModeSupport.sendDataMessage(to, null, port, (byte[])data, sentPI, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }
+                    return;
+                }
                 try
                 {
                     Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
