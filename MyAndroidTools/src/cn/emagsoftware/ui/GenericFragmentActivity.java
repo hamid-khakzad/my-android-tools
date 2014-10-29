@@ -1,46 +1,33 @@
-package cn.emagsoftware.ui.fragment;
+package cn.emagsoftware.ui;
 
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
+import android.support.v4.app.FragmentActivity;
 
-import java.lang.reflect.Field;
-
-import cn.emagsoftware.util.LogManager;
+import cn.emagsoftware.telephony.TelephonyMgr;
 
 /**
- * Created by Wendell on 13-8-26.
+ * Created by Wendell on 14-10-29.
  */
-public class GenericFragment extends Fragment {
+public class GenericFragmentActivity extends FragmentActivity {
 
-    private static final Field sChildFragmentManagerField;
-    static {
-        Field f = null;
-        try {
-            f = Fragment.class.getDeclaredField("mChildFragmentManager");
-            f.setAccessible(true);
-        }catch (NoSuchFieldException e) {
-            LogManager.logE(GenericFragment.class,"Error getting mChildFragmentManager field",e);
-        }
-        sChildFragmentManagerField = f;
-    }
-
-    private boolean isViewDetached = false;
     private String[] refreshTypes = null;
     private String[] refreshTokens = null;
     private BroadcastReceiver[] refreshReceivers = null;
+    private boolean isResumed = false;
+    private boolean shouldRecreateNextTime = false;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if(savedInstanceState != null) {
-            refreshTypes = savedInstanceState.getStringArray("genericfragment:support:refreshtypes");
-            refreshTokens = savedInstanceState.getStringArray("genericfragment:support:refreshtokens");
+            refreshTypes = savedInstanceState.getStringArray("genericactivity:support:refreshtypes");
+            refreshTokens = savedInstanceState.getStringArray("genericactivity:support:refreshtokens");
         }
         if(refreshTypes == null) {
             refreshTypes = getRefreshTypes();
@@ -52,7 +39,7 @@ public class GenericFragment extends Fragment {
     }
 
     @Override
-    public void onResume() {
+    protected void onResume() {
         super.onResume();
         if(refreshTypes != null) {
             refreshReceivers = new BroadcastReceiver[refreshTypes.length];
@@ -76,27 +63,32 @@ public class GenericFragment extends Fragment {
                     }
                 };
                 IntentFilter intentFilter = new IntentFilter();
-                intentFilter.addAction(getActivity().getPackageName() + "@" + refreshTypes[i]);
-                getActivity().registerReceiver(refreshReceivers[i], intentFilter);
+                intentFilter.addAction(getPackageName() + "@" + refreshTypes[i]);
+                registerReceiver(refreshReceivers[i], intentFilter);
             }
+        }
+        isResumed = true;
+        if(shouldRecreateNextTime) {
+            shouldRecreateNextTime = false;
+            recreateMeImmediately();
+            return;
         }
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         clearReceivers();
         if(refreshTypes != null) {
-            outState.putStringArray("genericfragment:support:refreshtypes",refreshTypes);
-            outState.putStringArray("genericfragment:support:refreshtokens",refreshTokens);
+            outState.putStringArray("genericactivity:support:refreshtypes",refreshTypes);
+            outState.putStringArray("genericactivity:support:refreshtokens",refreshTokens);
         }
     }
 
     private void clearReceivers() {
         if(refreshReceivers != null) {
-            Context context = getActivity();
             for(BroadcastReceiver refreshReceiver:refreshReceivers) {
-                context.unregisterReceiver(refreshReceiver);
+                unregisterReceiver(refreshReceiver);
             }
             refreshReceivers = null;
             for(int i = 0;i < refreshTokens.length;i++) {
@@ -108,44 +100,17 @@ public class GenericFragment extends Fragment {
     }
 
     @Override
-    public void onPause() {
+    protected void onPause() {
         super.onPause();
         clearReceivers();
+        isResumed = false;
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        isViewDetached = true;
-    }
-
-    @Override
-    public void onDestroy() {
+    protected void onDestroy() {
         super.onDestroy();
-        isViewDetached = false;
         refreshTypes = null;
         refreshTokens = null;
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        if(sChildFragmentManagerField != null) {
-            try {
-                sChildFragmentManagerField.set(this, null);
-            }catch (Exception e) {
-                LogManager.logE(GenericFragment.class,"Error setting mChildFragmentManager field",e);
-            }
-        }
-    }
-
-    /**
-     * @deprecated 通过判断findFragmentById或findFragmentByTag的值是否为null来决定是否添加Fragment会更全面
-     * @return
-     */
-    public boolean isViewDetached()
-    {
-        return isViewDetached;
     }
 
     /**
@@ -164,17 +129,24 @@ public class GenericFragment extends Fragment {
     protected void onRefresh(String refreshType,Bundle bundle) {
     }
 
-    public void refresh() {
-        final int id = getId();
-        final FragmentTransaction ft = getFragmentManager().beginTransaction();
-        final String tag = getTag();
-        getFragmentManager().beginTransaction().remove(this).commit();
-        new Handler().post(new Runnable() {
-            @Override
-            public void run() {
-                ft.add(id,GenericFragment.this,tag).commit();
-            }
-        });
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    @Override
+    public void recreate() {
+        if(TelephonyMgr.getSDKVersion() >= Build.VERSION_CODES.HONEYCOMB) {
+            super.recreate();
+        }else {
+            if(isResumed) recreateMeImmediately();
+            else shouldRecreateNextTime = true;
+        }
+    }
+
+    private void recreateMeImmediately() {
+        Intent intent = getIntent();
+        overridePendingTransition(0, 0);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        finish();
+        overridePendingTransition(0, 0);
+        startActivity(intent);
     }
 
 }
