@@ -488,7 +488,9 @@ public final class WifiUtils
             throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         } catch (IllegalAccessException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -507,7 +509,9 @@ public final class WifiUtils
             throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         } catch (IllegalAccessException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -535,7 +539,9 @@ public final class WifiUtils
             throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         } catch (IllegalAccessException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -681,7 +687,9 @@ public final class WifiUtils
         {
             if (callback != null)
                 callback.unregisterMe();
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         } catch (IllegalAccessException e)
         {
             if (callback != null)

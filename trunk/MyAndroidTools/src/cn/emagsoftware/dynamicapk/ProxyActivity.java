@@ -63,7 +63,9 @@ public class ProxyActivity extends Activity {
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
         Resources superRes = super.getResources();
         mResources = new Resources(mAssetManager, superRes.getDisplayMetrics(),
@@ -113,7 +115,9 @@ public class ProxyActivity extends Activity {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
 
@@ -227,7 +231,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
 
@@ -240,7 +246,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
     @Override
@@ -252,7 +260,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
 
@@ -264,7 +274,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
         super.onPause();
     }
@@ -277,7 +289,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
         super.onStop();
     }
@@ -290,7 +304,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
         super.onDestroy();
     }
@@ -303,7 +319,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -317,7 +335,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
 
@@ -330,7 +350,9 @@ public class ProxyActivity extends Activity {
         } catch(IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
 

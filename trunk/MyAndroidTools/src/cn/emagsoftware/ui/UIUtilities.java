@@ -40,7 +40,9 @@ public final class UIUtilities
             throw new RuntimeException(e);
         } catch (InvocationTargetException e)
         {
-            throw new RuntimeException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new RuntimeException(cause);
         }
     }
 
