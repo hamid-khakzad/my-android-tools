@@ -174,7 +174,9 @@ public final class SmsUtils
                     throw new ReflectHiddenFuncException(e);
                 } catch (InvocationTargetException e)
                 {
-                    throw new ReflectHiddenFuncException(e);
+                    Throwable cause = e.getCause();
+                    if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+                    else throw new ReflectHiddenFuncException(cause);
                 } catch (IllegalAccessException e)
                 {
                     throw new ReflectHiddenFuncException(e);

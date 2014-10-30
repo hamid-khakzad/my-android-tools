@@ -41,7 +41,9 @@ public final class TelephonyMgr
             throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         } catch (IllegalAccessException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -104,7 +106,9 @@ public final class TelephonyMgr
                 throw new ReflectHiddenFuncException(e);
             } catch (InvocationTargetException e)
             {
-                throw new ReflectHiddenFuncException(e);
+                Throwable cause = e.getCause();
+                if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+                else throw new ReflectHiddenFuncException(cause);
             } catch (IllegalAccessException e)
             {
                 throw new ReflectHiddenFuncException(e);
@@ -160,7 +164,9 @@ public final class TelephonyMgr
             throw new ReflectHiddenFuncException(e);
         } catch (InvocationTargetException e)
         {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         } catch (IllegalAccessException e)
         {
             throw new ReflectHiddenFuncException(e);
@@ -228,7 +234,9 @@ public final class TelephonyMgr
         }catch (IllegalAccessException e) {
             throw new ReflectHiddenFuncException(e);
         }catch (InvocationTargetException e) {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         }
     }
 
@@ -262,7 +270,9 @@ public final class TelephonyMgr
         }catch (IllegalAccessException e) {
             throw new ReflectHiddenFuncException(e);
         }catch (InvocationTargetException e) {
-            throw new ReflectHiddenFuncException(e);
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException) throw (RuntimeException)cause;
+            else throw new ReflectHiddenFuncException(cause);
         }
     }
 
