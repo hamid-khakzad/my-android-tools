@@ -3,7 +3,7 @@ package cn.emagsoftware.ui.theme;
 import java.util.List;
 
 import cn.emagsoftware.content.pm.PackageMgr;
-import cn.emagsoftware.ui.recreate.RecreateManager;
+import cn.emagsoftware.ui.GenericActivity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -40,16 +40,16 @@ public final class ThemeManager
     }
 
     /**
-     * <p>改变主题
-     * 
+     * <p>改变主题</>
+     * @param context
      * @param packageName 需要应用的主题包名，如果要使用默认主题，可传null
      * @param generalThemeName 主题包styles.xml中通用主题样式的名字，如果没有通用主题样式，可传null
      */
-    public static void changeTheme(String packageName, String generalThemeName)
+    public static void changeTheme(Context context, String packageName, String generalThemeName)
     {
         CUR_PACKAGENAME = packageName;
         CUR_GENERALTHEME_NAME = generalThemeName;
-        RecreateManager.recreateAll();
+        GenericActivity.sendRefresh(context,ThemeActivity.REFRESH_TYPE_THEME_CHANGED,null);
     }
 
     public static String getCurPackageName()

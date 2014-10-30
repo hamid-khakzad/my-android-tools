@@ -2,6 +2,7 @@ package cn.emagsoftware.ui.test;
 
 import cn.emagsoftware.ui.BaseLoaderCallbacks;
 import cn.emagsoftware.ui.BaseTaskPageLoader;
+import cn.emagsoftware.ui.GenericActionBarActivity;
 import cn.emagsoftware.ui.LoaderResult;
 import cn.emagsoftware.ui.R;
 import cn.emagsoftware.ui.ToastManager;
@@ -12,7 +13,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarActivity;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AbsListView;
@@ -23,7 +23,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-public class TestActivity extends ActionBarActivity
+public class TestActivity extends GenericActionBarActivity
 {
 
     private TextView loading = null;
