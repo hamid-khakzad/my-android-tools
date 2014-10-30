@@ -58,7 +58,7 @@ public class GenericActionBarActivity extends ActionBarActivity {
                         }
                         if(!token.equals(refreshTokens[index])) {
                             refreshTokens[index] = token;
-                            onRefresh(refreshTypes[index],intent.getBundleExtra("DATA"));
+                            dispatchRefresh(refreshTypes[index],intent.getBundleExtra("DATA"));
                         }
                     }
                 };
@@ -119,6 +119,10 @@ public class GenericActionBarActivity extends ActionBarActivity {
      */
     protected String[] getRefreshTypes() {
         return null;
+    }
+
+    protected void dispatchRefresh(String refreshType,Bundle bundle) {
+        onRefresh(refreshType,bundle);
     }
 
     /**
