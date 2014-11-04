@@ -958,6 +958,8 @@ public class BugFixedSlidingPaneLayout extends ViewGroup {
             if (lp.dimPaint != null) {
                 lp.dimPaint.setColorFilter(null);
             }
+            ViewCompat.setLayerType(v, ViewCompat.LAYER_TYPE_NONE, null);
+            invalidateChildRegion(v);
             final DisableLayerRunnable dlr = new DisableLayerRunnable(v);
             mPostedRunnables.add(dlr);
             ViewCompat.postOnAnimation(this, dlr);
