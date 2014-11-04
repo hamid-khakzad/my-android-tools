@@ -958,8 +958,6 @@ public class BugFixedSlidingPaneLayout extends ViewGroup {
             if (lp.dimPaint != null) {
                 lp.dimPaint.setColorFilter(null);
             }
-            ViewCompat.setLayerType(v, ViewCompat.LAYER_TYPE_NONE, null);
-            invalidateChildRegion(v);
             final DisableLayerRunnable dlr = new DisableLayerRunnable(v);
             mPostedRunnables.add(dlr);
             ViewCompat.postOnAnimation(this, dlr);
@@ -1508,6 +1506,7 @@ public class BugFixedSlidingPaneLayout extends ViewGroup {
         @Override
         public void run() {
             if (mChildView.getParent() == BugFixedSlidingPaneLayout.this) {
+                ViewCompat.setLayerType(mChildView, ViewCompat.LAYER_TYPE_SOFTWARE, null);
                 ViewCompat.setLayerType(mChildView, ViewCompat.LAYER_TYPE_NONE, null);
                 invalidateChildRegion(mChildView);
             }
