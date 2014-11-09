@@ -11,8 +11,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Scroller;
 
-import cn.emagsoftware.util.LogManager;
-
 /**
  * Created by Wendell on 14-11-8.
  */
@@ -24,6 +22,8 @@ public class PullListView extends ListView {
     private Integer mPullViewHeight = null;
     private float mLastY = -1;
     private Scroller mScroller;
+    private OnPullListener mOnPullListener = null;
+    private int mState = 0; //0:normal,1:begin pull,2:ready,3:refreshing
 
     public PullListView(Context context) {
         super(context);
@@ -84,9 +84,24 @@ public class PullListView extends ListView {
                     final float deltaY = ev.getRawY() - mLastY;
                     mLastY = ev.getRawY();
                     if(mPullViewHeight != null) {
-                        if(getFirstVisiblePosition() == 0 && (mPullView.getHeight() > 0 || deltaY > 0)) {
+                        if(getFirstVisiblePosition() == 0) {
                             int curHeight = (int)(deltaY/OFFSET_RADIO + mPullView.getHeight());
-                            updatePullViewHeight(curHeight);
+                            if(deltaY > 0) {
+                                updatePullViewHeight(curHeight);
+                                checkState(curHeight,true);
+                            }else if(deltaY < 0) {
+                                if(mState == 3) {
+                                    if(curHeight >= mPullViewHeight) {
+                                        updatePullViewHeight(curHeight);
+                                        checkState(curHeight,false);
+                                        setSelection(0); // 避免super.onTouchEvent(ev)的影响
+                                    }
+                                }else if(curHeight >= 0) {
+                                    updatePullViewHeight(curHeight);
+                                    checkState(curHeight,false);
+                                    setSelection(0); // 避免super.onTouchEvent(ev)的影响
+                                }
+                            }
                         }
                     }
                 }
@@ -94,15 +109,29 @@ public class PullListView extends ListView {
             default:
                 mLastY = -1;
                 if(mPullViewHeight != null) {
-                    int curHeight = mPullView.getHeight();
-                    if(curHeight > 0) {
+                    if(mState != 0) {
                         if(getFirstVisiblePosition() == 0) {
-                            int finalHeight = 0;
-                            if(curHeight > mPullViewHeight) finalHeight = mPullViewHeight;
-                            mScroller.startScroll(0, curHeight, 0, finalHeight - curHeight, 400);
-                            invalidate();
+                            int curHeight = mPullView.getHeight();
+                            if(mState == 3) {
+                                mScroller.startScroll(0, curHeight, 0, mPullViewHeight - curHeight, 400);
+                                invalidate();
+                            }else {
+                                int finalHeight = 0;
+                                if(mState == 2) {
+                                    mState = 3;
+                                    if(mOnPullListener != null) mOnPullListener.onRefreshing(mPullView);
+                                    finalHeight = mPullViewHeight;
+                                }
+                                mScroller.startScroll(0, curHeight, 0, finalHeight - curHeight, 400);
+                                invalidate();
+                            }
                         }else {
-                            updatePullViewHeight(0);
+                            if(mState == 3) updatePullViewHeight(mPullViewHeight);
+                            else updatePullViewHeight(0);
+                        }
+                        if(mState != 3) {
+                            mState = 0;
+                            if(mOnPullListener != null) mOnPullListener.onCanceled(mPullView);
                         }
                     }
                 }
@@ -111,15 +140,38 @@ public class PullListView extends ListView {
         return super.onTouchEvent(ev);
     }
 
+    private void checkState(int curHeight,boolean isIncreased) {
+        if(mState != 3) {
+            if(curHeight > mPullViewHeight) {
+                if(mState != 2) {
+                    mState = 2;
+                    if(mOnPullListener != null) mOnPullListener.onReady(mPullView);
+                }
+            }else {
+                if(mState != 1) {
+                    mState = 1;
+                    if(mOnPullListener != null) mOnPullListener.onBeginPull(mPullView);
+                }
+            }
+            if(mOnPullListener != null) mOnPullListener.onScroll(mPullView,(float)curHeight/mPullViewHeight,isIncreased);
+        }
+    }
+
     @Override
     public void computeScroll() {
         if(mScroller.computeScrollOffset()) {
-            int y = mScroller.getCurrY();
-            LogManager.logE(PullListView.class,"=========y:" + y);
-            updatePullViewHeight(y);
+            updatePullViewHeight(mScroller.getCurrY());
             postInvalidate();
         }
         super.computeScroll();
+    }
+
+    public void setOnPullListener(OnPullListener listener) {
+        this.mOnPullListener = listener;
+    }
+
+    public void setRefreshing(boolean refreshing) {
+
     }
 
 }
