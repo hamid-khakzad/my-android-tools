@@ -3,7 +3,7 @@
       package="cn.emagsoftware.ui"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="7" />
+    <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="21" />
     
     <application android:theme="@style/Theme.AppCompat.Light" android:label="MyAndroidTools">
         <activity android:name=".test.TestActivity">
