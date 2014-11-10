@@ -8,17 +8,16 @@ import cn.emagsoftware.ui.R;
 import cn.emagsoftware.ui.ToastManager;
 import cn.emagsoftware.ui.adapterview.DataHolder;
 import cn.emagsoftware.ui.adapterview.GenericAdapter;
+import cn.emagsoftware.ui.pulltorefresh.OnPullListener;
+import cn.emagsoftware.ui.pulltorefresh.PullListView;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.List;
@@ -33,21 +32,40 @@ public class TestActivity extends GenericActionBarActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test);
-        final SwipeRefreshLayout swiper = (SwipeRefreshLayout)findViewById(R.id.swiper);
-        swiper.setColorSchemeColors(Color.parseColor("#ff33b5e5"),Color.parseColor("#ff99cc00"),Color.parseColor("#ffffbb33"),Color.parseColor("#ffff4444"));
-        final ListView list = (ListView)findViewById(R.id.list);
+        final PullListView list = (PullListView)findViewById(R.id.list);
         final GenericAdapter adapter = new GenericAdapter(this);
+        TextView pullView = new TextView(this);
+        pullView.setText("Refresh...");
+        pullView.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
+        pullView.setPadding(0,0,0,35);
+        pullView.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,130));
+        list.addPullView(pullView);
         View temp = new View(this);
         list.addFooterView(temp); // 兼容Android 2.x，Android 2.x第一次调用addFooterView必须在setAdapter之前
         list.setAdapter(adapter);
         list.removeFooterView(temp);
-        swiper.setRefreshing(true);
-        swiper.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        list.setRefreshing(true);
+        list.setOnPullListener(new OnPullListener() {
             @Override
-            public void onRefresh() {
+            public void onBeginPull(View pullView) {
+                ((TextView)pullView).setText("Pull to refresh...");
+            }
+            @Override
+            public void onReady(View pullView) {
+                ((TextView)pullView).setText("Release to refresh...");
+            }
+            @Override
+            public void onRefreshing(View pullView) {
+                ((TextView)pullView).setText("Refresh...");
                 Loader loader = getSupportLoaderManager().getLoader(0);
-                TestLoader testLoader = (TestLoader)loader;
+                TestLoader testLoader = (TestLoader) loader;
                 testLoader.forceRefresh();
+            }
+            @Override
+            public void onCanceled(View pullView) {
+            }
+            @Override
+            public void onScroll(View pullView, float progress, boolean isIncreased) {
             }
         });
         getSupportLoaderManager().initLoader(0,null,new BaseLoaderCallbacks<List<DataHolder>>() {
@@ -59,7 +77,7 @@ public class TestActivity extends GenericActionBarActivity
             protected void onLoadFinished(Loader<LoaderResult<List<DataHolder>>> loader, List<DataHolder> result, Exception e, boolean isNew, boolean isRefresh) {
                 TestLoader testLoader = (TestLoader)loader;
                 if(!testLoader.isRefreshing()) { // 可能存在刷新的情况
-                    swiper.setRefreshing(false);
+                    list.setRefreshing(false);
                 }
                 adapter.setDataHolders(result);
                 // 添加/删除Footer
