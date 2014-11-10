@@ -47,7 +47,7 @@ public class PullListView extends ListView {
             @Override
             public void onGlobalLayout() {
                 mPullViewHeight = mPullView.getHeight();
-                updatePullViewHeight(0);
+                if(mState == 0) updatePullViewHeight(0);
                 mPullView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
             }
         });
@@ -171,7 +171,28 @@ public class PullListView extends ListView {
     }
 
     public void setRefreshing(boolean refreshing) {
-
+        if(mPullView == null) throw new IllegalStateException("pull view is null,call addPullView first.");
+        if(refreshing) {
+            if(mState != 3) {
+                mState = 3;
+                if(mOnPullListener != null) mOnPullListener.onRefreshing(mPullView);
+                if(mPullViewHeight != null) {
+                    int curHeight = mPullView.getHeight();
+                    mScroller.startScroll(0, curHeight, 0, mPullViewHeight - curHeight, 400);
+                    invalidate();
+                }
+                setSelection(0);
+            }
+        }else {
+            if(mState == 3) {
+                mState = 0;
+                if(mPullViewHeight != null) {
+                    int curHeight = mPullView.getHeight();
+                    mScroller.startScroll(0, curHeight, 0, -curHeight, 400);
+                    invalidate();
+                }
+            }
+        }
     }
 
 }
