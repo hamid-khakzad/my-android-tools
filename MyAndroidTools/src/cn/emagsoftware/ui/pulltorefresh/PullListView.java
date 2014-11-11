@@ -19,6 +19,7 @@ public class PullListView extends ListView {
     private static final float OFFSET_RADIO = 1.8f;
 
     private View mPullView = null;
+    private ViewGroup mPullViewWrapper = null;
     private Integer mPullViewHeight = null;
     private float mLastY = -1;
     private Scroller mScroller;
@@ -43,31 +44,33 @@ public class PullListView extends ListView {
     public void addPullView(View v) {
         if(getHeaderViewsCount() > 0) throw new IllegalStateException("addPullView can be called only once and before addHeaderView.");
         mPullView = v;
-        mPullView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        mPullViewWrapper = new PullViewWrapper(getContext());
+        mPullViewWrapper.addView(mPullView);
+        mPullViewWrapper.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
-                mPullViewHeight = mPullView.getHeight();
+                mPullViewHeight = mPullViewWrapper.getHeight();
                 if(mState == 0) updatePullViewHeight(0);
-                mPullView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                mPullViewWrapper.getViewTreeObserver().removeGlobalOnLayoutListener(this);
             }
         });
-        LinearLayout wrap = new LinearLayout(getContext());
-        wrap.addView(mPullView);
-        wrap.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,LayoutParams.WRAP_CONTENT));
-        addHeaderView(wrap,null,false);
+        LinearLayout topWrapper = new LinearLayout(getContext());
+        mPullViewWrapper.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT));
+        topWrapper.addView(mPullViewWrapper);
+        topWrapper.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,LayoutParams.WRAP_CONTENT));
+        addHeaderView(topWrapper,null,false);
     }
 
     private void updatePullViewHeight(int height) {
         if(height < 0) height = 0;
-        ViewGroup.LayoutParams layoutParams = mPullView.getLayoutParams();
-        if(layoutParams == null) layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT,height);
-        else layoutParams.height = height;
-        mPullView.setLayoutParams(layoutParams);
+        ViewGroup.LayoutParams layoutParams = mPullViewWrapper.getLayoutParams();
+        layoutParams.height = height;
+        mPullViewWrapper.setLayoutParams(layoutParams);
     }
 
     @Override
     public boolean removeHeaderView(View v) {
-        if(mPullView != null && mPullView.getParent() == v) throw new UnsupportedOperationException("current header view is pull view,could not be removed.");
+        if(mPullViewWrapper != null && mPullViewWrapper.getParent() == v) throw new UnsupportedOperationException("current header view is pull view,could not be removed.");
         return super.removeHeaderView(v);
     }
 
@@ -85,7 +88,7 @@ public class PullListView extends ListView {
                     mLastY = ev.getRawY();
                     if(mPullViewHeight != null) {
                         if(getFirstVisiblePosition() == 0) {
-                            int curHeight = (int)(deltaY/OFFSET_RADIO + mPullView.getHeight());
+                            int curHeight = (int)(deltaY/OFFSET_RADIO + mPullViewWrapper.getHeight());
                             if(deltaY > 0) {
                                 updatePullViewHeight(curHeight);
                                 checkState(curHeight,true);
@@ -111,7 +114,7 @@ public class PullListView extends ListView {
                 if(mPullViewHeight != null) {
                     if(mState != 0) {
                         if(getFirstVisiblePosition() == 0) {
-                            int curHeight = mPullView.getHeight();
+                            int curHeight = mPullViewWrapper.getHeight();
                             if(mState == 3) {
                                 mScroller.startScroll(0, curHeight, 0, mPullViewHeight - curHeight, 400);
                                 invalidate();
@@ -177,7 +180,7 @@ public class PullListView extends ListView {
                 mState = 3;
                 if(mOnPullListener != null) mOnPullListener.onRefreshing(mPullView);
                 if(mPullViewHeight != null) {
-                    int curHeight = mPullView.getHeight();
+                    int curHeight = mPullViewWrapper.getHeight();
                     mScroller.startScroll(0, curHeight, 0, mPullViewHeight - curHeight, 400);
                     invalidate();
                 }
@@ -187,7 +190,7 @@ public class PullListView extends ListView {
             if(mState == 3) {
                 mState = 0;
                 if(mPullViewHeight != null) {
-                    int curHeight = mPullView.getHeight();
+                    int curHeight = mPullViewWrapper.getHeight();
                     mScroller.startScroll(0, curHeight, 0, -curHeight, 400);
                     invalidate();
                 }

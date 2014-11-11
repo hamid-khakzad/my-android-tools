@@ -36,9 +36,8 @@ public class TestActivity extends GenericActionBarActivity
         final GenericAdapter adapter = new GenericAdapter(this);
         TextView pullView = new TextView(this);
         pullView.setText("Refresh...");
-        pullView.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
-        pullView.setPadding(0,0,0,35);
-        pullView.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,130));
+        pullView.setGravity(Gravity.CENTER);
+        pullView.setLayoutParams(new AbsListView.LayoutParams(AbsListView.LayoutParams.FILL_PARENT,140));
         list.addPullView(pullView);
         View temp = new View(this);
         list.addFooterView(temp); // 兼容Android 2.x，Android 2.x第一次调用addFooterView必须在setAdapter之前
