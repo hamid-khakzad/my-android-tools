@@ -25,6 +25,7 @@ public class PullListView extends ListView {
     private Scroller mScroller;
     private OnPullListener mOnPullListener = null;
     private int mState = 0; //0:normal,1:begin pull,2:ready,3:refreshing
+    private float mOffsetRadio = OFFSET_RADIO;
 
     public PullListView(Context context) {
         super(context);
@@ -78,17 +79,19 @@ public class PullListView extends ListView {
     public boolean onTouchEvent(MotionEvent ev) {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                mScroller.forceFinished(true);
                 mLastY = ev.getRawY();
                 break;
             case MotionEvent.ACTION_MOVE:
                 if(mLastY == -1) {
+                    mScroller.forceFinished(true);
                     mLastY = ev.getRawY();
                 }else {
                     final float deltaY = ev.getRawY() - mLastY;
                     mLastY = ev.getRawY();
                     if(mPullViewHeight != null) {
                         if(getFirstVisiblePosition() == 0) {
-                            int curHeight = (int)(deltaY/OFFSET_RADIO + mPullViewWrapper.getHeight());
+                            int curHeight = (int)(deltaY/mOffsetRadio + mPullViewWrapper.getHeight());
                             if(deltaY > 0) {
                                 updatePullViewHeight(curHeight);
                                 checkState(curHeight,true);
@@ -196,6 +199,11 @@ public class PullListView extends ListView {
                 }
             }
         }
+    }
+
+    public void setOffsetRadio(float offsetRadio) {
+        if(offsetRadio <= 0) throw new IllegalArgumentException("offsetRadio should > 0.");
+        this.mOffsetRadio = offsetRadio;
     }
 
 }
