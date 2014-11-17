@@ -155,8 +155,9 @@ public class PullListView extends ListView {
                 }
             }else {
                 if(mState != 1) {
+                    boolean isFirstPull = mState == 0;
                     mState = 1;
-                    if(mOnPullListener != null) mOnPullListener.onBeginPull(mPullView);
+                    if(mOnPullListener != null) mOnPullListener.onBeginPull(mPullView,isFirstPull);
                 }
             }
             if(mOnPullListener != null) mOnPullListener.onScroll(mPullView,(float)curHeight/mPullViewHeight,isIncreased);
