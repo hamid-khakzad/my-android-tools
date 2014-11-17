@@ -46,7 +46,7 @@ public class TestActivity extends GenericActionBarActivity
         list.setRefreshing(true);
         list.setOnPullListener(new OnPullListener() {
             @Override
-            public void onBeginPull(View pullView) {
+            public void onBeginPull(View pullView, boolean isFirstPull) {
                 ((TextView)pullView).setText("Pull to refresh...");
             }
             @Override
