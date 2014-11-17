@@ -7,7 +7,7 @@ import android.view.View;
  */
 public interface OnPullListener {
 
-    public void onBeginPull(View pullView);
+    public void onBeginPull(View pullView,boolean isFirstPull);
 
     public void onReady(View pullView);
 
