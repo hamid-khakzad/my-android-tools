@@ -1,7 +1,10 @@
 package cn.emagsoftware.ui;
 
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.AsyncTaskLoader;
+
+import cn.emagsoftware.database.sqlite.GenericSQLiteOpenHelper;
 
 /**
  * Created by Wendell on 14-8-20.
@@ -163,6 +166,24 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
             }
         }
         mResult = null;
+    }
+
+    public void addCacheInTransaction(SQLiteDatabase db,String[] deleteSqls,String[] addSqls) {
+        if(deleteSqls == null || deleteSqls.length == 0) throw new IllegalArgumentException("delete sqls is necessary.");
+        db.beginTransaction();
+        try {
+            for(String sql:deleteSqls) {
+                GenericSQLiteOpenHelper.execSQL(db,sql);
+            }
+            if(addSqls != null) {
+                for(String sql:addSqls) {
+                    GenericSQLiteOpenHelper.execSQL(db,sql);
+                }
+            }
+            db.setTransactionSuccessful();
+        }finally {
+            db.endTransaction();
+        }
     }
 
     protected abstract D loadInBackgroundImpl(boolean isRefresh) throws Exception;

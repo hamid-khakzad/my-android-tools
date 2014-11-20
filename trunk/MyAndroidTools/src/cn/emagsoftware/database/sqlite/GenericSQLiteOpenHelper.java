@@ -14,11 +14,20 @@ import android.database.sqlite.SQLiteOpenHelper;
  * generic sqlite open helper
  * 
  * @author Wendell
- * @version 1.2
+ * @version 1.5
  */
 public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
 {
 
+    /**
+     * <p>一般子类实现需要采用单例模式，原因如下：</>
+     * <p>1.SQLite不允许并发操作，并发操作会抛出异常，当前类的数据库操作做了同步，通过单例调用，能够避免异常</>
+     * <p>2.通过setWriteAheadLoggingEnabled(true)开启WAL模式后，单例同样能够做到多并发</>
+     * <p>3.单例通常不需要关闭数据库，从而提高了效率</>
+     * @param context
+     * @param dbName
+     * @param version
+     */
     public GenericSQLiteOpenHelper(Context context, String dbName, int version)
     {
         super(context, dbName, null, version);
@@ -33,17 +42,18 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
      * 
      * @param sql
      * @param selectionArgs
-     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      * @return
      */
-    public List<Map<String, String>> rawQuery(String sql, String[] selectionArgs, boolean closeDB)
+    public List<Map<String, String>> rawQuery(String sql, String[] selectionArgs)
     {
+        return rawQuery(getReadableDatabase(),sql,selectionArgs);
+    }
+
+    public static List<Map<String, String>> rawQuery(SQLiteDatabase db, String sql, String[] selectionArgs) {
         List<Map<String, String>> returnVal = new LinkedList<Map<String, String>>();
-        SQLiteDatabase db = null;
         Cursor cursor = null;
         try
         {
-            db = getReadableDatabase();
             cursor = db.rawQuery(sql, selectionArgs);
             int columnCount = cursor.getColumnCount();
             while (true)
@@ -61,15 +71,8 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
             }
         } finally
         {
-            try
-            {
-                if (cursor != null)
-                    cursor.close();
-            } finally
-            {
-                if (db != null && closeDB)
-                    db.close();
-            }
+            if (cursor != null)
+                cursor.close();
         }
     }
 
@@ -78,16 +81,17 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
      * 
      * @param sql
      * @param selectionArgs
-     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      * @return
      */
-    public Map<String, String> rawQueryForFirstRow(String sql, String[] selectionArgs, boolean closeDB)
+    public Map<String, String> rawQueryForFirstRow(String sql, String[] selectionArgs)
     {
-        SQLiteDatabase db = null;
+        return rawQueryForFirstRow(getReadableDatabase(),sql,selectionArgs);
+    }
+
+    public static Map<String, String> rawQueryForFirstRow(SQLiteDatabase db, String sql, String[] selectionArgs) {
         Cursor cursor = null;
         try
         {
-            db = getReadableDatabase();
             cursor = db.rawQuery(sql, selectionArgs);
             if (!cursor.moveToNext())
                 return null;
@@ -102,15 +106,8 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
             return row;
         } finally
         {
-            try
-            {
-                if (cursor != null)
-                    cursor.close();
-            } finally
-            {
-                if (db != null && closeDB)
-                    db.close();
-            }
+            if (cursor != null)
+                cursor.close();
         }
     }
 
@@ -119,17 +116,18 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
      * 
      * @param sql
      * @param selectionArgs
-     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      * @return
      */
-    public List<String> rawQueryForFirstField(String sql, String[] selectionArgs, boolean closeDB)
+    public List<String> rawQueryForFirstField(String sql, String[] selectionArgs)
     {
+        return rawQueryForFirstField(getReadableDatabase(),sql,selectionArgs);
+    }
+
+    public static List<String> rawQueryForFirstField(SQLiteDatabase db, String sql, String[] selectionArgs) {
         List<String> returnVal = new LinkedList<String>();
-        SQLiteDatabase db = null;
         Cursor cursor = null;
         try
         {
-            db = getReadableDatabase();
             cursor = db.rawQuery(sql, selectionArgs);
             while (true)
             {
@@ -140,15 +138,8 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
             }
         } finally
         {
-            try
-            {
-                if (cursor != null)
-                    cursor.close();
-            } finally
-            {
-                if (db != null && closeDB)
-                    db.close();
-            }
+            if (cursor != null)
+                cursor.close();
         }
     }
 
@@ -156,20 +147,14 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
      * <p>执行SQL
      * 
      * @param sql
-     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      */
-    public void execSQL(String sql, boolean closeDB)
+    public void execSQL(String sql)
     {
-        SQLiteDatabase db = null;
-        try
-        {
-            db = getWritableDatabase();
-            db.execSQL(sql);
-        } finally
-        {
-            if (db != null && closeDB)
-                db.close();
-        }
+        execSQL(getWritableDatabase(),sql);
+    }
+
+    public static void execSQL(SQLiteDatabase db, String sql) {
+        db.execSQL(sql);
     }
 
     /**
@@ -177,20 +162,14 @@ public abstract class GenericSQLiteOpenHelper extends SQLiteOpenHelper
      * 
      * @param sql
      * @param bindArgs
-     * @param closeDB 是否关闭数据库。出于效率考虑，应用程序可能会通过缓存当前实例的方式来缓存当前数据库，此时对当前数据库的操作完成后不应该关闭数据库
      */
-    public void execSQL(String sql, Object[] bindArgs, boolean closeDB)
+    public void execSQL(String sql, Object[] bindArgs)
     {
-        SQLiteDatabase db = null;
-        try
-        {
-            db = getWritableDatabase();
-            db.execSQL(sql, bindArgs);
-        } finally
-        {
-            if (db != null && closeDB)
-                db.close();
-        }
+        execSQL(getWritableDatabase(),sql,bindArgs);
+    }
+
+    public static void execSQL(SQLiteDatabase db, String sql, Object[] bindArgs) {
+        db.execSQL(sql, bindArgs);
     }
 
 }
