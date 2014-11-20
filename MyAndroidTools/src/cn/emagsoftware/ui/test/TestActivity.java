@@ -72,8 +72,9 @@ public class TestActivity extends GenericActionBarActivity
             public Loader<LoaderResult<List<DataHolder>>> onCreateLoader(int i, Bundle bundle) {
                 return new TestLoader(TestActivity.this);
             }
+
             @Override
-            protected void onLoadFinished(Loader<LoaderResult<List<DataHolder>>> loader, List<DataHolder> result, Exception e, boolean isNew, boolean isRefresh) {
+            protected void onLoadSuccess(Loader<LoaderResult<List<DataHolder>>> loader, List<DataHolder> result, boolean isRefresh) {
                 TestLoader testLoader = (TestLoader)loader;
                 if(!testLoader.isRefreshing()) { // 可能存在刷新的情况
                     list.setRefreshing(false);
@@ -94,26 +95,22 @@ public class TestActivity extends GenericActionBarActivity
                     }
                     loading.setText("loading...");
                 }
-                // 处理异常
-                if(e != null) {
-                    if(isRefresh) {
-                        if(isNew) {
-                            ToastManager.showLong(TestActivity.this,"error.");
-                        }
-                    }else {
-                        if(loading != null) {
-                            loading.setText("error.");
-                        }
-                    }
-                }
-                // 针对刷新成功的处理
-                if(isRefresh && isNew && e == null) {
+                if(isRefresh) {
                     list.setSelection(0);
                 }
             }
+
             @Override
-            public void onLoaderReset(Loader<LoaderResult<List<DataHolder>>> loaderResultLoader) {
-                adapter.setDataHolders(null);
+            protected void onLoadFailure(Loader<LoaderResult<List<DataHolder>>> loader, Exception e, boolean isRefresh) {
+                TestLoader testLoader = (TestLoader)loader;
+                if(!testLoader.isRefreshing()) { // 可能存在刷新的情况
+                    list.setRefreshing(false);
+                }
+                if(isRefresh || loading == null) {
+                    ToastManager.showLong(TestActivity.this,"error.");
+                }else {
+                    loading.setText("error.");
+                }
             }
         });
         BaseTaskPageLoader.bindPageLoading(list,new BaseTaskPageLoader.OnPageLoading() {

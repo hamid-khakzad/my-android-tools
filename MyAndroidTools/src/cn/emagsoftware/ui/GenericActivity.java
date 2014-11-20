@@ -22,7 +22,7 @@ public class GenericActivity extends Activity {
     private String[] refreshTokens = null;
     private BroadcastReceiver[] refreshReceivers = null;
     private boolean isResumed = false;
-    private boolean shouldRecreateNextTime = false;
+    private boolean shouldRefreshNextTime = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,9 +70,9 @@ public class GenericActivity extends Activity {
             }
         }
         isResumed = true;
-        if(shouldRecreateNextTime) {
-            shouldRecreateNextTime = false;
-            recreateMeImmediately();
+        if(shouldRefreshNextTime) {
+            shouldRefreshNextTime = false;
+            refreshImmediately();
             return;
         }
     }
@@ -156,12 +156,16 @@ public class GenericActivity extends Activity {
         if(TelephonyMgr.getSDKVersion() >= Build.VERSION_CODES.HONEYCOMB) {
             super.recreate();
         }else {
-            if(isResumed) recreateMeImmediately();
-            else shouldRecreateNextTime = true;
+            refresh();
         }
     }
 
-    private void recreateMeImmediately() {
+    public void refresh() {
+        if(isResumed) refreshImmediately();
+        else shouldRefreshNextTime = true;
+    }
+
+    private void refreshImmediately() {
         Intent intent = getIntent();
         overridePendingTransition(0, 0);
         intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
