@@ -23,11 +23,6 @@ public class TestLoader extends BasePageLoader {
     }
 
     @Override
-    protected int loadCountInBackground() throws Exception {
-        return -1;
-    }
-
-    @Override
     protected List<DataHolder> loadPageInBackground(boolean isRefresh, int start, int page) throws Exception {
         Thread.sleep(3000);
         if(MathUtilities.Random(3) == 2) {

@@ -27,13 +27,7 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
 
     protected abstract int getCount(D data);
     /**
-     * <p>加载当前已经存在的个数，返回-1表示使用当前缓存的个数，此时loadPageInBackground只需返回下一页的数据；若返回其他值，表示返回了更新的个数，则loadPageInBackground需要返回所有的数据</>
-     * @return
-     * @throws Exception
-     */
-    protected abstract int loadCountInBackground() throws Exception;
-    /**
-     * <p>加载分页数据，至于返回单页数据还是所有数据，依照loadCountInBackground的返回值而定</>
+     * <p>加载分页数据</>
      * @param isRefresh
      * @param start 起始位置，最小为0
      * @param page 起始页，最小为1
@@ -68,19 +62,7 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
             start = 0;
             mStartSign = start;
         }else {
-            int calcStart = loadCountInBackground();
-            if(calcStart != -1 && calcStart < 0) {
-                throw new IllegalStateException("loadCountInBackground()'value should (==-1 or >=0)");
-            }
-            extraCountCheckInBackground(calcStart);
-            if(calcStart == -1) {
-                mStartSign = -1;
-            }else {
-                if(start != calcStart) {
-                    start = 0;
-                }
-                mStartSign = start;
-            }
+            mStartSign = -1;
             if(isRefresh) { //并不是刻意检查取消，此时isRefresh为true会导致逻辑问题
                 return null;
             }
@@ -90,16 +72,13 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
         return loadPageInBackground(isRefresh,start,page);
     }
 
-    protected void extraCountCheckInBackground(int count) {
-    }
-
     @Override
     protected void deliverLoadedResult(LoaderResult<D> data) {
         if(data != null && data.getException() == null) {
             D pageData = data.getData();
+            mCurPageSize = pageData==null?0:getCount(pageData);
             if(mStartSign == -1) {
                 D oldData = mResult==null?null:mResult.getData();
-                mCurPageSize = pageData==null?0:getCount(pageData);
                 if(oldData != null) {
                     if(pageData == null) {
                         data = new LoaderResult<D>(null,oldData);
@@ -110,12 +89,6 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
                         }
                         data = new LoaderResult<D>(null,allData);
                     }
-                }
-            }else {
-                int allSize = pageData==null?0:getCount(pageData);
-                mCurPageSize = allSize - mStartSign;
-                if(mCurPageSize < 0) {
-                    mCurPageSize = 0;
                 }
             }
         }

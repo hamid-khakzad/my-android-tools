@@ -28,14 +28,6 @@ public abstract class BaseCursorPageLoader extends BaseTaskPageLoader<Cursor> {
     }
 
     @Override
-    protected void extraCountCheckInBackground(int count) {
-        super.extraCountCheckInBackground(count);
-        if(count == -1) {
-            throw new IllegalStateException("in BaseCursorPageLoader,loadCountInBackground()'value can not be -1");
-        }
-    }
-
-    @Override
     protected int getCount(Cursor data) {
         return data.getCount();
     }
