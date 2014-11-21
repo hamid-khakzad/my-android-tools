@@ -34,7 +34,7 @@ public abstract class BaseCursorPageLoader extends BaseTaskPageLoader<Cursor> {
 
     @Override
     protected Cursor merge(Cursor old, Cursor add) {
-        return null;
+        return add;
     }
 
 }
