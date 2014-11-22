@@ -21,10 +21,6 @@ public abstract class BasePageLoader extends BaseTaskPageLoader<List<DataHolder>
     }
 
     @Override
-    protected void registerContentObserver(List<DataHolder> data, ForceLoadContentObserver observer) {
-    }
-
-    @Override
     protected int getCount(List<DataHolder> data) {
         return data.size();
     }

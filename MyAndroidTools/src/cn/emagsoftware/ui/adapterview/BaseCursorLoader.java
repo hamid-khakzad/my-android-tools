@@ -21,10 +21,4 @@ public abstract class BaseCursorLoader extends BaseTaskLoader<Cursor> {
         }
     }
 
-    @Override
-    protected void registerContentObserver(Cursor data, ForceLoadContentObserver observer) {
-        data.getCount();
-        data.registerContentObserver(observer);
-    }
-
 }
