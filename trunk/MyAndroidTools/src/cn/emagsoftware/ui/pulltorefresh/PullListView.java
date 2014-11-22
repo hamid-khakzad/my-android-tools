@@ -5,7 +5,6 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -19,7 +18,7 @@ public class PullListView extends ListView {
     private static final float OFFSET_RADIO = 1.8f;
 
     private View mPullView = null;
-    private ViewGroup mPullViewWrapper = null;
+    private PullViewWrapper mPullViewWrapper = null;
     private Integer mPullViewHeight = null;
     private float mLastY = -1;
     private Scroller mScroller;
@@ -38,7 +37,7 @@ public class PullListView extends ListView {
     }
 
     public PullListView(Context context, AttributeSet attrs, int defStyle) {
-        super(context,attrs,defStyle);
+        super(context, attrs, defStyle);
         mScroller = new Scroller(context, new DecelerateInterpolator());
     }
 
@@ -47,19 +46,27 @@ public class PullListView extends ListView {
         mPullView = v;
         mPullViewWrapper = new PullViewWrapper(getContext());
         mPullViewWrapper.addView(mPullView);
-        mPullViewWrapper.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        mPullViewWrapper.setOnPullViewLayoutListener(new PullViewWrapper.OnPullViewLayoutListener() {
             @Override
-            public void onGlobalLayout() {
-                mPullViewHeight = mPullViewWrapper.getHeight();
-                if(mState == 0) updatePullViewHeight(0);
-                mPullViewWrapper.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+            public void onPullViewLayout(View pullView) {
+                if(mPullViewHeight == null) {
+                    mPullViewHeight = pullView.getHeight();
+                    if(mState == 0) {
+                        pullView.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                updatePullViewHeight(0);
+                            }
+                        });
+                    }
+                }
             }
         });
         LinearLayout topWrapper = new LinearLayout(getContext());
         mPullViewWrapper.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT));
         topWrapper.addView(mPullViewWrapper);
         topWrapper.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,LayoutParams.WRAP_CONTENT));
-        addHeaderView(topWrapper,null,false);
+        addHeaderView(topWrapper, null, false);
     }
 
     private void updatePullViewHeight(int height) {
