@@ -19,8 +19,4 @@ public abstract class BaseLoader extends BaseTaskLoader<List<DataHolder>> {
     protected void onReleaseData(List<DataHolder> data) {
     }
 
-    @Override
-    protected void registerContentObserver(List<DataHolder> data, ForceLoadContentObserver observer) {
-    }
-
 }

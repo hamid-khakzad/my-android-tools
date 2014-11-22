@@ -186,8 +186,15 @@ public abstract class BaseTaskLoader<D> extends AsyncTaskLoader<LoaderResult<D>>
         }
     }
 
+    /**
+     * <p>注册Observer可能会使LoaderManager.LoaderCallbacks的实现复杂化或出现逻辑问题，故该方法不强制子类实现</>
+     * @param data
+     * @param observer
+     */
+    protected void registerContentObserver(D data,ForceLoadContentObserver observer) {
+    }
+
     protected abstract D loadInBackgroundImpl(boolean isRefresh) throws Exception;
     protected abstract void onReleaseData(D data);
-    protected abstract void registerContentObserver(D data,ForceLoadContentObserver observer);
 
 }

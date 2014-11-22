@@ -22,12 +22,6 @@ public abstract class BaseCursorPageLoader extends BaseTaskPageLoader<Cursor> {
     }
 
     @Override
-    protected void registerContentObserver(Cursor data, ForceLoadContentObserver observer) {
-        data.getCount();
-        data.registerContentObserver(observer);
-    }
-
-    @Override
     protected int getCount(Cursor data) {
         return data.getCount();
     }
