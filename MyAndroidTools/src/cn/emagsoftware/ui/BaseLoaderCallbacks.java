@@ -21,10 +21,13 @@ public abstract class BaseLoaderCallbacks<D> implements LoaderManager.LoaderCall
                 if(e == null) onLoadSuccess(loaderResultLoader,result,dLoaderResult.mIsRefresh);
                 else onLoadFailure(loaderResultLoader,e,dLoaderResult.mIsRefresh);
             }else {
-                if(e == null || dLoaderResult.mIsRefresh) onLoadSuccess(loaderResultLoader,result,false);
+                if(e == null) onLoadSuccess(loaderResultLoader,result,false);
                 else {
-                    if(result != null) onLoadSuccess(loaderResultLoader,result,false);
-                    onLoadFailure(loaderResultLoader,e,false);
+                    if(result == null) onLoadFailure(loaderResultLoader,e,false);
+                    else {
+                        onLoadSuccess(loaderResultLoader,result,false);
+                        if(!dLoaderResult.mIsRefresh) onLoadFailure(loaderResultLoader,e,false);
+                    }
                 }
             }
         }

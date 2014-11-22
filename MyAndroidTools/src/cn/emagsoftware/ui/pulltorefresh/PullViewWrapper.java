@@ -10,6 +10,8 @@ import android.view.ViewGroup;
  */
 class PullViewWrapper extends ViewGroup {
 
+    private OnPullViewLayoutListener mListener = null;
+
     public PullViewWrapper(Context context) {
         super(context);
     }
@@ -75,6 +77,15 @@ class PullViewWrapper extends ViewGroup {
         int left = getPaddingLeft();
         int top = getMeasuredHeight() - getPaddingBottom() - childHeight;
         child.layout(left,top,left + child.getMeasuredWidth(),top + childHeight);
+        if(mListener != null) mListener.onPullViewLayout(child);
+    }
+
+    public void setOnPullViewLayoutListener(OnPullViewLayoutListener listener) {
+        mListener = listener;
+    }
+
+    public static interface OnPullViewLayoutListener {
+        public void onPullViewLayout(View pullView);
     }
 
 }
