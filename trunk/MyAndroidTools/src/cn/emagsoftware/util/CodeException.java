@@ -46,13 +46,15 @@ public class CodeException extends Exception
         return code;
     }
 
+    public String getCodeAndMessage() {
+        return StringUtilities.toStringWhenNull(getLocalizedMessage(), "") + "[code:" + code + "]";
+    }
+
     @Override
     public String toString()
     {
-        // TODO Auto-generated method stub
         String name = getClass().getName();
-        String msg = StringUtilities.toStringWhenNull(getLocalizedMessage(), "");
-        return name + ": [code:" + code + "]" + msg;
+        return name + ": " + getCodeAndMessage();
     }
 
 }
