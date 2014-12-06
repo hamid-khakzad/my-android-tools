@@ -11,6 +11,7 @@ import com.nostra13.universalimageloader.core.imageaware.ImageAware;
 
 /**
  * Created by Wendell on 14-3-18.
+ * @deprecated 该类在ImageView的ScaleType发生改变时效果会不理想，可使用{@link com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer}代替，可使用View重叠解决FadeInBitmapDisplayer淡入显示时导致的空白问题
  */
 public class TransitionBitmapDisplayer implements BitmapDisplayer {
 
