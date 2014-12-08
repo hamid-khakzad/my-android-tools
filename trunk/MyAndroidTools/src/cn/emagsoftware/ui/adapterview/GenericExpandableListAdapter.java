@@ -16,21 +16,43 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     Context mContext       = null;
     private List<GroupDataHolder> mHolders = new ArrayList<GroupDataHolder>();
+    private int mGroupTypeCount = 1;
+    private int mChildTypeCount = 1;
 
     public GenericExpandableListAdapter(Context context)
     {
+        this(context,1,1);
+    }
+
+    public GenericExpandableListAdapter(Context context,int groupTypeCount,int childTypeCount) {
         if(context == null)
             throw new NullPointerException();
+        if (groupTypeCount <= 0)
+            throw new IllegalArgumentException("groupTypeCount should great than zero.");
+        if (childTypeCount <= 0)
+            throw new IllegalArgumentException("childTypeCount should great than zero.");
         mContext = context;
+        this.mGroupTypeCount = groupTypeCount;
+        this.mChildTypeCount = childTypeCount;
     }
 
     public GenericExpandableListAdapter(Context context,List<GroupDataHolder> holders)
     {
+        this(context,holders,1,1);
+    }
+
+    public GenericExpandableListAdapter(Context context,List<GroupDataHolder> holders,int groupTypeCount,int childTypeCount) {
         if(context == null)
             throw new NullPointerException();
+        if (groupTypeCount <= 0)
+            throw new IllegalArgumentException("groupTypeCount should great than zero.");
+        if (childTypeCount <= 0)
+            throw new IllegalArgumentException("childTypeCount should great than zero.");
         mContext = context;
         if(holders != null)
             mHolders = new ArrayList<GroupDataHolder>(holders);
+        this.mGroupTypeCount = groupTypeCount;
+        this.mChildTypeCount = childTypeCount;
     }
 
     public void setDataHolders(List<GroupDataHolder> holders) {
@@ -124,6 +146,26 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
     @Override
     public final long getChildId(int i, int i2) {
         return i2;
+    }
+
+    @Override
+    public int getGroupTypeCount() {
+        return mGroupTypeCount;
+    }
+
+    @Override
+    public int getChildTypeCount() {
+        return mChildTypeCount;
+    }
+
+    @Override
+    public int getGroupType(int groupPosition) {
+        return queryDataHolder(groupPosition).getType();
+    }
+
+    @Override
+    public int getChildType(int groupPosition, int childPosition) {
+        return queryDataHolder(groupPosition).queryChild(childPosition).getType();
     }
 
     @Override
