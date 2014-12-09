@@ -8,8 +8,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 
-import java.util.UUID;
+import java.util.LinkedList;
+import java.util.List;
 
 import cn.emagsoftware.telephony.TelephonyMgr;
 
@@ -18,31 +20,16 @@ import cn.emagsoftware.telephony.TelephonyMgr;
  */
 public class GenericActivity extends Activity {
 
-    private String[] refreshTypes = null;
-    private String[] refreshTokens = null;
-    private BroadcastReceiver[] refreshReceivers = null;
     private boolean isResumed = false;
+    private BroadcastReceiver[] refreshReceivers = null;
+    private List<Object[]> cacheRefresh = new LinkedList<Object[]>();
+    private Handler handler = new Handler();
     private boolean shouldRefreshNextTime = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(savedInstanceState != null) {
-            refreshTypes = savedInstanceState.getStringArray("genericactivity:support:refreshtypes");
-            refreshTokens = savedInstanceState.getStringArray("genericactivity:support:refreshtokens");
-        }
-        if(refreshTypes == null) {
-            refreshTypes = getRefreshTypes();
-            if(refreshTypes != null) {
-                refreshTypes = refreshTypes.clone();
-                refreshTokens = new String[refreshTypes.length];
-            }
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
+        final String[] refreshTypes = getRefreshTypes();
         if(refreshTypes != null) {
             refreshReceivers = new BroadcastReceiver[refreshTypes.length];
             for(int i = 0;i < refreshTypes.length;i++) {
@@ -50,18 +37,9 @@ public class GenericActivity extends Activity {
                 refreshReceivers[i] = new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        String token = intent.getStringExtra("TOKEN");
-                        if(token == null || token.equals("")) {
-                            return;
-                        }
-                        if(refreshTokens[index] == null && isInitialStickyBroadcast()) {
-                            refreshTokens[index] = token;
-                            return;
-                        }
-                        if(!token.equals(refreshTokens[index])) {
-                            refreshTokens[index] = token;
-                            dispatchRefresh(refreshTypes[index],intent.getBundleExtra("DATA"));
-                        }
+                        Bundle data = intent.getBundleExtra("DATA");
+                        if(isResumed) dispatchRefresh(refreshTypes[index],data);
+                        else cacheRefresh.add(new Object[]{refreshTypes[index],data});
                     }
                 };
                 IntentFilter intentFilter = new IntentFilter();
@@ -69,50 +47,46 @@ public class GenericActivity extends Activity {
                 registerReceiver(refreshReceivers[i], intentFilter);
             }
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         isResumed = true;
         if(shouldRefreshNextTime) {
             shouldRefreshNextTime = false;
             refreshImmediately();
             return;
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        clearReceivers();
-        if(refreshTypes != null) {
-            outState.putStringArray("genericactivity:support:refreshtypes",refreshTypes);
-            outState.putStringArray("genericactivity:support:refreshtokens",refreshTokens);
-        }
-    }
-
-    private void clearReceivers() {
-        if(refreshReceivers != null) {
-            for(BroadcastReceiver refreshReceiver:refreshReceivers) {
-                unregisterReceiver(refreshReceiver);
-            }
-            refreshReceivers = null;
-            for(int i = 0;i < refreshTokens.length;i++) {
-                if(refreshTokens[i] == null) {
-                    refreshTokens[i] = "";
+        if(cacheRefresh.size() > 0) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    for(Object[] refresh : cacheRefresh) {
+                        dispatchRefresh((String)refresh[0],(Bundle)refresh[1]);
+                    }
+                    cacheRefresh.clear();
                 }
-            }
+            });
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        clearReceivers();
         isResumed = false;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        refreshTypes = null;
-        refreshTokens = null;
+        if(refreshReceivers != null) {
+            for(BroadcastReceiver refreshReceiver:refreshReceivers) {
+                unregisterReceiver(refreshReceiver);
+            }
+            refreshReceivers = null;
+        }
+        cacheRefresh.clear();
     }
 
     /**
@@ -143,11 +117,10 @@ public class GenericActivity extends Activity {
      */
     public static void sendRefresh(Context context,String refreshType,Bundle bundle) {
         Intent intent = new Intent(context.getPackageName() + "@" + refreshType);
-        intent.putExtra("TOKEN", UUID.randomUUID().toString());
         if(bundle != null) {
             intent.putExtra("DATA",bundle);
         }
-        context.sendStickyBroadcast(intent);
+        context.sendBroadcast(intent);
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
