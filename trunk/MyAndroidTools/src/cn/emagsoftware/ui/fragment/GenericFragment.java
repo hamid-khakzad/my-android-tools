@@ -10,6 +10,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 
 import java.lang.reflect.Field;
+import java.util.LinkedList;
+import java.util.List;
 
 import cn.emagsoftware.util.LogManager;
 
@@ -31,29 +33,15 @@ public class GenericFragment extends Fragment {
     }
 
     private boolean isViewDetached = false;
-    private String[] refreshTypes = null;
-    private String[] refreshTokens = null;
+    private boolean isResumed = false;
     private BroadcastReceiver[] refreshReceivers = null;
+    private List<Object[]> cacheRefresh = new LinkedList<Object[]>();
+    private Handler handler = new Handler();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(savedInstanceState != null) {
-            refreshTypes = savedInstanceState.getStringArray("genericfragment:support:refreshtypes");
-            refreshTokens = savedInstanceState.getStringArray("genericfragment:support:refreshtokens");
-        }
-        if(refreshTypes == null) {
-            refreshTypes = getRefreshTypes();
-            if(refreshTypes != null) {
-                refreshTypes = refreshTypes.clone();
-                refreshTokens = new String[refreshTypes.length];
-            }
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
+        final String[] refreshTypes = getRefreshTypes();
         if(refreshTypes != null) {
             refreshReceivers = new BroadcastReceiver[refreshTypes.length];
             for(int i = 0;i < refreshTypes.length;i++) {
@@ -61,18 +49,9 @@ public class GenericFragment extends Fragment {
                 refreshReceivers[i] = new BroadcastReceiver() {
                     @Override
                     public void onReceive(Context context, Intent intent) {
-                        String token = intent.getStringExtra("TOKEN");
-                        if(token == null || token.equals("")) {
-                            return;
-                        }
-                        if(refreshTokens[index] == null && isInitialStickyBroadcast()) {
-                            refreshTokens[index] = token;
-                            return;
-                        }
-                        if(!token.equals(refreshTokens[index])) {
-                            refreshTokens[index] = token;
-                            dispatchRefresh(refreshTypes[index],intent.getBundleExtra("DATA"));
-                        }
+                        Bundle data = intent.getBundleExtra("DATA");
+                        if(isResumed) dispatchRefresh(refreshTypes[index],data);
+                        else cacheRefresh.add(new Object[]{refreshTypes[index],data});
                     }
                 };
                 IntentFilter intentFilter = new IntentFilter();
@@ -83,34 +62,26 @@ public class GenericFragment extends Fragment {
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        clearReceivers();
-        if(refreshTypes != null) {
-            outState.putStringArray("genericfragment:support:refreshtypes",refreshTypes);
-            outState.putStringArray("genericfragment:support:refreshtokens",refreshTokens);
-        }
-    }
-
-    private void clearReceivers() {
-        if(refreshReceivers != null) {
-            Context context = getActivity();
-            for(BroadcastReceiver refreshReceiver:refreshReceivers) {
-                context.unregisterReceiver(refreshReceiver);
-            }
-            refreshReceivers = null;
-            for(int i = 0;i < refreshTokens.length;i++) {
-                if(refreshTokens[i] == null) {
-                    refreshTokens[i] = "";
+    public void onResume() {
+        super.onResume();
+        isResumed = true;
+        if(cacheRefresh.size() > 0) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    for(Object[] refresh : cacheRefresh) {
+                        dispatchRefresh((String)refresh[0],(Bundle)refresh[1]);
+                    }
+                    cacheRefresh.clear();
                 }
-            }
+            });
         }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        clearReceivers();
+        isResumed = false;
     }
 
     @Override
@@ -123,8 +94,14 @@ public class GenericFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         isViewDetached = false;
-        refreshTypes = null;
-        refreshTokens = null;
+        if(refreshReceivers != null) {
+            Context context = getActivity();
+            for(BroadcastReceiver refreshReceiver:refreshReceivers) {
+                context.unregisterReceiver(refreshReceiver);
+            }
+            refreshReceivers = null;
+        }
+        cacheRefresh.clear();
     }
 
     @Override
