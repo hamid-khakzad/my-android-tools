@@ -35,20 +35,22 @@ public class TransitionBitmapDisplayer implements BitmapDisplayer {
 
     @Override
     public void display(Bitmap bitmap, ImageAware imageAware, LoadedFrom loadedFrom) {
+        Drawable drawable = convert(bitmap);
         if ((animateFromNetwork && loadedFrom == LoadedFrom.NETWORK) ||
                 (animateFromDisc && loadedFrom == LoadedFrom.DISC_CACHE) ||
                 (animateFromMemory && loadedFrom == LoadedFrom.MEMORY_CACHE)) {
-            MyTransitionDrawable transDrawable = new MyTransitionDrawable(convert(bitmap));
+            MyTransitionDrawable transDrawable = new MyTransitionDrawable(drawable==null?new BitmapDrawable(bitmap):drawable);
             transDrawable.setCrossFadeEnabled(true);
             imageAware.setImageDrawable(transDrawable);
             transDrawable.startTransition(durationMillis);
         }else {
-            imageAware.setImageBitmap(bitmap);
+            if(drawable == null) imageAware.setImageBitmap(bitmap);
+            else imageAware.setImageDrawable(drawable);
         }
     }
 
     protected Drawable convert(Bitmap bitmap) {
-        return new BitmapDrawable(bitmap);
+        return null;
     }
 
     private static class MyTransitionDrawable extends TransitionDrawable {
