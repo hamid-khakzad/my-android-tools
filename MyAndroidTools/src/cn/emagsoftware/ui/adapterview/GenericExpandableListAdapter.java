@@ -140,12 +140,12 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     @Override
     public final long getGroupId(int i) {
-        return i;
+        return queryDataHolder(i).getId();
     }
 
     @Override
     public final long getChildId(int i, int i2) {
-        return i2;
+        return queryDataHolder(i).queryChild(i2).getId();
     }
 
     @Override
