@@ -15,11 +15,17 @@ public abstract class DataHolder
 
     private Object   mData          = null;
     private DisplayImageOptions[] mOptions = null;
+    private int mId;
 
     public DataHolder(Object data,DisplayImageOptions... options)
     {
         mData = data;
         mOptions = options;
+        mId = super.hashCode();
+    }
+
+    public int getId() {
+        return mId;
     }
 
     /**

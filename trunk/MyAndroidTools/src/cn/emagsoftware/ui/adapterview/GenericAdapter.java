@@ -176,7 +176,7 @@ public class GenericAdapter extends BaseAdapter
     @Override
     public final long getItemId(int position)
     {
-        return position;
+        return queryDataHolder(position).getId();
     }
 
     @Override
@@ -189,6 +189,11 @@ public class GenericAdapter extends BaseAdapter
     public final int getViewTypeCount()
     {
         return mViewTypeCount;
+    }
+
+    @Override
+    public final boolean hasStableIds() {
+        return !mIsLoopView;
     }
 
     @Override
