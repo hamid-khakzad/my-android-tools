@@ -16,9 +16,6 @@ import java.util.ArrayList;
 
 import cn.emagsoftware.util.LogManager;
 
-/**
- * @deprecated 该类已舍弃，可使用{@link cn.emagsoftware.ui.pageradapterview.NoSlidingViewPager}代替。NoSlidingViewPager具有类似于ViewPager的回收机制，可以通过setOffscreenPageLimit(int limit)来控制回收，setOffscreenPageLimit带来的一次性加载多页数据的问题，可以通过loader加载机制来避免并发加载
- */
 public class TabPager extends ViewGroup {
     private static final boolean DEBUG = false;
 
