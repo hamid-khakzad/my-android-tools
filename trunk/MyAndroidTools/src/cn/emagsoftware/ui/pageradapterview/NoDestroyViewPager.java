@@ -87,6 +87,7 @@ import java.util.Comparator;
  *
  * {@sample development/samples/Support13Demos/src/com/example/android/supportv13/app/ActionBarTabsPager.java
  *      complete}
+ *  @deprecated 该类已舍弃，请直接使用{@link android.support.v4.view.ViewPager}，ViewPager的自动回收问题可以通过setOffscreenPageLimit(int limit)来控制，setOffscreenPageLimit带来的一次性加载多页数据的问题，可以通过loader加载机制来避免并发加载
  */
 public class NoDestroyViewPager extends ViewGroup {
     private static final String TAG = "NoDestroyViewPager";
