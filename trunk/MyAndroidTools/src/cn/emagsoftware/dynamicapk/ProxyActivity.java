@@ -84,9 +84,8 @@ public class ProxyActivity extends Activity {
     protected void launchRemoteActivity(Bundle savedInstanceState, String className) {
         File dexOutputDir = this.getDir("dex", Context.MODE_PRIVATE);
         final String dexOutputPath = dexOutputDir.getAbsolutePath();
-        ClassLoader localClassLoader = ClassLoader.getSystemClassLoader();
         DexClassLoader dexClassLoader = new DexClassLoader(mApkPath,
-                dexOutputPath, null, localClassLoader);
+                dexOutputPath, null, getClassLoader());
         mClassLoader = dexClassLoader;
         try {
             Class<?> localClass = dexClassLoader.loadClass(className);
