@@ -20,8 +20,9 @@ public final class TelephonyMgr
     {
     }
 
-    public static boolean isDualMode() throws ReflectHiddenFuncException
+    public static boolean isDualMode(Context context) throws ReflectHiddenFuncException
     {
+        if(getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) return LollipopDualModeSupport.getPhoneCount(context) >= 2;
         boolean isDualMode = HtcDualModeSupport.isDualMode();
         if(isDualMode) return isDualMode;
         try
@@ -63,7 +64,7 @@ public final class TelephonyMgr
 
     public static String getSubscriberId(Context context,int cardIndex) throws ReflectHiddenFuncException
     {
-        boolean isDualMode = isDualMode();
+        boolean isDualMode = isDualMode(context);
         String name = null;
         String model = Build.MODEL;
         if (cardIndex == 0)
@@ -83,6 +84,7 @@ public final class TelephonyMgr
         } else
             throw new IllegalArgumentException("cardIndex can only be 0 or 1");
         if(isDualMode) {
+            if(getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) return LollipopDualModeSupport.getSubscriberId(context,cardIndex);
             if(HtcDualModeSupport.isDualMode())
                 return HtcDualModeSupport.getSubscriberId(cardIndex);
             try

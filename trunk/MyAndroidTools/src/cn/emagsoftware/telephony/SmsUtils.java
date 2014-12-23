@@ -92,7 +92,7 @@ public final class SmsUtils
     }
 
     private static void sendMessageImpl(Context context, String to, short port, Object data, SmsSendCallback ssc, int timeout, int cardIndex) throws ReflectHiddenFuncException {
-        boolean isDualMode = TelephonyMgr.isDualMode();
+        boolean isDualMode = TelephonyMgr.isDualMode(context);
         String name = null;
         String model = Build.MODEL;
         if (cardIndex == 0)
@@ -131,6 +131,14 @@ public final class SmsUtils
         {
             if (isDualMode)
             {
+                if(TelephonyMgr.getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) {
+                    if(data instanceof String){
+                        LollipopDualModeSupport.sendTextMessage(to,null,(String)data,sentPI,null,cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }else {
+                        LollipopDualModeSupport.sendDataMessage(to,null,port,(byte[])data,sentPI,null,cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }
+                    return;
+                }
                 if(HtcDualModeSupport.isDualMode()) {
                     if(data instanceof String){
                         HtcDualModeSupport.sendTextMessage(to, null, (String)data, sentPI, null, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
