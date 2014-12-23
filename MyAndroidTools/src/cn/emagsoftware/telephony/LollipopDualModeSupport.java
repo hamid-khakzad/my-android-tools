@@ -16,10 +16,10 @@ final class LollipopDualModeSupport {
 
     private LollipopDualModeSupport(){}
 
-    public static int getPhoneCount(Context context) throws ReflectHiddenFuncException {
+    public static int getSimCount(Context context) throws ReflectHiddenFuncException {
         TelephonyManager tm = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
         try {
-            Method method = TelephonyManager.class.getDeclaredMethod("getPhoneCount");
+            Method method = TelephonyManager.class.getDeclaredMethod("getSimCount");
             method.setAccessible(true);
             return (Integer)method.invoke(tm);
         }catch (NoSuchMethodException e) {

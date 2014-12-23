@@ -22,7 +22,7 @@ public final class TelephonyMgr
 
     public static boolean isDualMode(Context context) throws ReflectHiddenFuncException
     {
-        if(getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) return LollipopDualModeSupport.getPhoneCount(context) >= 2;
+        if(getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) return LollipopDualModeSupport.getSimCount(context) >= 2;
         boolean isDualMode = HtcDualModeSupport.isDualMode();
         if(isDualMode) return isDualMode;
         try
