@@ -1,9 +1,7 @@
 package cn.emagsoftware.ui.imageloader;
 
-import android.R;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 
@@ -16,17 +14,19 @@ import com.nostra13.universalimageloader.core.imageaware.ImageAware;
  */
 public class TransitionBitmapDisplayer implements BitmapDisplayer {
 
+    private final int defaultDrawableId;
     private final int durationMillis;
 
     private final boolean animateFromNetwork;
     private final boolean animateFromDisc;
     private final boolean animateFromMemory;
 
-    public TransitionBitmapDisplayer(int durationMillis) {
-        this(durationMillis, true, true, true);
+    public TransitionBitmapDisplayer(int defaultDrawableId, int durationMillis) {
+        this(defaultDrawableId, durationMillis, true, true, true);
     }
 
-    public TransitionBitmapDisplayer(int durationMillis, boolean animateFromNetwork, boolean animateFromDisc, boolean animateFromMemory) {
+    public TransitionBitmapDisplayer(int defaultDrawableId, int durationMillis, boolean animateFromNetwork, boolean animateFromDisc, boolean animateFromMemory) {
+        this.defaultDrawableId = defaultDrawableId;
         this.durationMillis = durationMillis;
         this.animateFromNetwork = animateFromNetwork;
         this.animateFromDisc = animateFromDisc;
@@ -39,7 +39,7 @@ public class TransitionBitmapDisplayer implements BitmapDisplayer {
         if ((animateFromNetwork && loadedFrom == LoadedFrom.NETWORK) ||
                 (animateFromDisc && loadedFrom == LoadedFrom.DISC_CACHE) ||
                 (animateFromMemory && loadedFrom == LoadedFrom.MEMORY_CACHE)) {
-            MyTransitionDrawable transDrawable = new MyTransitionDrawable(drawable==null?new BitmapDrawable(bitmap):drawable);
+            MyTransitionDrawable transDrawable = new MyTransitionDrawable(imageAware.getWrappedView().getResources().getDrawable(defaultDrawableId),drawable==null?new BitmapDrawable(bitmap):drawable);
             transDrawable.setCrossFadeEnabled(true);
             imageAware.setImageDrawable(transDrawable);
             transDrawable.startTransition(durationMillis);
@@ -57,8 +57,8 @@ public class TransitionBitmapDisplayer implements BitmapDisplayer {
 
         private Drawable mainDrawable = null;
 
-        public MyTransitionDrawable(Drawable mainDrawable) {
-            super(new Drawable[]{new ColorDrawable(R.color.transparent), mainDrawable});
+        public MyTransitionDrawable(Drawable defDrawable,Drawable mainDrawable) {
+            super(new Drawable[]{defDrawable, mainDrawable});
             this.mainDrawable = mainDrawable;
         }
 
