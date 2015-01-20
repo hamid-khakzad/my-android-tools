@@ -25,6 +25,8 @@ public final class TelephonyMgr
         if(getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) return LollipopDualModeSupport.getSimCount(context) >= 2;
         boolean isDualMode = HtcDualModeSupport.isDualMode();
         if(isDualMode) return isDualMode;
+        isDualMode = MX4DualModeSupport.isDualMode();
+        if(isDualMode) return isDualMode;
         try
         {
             Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
@@ -87,6 +89,8 @@ public final class TelephonyMgr
             if(getSDKVersion() >= Build.VERSION_CODES.LOLLIPOP) return LollipopDualModeSupport.getSubscriberId(context,cardIndex);
             if(HtcDualModeSupport.isDualMode())
                 return HtcDualModeSupport.getSubscriberId(cardIndex);
+            if(MX4DualModeSupport.isDualMode())
+                return MX4DualModeSupport.getSubscriberId(cardIndex);
             try
             {
                 Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);

@@ -147,6 +147,14 @@ public final class SmsUtils
                     }
                     return;
                 }
+                if(MX4DualModeSupport.isDualMode()) {
+                    if(data instanceof String){
+                        MX4DualModeSupport.sendTextMessage(to, null, (String)data, sentPI, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }else{
+                        MX4DualModeSupport.sendDataMessage(to, null, port, (byte[])data, sentPI, null, cardIndex); // 暂时屏蔽了deliveryIntent事件的接收，因为其在某些机器上会弹出回执信息
+                    }
+                    return;
+                }
                 try
                 {
                     Method method = Class.forName("android.os.ServiceManager").getDeclaredMethod("getService", String.class);
