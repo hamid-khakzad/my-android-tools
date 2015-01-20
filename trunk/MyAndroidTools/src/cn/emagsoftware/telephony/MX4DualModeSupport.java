@@ -19,7 +19,7 @@ final class MX4DualModeSupport {
             Class clz = Class.forName("android.os.BuildExt");
             Field field = clz.getDeclaredField("IS_M1_NOTE");
             field.setAccessible(true);
-            return field.getBoolean(null);
+            return (Boolean)field.get(null);
         }catch (Exception e) {
             return false;
         }
@@ -27,7 +27,7 @@ final class MX4DualModeSupport {
 
     public static String getSubscriberId(int cardIndex) throws ReflectHiddenFuncException {
         try {
-            Class clz = Class.forName("android.telephony.TelephonyManagerEx");
+            Class clz = Class.forName("com.mediatek.telephony.TelephonyManagerEx");
             Method method = clz.getDeclaredMethod("getDefault");
             method.setAccessible(true);
             Object obj = method.invoke(null);
