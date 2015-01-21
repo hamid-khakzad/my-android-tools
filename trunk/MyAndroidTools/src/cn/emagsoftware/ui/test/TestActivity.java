@@ -122,7 +122,7 @@ public class TestActivity extends GenericActionBarActivity
                     testLoader.forcePageLoad();
                 }
             }
-        });
+        },0);
     }
 
 }
