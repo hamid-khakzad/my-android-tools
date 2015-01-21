@@ -150,8 +150,9 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
      * <p>bindPageLoading实际上设置了AbsListView的OnScrollListener监听；用户若包含自己的OnScrollListener监听，请在bindPageLoading之前调用setOnScrollListener，bindPageLoading方法会将用户的逻辑包含进来； 若在bindPageLoading之后调用setOnScrollListener，将取消bindPageLoading的作用</>
      * @param adapterView
      * @param onPageLoading
+     * @param remainingCount
      */
-    public static void bindPageLoading(AdapterView<? extends Adapter> adapterView,OnPageLoading onPageLoading)
+    public static void bindPageLoading(AdapterView<? extends Adapter> adapterView,OnPageLoading onPageLoading,int remainingCount)
     {
         if (adapterView instanceof AbsListView)
         {
@@ -163,10 +164,10 @@ public abstract class BaseTaskPageLoader<D> extends BaseTaskLoader<D> {
                 AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absList);
                 if (onScrollListener instanceof WrappedOnScrollListener)
                 {
-                    absList.setOnScrollListener(new WrappedOnScrollListener(((WrappedOnScrollListener) onScrollListener).getOriginalListener(), onPageLoading, 0));
+                    absList.setOnScrollListener(new WrappedOnScrollListener(((WrappedOnScrollListener) onScrollListener).getOriginalListener(), onPageLoading, remainingCount));
                 } else
                 {
-                    absList.setOnScrollListener(new WrappedOnScrollListener(onScrollListener, onPageLoading, 0));
+                    absList.setOnScrollListener(new WrappedOnScrollListener(onScrollListener, onPageLoading, remainingCount));
                 }
             } catch (NoSuchFieldException e)
             {
