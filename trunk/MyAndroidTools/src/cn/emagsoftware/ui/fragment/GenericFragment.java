@@ -21,15 +21,24 @@ import cn.emagsoftware.util.LogManager;
 public class GenericFragment extends Fragment {
 
     private static final Field sChildFragmentManagerField;
+    private static final Field sSavedViewStateField;
     static {
-        Field f = null;
+        Field fm = null;
         try {
-            f = Fragment.class.getDeclaredField("mChildFragmentManager");
-            f.setAccessible(true);
+            fm = Fragment.class.getDeclaredField("mChildFragmentManager");
+            fm.setAccessible(true);
         }catch (NoSuchFieldException e) {
             LogManager.logE(GenericFragment.class,"Error getting mChildFragmentManager field",e);
         }
-        sChildFragmentManagerField = f;
+        Field fs = null;
+        try {
+            fs = Fragment.class.getDeclaredField("mSavedViewState");
+            fs.setAccessible(true);
+        }catch (NoSuchFieldException e) {
+            LogManager.logE(GenericFragment.class,"Error getting mSavedViewState field",e);
+        }
+        sChildFragmentManagerField = fm;
+        sSavedViewStateField = fs;
     }
 
     private boolean isViewDetached = false;
@@ -112,6 +121,13 @@ public class GenericFragment extends Fragment {
                 sChildFragmentManagerField.set(this, null);
             }catch (Exception e) {
                 LogManager.logE(GenericFragment.class,"Error setting mChildFragmentManager field",e);
+            }
+        }
+        if(sSavedViewStateField != null) {
+            try {
+                sSavedViewStateField.set(this, null);
+            }catch (Exception e) {
+                LogManager.logE(GenericFragment.class,"Error setting mSavedViewState field",e);
             }
         }
     }
