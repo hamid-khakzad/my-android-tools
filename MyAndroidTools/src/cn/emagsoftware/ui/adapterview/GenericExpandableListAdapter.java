@@ -140,12 +140,16 @@ public class GenericExpandableListAdapter extends BaseExpandableListAdapter
 
     @Override
     public final long getGroupId(int i) {
+        if(i >= getGroupCount()) return -1; // Resolve Android Bug
         return queryDataHolder(i).getId();
     }
 
     @Override
     public final long getChildId(int i, int i2) {
-        return queryDataHolder(i).queryChild(i2).getId();
+        if(i >= getGroupCount()) return -1; // Resolve Android Bug
+        GroupDataHolder holder = queryDataHolder(i);
+        if(i2 >= holder.getChildrenCount()) return -1; // Resolve Android Bug
+        return holder.queryChild(i2).getId();
     }
 
     @Override

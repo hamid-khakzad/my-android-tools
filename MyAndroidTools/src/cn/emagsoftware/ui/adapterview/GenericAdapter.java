@@ -176,6 +176,7 @@ public class GenericAdapter extends BaseAdapter
     @Override
     public final long getItemId(int position)
     {
+        if(position >= getCount()) return -1; // Resolve Android Bug
         return queryDataHolder(position).getId();
     }
 
