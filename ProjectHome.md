@@ -1,0 +1,1 @@
+an API collection for android developing.It includes usual functions.
